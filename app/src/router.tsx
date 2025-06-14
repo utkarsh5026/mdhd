@@ -1,8 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
-import HomePage from "@/components/home/HomePage";
-import DocumentPreview from "@/components/document-reading/preview/DocumentPreview";
 import ErrorBoundary from "@/components/utils/error/ErrorBoundary";
+import "./index.css";
 
 /**
  * Application Router Configuration
@@ -18,18 +17,6 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     errorElement: <ErrorBoundary />,
-    children: [
-      {
-        path: "documents/:documentPath/*",
-        element: <DocumentPreview />,
-        errorElement: <ErrorBoundary />,
-      },
-      {
-        index: true,
-        element: <HomePage />,
-        errorElement: <ErrorBoundary />,
-      },
-    ],
   },
 ]);
 

@@ -1,4 +1,3 @@
-import { useCurrentDocument } from "@/hooks";
 import { useHistoryStore } from "@/stores";
 import { union } from "@/utils/array";
 import { useEffect, useState, useRef, useCallback } from "react";
