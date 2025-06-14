@@ -27,18 +27,18 @@ const Header: React.FC<HeaderProps> = ({
         {/* Modern gradient background with sophisticated blur */}
         <div className="relative">
           {/* Multi-layer background */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-b from-secondary/30 via-secondary/10 to-transparent" />
-          <div className="absolute inset-0 backdrop-blur-xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-secondary/20 via-secondary/5 to-transparent" />
+          <div className="absolute inset-0 backdrop-blur-md" />
 
           {/* Content container */}
-          <div className="relative flex items-center justify-between p-4 sm:p-6 lg:p-8">
+          <div className="relative flex items-center justify-between p-4 sm:p-5 lg:p-6">
             {/* Exit Button - Left Side */}
             <motion.button
               onClick={onExit}
               className={cn(
                 "relative group touch-manipulation",
-                "p-3 sm:p-4 lg:p-5 rounded-full",
+                "p-3 sm:p-3.5 lg:p-4 rounded-full",
                 "transition-all duration-500 ease-out",
                 "border-2 backdrop-blur-md shadow-lg",
                 "bg-cardBg/80 border-border/50 text-foreground",
@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({
               <X
                 className={cn(
                   "relative z-10 transition-all duration-300",
-                  "h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7",
+                  "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
                   "group-hover:scale-110"
                 )}
               />
@@ -80,13 +80,13 @@ const Header: React.FC<HeaderProps> = ({
             </motion.button>
 
             {/* Action Buttons - Right Side */}
-            <div className="flex items-center gap-3 sm:gap-4 lg:gap-5">
+            <div className="flex items-center gap-3 sm:gap-3.5 lg:gap-4">
               {/* Settings Button */}
               <motion.button
                 onClick={onSettings}
                 className={cn(
                   "relative group touch-manipulation",
-                  "p-3 sm:p-4 lg:p-5 rounded-full",
+                  "p-3 sm:p-3.5 lg:p-4 rounded-full",
                   "transition-all duration-500 ease-out",
                   "border-2 backdrop-blur-md shadow-lg",
                   "bg-cardBg/80 border-border/50 text-foreground",
@@ -110,7 +110,7 @@ const Header: React.FC<HeaderProps> = ({
                 <Settings
                   className={cn(
                     "relative z-10 transition-all duration-300",
-                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7",
+                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
                     "group-hover:scale-110"
                   )}
                 />
@@ -138,7 +138,7 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={onMenu}
                 className={cn(
                   "relative group touch-manipulation",
-                  "p-3 sm:p-4 lg:p-5 rounded-full",
+                  "p-3 sm:p-3.5 lg:p-4 rounded-full",
                   "transition-all duration-500 ease-out",
                   "border-2 backdrop-blur-md shadow-lg",
                   "bg-cardBg/80 border-border/50 text-foreground",
@@ -162,7 +162,7 @@ const Header: React.FC<HeaderProps> = ({
                 <List
                   className={cn(
                     "relative z-10 transition-all duration-300",
-                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7",
+                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
                     "group-hover:scale-110"
                   )}
                 />

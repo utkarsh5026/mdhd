@@ -29,21 +29,21 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
         {/* Modern gradient background with sophisticated blur */}
         <div className="relative">
           {/* Multi-layer background */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-secondary/30 via-secondary/10 to-transparent" />
-          <div className="absolute inset-0 backdrop-blur-xl" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-secondary/20 via-secondary/5 to-transparent" />
+          <div className="absolute inset-0 backdrop-blur-md" />
 
           {/* Content container */}
-          <div className="relative flex items-center justify-center p-4 sm:p-6 lg:p-8">
+          <div className="relative flex items-center justify-center p-4 sm:p-5 lg:p-6">
             {/* Premium control group */}
-            <div className="flex items-center gap-6 sm:gap-8 lg:gap-10">
+            <div className="flex items-center gap-6 sm:gap-7 lg:gap-8">
               {/* Previous Button */}
               <motion.button
                 onClick={onPrevious}
                 disabled={currentIndex === 0}
                 className={cn(
                   "relative group touch-manipulation",
-                  "p-3 sm:p-4 lg:p-5 rounded-full",
+                  "p-3 sm:p-3.5 lg:p-4 rounded-full",
                   "transition-all duration-500 ease-out",
                   "border-2 backdrop-blur-md shadow-lg",
                   currentIndex === 0
@@ -78,7 +78,7 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
                 <ChevronLeft
                   className={cn(
                     "relative z-10 transition-all duration-300",
-                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7",
+                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
                     currentIndex !== 0 && "group-hover:scale-110"
                   )}
                 />
@@ -108,7 +108,7 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
 
               {/* Modern separator with gradient */}
               <div className="relative">
-                <div className="w-px h-8 sm:h-10 lg:h-12 bg-gradient-to-b from-transparent via-border to-transparent" />
+                <div className="w-px h-6 sm:h-8 lg:h-10 bg-gradient-to-b from-transparent via-border to-transparent" />
                 <div className="absolute inset-0 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent blur-sm" />
               </div>
 
@@ -118,7 +118,7 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
                 disabled={currentIndex === total - 1}
                 className={cn(
                   "relative group touch-manipulation",
-                  "p-3 sm:p-4 lg:p-5 rounded-full",
+                  "p-3 sm:p-3.5 lg:p-4 rounded-full",
                   "transition-all duration-500 ease-out",
                   "border-2 backdrop-blur-md shadow-lg",
                   currentIndex === total - 1
@@ -153,7 +153,7 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
                 <ChevronRight
                   className={cn(
                     "relative z-10 transition-all duration-300",
-                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7",
+                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
                     currentIndex !== total - 1 && "group-hover:scale-110"
                   )}
                 />
