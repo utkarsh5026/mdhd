@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Menu, Home } from "lucide-react";
 import ThemeSelector from "@/components/shared/theme/ThemeSelector";
+import { motion } from "framer-motion";
 
 interface AppHeaderProps {
   toggleSidebar: () => void;
@@ -101,11 +102,32 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       </div>
 
       {/* App title - center on mobile, left on desktop */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 md:static md:translate-x-0 md:hidden">
-        <h1 className="text-sm font-medium text-foreground/80 font-cascadia-code">
-          First Principles
-        </h1>
-      </div>
+      <motion.div
+        className="text-center"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, delay: 0.2 }}
+      >
+        {/* Title */}
+        <motion.h1
+          className="text-2xl md:text-4xl font-bold mb-6 relative"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          <span className="bg-gradient-to-r from-foreground via-primary/90 to-foreground bg-clip-text text-transparent">
+            MDHD
+          </span>
+
+          {/* Animated underline */}
+          <motion.div
+            className="absolute -bottom-2 left-1/2 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
+            initial={{ width: 0, x: "-50%" }}
+            animate={{ width: "60%", x: "-50%" }}
+            transition={{ duration: 1, delay: 1 }}
+          />
+        </motion.h1>
+      </motion.div>
 
       {/* Right side - Theme selector */}
       <div>

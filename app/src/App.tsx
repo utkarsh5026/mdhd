@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from "react";
-import { Play, Sparkles, ChevronRight, FileText } from "lucide-react";
+import { Play, ChevronRight, FileText, BookOpen, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 import FullScreenCardView from "@/components/document-reading/fullscreen/FullScreenCardView";
 import { useTheme } from "./hooks";
 import {
@@ -15,6 +16,8 @@ const MDHDHomepage: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [sections, setSections] = useState<MarkdownSection[]>([]);
   const [readSections] = useState<Set<number>>(new Set());
+  const [inputFocused, setInputFocused] = useState(false);
+
   useTheme();
 
   const handleStartReading = useCallback(() => {
@@ -49,6 +52,12 @@ const MDHDHomepage: React.FC = () => {
     ? markdownInput.split("\n").filter((line) => /^#{1,2}\s/.exec(line)).length
     : 0;
 
+  const wordCount = markdownInput.trim()
+    ? markdownInput.split(/\s+/).filter((word) => word.length > 0).length
+    : 0;
+
+  const estimatedReadTime = Math.ceil(wordCount / 250); // Average reading speed
+
   if (isFullscreen) {
     return (
       <FullScreenCardView
@@ -64,110 +73,256 @@ const MDHDHomepage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative font-cascadia-code">
-      {/* Subtle background pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.02]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)",
-          backgroundSize: "32px 32px",
-        }}
-      />
-
-      {/* Main content */}
+    <div className="min-h-screen bg-background relative font-cascadia-code overflow-hidden">
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center p-4 mb-6 rounded-2xl bg-primary/5 border border-primary/10">
-              <Sparkles className="h-8 w-8 text-primary" />
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full max-w-5xl mx-auto"
+        >
+          {/* Hero Section */}
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
+          >
+            {/* Title */}
+            <motion.h1
+              className="text-2xl md:text-4xl font-bold mb-6 relative"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              <span className="bg-gradient-to-r from-foreground via-primary/90 to-foreground bg-clip-text text-transparent">
+                MDHD
+              </span>
 
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              MDHD
-            </h1>
+              {/* Animated underline */}
+              <motion.div
+                className="absolute -bottom-2 left-1/2 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
+                initial={{ width: 0, x: "-50%" }}
+                animate={{ width: "60%", x: "-50%" }}
+                transition={{ duration: 1, delay: 1 }}
+              />
+            </motion.h1>
+          </motion.div>
 
-            <p className="text-muted-foreground text-lg">
-              Markdown for ADHD users •{" "}
-              <span className="text-primary">Structured reading</span>
-            </p>
-          </div>
+          {/* Main Input Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="relative"
+          >
+            <Card
+              className={cn(
+                "relative overflow-hidden backdrop-blur-xl transition-all duration-500 rounded-2xl",
+                "bg-card/30 border-border/30 shadow-2xl",
+                inputFocused && "shadow-primary/10 border-primary/30 shadow-3xl"
+              )}
+            >
+              {/* Glass morphism overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-card/40 via-card/20 to-card/40" />
 
-          {/* Input Card */}
-          <Card className="p-8 bg-card/50 backdrop-blur-sm border-border/50 shadow-xl">
-            <div className="space-y-6">
-              {/* Input Area */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-foreground">
-                    Paste your markdown content
-                  </label>
-                  {sectionCount > 0 && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <FileText className="h-3 w-3" />
-                      <span>{sectionCount} sections detected</span>
+              {/* Animated border gradient */}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+              <div className="relative z-10 p-8 md:p-12">
+                <div className="space-y-8">
+                  {/* Header Section */}
+                  <motion.div
+                    className="flex items-center justify-between"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.6 }}
+                  >
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">
+                        Transform Your Markdown
+                      </h2>
+                      <p className="text-muted-foreground">
+                        Break down complex content into digestible, focused
+                        sections
+                      </p>
                     </div>
-                  )}
-                </div>
 
-                <textarea
-                  value={markdownInput}
-                  onChange={(e) => setMarkdownInput(e.target.value)}
-                  placeholder="# Your First Section
+                    <AnimatePresence>
+                      {sectionCount > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0, rotate: -180 }}
+                          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                          exit={{ opacity: 0, scale: 0, rotate: 180 }}
+                          className="flex items-center gap-3 px-4 py-2 rounded-full bg-primary/10 border border-primary/20"
+                        >
+                          <FileText className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium text-primary">
+                            {sectionCount} sections
+                          </span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+
+                  {/* Input Area */}
+                  <motion.div
+                    className="space-y-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.8 }}
+                  >
+                    <div className="relative group">
+                      <motion.textarea
+                        value={markdownInput}
+                        onChange={(e) => setMarkdownInput(e.target.value)}
+                        onFocus={() => setInputFocused(true)}
+                        onBlur={() => setInputFocused(false)}
+                        placeholder="# Your First Section
 This is how your content will be broken down into focused reading sections.
 
 ## Subsection
 Each heading becomes a separate card for distraction-free reading.
 
 Start typing your markdown content here..."
-                  className={cn(
-                    "w-full h-80 p-6 rounded-xl border bg-background/50 backdrop-blur-sm resize-none",
-                    "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
-                    "transition-all duration-300 text-sm leading-relaxed",
-                    "placeholder:text-muted-foreground/50"
-                  )}
-                />
+                        className={cn(
+                          "w-full h-96 p-6 rounded-2xl border transition-all duration-300 resize-none",
+                          "bg-background/50 backdrop-blur-sm",
+                          "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
+                          "text-sm leading-relaxed placeholder:text-muted-foreground/60",
+                          "group-hover:border-primary/30"
+                        )}
+                        whileFocus={{ scale: 1.01 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 30,
+                        }}
+                      />
 
-                {/* Character count and status */}
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{markdownInput.length} characters</span>
-                  {markdownInput.trim() && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-primary">Ready to read</span>
+                      {/* Input decorations */}
+                      <div className="absolute top-4 right-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                        <BookOpen className="h-5 w-5 text-primary" />
+                      </div>
                     </div>
-                  )}
+
+                    {/* Stats Row */}
+                    <motion.div
+                      className="flex items-center justify-between text-sm"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 1 }}
+                    >
+                      <div className="flex items-center gap-6 text-muted-foreground">
+                        <span>{markdownInput.length} characters</span>
+                        <span>{wordCount} words</span>
+                        {estimatedReadTime > 0 && (
+                          <span>~{estimatedReadTime} min read</span>
+                        )}
+                      </div>
+
+                      <AnimatePresence>
+                        {markdownInput.trim() && (
+                          <motion.div
+                            initial={{ opacity: 0, x: 20, scale: 0.8 }}
+                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                            exit={{ opacity: 0, x: 20, scale: 0.8 }}
+                            className="flex items-center gap-2"
+                          >
+                            <motion.div
+                              className="w-2 h-2 rounded-full bg-green-500"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            />
+                            <span className="text-primary font-medium">
+                              Ready to read
+                            </span>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  </motion.div>
+
+                  {/* Action Button */}
+                  <motion.div
+                    className="pt-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 1 }}
+                  >
+                    <Button
+                      onClick={handleStartReading}
+                      disabled={!markdownInput.trim()}
+                      size="lg"
+                      className={cn(
+                        "w-full h-16 text-lg font-semibold relative overflow-hidden group",
+                        "bg-gradient-to-r from-primary via-primary to-primary hover:from-primary/90 hover:via-primary hover:to-primary/90",
+                        "disabled:bg-muted disabled:text-muted-foreground disabled:from-muted disabled:via-muted disabled:to-muted",
+                        "transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-primary/25",
+                        "border border-primary/20"
+                      )}
+                    >
+                      {/* Animated background gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+
+                      {/* Button content */}
+                      <div className="relative z-10 flex items-center justify-center gap-3">
+                        <Play className="w-6 h-6" />
+                        <span>Start Focused Reading</span>
+                        <motion.div
+                          animate={{ x: [0, 4, 0] }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        >
+                          <ChevronRight className="w-6 h-6" />
+                        </motion.div>
+                      </div>
+
+                      {/* Glow effect */}
+                      <div className="absolute inset-0 bg-primary/20 blur-xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
+            </Card>
+          </motion.div>
 
-              {/* Start Button */}
-              <div className="pt-4">
-                <Button
-                  onClick={handleStartReading}
-                  disabled={!markdownInput.trim()}
-                  size="lg"
-                  className={cn(
-                    "w-full h-14 text-base font-medium",
-                    "bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground",
-                    "transition-all duration-300 group relative overflow-hidden"
-                  )}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                  <Play className="w-5 h-5 mr-3" />
-                  Start Focused Reading
-                  <ChevronRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
-                </Button>
+          {/* Quick Tips */}
+          <motion.div
+            className="mt-12 text-center space-y-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1.2 }}
+          >
+            <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
+                  <span className="text-xs font-bold text-primary">#</span>
+                </div>
+                <span>Main sections</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
+                  <span className="text-xs font-bold text-primary">##</span>
+                </div>
+                <span>Subsections</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-primary" />
+                <span>Focused cards</span>
               </div>
             </div>
-          </Card>
 
-          {/* Quick tips */}
-          <div className="mt-8 text-center text-xs text-muted-foreground space-y-2">
-            <p>Use # for main sections and ## for subsections</p>
-            <p>Each section becomes a focused reading card</p>
-          </div>
-        </div>
+            <p className="text-xs text-muted-foreground/80">
+              Each section becomes a distraction-free reading experience
+            </p>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );
