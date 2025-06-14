@@ -122,16 +122,13 @@ const CodeRender: React.FC<CodeRenderProps> = ({
   ) : (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div ref={codeRef} className="my-8 relative font-fira-code no-swipe">
-        <div className="bg-[#1c1c1c] text-gray-400 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold border-b border-[#222222] flex justify-between items-center rounded-t-2xl sm:rounded-t-2xl">
+        <div className="bg-card text-muted-foreground px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold border-b border-border flex justify-between items-center rounded-t-2xl sm:rounded-t-2xl">
           <span className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
             <span className="flex-shrink-0">
               {(() => {
                 const IconComponent = getIconForTech(language || "code");
                 return <IconComponent />;
               })()}
-            </span>
-            <span className="truncate text-xs sm:text-sm">
-              {language || "code"}
             </span>
           </span>
 
@@ -236,18 +233,18 @@ const CodeRender: React.FC<CodeRenderProps> = ({
 
         <CollapsibleContent className="data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
           <div className="relative">
-            <ScrollArea className="rounded-b-2xl sm:shadow-md sm:shadow-background/50">
+            <ScrollArea className="rounded-b-2xl sm:shadow-md sm:shadow-background/50 border-none">
               <SyntaxHighlighter
                 language={language || "text"}
                 customStyle={{
                   margin: 0,
                   padding: window.innerWidth < 640 ? "0.75rem" : "1rem",
-                  paddingTop: window.innerWidth < 640 ? "3rem" : "3.5rem",
-                  backgroundColor: "transparent",
                   fontSize: window.innerWidth < 640 ? "0.8rem" : "0.875rem",
                   lineHeight: window.innerWidth < 640 ? 1.5 : 1.6,
                   minWidth: "100%",
                   width: "max-content",
+                  backgroundColor: "transparent",
+                  border: "none",
                 }}
                 useInlineStyles={true}
                 codeTagProps={{
@@ -259,7 +256,19 @@ const CodeRender: React.FC<CodeRenderProps> = ({
                   },
                 }}
                 {...props}
-                style={getCurrentThemeStyle()}
+                style={{
+                  ...getCurrentThemeStyle(),
+                  'code[class*="language-"]': {
+                    ...getCurrentThemeStyle()['code[class*="language-"]'],
+                    backgroundColor: "transparent",
+                    background: "transparent",
+                  },
+                  'pre[class*="language-"]': {
+                    ...getCurrentThemeStyle()['pre[class*="language-"]'],
+                    backgroundColor: "transparent",
+                    background: "transparent",
+                  },
+                }}
               >
                 {typeof children === "string"
                   ? children.replace(/\n$/, "")
