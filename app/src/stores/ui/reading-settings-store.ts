@@ -32,7 +32,6 @@ export interface ReadingSettings {
 interface ReadingSettingsState {
   settings: ReadingSettings;
   setFontFamily: (family: FontFamily) => void;
-  setCustomBackground: (color: string | null) => void;
   resetSettings: () => void;
 }
 
@@ -62,13 +61,6 @@ export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
   setFontFamily: (family: FontFamily) =>
     set((state) => {
       const newSettings = { ...state.settings, fontFamily: family };
-      localStorage.setItem("reading-settings", JSON.stringify(newSettings));
-      return { settings: newSettings };
-    }),
-
-  setCustomBackground: (color: string | null) =>
-    set((state) => {
-      const newSettings = { ...state.settings, customBackground: color };
       localStorage.setItem("reading-settings", JSON.stringify(newSettings));
       return { settings: newSettings };
     }),

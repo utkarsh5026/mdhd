@@ -85,7 +85,7 @@ const MDHDHomepage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background font-cascadia-code">
+    <div className="min-h-screen bg-black/90 font-cascadia-code">
       <div className="container mx-auto px-4 py-8">
         <div
           className={cn(

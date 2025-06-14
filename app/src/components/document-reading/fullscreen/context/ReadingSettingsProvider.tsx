@@ -12,8 +12,7 @@ interface ReadingSettingsProviderProps {
 export const ReadingSettingsProvider: React.FC<
   ReadingSettingsProviderProps
 > = ({ children }) => {
-  const { settings, setFontFamily, setCustomBackground, resetSettings } =
-    useReadingSettingsStore();
+  const { settings, setFontFamily, resetSettings } = useReadingSettingsStore();
 
   useEffect(() => {
     if (settings.customBackground) {
@@ -36,10 +35,9 @@ export const ReadingSettingsProvider: React.FC<
     () => ({
       settings,
       setFontFamily,
-      setCustomBackground,
       resetSettings,
     }),
-    [settings, setFontFamily, setCustomBackground, resetSettings]
+    [settings, setFontFamily, resetSettings]
   );
 
   return (

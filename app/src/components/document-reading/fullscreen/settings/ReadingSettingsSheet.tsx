@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Paintbrush, RotateCcw } from "lucide-react";
 import { useReadingSettings } from "../context/ReadingContext";
 import FontFamilySelector from "./FontFamilySelector";
-import BackgroundSelector from "./BackgroundSelector";
 import ThemeSelector from "./ThemeSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -58,17 +57,10 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
               <TabsTrigger value="appearance" className="flex-1">
                 Appearance
               </TabsTrigger>
-              <TabsTrigger value="background" className="flex-1">
-                Background
-              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="text" className="flex flex-col gap-12 p-4">
               <FontFamilySelector />
-            </TabsContent>
-
-            <TabsContent value="background" className="space-y-6">
-              <BackgroundSelector />
             </TabsContent>
 
             <TabsContent value="appearance" className="space-y-6">

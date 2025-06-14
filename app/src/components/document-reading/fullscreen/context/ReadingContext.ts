@@ -29,10 +29,8 @@ export const fontFamilyMap: Record<FontFamily, string> = {
 export interface ReadingSettingsContextType {
   settings: {
     fontFamily: FontFamily;
-    customBackground: string | null;
   };
   setFontFamily: (family: FontFamily) => void;
-  setCustomBackground: (color: string | null) => void;
   resetSettings: () => void;
 }
 
