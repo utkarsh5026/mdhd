@@ -223,7 +223,7 @@ Start typing your markdown content here..."
                       disabled={!markdownInput.trim()}
                       size="lg"
                       className={cn(
-                        "w-full h-16 text-lg font-semibold relative overflow-hidden group",
+                        "w-full h-16 text-lg font-semibold relative overflow-hidden group rounded-2xl cursor-pointer",
                         "bg-gradient-to-r from-primary via-primary to-primary hover:from-primary/90 hover:via-primary hover:to-primary/90",
                         "disabled:bg-muted disabled:text-muted-foreground disabled:from-muted disabled:via-muted disabled:to-muted",
                         "transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-primary/25",
