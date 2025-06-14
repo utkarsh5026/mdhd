@@ -1,0 +1,154 @@
+/* InsightCard.css - Animation styles for the enhanced InsightCard component */
+
+/* Pulsing animation for the main icon */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(var(--primary), 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(var(--primary), 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(var(--primary), 0);
+    }
+}
+
+/* Floating animation for info icons */
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+/* Subtle attention-grabbing animation */
+@keyframes attention {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Slight pop animation for header actions */
+@keyframes pop {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.08);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Glow effect animation */
+@keyframes glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px rgba(var(--primary), 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(var(--primary), 0.4);
+    }
+}
+
+/* Apply animations to specific elements */
+.icon-pulse {
+    animation: pulse 2s infinite;
+}
+
+.insight-card {
+    position: relative;
+    overflow: hidden;
+}
+
+
+.insight-card:hover::before {
+    opacity: 0.1;
+}
+
+.insight-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background-size: 200% 200%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.insight-badge {
+    transition: all 0.3s ease;
+}
+
+.insight-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    animation: attention 0.5s ease;
+}
+
+
+
+
+.info-icon {
+    animation: float 3s ease-in-out infinite;
+}
+
+
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+    .insight-badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    .icon-pulse {
+        padding: 0.75rem;
+    }
+
+    .insight-card {
+        border-radius: 1rem;
+    }
+
+    /* Mobile optimization for header action */
+    .header-action {
+        scale: 0.95;
+    }
+
+    /* Ensure the header layout doesn't break on small screens */
+    .header-action button,
+    .header-action a {
+        padding: 0.35rem !important;
+        min-width: 0 !important;
+        height: auto !important;
+    }
+
+    /* Ensure icons in header actions are properly sized on mobile */
+    .header-action svg {
+        width: 1rem;
+        height: 1rem;
+    }
+}

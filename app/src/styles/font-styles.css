@@ -1,0 +1,80 @@
+/* src/styles/font-styles.css */
+
+/* Font Imports */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap');
+
+/* New reading-optimized fonts */
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Vollkorn:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600;7..72,700&display=swap');
+
+/* Reading Content Styles */
+.fullscreen-reading-content {
+    /* Will inherit the font-family, size, line-height, and letter-spacing from inline styles */
+    color: var(--foreground);
+}
+
+/* Apply font styles to markdown renderer */
+.fullscreen-reading-content .markdown-content h1,
+.fullscreen-reading-content .markdown-content h2,
+.fullscreen-reading-content .markdown-content h3,
+.fullscreen-reading-content .markdown-content h4,
+.fullscreen-reading-content .markdown-content h5,
+.fullscreen-reading-content .markdown-content h6,
+.fullscreen-reading-content .markdown-content p,
+.fullscreen-reading-content .markdown-content li,
+.fullscreen-reading-content .markdown-content blockquote {
+    font-family: inherit;
+}
+
+/* Enhanced styles for improved readability */
+.fullscreen-reading-content .markdown-content {
+    /* Base styles */
+    max-width: 70ch;
+    margin: 0 auto;
+}
+
+.fullscreen-reading-content .markdown-content h1 {
+    font-size: 2em;
+    margin-top: 1.5em;
+    margin-bottom: 0.8em;
+}
+
+.fullscreen-reading-content .markdown-content h2 {
+    font-size: 1.75em;
+    margin-top: 1.4em;
+    margin-bottom: 0.7em;
+}
+
+.fullscreen-reading-content .markdown-content h3 {
+    font-size: 1.5em;
+    margin-top: 1.3em;
+    margin-bottom: 0.6em;
+}
+
+.fullscreen-reading-content .markdown-content p {
+    margin-bottom: 1.2em;
+}
+
+.fullscreen-reading-content .markdown-content blockquote {
+    margin-left: 0;
+    border-left-width: 3px;
+}
+
+.fullscreen-reading-content .markdown-content code {
+    font-size: 0.9em;
+}
