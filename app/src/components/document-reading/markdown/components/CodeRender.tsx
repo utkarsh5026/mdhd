@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { Copy, ChevronDown, ChevronRight, Palette, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import getTopicIcon from "@/components/shared/icons/topicIcon";
+import getIconForTech from "@/components/shared/icons/";
 import {
   Collapsible,
   CollapsibleContent,
@@ -125,7 +125,10 @@ const CodeRender: React.FC<CodeRenderProps> = ({
         <div className="bg-[#1c1c1c] text-gray-400 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold border-b border-[#222222] flex justify-between items-center rounded-t-2xl sm:rounded-t-2xl">
           <span className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
             <span className="flex-shrink-0">
-              {getTopicIcon(language || "code")}
+              {(() => {
+                const IconComponent = getIconForTech(language || "code");
+                return <IconComponent />;
+              })()}
             </span>
             <span className="truncate text-xs sm:text-sm">
               {language || "code"}
