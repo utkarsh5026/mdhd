@@ -4,9 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "generate-index": "node scripts/generateContentIndex.cjs",
-    "generate-section-metadata": "node scripts/generateSectionMetadata.cjs",
-    "prebuild": "npm run generate-index && npm run generate-section-metadata",
     "build": "tsc -b && vite build",
     "dev": "vite",
     "lint": "eslint .",
