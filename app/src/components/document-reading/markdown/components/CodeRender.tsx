@@ -1,6 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { Copy, ChevronDown, ChevronRight, Palette, Check } from "lucide-react";
+import {
+  Copy,
+  ChevronDown,
+  ChevronRight,
+  Palette,
+  Check,
+  Maximize2,
+  Image,
+  FileText,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import getIconForTech from "@/components/shared/icons/";
 import {
@@ -16,9 +25,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogOverlay,
+} from "@/components/ui/dialog";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useCodeThemeStore, type ThemeKey } from "@/stores/ui/code-theme";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 interface CodeRenderProps extends React.ComponentPropsWithoutRef<"code"> {
   inline?: boolean;
@@ -37,9 +57,17 @@ const getHeadingCodeStyle = (headingLevel: number | null) => {
 };
 
 /**
- * CodeRender Component
+ * Enhanced CodeRender Component with Dialog View
  *
- * Renders code blocks and inline code with syntax highlighting and copy functionality.
+ * This component provides a comprehensive code rendering solution with:
+ * - Syntax highlighting using Prism
+ * - Theme customization with real-time preview
+ * - Copy functionality with visual feedback
+ * - Collapsible code blocks for space efficiency
+ * - Full-screen dialog view for better code inspection
+ * - Download capabilities (as image or code file)
+ * - Responsive design for mobile and desktop
+ * - Smart detection of inline vs block code
  */
 const CodeRender: React.FC<CodeRenderProps> = ({
   inline,
@@ -47,11 +75,17 @@ const CodeRender: React.FC<CodeRenderProps> = ({
   children,
   ...props
 }) => {
+  // Core state management
   const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [downloading, setDownloading] = useState<"image" | "file" | null>(null);
+
+  // Extract language from className (e.g., "language-javascript" -> "javascript")
   const match = /language-(\w+)/.exec(className ?? "");
   const language = match ? match[1] : "";
 
+  // Theme management from Zustand store
   const {
     selectedTheme,
     setTheme,
@@ -60,29 +94,41 @@ const CodeRender: React.FC<CodeRenderProps> = ({
     getThemesByCategory,
   } = useCodeThemeStore();
 
-  const codeRef = React.useRef<HTMLDivElement>(null);
+  // Refs for DOM manipulation
+  const codeRef = useRef<HTMLDivElement>(null);
+  const dialogCodeRef = useRef<HTMLDivElement>(null);
+
+  // Context detection state
   const [isInTableCell, setIsInTableCell] = useState(false);
   const [headingLevel, setHeadingLevel] = useState<number | null>(null);
 
-  console.log(headingLevel);
-
+  /**
+   * Context Detection Logic
+   *
+   * This effect analyzes the component's DOM position to determine
+   * if it's inside a table cell or heading, which affects rendering style.
+   * We traverse up to 3 parent elements to find context clues.
+   */
   useEffect(() => {
     if (codeRef.current) {
       let parent = codeRef.current.parentElement;
       let cnt = 0;
-      while (parent) {
+
+      while (parent && cnt < 3) {
         const tagName = parent.tagName.toLowerCase().trim();
+
+        // Check if code is inside a table cell
         if (tagName === "td") {
           setIsInTableCell(true);
           return;
         }
 
+        // Check if code is inside a heading
         if (tagName === "h1" || tagName === "h2" || tagName === "h3") {
           setHeadingLevel(parseInt(tagName.slice(1)));
           return;
         }
 
-        if (cnt === 3) break;
         parent = parent.parentElement;
         cnt++;
       }
@@ -90,121 +136,462 @@ const CodeRender: React.FC<CodeRenderProps> = ({
     }
   }, []);
 
+  // Extract and clean code content
   const codeContent =
     typeof children === "string"
-      ? children.replace(/\n$/, "")
+      ? children.replace(/\n$/, "") // Remove trailing newline
       : React.Children.toArray(children).join("");
 
+  // Determine if code should be rendered in compact mode
   const isCompactCode =
     typeof codeContent === "string" &&
     !codeContent.includes("\n") &&
     codeContent.length < 25;
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(codeContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  /**
+   * Copy to Clipboard Functionality
+   *
+   * Copies the code content to user's clipboard and provides
+   * visual feedback with a temporary success state.
+   */
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(codeContent);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy code:", err);
+    }
   };
 
-  const showSimpleCode = isInTableCell || (!inline && isCompactCode);
+  /**
+   * Download as Image Functionality
+   *
+   * Converts the code display to a canvas and downloads it as PNG.
+   * Handles horizontal overflow by temporarily expanding the container.
+   */
+  const downloadAsImage = async () => {
+    setDownloading("image");
 
-  return showSimpleCode ? (
-    <span ref={codeRef}>
-      <code
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+
+      const element = dialogCodeRef.current;
+      if (!element) return;
+
+      // Find all scrollable elements that might constrain the content
+      const scrollElements = element.querySelectorAll(
+        "[data-radix-scroll-area-viewport], .overflow-hidden, .overflow-auto, .overflow-x-auto"
+      );
+      const preElements = element.querySelectorAll("pre, code");
+
+      // Store original styles for restoration
+      const originalStyles = new Map();
+
+      // Function to store and modify element styles
+      const prepareElementForCapture = (el: Element) => {
+        const htmlEl = el as HTMLElement;
+
+        // Store original styles
+        originalStyles.set(htmlEl, {
+          maxHeight: htmlEl.style.maxHeight,
+          maxWidth: htmlEl.style.maxWidth,
+          overflow: htmlEl.style.overflow,
+          overflowX: htmlEl.style.overflowX,
+          overflowY: htmlEl.style.overflowY,
+          width: htmlEl.style.width,
+          height: htmlEl.style.height,
+          whiteSpace: htmlEl.style.whiteSpace,
+        });
+
+        // Apply capture-friendly styles
+        htmlEl.style.maxHeight = "none";
+        htmlEl.style.maxWidth = "none";
+        htmlEl.style.overflow = "visible";
+        htmlEl.style.overflowX = "visible";
+        htmlEl.style.overflowY = "visible";
+
+        // For pre/code elements, ensure full width display
+        if (
+          htmlEl.tagName.toLowerCase() === "pre" ||
+          htmlEl.tagName.toLowerCase() === "code"
+        ) {
+          htmlEl.style.width = "max-content";
+          htmlEl.style.whiteSpace = "pre";
+        }
+      };
+
+      // Function to restore original styles
+      const restoreElementStyles = (el: Element) => {
+        const htmlEl = el as HTMLElement;
+        const originalStyle = originalStyles.get(htmlEl);
+        if (originalStyle) {
+          Object.assign(htmlEl.style, originalStyle);
+        }
+      };
+
+      try {
+        // Prepare all relevant elements for capture
+        scrollElements.forEach(prepareElementForCapture);
+        preElements.forEach(prepareElementForCapture);
+
+        // Also prepare the main dialog element
+        prepareElementForCapture(element);
+
+        // Wait for layout to settle
+        await new Promise((resolve) => setTimeout(resolve, 150));
+
+        // Get the full dimensions after expanding
+        const rect = element.getBoundingClientRect();
+        let fullWidth = rect.width;
+        let fullHeight = rect.height;
+
+        // Check if any child elements are wider
+        preElements.forEach((pre) => {
+          const preRect = pre.getBoundingClientRect();
+          fullWidth = Math.max(fullWidth, preRect.width + 48); // Add padding
+          fullHeight = Math.max(fullHeight, preRect.height + 96); // Add padding
+        });
+
+        // Capture with full dimensions
+        const canvas = await html2canvas(element, {
+          backgroundColor: "#1a1a1a",
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          foreignObjectRendering: true,
+          width: Math.ceil(fullWidth),
+          height: Math.ceil(fullHeight),
+          scrollX: 0,
+          scrollY: 0,
+        });
+
+        // Convert and download
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `code-${language || "snippet"}-${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        }, "image/png");
+      } finally {
+        // Always restore original styles
+        scrollElements.forEach(restoreElementStyles);
+        preElements.forEach(restoreElementStyles);
+        restoreElementStyles(element);
+      }
+    } catch (err) {
+      console.error("Failed to download image:", err);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  /**
+   * Download as File Functionality
+   *
+   * Creates a text file with the code content and triggers download.
+   * File extension is determined by the detected language.
+   */
+  const downloadAsFile = () => {
+    setDownloading("file");
+
+    try {
+      // Determine file extension based on language
+      const getFileExtension = (lang: string) => {
+        const extensions: Record<string, string> = {
+          javascript: "js",
+          typescript: "ts",
+          python: "py",
+          java: "java",
+          cpp: "cpp",
+          c: "c",
+          csharp: "cs",
+          php: "php",
+          ruby: "rb",
+          go: "go",
+          rust: "rs",
+          swift: "swift",
+          kotlin: "kt",
+          dart: "dart",
+          html: "html",
+          css: "css",
+          scss: "scss",
+          shell: "sh",
+          bash: "sh",
+          powershell: "ps1",
+          sql: "sql",
+          json: "json",
+          yaml: "yml",
+          xml: "xml",
+          markdown: "md",
+        };
+        return extensions[lang] || "txt";
+      };
+
+      const extension = getFileExtension(language);
+      const blob = new Blob([codeContent], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `code-snippet.${extension}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to download file:", err);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  /**
+   * Theme Selector Component
+   *
+   * Reusable dropdown component for theme selection with
+   * organized categories and current theme indication.
+   */
+  const ThemeSelector = ({
+    size = "default",
+  }: {
+    size?: "default" | "small";
+  }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size={size === "small" ? "sm" : "icon"}
+          className={cn(
+            "transition-colors",
+            size === "small" ? "h-8 px-3" : "p-2 h-10 w-10"
+          )}
+          aria-label="Select theme"
+        >
+          <Palette className={cn(size === "small" ? "w-3 h-3" : "w-4 h-4")} />
+          {size === "small" && <span className="ml-1 text-xs">Theme</span>}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        side="bottom"
+        sideOffset={8}
+        className="w-52 max-h-64 overflow-y-auto bg-card rounded-xl font-fira-code"
+      >
+        <DropdownMenuLabel className="text-xs text-muted-foreground px-3 py-2">
+          Current: {getCurrentThemeName()}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {Object.entries(getThemesByCategory()).map(([category, themes]) => (
+          <React.Fragment key={category}>
+            <DropdownMenuLabel className="text-xs font-medium text-muted-foreground px-3 py-2">
+              {category}
+            </DropdownMenuLabel>
+            {Object.entries(themes).map(([themeKey, theme]) => (
+              <DropdownMenuItem
+                key={themeKey}
+                onClick={() => setTheme(themeKey as ThemeKey)}
+                className={cn(
+                  "cursor-pointer text-sm py-2.5",
+                  selectedTheme === themeKey &&
+                    "bg-accent text-accent-foreground"
+                )}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <span>{theme.name}</span>
+                  {selectedTheme === themeKey && (
+                    <Check className="w-3 h-3 text-primary" />
+                  )}
+                </div>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+          </React.Fragment>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  /**
+   * Code Display Component
+   *
+   * Reusable component that renders syntax-highlighted code
+   * with responsive styling and proper theming.
+   */
+  const CodeDisplay = ({
+    isDialog = false,
+    ref,
+  }: {
+    isDialog?: boolean;
+    ref?: React.RefObject<HTMLDivElement | null>;
+  }) => (
+    <div
+      ref={ref}
+      className={cn(isDialog && "relative code-capture-container")}
+    >
+      <ScrollArea
         className={cn(
-          "px-2 py-1 text-primary font-cascadia-code break-words",
-          getHeadingCodeStyle(headingLevel)
+          "rounded-b-2xl border-none",
+          isDialog &&
+            "max-h-[70vh] lg:max-h-[75vh] xl:max-h-[80vh] code-scroll-area"
         )}
       >
-        {codeContent}
-      </code>
-    </span>
-  ) : (
+        <SyntaxHighlighter
+          language={language || "text"}
+          customStyle={{
+            margin: 0,
+            padding: isDialog
+              ? window.innerWidth >= 1536
+                ? "3rem"
+                : window.innerWidth >= 1280
+                ? "2.5rem"
+                : window.innerWidth >= 1024
+                ? "2rem"
+                : "1.5rem"
+              : window.innerWidth < 640
+              ? "0.75rem"
+              : "1rem",
+            fontSize: isDialog
+              ? window.innerWidth >= 1536
+                ? "1.1rem"
+                : window.innerWidth >= 1280
+                ? "1.05rem"
+                : window.innerWidth >= 1024
+                ? "1rem"
+                : "0.95rem"
+              : window.innerWidth < 640
+              ? "0.8rem"
+              : "0.875rem",
+            lineHeight: isDialog
+              ? window.innerWidth >= 1024
+                ? 1.8
+                : 1.7
+              : window.innerWidth < 640
+              ? 1.5
+              : 1.6,
+            minWidth: "100%",
+            width: "max-content",
+            backgroundColor: "transparent",
+            border: "none",
+            // These properties help with image capture
+            maxWidth: "none",
+            whiteSpace: "pre",
+            wordWrap: "normal",
+            overflow: "visible",
+          }}
+          useInlineStyles={true}
+          codeTagProps={{
+            style: {
+              backgroundColor: "transparent",
+              fontFamily: "Source Code Pro, monospace",
+              whiteSpace: "pre",
+              fontSize: "inherit",
+              overflow: "visible",
+              maxWidth: "none",
+            },
+          }}
+          {...props}
+          style={{
+            ...getCurrentThemeStyle(),
+            'code[class*="language-"]': {
+              ...getCurrentThemeStyle()['code[class*="language-"]'],
+              backgroundColor: "transparent",
+              background: "transparent",
+              overflow: "visible",
+              maxWidth: "none",
+            },
+            'pre[class*="language-"]': {
+              ...getCurrentThemeStyle()['pre[class*="language-"]'],
+              backgroundColor: "transparent",
+              background: "transparent",
+              overflow: "visible",
+              maxWidth: "none",
+            },
+          }}
+        >
+          {codeContent}
+        </SyntaxHighlighter>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
+  );
+
+  // Render simple inline code for table cells or compact code
+  const showSimpleCode = isInTableCell || (!inline && isCompactCode);
+
+  if (showSimpleCode) {
+    return (
+      <span ref={codeRef}>
+        <code
+          className={cn(
+            "px-2 py-1 text-primary font-cascadia-code break-words",
+            getHeadingCodeStyle(headingLevel)
+          )}
+        >
+          {codeContent}
+        </code>
+      </span>
+    );
+  }
+
+  return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div
         ref={codeRef}
         className="my-8 relative font-fira-code no-swipe shadow-md shadow-background/50 rounded-2xl border-2"
       >
-        <div className="bg-card text-muted-foreground px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold border-b border-border flex justify-between items-center rounded-t-2xl sm:rounded-t-2xl">
-          <span className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+        {/* Code Block Header */}
+        <div className="bg-card text-muted-foreground px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold border-b border-border flex justify-between items-center rounded-t-2xl">
+          {/* Language indicator with icon */}
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
             <span className="flex-shrink-0">
               {(() => {
                 const IconComponent = getIconForTech(language || "code");
-                return <IconComponent />;
+                return <IconComponent className="w-4 h-4" />;
               })()}
             </span>
-          </span>
+            <Badge variant="outline" className="text-xs">
+              {language || "text"}
+            </Badge>
+            <span className="text-xs text-muted-foreground ml-2">
+              {codeContent.split("\n").length} lines
+            </span>
+          </div>
 
+          {/* Header Actions */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="p-2 sm:p-1 rounded hover:bg-[#252525] transition-colors flex items-center gap-1 min-h-[44px] sm:min-h-auto"
-                  aria-label="Select theme"
-                >
-                  <Palette size={18} className="text-gray-500 sm:w-4 sm:h-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                side="bottom"
-                sideOffset={8}
-                className="w-52 sm:w-48 max-h-64 overflow-y-auto bg-card rounded-xl sm:rounded-2xl font-fira-code mr-2 sm:mr-0"
-              >
-                <DropdownMenuLabel className="text-xs text-muted-foreground px-3 py-2">
-                  Current: {getCurrentThemeName()}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {Object.entries(getThemesByCategory()).map(
-                  ([category, themes]) => (
-                    <React.Fragment key={category}>
-                      <DropdownMenuLabel className="text-xs font-medium text-muted-foreground px-3 py-2">
-                        {category}
-                      </DropdownMenuLabel>
-                      {Object.entries(themes).map(([themeKey, theme]) => (
-                        <DropdownMenuItem
-                          key={themeKey}
-                          onClick={() => setTheme(themeKey as ThemeKey)}
-                          className={cn(
-                            "cursor-pointer text-sm py-2.5 sm:py-2",
-                            selectedTheme === themeKey &&
-                              "bg-accent text-accent-foreground"
-                          )}
-                        >
-                          {theme.name}
-                        </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                    </React.Fragment>
-                  )
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Theme Selector */}
+            <ThemeSelector size="small" />
 
+            {/* Copy Button */}
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={copyToClipboard}
-              className={cn(
-                " p-2  transition-all duration-300 ease-in-out rounded-2xl",
-                "hover:bg-background/50 backdrop-blur-sm border-none"
-              )}
+              className="h-8 px-2 transition-all duration-300"
               aria-label={copied ? "Copied!" : "Copy code"}
             >
-              <div className="relative text-xs sm:text-sm">
+              <div className="relative">
                 <Copy
-                  size={16}
+                  size={14}
                   className={cn(
-                    "transition-all duration-300 ease-in-out",
+                    "transition-all duration-300",
                     copied
                       ? "opacity-0 scale-0 rotate-90"
-                      : "opacity-100 scale-100 rotate-0 text-gray-300 hover:text-white"
+                      : "opacity-100 scale-100 rotate-0"
                   )}
                 />
                 <Check
-                  size={16}
+                  size={14}
                   className={cn(
-                    "absolute inset-0 transition-all duration-300 ease-in-out text-green-400",
+                    "absolute inset-0 transition-all duration-300 text-green-400",
                     copied
                       ? "opacity-100 scale-100 rotate-0"
                       : "opacity-0 scale-0 -rotate-90"
@@ -213,73 +600,155 @@ const CodeRender: React.FC<CodeRenderProps> = ({
               </div>
             </Button>
 
+            {/* Expand to Dialog Button */}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2"
+                  aria-label="Open in dialog"
+                >
+                  <Maximize2 size={14} />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[95vw] w-[95vw] xl:max-w-[90vw] xl:w-[90vw] 2xl:max-w-[85vw] 2xl:w-[85vw] h-[90vh] p-0 font-fira-code rounded-2xl border-none">
+                <DialogHeader className="px-6 py-4 border-b bg-card/50 backdrop-blur-sm rounded-t-2xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <DialogTitle className="flex items-center gap-2 text-lg">
+                        {(() => {
+                          const IconComponent = getIconForTech(
+                            language || "code"
+                          );
+                          return <IconComponent className="w-5 h-5" />;
+                        })()}
+                        <span>Code Preview</span>
+                      </DialogTitle>
+                      <Badge variant="outline" className="text-sm px-3 py-1">
+                        {language || "text"}
+                      </Badge>
+                      <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{codeContent.split("\n").length} lines</span>
+                        <span>•</span>
+                        <span>{codeContent.length} chars</span>
+                      </div>
+                    </div>
+
+                    {/* Dialog Actions */}
+                    <div className="flex items-center gap-2">
+                      <ThemeSelector />
+                      <Separator orientation="vertical" className="h-6" />
+
+                      {/* Download as Image */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={downloadAsImage}
+                        disabled={downloading === "image"}
+                        className="gap-2"
+                      >
+                        {downloading === "image" ? (
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Image className="w-4 h-4" />
+                        )}
+                        Image
+                      </Button>
+
+                      {/* Download as File */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={downloadAsFile}
+                        disabled={downloading === "file"}
+                        className="gap-2"
+                      >
+                        {downloading === "file" ? (
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <FileText className="w-4 h-4" />
+                        )}
+                        File
+                      </Button>
+                    </div>
+                  </div>
+                </DialogHeader>
+
+                {/* Dialog Code Display */}
+                <ScrollArea className="flex-1 overflow-y-auto p-4 rounded-2xl border-4 m-4 border-primary">
+                  <CodeDisplay isDialog ref={dialogCodeRef} />
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+
+                <DialogFooter className="px-6 py-4 border-t bg-muted/30 backdrop-blur-sm rounded-b-2xl border-4">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {codeContent.split("\n").length}
+                        </span>
+                        <span>lines</span>
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {codeContent.length}
+                        </span>
+                        <span>characters</span>
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span>Theme:</span>
+                        <span className="font-medium">
+                          {getCurrentThemeName()}
+                        </span>
+                      </span>
+                      <span className="hidden lg:flex items-center gap-2">
+                        <span>Font:</span>
+                        <span className="font-medium">Source Code Pro</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={copyToClipboard}
+                        size="sm"
+                        className="gap-2"
+                      >
+                        {copied ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                        {copied ? "Copied!" : "Copy All"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogFooter>
+              </DialogContent>
+              <DialogOverlay />
+            </Dialog>
+
+            {/* Collapse Toggle */}
             <CollapsibleTrigger asChild>
-              <button
-                className="p-2 sm:p-1 rounded hover:bg-[#252525] transition-colors min-h-[44px] sm:min-h-auto"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2"
                 aria-label={isOpen ? "Collapse code" : "Expand code"}
               >
                 {isOpen ? (
-                  <ChevronDown
-                    size={18}
-                    className="text-gray-500 sm:w-4 sm:h-4"
-                  />
+                  <ChevronDown size={14} />
                 ) : (
-                  <ChevronRight
-                    size={18}
-                    className="text-gray-500 sm:w-4 sm:h-4"
-                  />
+                  <ChevronRight size={14} />
                 )}
-              </button>
+              </Button>
             </CollapsibleTrigger>
           </div>
         </div>
 
+        {/* Collapsible Code Content */}
         <CollapsibleContent className="data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
-          <div className="relative">
-            <ScrollArea className="rounded-b-2xl sm:shadow-md sm:shadow-background/50 border-none">
-              <SyntaxHighlighter
-                language={language || "text"}
-                customStyle={{
-                  margin: 0,
-                  padding: window.innerWidth < 640 ? "0.75rem" : "1rem",
-                  fontSize: window.innerWidth < 640 ? "0.8rem" : "0.875rem",
-                  lineHeight: window.innerWidth < 640 ? 1.5 : 1.6,
-                  minWidth: "100%",
-                  width: "max-content",
-                  backgroundColor: "transparent",
-                  border: "none",
-                }}
-                useInlineStyles={true}
-                codeTagProps={{
-                  style: {
-                    backgroundColor: "transparent",
-                    fontFamily: "Source Code Pro, monospace",
-                    whiteSpace: "pre",
-                    fontSize: "inherit",
-                  },
-                }}
-                {...props}
-                style={{
-                  ...getCurrentThemeStyle(),
-                  'code[class*="language-"]': {
-                    ...getCurrentThemeStyle()['code[class*="language-"]'],
-                    backgroundColor: "transparent",
-                    background: "transparent",
-                  },
-                  'pre[class*="language-"]': {
-                    ...getCurrentThemeStyle()['pre[class*="language-"]'],
-                    backgroundColor: "transparent",
-                    background: "transparent",
-                  },
-                }}
-              >
-                {typeof children === "string"
-                  ? children.replace(/\n$/, "")
-                  : React.Children.toArray(children).join("")}
-              </SyntaxHighlighter>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          </div>
+          <CodeDisplay />
         </CollapsibleContent>
       </div>
     </Collapsible>
