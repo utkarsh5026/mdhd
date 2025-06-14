@@ -1,22 +1,14 @@
-import {
-  Play,
-  ChevronRight,
-  FileText,
-  BookOpen,
-  Hash,
-  List,
-} from "lucide-react";
+import { Play, ChevronRight, Hash, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface MarkdownInputProps {
   markdownInput: string;
   setMarkdownInput: (markdownInput: string) => void;
   hasContent: boolean;
-  stats: { sections: number; words: number; readTime: number };
   handleStartReading: () => void;
 }
 
@@ -24,7 +16,6 @@ const MarkdownInput: React.FC<MarkdownInputProps> = ({
   markdownInput,
   setMarkdownInput,
   hasContent,
-  stats,
   handleStartReading,
 }) => {
   return (
@@ -35,7 +26,7 @@ const MarkdownInput: React.FC<MarkdownInputProps> = ({
       className="w-full max-w-2xl mx-auto space-y-8"
     >
       {/* Hero Section */}
-      <div className="text-center space-y-6">
+      <div className="text-center space-y-6 mb-4 rounded-2xl bg-transparent p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -50,43 +41,11 @@ const MarkdownInput: React.FC<MarkdownInputProps> = ({
             Transform your markdown into focused reading sessions
           </p>
         </motion.div>
-
-        {/* Stats */}
-        <AnimatePresence>
-          {hasContent && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="flex items-center justify-center gap-6"
-            >
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" />
-                <span className="text-sm text-muted-foreground">
-                  {stats.sections} sections
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-primary" />
-                <span className="text-sm text-muted-foreground">
-                  {stats.words} words
-                </span>
-              </div>
-              {stats.readTime > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    ~{stats.readTime} min read
-                  </span>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Input Card */}
       <Card className="p-6 space-y-6 border-border/50 bg-card/50 backdrop-blur-sm rounded-2xl">
-        <CardContent>
+        <CardContent className="p-0 overflow-y-auto flex flex-col gap-4">
           <div className="space-y-4">
             <textarea
               value={markdownInput}
@@ -105,7 +64,7 @@ console.log('Hello, World!');
 Transform your content into digestible sections for better focus."
               className={cn(
                 "w-full h-80 p-4 rounded-2xl border resize-none",
-                "bg-background/50 backdrop-blur-sm transition-all duration-200 text-muted-foreground",
+                "bg-card/50 backdrop-blur-sm transition-all duration-200 text-muted-foreground",
                 "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
                 "text-sm leading-relaxed placeholder:text-muted-foreground/60",
                 "scrollbar-hide"
@@ -113,22 +72,6 @@ Transform your content into digestible sections for better focus."
             />
 
             {/* Character count */}
-            <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>{markdownInput.length} characters</span>
-              <AnimatePresence>
-                {hasContent && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex items-center gap-2"
-                  >
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-primary font-medium">Ready</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
           </div>
 
           {/* Action Button */}

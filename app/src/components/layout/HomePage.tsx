@@ -11,12 +11,16 @@ import {
 } from "@/services/section/parsing";
 import TableOfContents from "./TableOfContents";
 import MarkdownInput from "./MarkdownInput";
+import ThemeSelector from "@/components/shared/theme/ThemeSelector";
+import { useTheme } from "@/hooks";
 
 const MDHDHomepage: React.FC = () => {
   const [markdownInput, setMarkdownInput] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [sections, setSections] = useState<MarkdownSection[]>([]);
   const [readSections] = useState<Set<number>>(new Set());
+
+  const { currentTheme, setTheme } = useTheme();
 
   const parsedSections = useMemo(() => {
     if (!markdownInput.trim()) return [];
@@ -49,25 +53,6 @@ const MDHDHomepage: React.FC = () => {
     [sections]
   );
 
-  const stats = useMemo(() => {
-    const trimmed = markdownInput.trim();
-    if (!trimmed) return { sections: 0, words: 0, readTime: 0 };
-
-    const sectionCount = trimmed
-      .split("\n")
-      .filter((line) => /^#{1,2}\s/.exec(line)).length;
-    const wordCount = trimmed
-      .split(/\s+/)
-      .filter((word) => word.length > 0).length;
-    const estimatedReadTime = Math.ceil(wordCount / 250);
-
-    return {
-      sections: sectionCount,
-      words: wordCount,
-      readTime: estimatedReadTime,
-    };
-  }, [markdownInput]);
-
   const hasContent = markdownInput.trim().length > 0;
 
   if (isFullscreen) {
@@ -85,7 +70,13 @@ const MDHDHomepage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black/90 font-cascadia-code">
+    <div className="min-h-screen bg-gradient-to-b from-background to-primary/10 font-cascadia-code relative">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeSelector
+          currentTheme={currentTheme.name}
+          onThemeChange={setTheme}
+        />
+      </div>
       <div className="container mx-auto px-4 py-8">
         <div
           className={cn(
@@ -104,7 +95,6 @@ const MDHDHomepage: React.FC = () => {
               markdownInput={markdownInput}
               setMarkdownInput={setMarkdownInput}
               hasContent={hasContent}
-              stats={stats}
               handleStartReading={handleStartReading}
             />
           </div>
