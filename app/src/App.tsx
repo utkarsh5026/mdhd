@@ -73,7 +73,7 @@ const MDHDHomepage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative font-cascadia-code overflow-hidden">
+    <div className="min-h-screen bg-card relative font-cascadia-code overflow-hidden">
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -119,12 +119,12 @@ const MDHDHomepage: React.FC = () => {
             <Card
               className={cn(
                 "relative overflow-hidden backdrop-blur-xl transition-all duration-500 rounded-2xl",
-                "bg-card/30 border-border/30 shadow-2xl",
+                "bg-background border-border/30 border-2 shadow-2xl",
                 inputFocused && "shadow-primary/10 border-primary/30 shadow-3xl"
               )}
             >
               {/* Glass morphism overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-card/40 via-card/20 to-card/40" />
+              <div className="absolute inset-0 bg-gradient-to-br from-background/40 via-background/20 to-background/40" />
 
               {/* Animated border gradient */}
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
