@@ -30,7 +30,7 @@ const ListRender: React.FC<ListProps> = ({ type, props }) => {
     return (
       <li
         {...props}
-        className="pl-0.5 xs:pl-1 sm:pl-1 leading-6 xs:leading-7 sm:leading-8 text-gray-300 break-words text-pretty"
+        className="pl-0.5 xs:pl-1 sm:pl-1 leading-6 xs:leading-7 sm:leading-8 text-foreground/80 break-words text-pretty"
       />
     );
   }

@@ -53,14 +53,14 @@ const TableRender: React.FC<TableRenderProps> = ({ type, props }) => {
       return (
         <th
           {...(props as React.ComponentPropsWithoutRef<"th">)}
-          className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 text-left text-xs xs:text-sm font-medium text-gray-300 uppercase tracking-wide xs:tracking-wider break-words"
+          className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 text-left text-xs xs:text-sm font-medium text-foreground/80 uppercase tracking-wide xs:tracking-wider break-words"
         />
       );
     case "td":
       return (
         <td
           {...(props as React.ComponentPropsWithoutRef<"td">)}
-          className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 text-xs xs:text-sm sm:text-base text-gray-300 break-words leading-5 xs:leading-6 sm:leading-7"
+          className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 text-xs xs:text-sm sm:text-base text-foreground/80 break-words leading-5 xs:leading-6 sm:leading-7"
         />
       );
     default:

@@ -20,7 +20,7 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({ level, ...props }) => {
     4: "text-base xs:text-lg sm:text-xl lg:text-2xl font-normal mt-4 xs:mt-5 sm:mt-6 mb-2 xs:mb-3 leading-normal",
   };
 
-  const className = `${headingStyles[level]} group text-primary text-pretty break-words`;
+  const className = `${headingStyles[level]} group text-primary/60 text-pretty break-words`;
   const HeadingTag = `h${level}` as React.ElementType;
 
   return (
