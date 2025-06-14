@@ -82,32 +82,6 @@ const MDHDHomepage: React.FC = () => {
           className="w-full max-w-5xl mx-auto"
         >
           {/* Hero Section */}
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
-          >
-            {/* Title */}
-            <motion.h1
-              className="text-2xl md:text-4xl font-bold mb-6 relative"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              <span className="bg-gradient-to-r from-foreground via-primary/90 to-foreground bg-clip-text text-transparent">
-                MDHD
-              </span>
-
-              {/* Animated underline */}
-              <motion.div
-                className="absolute -bottom-2 left-1/2 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
-                initial={{ width: 0, x: "-50%" }}
-                animate={{ width: "60%", x: "-50%" }}
-                transition={{ duration: 1, delay: 1 }}
-              />
-            </motion.h1>
-          </motion.div>
 
           {/* Main Input Card */}
           <motion.div
@@ -120,15 +94,9 @@ const MDHDHomepage: React.FC = () => {
               className={cn(
                 "relative overflow-hidden backdrop-blur-xl transition-all duration-500 rounded-2xl",
                 "bg-background border-border/30 border-2 shadow-2xl",
-                inputFocused && "shadow-primary/10 border-primary/30 shadow-3xl"
+                inputFocused && "shadow-primary/10 border-none shadow-3xl"
               )}
             >
-              {/* Glass morphism overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-background/40 via-background/20 to-background/40" />
-
-              {/* Animated border gradient */}
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-
               <div className="relative z-10 p-8 md:p-12">
                 <div className="space-y-8">
                   {/* Header Section */}
