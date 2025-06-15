@@ -193,8 +193,8 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 p-6 relative">
-          <ScrollArea className="relative h-full rounded-2xl border border-border/30 overflow-y-auto z-20">
+        <div className="flex-1 p-6 relative overflow-hidden">
+          <ScrollArea className="relative max-h-[calc(90vh-180px)] rounded-2xl border border-border/30 z-20 overflow-hidden">
             <CodeDisplay
               isDialog
               ref={dialogCodeRef}
