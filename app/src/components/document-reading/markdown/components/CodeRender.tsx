@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   Copy,
@@ -126,11 +126,11 @@ const CodeRender: React.FC<CodeRenderProps> = ({
     }
   }, []);
 
-  // Extract and clean code content
-  const codeContent =
-    typeof children === "string"
+  const codeContent = useMemo(() => {
+    return typeof children === "string"
       ? children.replace(/\n$/, "") // Remove trailing newline
       : React.Children.toArray(children).join("");
+  }, [children]);
 
   // Determine if code should be rendered in compact mode
   const isCompactCode =
@@ -180,111 +180,6 @@ const CodeRender: React.FC<CodeRenderProps> = ({
     setDownloading(null);
   };
 
-  /**
-   * Code Display Component
-   *
-   * Reusable component that renders syntax-highlighted code
-   * with responsive styling and proper theming.
-   */
-  const CodeDisplay = ({
-    isDialog = false,
-    ref,
-  }: {
-    isDialog?: boolean;
-    ref?: React.RefObject<HTMLDivElement | null>;
-  }) => (
-    <div
-      ref={ref}
-      className={cn(isDialog && "relative code-capture-container")}
-    >
-      <ScrollArea
-        className={cn(
-          "rounded-b-2xl border-none",
-          isDialog &&
-            "max-h-[70vh] lg:max-h-[75vh] xl:max-h-[80vh] code-scroll-area"
-        )}
-      >
-        <SyntaxHighlighter
-          language={language || "text"}
-          customStyle={{
-            margin: 0,
-            padding: isDialog
-              ? window.innerWidth >= 1536
-                ? "3rem"
-                : window.innerWidth >= 1280
-                ? "2.5rem"
-                : window.innerWidth >= 1024
-                ? "2rem"
-                : "1.5rem"
-              : window.innerWidth < 640
-              ? "0.75rem"
-              : "1rem",
-            fontSize: isDialog
-              ? window.innerWidth >= 1536
-                ? "1.1rem"
-                : window.innerWidth >= 1280
-                ? "1.05rem"
-                : window.innerWidth >= 1024
-                ? "1rem"
-                : "0.95rem"
-              : window.innerWidth < 640
-              ? "0.8rem"
-              : "0.875rem",
-            lineHeight: isDialog
-              ? window.innerWidth >= 1024
-                ? 1.8
-                : 1.7
-              : window.innerWidth < 640
-              ? 1.5
-              : 1.6,
-            minWidth: "100%",
-            width: "max-content",
-            backgroundColor: "transparent",
-            border: "none",
-            // These properties help with image capture
-            maxWidth: "none",
-            whiteSpace: "pre",
-            wordWrap: "normal",
-            overflow: "visible",
-          }}
-          useInlineStyles={true}
-          codeTagProps={{
-            style: {
-              backgroundColor: "transparent",
-              fontFamily: "Source Code Pro, monospace",
-              whiteSpace: "pre",
-              fontSize: "inherit",
-              overflow: "visible",
-              maxWidth: "none",
-            },
-          }}
-          {...props}
-          style={{
-            ...getCurrentThemeStyle(),
-            'code[class*="language-"]': {
-              ...getCurrentThemeStyle()['code[class*="language-"]'],
-              backgroundColor: "transparent",
-              background: "transparent",
-              overflow: "visible",
-              maxWidth: "none",
-            },
-            'pre[class*="language-"]': {
-              ...getCurrentThemeStyle()['pre[class*="language-"]'],
-              backgroundColor: "transparent",
-              background: "transparent",
-              overflow: "visible",
-              maxWidth: "none",
-            },
-          }}
-        >
-          {codeContent}
-        </SyntaxHighlighter>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
-    </div>
-  );
-
-  // Render simple inline code for table cells or compact code
   const showSimpleCode = isInTableCell || (!inline && isCompactCode);
 
   if (showSimpleCode) {
@@ -432,7 +327,14 @@ const CodeRender: React.FC<CodeRenderProps> = ({
 
                 {/* Dialog Code Display */}
                 <ScrollArea className="flex-1 overflow-y-auto p-4 rounded-2xl border-4 m-4 border-primary">
-                  <CodeDisplay isDialog ref={dialogCodeRef} />
+                  <CodeDisplay
+                    isDialog
+                    ref={dialogCodeRef}
+                    themeStyle={getCurrentThemeStyle()}
+                    language={language}
+                    codeContent={codeContent}
+                    props={{ ...props }}
+                  />
                   <ScrollBar orientation="horizontal" />
                 </ScrollArea>
 
@@ -503,7 +405,12 @@ const CodeRender: React.FC<CodeRenderProps> = ({
 
         {/* Collapsible Code Content */}
         <CollapsibleContent className="data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
-          <CodeDisplay />
+          <CodeDisplay
+            language={language}
+            codeContent={codeContent}
+            themeStyle={getCurrentThemeStyle()}
+            props={{ ...props }}
+          />
         </CollapsibleContent>
       </div>
     </Collapsible>
@@ -579,6 +486,116 @@ const ThemeSelector = ({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+};
+
+interface CodeDisplayProps {
+  isDialog?: boolean;
+  ref?: React.RefObject<HTMLDivElement | null>;
+  language: string;
+  codeContent: string;
+  props?: React.ComponentPropsWithoutRef<typeof SyntaxHighlighter>;
+  themeStyle: Record<string, React.CSSProperties>;
+}
+
+const CodeDisplay = ({
+  isDialog = false,
+  ref,
+  language,
+  codeContent,
+  props,
+  themeStyle,
+}: CodeDisplayProps) => {
+  return (
+    <div
+      ref={ref}
+      className={cn(isDialog && "relative code-capture-container")}
+    >
+      <ScrollArea
+        className={cn(
+          "rounded-b-2xl border-none",
+          isDialog &&
+            "max-h-[70vh] lg:max-h-[75vh] xl:max-h-[80vh] code-scroll-area"
+        )}
+      >
+        <SyntaxHighlighter
+          language={language ?? "text"}
+          customStyle={{
+            margin: 0,
+            padding: isDialog
+              ? window.innerWidth >= 1536
+                ? "3rem"
+                : window.innerWidth >= 1280
+                ? "2.5rem"
+                : window.innerWidth >= 1024
+                ? "2rem"
+                : "1.5rem"
+              : window.innerWidth < 640
+              ? "0.75rem"
+              : "1rem",
+            fontSize: isDialog
+              ? window.innerWidth >= 1536
+                ? "1.1rem"
+                : window.innerWidth >= 1280
+                ? "1.05rem"
+                : window.innerWidth >= 1024
+                ? "1rem"
+                : "0.95rem"
+              : window.innerWidth < 640
+              ? "0.8rem"
+              : "0.875rem",
+            lineHeight: isDialog
+              ? window.innerWidth >= 1024
+                ? 1.8
+                : 1.7
+              : window.innerWidth < 640
+              ? 1.5
+              : 1.6,
+            minWidth: "100%",
+            width: "max-content",
+            backgroundColor: "transparent",
+            border: "none",
+            // These properties help with image capture
+            maxWidth: "none",
+            whiteSpace: "pre",
+            wordWrap: "normal",
+            overflow: "visible",
+          }}
+          useInlineStyles={true}
+          codeTagProps={{
+            style: {
+              backgroundColor: "transparent",
+              fontFamily: "Source Code Pro, monospace",
+              whiteSpace: "pre",
+              fontSize: "inherit",
+              overflow: "visible",
+              maxWidth: "none",
+            },
+          }}
+          {...props}
+          style={{
+            ...themeStyle,
+            'code[class*="language-"]': {
+              ...themeStyle['code[class*="language-"]'],
+              backgroundColor: "transparent",
+              background: "transparent",
+              overflow: "visible",
+              maxWidth: "none",
+            },
+            'pre[class*="language-"]': {
+              ...themeStyle['pre[class*="language-"]'],
+              backgroundColor: "transparent",
+              background: "transparent",
+              overflow: "visible",
+              maxWidth: "none",
+            },
+          }}
+        >
+          {String(codeContent)}
+        </SyntaxHighlighter>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
   );
 };
 
