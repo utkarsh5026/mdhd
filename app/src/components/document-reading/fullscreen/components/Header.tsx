@@ -26,11 +26,6 @@ const Header: React.FC<HeaderProps> = ({
       >
         {/* Modern gradient background with sophisticated blur */}
         <div className="relative">
-          {/* Multi-layer background */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-b from-secondary/20 via-secondary/5 to-transparent" />
-          <div className="absolute inset-0 backdrop-blur-md" />
-
           {/* Content container */}
           <div className="relative flex items-center justify-between p-4 sm:p-5 lg:p-6">
             {/* Exit Button - Left Side */}
