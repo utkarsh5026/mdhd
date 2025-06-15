@@ -36,7 +36,6 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useCodeThemeStore, type ThemeKey } from "@/stores/ui/code-theme";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { downloadAsFile, downloadAsImage } from "@/utils/download";
 
@@ -104,14 +103,6 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
                 })()}
                 <span>Code Preview</span>
               </DialogTitle>
-              <Badge variant="outline" className="text-sm px-3 py-1">
-                {language || "text"}
-              </Badge>
-              <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{codeContent.split("\n").length} lines</span>
-                <span>•</span>
-                <span>{codeContent.length} chars</span>
-              </div>
             </div>
 
             {/* Dialog Actions */}
@@ -121,11 +112,11 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
 
               {/* Download as Image */}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={onDownloadAsImage}
                 disabled={downloading === "image"}
-                className="gap-2"
+                className="gap-2 cursor-pointer"
               >
                 {downloading === "image" ? (
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -137,11 +128,11 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
 
               {/* Download as File */}
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={onDownloadAsFile}
                 disabled={downloading === "file"}
-                className="gap-2"
+                className="gap-2 cursor-pointer"
               >
                 {downloading === "file" ? (
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -155,7 +146,7 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
         </DialogHeader>
 
         {/* Dialog Code Display */}
-        <ScrollArea className="flex-1 overflow-y-auto p-4 rounded-2xl border-4 m-4 border-primary">
+        <ScrollArea className="flex-1 overflow-y-auto p-4 rounded-2xl border-2 m-4 border-border">
           <CodeDisplay
             isDialog
             ref={dialogCodeRef}
