@@ -65,7 +65,6 @@ export type ThemeKey = {
   [K in keyof typeof codeThemes]: keyof (typeof codeThemes)[K];
 }[keyof typeof codeThemes];
 
-// Store interface
 interface CodeThemeStore {
   selectedTheme: ThemeKey;
   setTheme: (theme: ThemeKey) => void;
@@ -74,7 +73,6 @@ interface CodeThemeStore {
   getThemesByCategory: () => typeof codeThemes;
 }
 
-// Create the store with persistence
 export const useCodeThemeStore = create<CodeThemeStore>()(
   persist(
     (set, get) => ({
@@ -87,7 +85,6 @@ export const useCodeThemeStore = create<CodeThemeStore>()(
       getCurrentThemeStyle: () => {
         const { selectedTheme } = get();
 
-        // Direct lookup in each category
         if (selectedTheme in codeThemes["Dark Themes"]) {
           return codeThemes["Dark Themes"][
             selectedTheme as keyof (typeof codeThemes)["Dark Themes"]
@@ -104,14 +101,12 @@ export const useCodeThemeStore = create<CodeThemeStore>()(
           ].style;
         }
 
-        // Fallback to oneDark
         return oneDark;
       },
 
       getCurrentThemeName: () => {
         const { selectedTheme } = get();
 
-        // Direct lookup in each category
         if (selectedTheme in codeThemes["Dark Themes"]) {
           return codeThemes["Dark Themes"][
             selectedTheme as keyof (typeof codeThemes)["Dark Themes"]
@@ -128,16 +123,14 @@ export const useCodeThemeStore = create<CodeThemeStore>()(
           ].name;
         }
 
-        // Fallback
         return "One Dark";
       },
 
       getThemesByCategory: () => codeThemes,
     }),
     {
-      name: "code-theme-storage", // unique name for localStorage key
+      name: "code-theme-storage",
       storage: createJSONStorage(() => localStorage),
-      // Only persist the selectedTheme, not the functions
       partialize: (state) => ({ selectedTheme: state.selectedTheme }),
     }
   )

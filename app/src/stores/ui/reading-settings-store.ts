@@ -36,7 +36,7 @@ interface ReadingSettingsState {
 }
 
 const DEFAULT_SETTINGS: ReadingSettings = {
-  fontFamily: "cascadia-code",
+  fontFamily: "roboto-slab",
   customBackground: useThemeStore.getState().currentTheme.background,
 };
 
