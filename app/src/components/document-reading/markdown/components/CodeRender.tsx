@@ -358,7 +358,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div
         ref={codeRef}
-        className="my-8 relative font-fira-code no-swipe shadow-md shadow-background/50 rounded-2xl border-2"
+        className="my-8 relative font-fira-code no-swipe shadow-xl shadow-background/50 rounded-2xl border-1 border-border/40"
       >
         {/* Code Block Header */}
         <div className="bg-card text-muted-foreground px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold border-b border-border flex justify-between items-center rounded-t-2xl">
