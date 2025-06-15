@@ -36,6 +36,7 @@ const SectionsSheet: React.FC<SectionsSheetProps> = ({
   const sectionsWithIds = sections.map((section, index) => ({
     id: index,
     title: section.title,
+    level: section.level,
   }));
 
   return (
