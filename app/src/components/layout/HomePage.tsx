@@ -1,26 +1,24 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
-import FullScreenCardView from "@/components/document-reading/fullscreen/FullScreenCardView";
-import {
-  type MarkdownSection,
-  parseMarkdownIntoSections,
-} from "@/services/section/parsing";
-import TableOfContents from "./TableOfContents";
-import MarkdownInput from "./MarkdownInput";
-import ThemeSelector from "@/components/shared/theme/ThemeSelector";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { parseMarkdownIntoSections } from "@/services/section/parsing";
+import FullscreenCardView from "../document-reading/fullscreen/FullScreenCardView";
+import ThemeSelector from "../shared/theme/ThemeSelector";
+import { type MarkdownSection } from "@/services/section/parsing";
 import { useTheme } from "@/hooks";
+import MarkdownInput from "./MarkdownInput";
+import Hero from "./Hero";
 
-const MDHDHomepage: React.FC = () => {
+const MDHDHomepage = () => {
   const [markdownInput, setMarkdownInput] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [sections, setSections] = useState<MarkdownSection[]>([]);
-  const [readSections] = useState<Set<number>>(new Set());
-
+  const [readSections] = useState(new Set<number>());
+  const [isTyping, setIsTyping] = useState(false);
   const { currentTheme, setTheme } = useTheme();
+
+  const { scrollY } = useScroll();
+  const backgroundY = useTransform(scrollY, [0, 500], [0, 150]);
 
   const parsedSections = useMemo(() => {
     if (!markdownInput.trim()) return [];
@@ -41,23 +39,34 @@ const MDHDHomepage: React.FC = () => {
     // Handle any cleanup if needed
   }, []);
 
-  const handleChangeSection = useCallback(async (): Promise<boolean> => {
-    // Handle section change logic
+  const handleChangeSection = useCallback(async () => {
     return true;
   }, []);
 
   const getSection = useCallback(
-    (index: number): MarkdownSection | null => {
+    (index: number) => {
       return sections[index] || null;
     },
     [sections]
   );
 
-  const hasContent = markdownInput.trim().length > 0;
+  const wordCount = markdownInput
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
+
+  // Handle typing animation
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (markdownInput) {
+      setIsTyping(true);
+      timeout = setTimeout(() => setIsTyping(false), 500);
+    }
+    return () => clearTimeout(timeout);
+  }, [markdownInput]);
 
   if (isFullscreen) {
     return (
-      <FullScreenCardView
+      <FullscreenCardView
         onExit={handleExitReading}
         onChangeSection={handleChangeSection}
         sections={sections}
@@ -70,67 +79,57 @@ const MDHDHomepage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-primary/10 font-cascadia-code relative">
-      <div className="fixed top-4 right-4 z-50">
-        <ThemeSelector
-          currentTheme={currentTheme.name}
-          onThemeChange={setTheme}
-        />
-      </div>
-      <div className="container mx-auto px-4 py-8">
-        <div
-          className={cn(
-            "grid transition-all duration-500 ease-in-out gap-8",
-            hasContent ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
-          )}
+    <div className="min-h-screen relative overflow-hidden font-cascadia-code">
+      {/* Animated background */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-secondary/10"
+        style={{ y: backgroundY }}
+      />
+
+      {/* Geometric background patterns */}
+
+      {/* Theme selector */}
+      <div className="fixed top-6 right-6 z-50">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1 }}
         >
-          {/* Main Input Section - Always Centered */}
+          <ThemeSelector
+            currentTheme={currentTheme.name}
+            onThemeChange={setTheme}
+          />
+        </motion.div>
+      </div>
+
+      {/* Main content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-7xl mx-auto">
           <div
             className={cn(
-              "flex items-center justify-center min-h-screen",
-              hasContent && "lg:min-h-[calc(100vh-4rem)]"
+              "grid gap-8 lg:gap-12 transition-all duration-700",
+              "grid-cols-1 place-items-center"
             )}
           >
-            <MarkdownInput
-              markdownInput={markdownInput}
-              setMarkdownInput={setMarkdownInput}
-              hasContent={hasContent}
-              handleStartReading={handleStartReading}
-            />
+            {/* Main input section */}
+            <div
+              className={cn(
+                "flex flex-col items-center justify-center space-y-8",
+                "items-center text-center"
+              )}
+            >
+              <Hero />
+
+              <MarkdownInput
+                markdownInput={markdownInput}
+                setMarkdownInput={setMarkdownInput}
+                handleStartReading={handleStartReading}
+                isTyping={isTyping}
+                wordCount={wordCount}
+                parsedSections={parsedSections}
+              />
+            </div>
           </div>
-
-          {/* Preview Panel - Appears when content exists */}
-          <AnimatePresence>
-            {hasContent && (
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 50 }}
-                transition={{ duration: 0.5 }}
-                className="hidden lg:flex items-center justify-center min-h-[calc(100vh-4rem)]"
-              >
-                <Card className="w-full h-[600px] p-6 border-border/50 bg-card/50 backdrop-blur-sm rounded-2xl">
-                  <div className="h-full flex flex-col">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Preview</h3>
-                      <Badge
-                        variant="outline"
-                        className="bg-primary/5 border-primary/20"
-                      >
-                        {parsedSections.length} sections
-                      </Badge>
-                    </div>
-
-                    <CardContent className="p-0 overflow-y-auto">
-                      <ScrollArea className="h-full border bg-background/30 rounded-2xl p-4">
-                        <TableOfContents sections={parsedSections} />
-                      </ScrollArea>
-                    </CardContent>
-                  </div>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
     </div>

@@ -1,59 +1,49 @@
-import { Play, ChevronRight, Hash, List } from "lucide-react";
+import { Play, ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { MarkdownSection } from "@/services/section/parsing";
 
 interface MarkdownInputProps {
   markdownInput: string;
   setMarkdownInput: (markdownInput: string) => void;
-  hasContent: boolean;
   handleStartReading: () => void;
+  isTyping: boolean;
+  wordCount: number;
+  parsedSections: MarkdownSection[];
 }
 
 const MarkdownInput: React.FC<MarkdownInputProps> = ({
   markdownInput,
   setMarkdownInput,
-  hasContent,
   handleStartReading,
+  isTyping,
+  wordCount,
+  parsedSections,
 }) => {
+  const hasContent = markdownInput.trim().length > 0;
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="w-full max-w-2xl mx-auto space-y-8"
+      transition={{ duration: 0.8, delay: 0.6 }}
+      className="w-full max-w-2xl"
     >
-      {/* Hero Section */}
-      <div className="text-center space-y-6 mb-4 rounded-2xl bg-transparent p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          <h1 className="text-4xl md:text-6xl font-bold">
-            <span className="bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
-              MDHD
-            </span>
-          </h1>
-          <p className="text-muted-foreground mt-4 text-lg">
-            Transform your markdown into focused reading sessions
-          </p>
-        </motion.div>
-      </div>
+      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card/60 to-card/40 backdrop-blur-xl shadow-2xl rounded-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
 
-      {/* Input Card */}
-      <Card className="p-6 space-y-6 border-border/50 bg-card/50 backdrop-blur-sm rounded-2xl">
-        <CardContent className="p-0 overflow-y-auto flex flex-col gap-4">
+        <CardContent className="relative z-10 p-6 lg:p-8 space-y-6">
           <div className="space-y-4">
-            <textarea
-              value={markdownInput}
-              onChange={(e) => setMarkdownInput(e.target.value)}
-              placeholder="# Your First Section
+            <div className="relative">
+              <motion.textarea
+                value={markdownInput}
+                onChange={(e) => setMarkdownInput(e.target.value)}
+                placeholder="# Your First Section
 Start typing your markdown content here...
 
-## Subsection
+## Subsection  
 Each heading creates a new focused reading card.
 
 ```javascript
@@ -61,70 +51,104 @@ Each heading creates a new focused reading card.
 console.log('Hello, World!');
 ```
 
-Transform your content into digestible sections for better focus."
-              className={cn(
-                "w-full h-80 p-4 rounded-2xl border resize-none",
-                "bg-card/50 backdrop-blur-sm transition-all duration-200 text-muted-foreground",
-                "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
-                "text-sm leading-relaxed placeholder:text-muted-foreground/60",
-                "scrollbar-hide"
-              )}
-            />
+Transform your content into digestible sections for better focus and comprehension."
+                className={cn(
+                  "w-full h-60 p-4 rounded-2xl border-0 resize-none",
+                  "bg-background/50 backdrop-blur-sm transition-all duration-300",
+                  "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-background/70",
+                  "text-sm leading-relaxed placeholder:text-muted-foreground/60",
+                  "scrollbar-hide font-mono"
+                )}
+                whileFocus={{ scale: 1.01 }}
+              />
 
-            {/* Character count */}
+              {/* Typing indicator */}
+              <AnimatePresence>
+                {isTyping && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="absolute top-2 right-2 flex items-center gap-2 px-2 py-1 bg-primary/10 rounded-lg"
+                  >
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 1, repeat: Infinity }}
+                      className="w-2 h-2 bg-primary rounded-full"
+                    />
+                    <span className="text-xs text-primary">Writing...</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Stats */}
+            <AnimatePresence>
+              {markdownInput.trim().length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="flex items-center justify-between text-xs text-muted-foreground"
+                >
+                  <div className="flex items-center gap-4">
+                    <span>{wordCount} words</span>
+                    <span>{parsedSections.length} sections</span>
+                    <span>~{Math.ceil(wordCount / 250)} min read</span>
+                  </div>
+                  <motion.div
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3 text-primary" />
+                    <span className="text-primary">Ready to read</span>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Action Button */}
-          <Button
-            onClick={handleStartReading}
-            disabled={!hasContent}
-            size="lg"
-            className={cn(
-              "w-full h-14 text-base font-semibold relative cursor-pointer overflow-hidden group rounded-2xl",
-              "bg-primary/60 hover:bg-primary/80 hover:scale-105 transition-all duration-300",
-              "disabled:bg-muted disabled:text-muted-foreground",
-              "shadow-lg hover:shadow-xl hover:shadow-primary/25"
-            )}
-          >
-            <div className="relative z-10 flex items-center justify-center gap-3">
-              <Play className="w-5 h-5" />
-              <span>Start Focused Reading</span>
-              <motion.div
-                animate={hasContent ? { x: [0, 4, 0] } : {}}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </motion.div>
-            </div>
-          </Button>
+          {/* Action button */}
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              onClick={handleStartReading}
+              disabled={!hasContent}
+              size="lg"
+              className={cn(
+                "w-full h-16 text-lg font-bold relative overflow-hidden group",
+                "bg-gradient-to-r from-primary via-primary/90 to-primary",
+                "hover:from-primary/90 hover:via-primary hover:to-primary/90",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "shadow-lg hover:shadow-xl hover:shadow-primary/25 transition-all duration-300",
+                "border-0 rounded-2xl cursor-pointer"
+              )}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+              <div className="relative z-10 flex items-center justify-center gap-3">
+                <motion.div
+                  animate={hasContent ? { scale: [1, 1.1, 1] } : {}}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <Play className="w-6 h-6" />
+                </motion.div>
+                <span>Start Focused Reading</span>
+                <motion.div
+                  animate={hasContent ? { x: [0, 4, 0] } : {}}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </motion.div>
+              </div>
+            </Button>
+          </motion.div>
         </CardContent>
       </Card>
-
-      {/* Quick Tips */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="text-center space-y-3"
-      >
-        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Hash className="w-4 h-4" />
-            <span>Sections</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <List className="w-4 h-4" />
-            <span>Focus Mode</span>
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground/80">
-          Break down complex content into digestible parts
-        </p>
-      </motion.div>
     </motion.div>
   );
 };
