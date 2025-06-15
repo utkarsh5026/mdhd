@@ -30,14 +30,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogOverlay,
 } from "@/components/ui/dialog";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useCodeThemeStore, type ThemeKey } from "@/stores/ui/code-theme";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { downloadAsFile, downloadAsImage } from "@/utils/download";
+import { Badge } from "@/components/ui/badge";
 
 interface CodeRenderProps extends React.ComponentPropsWithoutRef<"code"> {
   inline?: boolean;
@@ -54,6 +53,7 @@ interface CodePreviewDialogProps {
   onCopy: () => void;
   copied: boolean;
   dialogCodeRef: React.RefObject<HTMLDivElement | null>;
+  themeStyle: Record<string, React.CSSProperties>;
   props?: React.ComponentPropsWithoutRef<typeof SyntaxHighlighter>;
 }
 
@@ -87,118 +87,129 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
   copied,
   dialogCodeRef,
   props,
+  themeStyle,
 }) => {
-  const { getCurrentThemeStyle, getCurrentThemeName } = useCodeThemeStore();
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] w-[95vw] xl:max-w-[90vw] xl:w-[90vw] 2xl:max-w-[85vw] 2xl:w-[85vw] h-[90vh] p-0 font-fira-code rounded-2xl border-none">
-        <DialogHeader className="px-6 py-4 border-b bg-card/50 backdrop-blur-sm rounded-t-2xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <DialogTitle className="flex items-center gap-2 text-lg">
-                {(() => {
-                  const IconComponent = getIconForTech(language || "code");
-                  return <IconComponent className="w-5 h-5" />;
-                })()}
-                <span>Code Preview</span>
-              </DialogTitle>
+      <DialogContent className="max-w-[95vw] w-[95vw] xl:max-w-[90vw] xl:w-[90vw] 2xl:max-w-[85vw] 2xl:w-[85vw] h-[90vh] p-0 font-cascadia-code rounded-3xl border-none shadow-2xl shadow-black/20  overflow-y-auto">
+        <DialogHeader className="relative px-8 py-6 border-b border-border/50 bg-gradient-to-r from-card/80 via-card/60 to-card/40 backdrop-blur-xl rounded-t-3xl">
+          {/* Subtle gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 rounded-t-3xl" />
+
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                {/* Icon with subtle glow effect */}
+                <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full" />
+                <div className="relative p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20 backdrop-blur-sm">
+                  {(() => {
+                    const IconComponent = getIconForTech(language || "code");
+                    return <IconComponent className="w-6 h-6 text-primary" />;
+                  })()}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  Code Preview
+                </DialogTitle>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Badge
+                    variant="secondary"
+                    className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20"
+                  >
+                    {language || "plaintext"}
+                  </Badge>
+                  <span>•</span>
+                  <span>{codeContent.split("\n").length} lines</span>
+                </div>
+              </div>
             </div>
 
-            {/* Dialog Actions */}
-            <div className="flex items-center gap-2">
-              <ThemeSelector />
-              <Separator orientation="vertical" className="h-6" />
+            {/* Enhanced Action Buttons */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 p-1 bg-card/50 rounded-2xl border border-border/50 backdrop-blur-sm">
+                <ThemeSelector />
 
-              {/* Download as Image */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onDownloadAsImage}
-                disabled={downloading === "image"}
-                className="gap-2 cursor-pointer"
-              >
-                {downloading === "image" ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Image className="w-4 h-4" />
-                )}
-                Image
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onCopy}
+                  className="gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-2xl cursor-pointer"
+                >
+                  <div className="relative">
+                    <Copy
+                      className={cn(
+                        "w-4 h-4 transition-all duration-300",
+                        copied
+                          ? "opacity-0 scale-0 rotate-90"
+                          : "opacity-100 scale-100 rotate-0"
+                      )}
+                    />
+                    <Check
+                      className={cn(
+                        "absolute inset-0 w-4 h-4 transition-all duration-300",
+                        copied
+                          ? "opacity-100 scale-100 rotate-0 text-green-600"
+                          : "opacity-0 scale-0 -rotate-90"
+                      )}
+                    />
+                  </div>
+                  <span className="hidden sm:inline">Copy</span>
+                </Button>
 
-              {/* Download as File */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onDownloadAsFile}
-                disabled={downloading === "file"}
-                className="gap-2 cursor-pointer"
-              >
-                {downloading === "file" ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <FileText className="w-4 h-4" />
-                )}
-                File
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onDownloadAsImage}
+                  disabled={downloading === "image"}
+                  className="gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-2xl cursor-pointer"
+                >
+                  {downloading === "image" ? (
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Image className="w-4 h-4" />
+                  )}
+                  <span className="hidden sm:inline">Image</span>
+                </Button>
+
+                {/* Download as File */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onDownloadAsFile}
+                  disabled={downloading === "file"}
+                  className="gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200  cursor-pointer rounded-2xl"
+                >
+                  {downloading === "file" ? (
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4" />
+                  )}
+                  <span className="hidden sm:inline">File</span>
+                </Button>
+              </div>
             </div>
           </div>
         </DialogHeader>
 
-        {/* Dialog Code Display */}
-        <ScrollArea className="flex-1 overflow-y-auto p-4 rounded-2xl border-2 m-4 border-border">
-          <CodeDisplay
-            isDialog
-            ref={dialogCodeRef}
-            themeStyle={getCurrentThemeStyle()}
-            language={language}
-            codeContent={codeContent}
-            props={{ ...props }}
-          />
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-
-        <DialogFooter className="px-6 py-4 border-t bg-muted/30 backdrop-blur-sm rounded-b-2xl border-4">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <span className="flex items-center gap-2">
-                <span className="font-medium">
-                  {codeContent.split("\n").length}
-                </span>
-                <span>lines</span>
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="font-medium">{codeContent.length}</span>
-                <span>characters</span>
-              </span>
-              <span className="flex items-center gap-2">
-                <span>Theme:</span>
-                <span className="font-medium">{getCurrentThemeName()}</span>
-              </span>
-              <span className="hidden lg:flex items-center gap-2">
-                <span>Font:</span>
-                <span className="font-medium">Source Code Pro</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={onCopy}
-                size="sm"
-                className="gap-2"
-              >
-                {copied ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-                {copied ? "Copied!" : "Copy All"}
-              </Button>
-            </div>
-          </div>
-        </DialogFooter>
+        <div className="flex-1 p-6 relative">
+          <ScrollArea className="relative h-full rounded-2xl border border-border/30 overflow-y-auto z-20">
+            <CodeDisplay
+              isDialog
+              ref={dialogCodeRef}
+              themeStyle={themeStyle}
+              language={language}
+              codeContent={codeContent}
+              props={{ ...props }}
+            />
+            <ScrollBar orientation="horizontal" className="bg-muted/50" />
+            <ScrollBar orientation="vertical" className="bg-muted/50" />
+          </ScrollArea>
+        </div>
       </DialogContent>
-      <DialogOverlay />
+
+      <DialogOverlay className="bg-black/40 backdrop-blur-sm" />
     </Dialog>
   );
 };
@@ -449,6 +460,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
         copied={copied}
         dialogCodeRef={dialogCodeRef}
         props={props}
+        themeStyle={getCurrentThemeStyle()}
       />
     </Collapsible>
   );
