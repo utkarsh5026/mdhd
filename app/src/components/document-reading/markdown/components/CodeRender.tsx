@@ -91,56 +91,65 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] w-[95vw] xl:max-w-[90vw] xl:w-[90vw] 2xl:max-w-[85vw] 2xl:w-[85vw] h-[90vh] p-0 font-cascadia-code rounded-3xl border-none shadow-2xl shadow-black/20  overflow-y-auto">
-        <DialogHeader className="relative px-8 py-6 border-b border-border/50 bg-gradient-to-r from-card/80 via-card/60 to-card/40 backdrop-blur-xl rounded-t-3xl">
+      <DialogContent className="max-w-[98vw] w-[98vw] sm:max-w-[95vw] sm:w-[95vw] xl:max-w-[90vw] xl:w-[90vw] 2xl:max-w-[85vw] 2xl:w-[85vw] h-[95vh] sm:h-[90vh] p-0 font-cascadia-code rounded-2xl sm:rounded-3xl border-none shadow-2xl shadow-black/20 overflow-y-auto">
+        <DialogHeader className="relative px-3 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-6 border-b border-border/50 bg-gradient-to-r from-card/80 via-card/60 to-card/40 backdrop-blur-xl rounded-t-2xl sm:rounded-t-3xl">
           {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 rounded-t-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 rounded-t-2xl sm:rounded-t-3xl" />
 
-          <div className="relative flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative">
+          <div className="relative flex items-center justify-between gap-2">
+            <div className="flex items-center flex-1 min-w-0">
+              {/* Mobile: Smaller icon, Desktop: Original size */}
+              <div className="relative flex-shrink-0">
                 {/* Icon with subtle glow effect */}
                 <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full" />
-                <div className="relative p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20 backdrop-blur-sm">
+                <div className="relative p-2 sm:p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl sm:rounded-2xl border border-primary/20 backdrop-blur-sm">
                   {(() => {
                     const IconComponent = getIconForTech(language || "code");
-                    return <IconComponent className="w-6 h-6 text-primary" />;
+                    return (
+                      <IconComponent className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
+                    );
                   })()}
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+              <div className="ml-3 sm:ml-4 space-y-0.5 sm:space-y-1 min-w-0 flex-1">
+                <DialogTitle className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent truncate">
                   Code Preview
                 </DialogTitle>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
                   <Badge
-                    variant="secondary"
-                    className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20"
+                    variant="outline"
+                    className="text-xs px-1.5 py-0.5 sm:px-2 bg-primary/10 text-primary border-none flex-shrink-0 rounded-2xl hidden sm:block"
                   >
                     {language || "plaintext"}
                   </Badge>
-                  <span>•</span>
-                  <span>{codeContent.split("\n").length} lines</span>
+                  <span className="hidden xs:inline">•</span>
+                  <span className="hidden xs:inline truncate">
+                    {codeContent.split("\n").length} lines
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Enhanced Action Buttons */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 p-1 bg-card/50 rounded-2xl border border-border/50 backdrop-blur-sm">
-                <ThemeSelector />
+            {/* Enhanced Action Buttons - More compact on mobile */}
+            <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+              <div className="flex items-center gap-0.5 sm:gap-2 p-1 bg-card/50 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm">
+                {/* Theme Selector - Hidden on very small screens */}
+                <div className="hidden xs:block">
+                  <ThemeSelector />
+                </div>
 
+                {/* Copy Button */}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={onCopy}
-                  className="gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-2xl cursor-pointer"
+                  className="gap-1 sm:gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-xl sm:rounded-2xl cursor-pointer h-8 px-2 sm:px-3"
                 >
                   <div className="relative">
                     <Copy
                       className={cn(
-                        "w-4 h-4 transition-all duration-300",
+                        "w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all duration-300",
                         copied
                           ? "opacity-0 scale-0 rotate-90"
                           : "opacity-100 scale-100 rotate-0"
@@ -148,53 +157,54 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
                     />
                     <Check
                       className={cn(
-                        "absolute inset-0 w-4 h-4 transition-all duration-300",
+                        "absolute inset-0 w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all duration-300",
                         copied
                           ? "opacity-100 scale-100 rotate-0 text-green-600"
                           : "opacity-0 scale-0 -rotate-90"
                       )}
                     />
                   </div>
-                  <span className="hidden sm:inline">Copy</span>
+                  <span className="hidden md:inline">Copy</span>
                 </Button>
 
+                {/* Download as Image Button */}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={onDownloadAsImage}
                   disabled={downloading === "image"}
-                  className="gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-2xl cursor-pointer"
+                  className="gap-1 sm:gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-xl sm:rounded-2xl cursor-pointer h-8 px-2 sm:px-3"
                 >
                   {downloading === "image" ? (
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <Image className="w-4 h-4" />
+                    <Image className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   )}
-                  <span className="hidden sm:inline">Image</span>
+                  <span className="hidden md:inline">Image</span>
                 </Button>
 
-                {/* Download as File */}
+                {/* Download as File Button */}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={onDownloadAsFile}
                   disabled={downloading === "file"}
-                  className="gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200  cursor-pointer rounded-2xl"
+                  className="gap-1 sm:gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 cursor-pointer rounded-xl sm:rounded-2xl h-8 px-2 sm:px-3"
                 >
                   {downloading === "file" ? (
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <FileText className="w-4 h-4" />
+                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   )}
-                  <span className="hidden sm:inline">File</span>
+                  <span className="hidden md:inline">File</span>
                 </Button>
               </div>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="flex-1 p-6 relative overflow-hidden">
-          <ScrollArea className="relative max-h-[calc(90vh-180px)] rounded-2xl border border-border/30 z-20 overflow-hidden">
+        <div className="flex-1 p-3 sm:p-4 lg:p-6 relative overflow-hidden">
+          <ScrollArea className="relative max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-140px)] lg:max-h-[calc(90vh-180px)] rounded-xl sm:rounded-2xl border border-border/30 z-20 overflow-hidden">
             <CodeDisplay
               isDialog
               ref={dialogCodeRef}
@@ -233,7 +243,6 @@ const CodeRender: React.FC<CodeRenderProps> = ({
   children,
   ...props
 }) => {
-  // Core state management
   const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
