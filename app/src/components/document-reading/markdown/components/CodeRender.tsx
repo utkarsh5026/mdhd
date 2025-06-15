@@ -289,7 +289,6 @@ const CodeRender: React.FC<CodeRenderProps> = ({
       : React.Children.toArray(children).join("");
   }, [children]);
 
-  // Determine if code should be rendered in compact mode
   const isCompactCode =
     typeof codeContent === "string" &&
     !codeContent.includes("\n") &&
@@ -320,9 +319,12 @@ const CodeRender: React.FC<CodeRenderProps> = ({
   const handleDownloadAsImage = () => {
     setDownloading("image");
     if (dialogCodeRef.current) {
-      downloadAsImage(dialogCodeRef.current, language);
+      downloadAsImage(dialogCodeRef.current, language).then(() => {
+        setDownloading(null);
+      });
+    } else {
+      setDownloading(null);
     }
-    setDownloading(null);
   };
 
   /**
@@ -547,14 +549,41 @@ interface CodeDisplayProps {
   themeStyle: Record<string, React.CSSProperties>;
 }
 
-const CodeDisplay = ({
+const CodeDisplay: React.FC<CodeDisplayProps> = ({
   isDialog = false,
   ref,
   language,
   codeContent,
   props,
   themeStyle,
-}: CodeDisplayProps) => {
+}) => {
+  const getPadding = () => {
+    if (isDialog) {
+      if (window.innerWidth >= 1536) return "3rem";
+      if (window.innerWidth >= 1280) return "2.5rem";
+      if (window.innerWidth >= 1024) return "2rem";
+      return "1.5rem";
+    }
+    return window.innerWidth < 640 ? "0.75rem" : "1rem";
+  };
+
+  const getFontSize = () => {
+    if (isDialog) {
+      if (window.innerWidth >= 1536) return "1.1rem";
+      if (window.innerWidth >= 1280) return "1.05rem";
+      if (window.innerWidth >= 1024) return "1rem";
+      return "0.95rem";
+    }
+    return window.innerWidth < 640 ? "0.8rem" : "0.875rem";
+  };
+
+  const getLineHeight = () => {
+    if (isDialog) {
+      return window.innerWidth >= 1024 ? 1.8 : 1.7;
+    }
+    return window.innerWidth < 640 ? 1.5 : 1.6;
+  };
+
   return (
     <div
       ref={ref}
@@ -571,35 +600,9 @@ const CodeDisplay = ({
           language={language ?? "text"}
           customStyle={{
             margin: 0,
-            padding: isDialog
-              ? window.innerWidth >= 1536
-                ? "3rem"
-                : window.innerWidth >= 1280
-                ? "2.5rem"
-                : window.innerWidth >= 1024
-                ? "2rem"
-                : "1.5rem"
-              : window.innerWidth < 640
-              ? "0.75rem"
-              : "1rem",
-            fontSize: isDialog
-              ? window.innerWidth >= 1536
-                ? "1.1rem"
-                : window.innerWidth >= 1280
-                ? "1.05rem"
-                : window.innerWidth >= 1024
-                ? "1rem"
-                : "0.95rem"
-              : window.innerWidth < 640
-              ? "0.8rem"
-              : "0.875rem",
-            lineHeight: isDialog
-              ? window.innerWidth >= 1024
-                ? 1.8
-                : 1.7
-              : window.innerWidth < 640
-              ? 1.5
-              : 1.6,
+            padding: getPadding(),
+            fontSize: getFontSize(),
+            lineHeight: getLineHeight(),
             minWidth: "100%",
             width: "max-content",
             backgroundColor: "transparent",
