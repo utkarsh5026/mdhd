@@ -82,24 +82,13 @@ const CodeRender: React.FC<CodeRenderProps> = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [downloading, setDownloading] = useState<"image" | "file" | null>(null);
 
-  // Extract language from className (e.g., "language-javascript" -> "javascript")
   const match = /language-(\w+)/.exec(className ?? "");
   const language = match ? match[1] : "";
+  const { getCurrentThemeStyle, getCurrentThemeName } = useCodeThemeStore();
 
-  // Theme management from Zustand store
-  const {
-    selectedTheme,
-    setTheme,
-    getCurrentThemeStyle,
-    getCurrentThemeName,
-    getThemesByCategory,
-  } = useCodeThemeStore();
-
-  // Refs for DOM manipulation
   const codeRef = useRef<HTMLDivElement>(null);
   const dialogCodeRef = useRef<HTMLDivElement>(null);
 
-  // Context detection state
   const [isInTableCell, setIsInTableCell] = useState(false);
   const [headingLevel, setHeadingLevel] = useState<number | null>(null);
 
@@ -190,72 +179,6 @@ const CodeRender: React.FC<CodeRenderProps> = ({
     downloadAsFile(codeContent, language);
     setDownloading(null);
   };
-
-  /**
-   * Theme Selector Component
-   *
-   * Reusable dropdown component for theme selection with
-   * organized categories and current theme indication.
-   */
-  const ThemeSelector = ({
-    size = "default",
-  }: {
-    size?: "default" | "small";
-  }) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size={size === "small" ? "sm" : "icon"}
-          className={cn(
-            "transition-colors",
-            size === "small" ? "h-8 px-3" : "p-2 h-10 w-10"
-          )}
-          aria-label="Select theme"
-        >
-          <Palette className={cn(size === "small" ? "w-3 h-3" : "w-4 h-4")} />
-          {size === "small" && <span className="ml-1 text-xs">Theme</span>}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        side="bottom"
-        sideOffset={8}
-        className="w-52 max-h-64 overflow-y-auto bg-card rounded-xl font-fira-code"
-      >
-        <DropdownMenuLabel className="text-xs text-muted-foreground px-3 py-2">
-          Current: {getCurrentThemeName()}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {Object.entries(getThemesByCategory()).map(([category, themes]) => (
-          <React.Fragment key={category}>
-            <DropdownMenuLabel className="text-xs font-medium text-muted-foreground px-3 py-2">
-              {category}
-            </DropdownMenuLabel>
-            {Object.entries(themes).map(([themeKey, theme]) => (
-              <DropdownMenuItem
-                key={themeKey}
-                onClick={() => setTheme(themeKey as ThemeKey)}
-                className={cn(
-                  "cursor-pointer text-sm py-2.5",
-                  selectedTheme === themeKey &&
-                    "bg-accent text-accent-foreground"
-                )}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span>{theme.name}</span>
-                  {selectedTheme === themeKey && (
-                    <Check className="w-3 h-3 text-primary" />
-                  )}
-                </div>
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-          </React.Fragment>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
 
   /**
    * Code Display Component
@@ -394,12 +317,6 @@ const CodeRender: React.FC<CodeRenderProps> = ({
                 const IconComponent = getIconForTech(language || "code");
                 return <IconComponent className="w-4 h-4" />;
               })()}
-            </span>
-            <Badge variant="outline" className="text-xs">
-              {language || "text"}
-            </Badge>
-            <span className="text-xs text-muted-foreground ml-2">
-              {codeContent.split("\n").length} lines
             </span>
           </div>
 
@@ -590,6 +507,78 @@ const CodeRender: React.FC<CodeRenderProps> = ({
         </CollapsibleContent>
       </div>
     </Collapsible>
+  );
+};
+
+/**
+ * Theme Selector Component
+ *
+ * Reusable dropdown component for theme selection with
+ * organized categories and current theme indication.
+ */
+const ThemeSelector = ({
+  size = "default",
+}: {
+  size?: "default" | "small";
+}) => {
+  const { selectedTheme, setTheme, getCurrentThemeName, getThemesByCategory } =
+    useCodeThemeStore();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size={size === "small" ? "sm" : "icon"}
+          className={cn(
+            "transition-colors",
+            size === "small" ? "h-8 px-3" : "p-2 h-10 w-10"
+          )}
+          aria-label="Select theme"
+        >
+          <Palette className={cn(size === "small" ? "w-3 h-3" : "w-4 h-4")} />
+          {size === "small" && (
+            <span className="ml-1 text-xs sm:block hidden">Theme</span>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        side="bottom"
+        sideOffset={8}
+        className="w-52 max-h-64 overflow-y-auto bg-card rounded-2xl font-fira-code"
+      >
+        <DropdownMenuLabel className="text-xs text-muted-foreground px-3 py-2">
+          Current: {getCurrentThemeName()}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {Object.entries(getThemesByCategory()).map(([category, themes]) => (
+          <React.Fragment key={category}>
+            <DropdownMenuLabel className="text-xs font-medium text-muted-foreground px-3 py-2">
+              {category}
+            </DropdownMenuLabel>
+            {Object.entries(themes).map(([themeKey, theme]) => (
+              <DropdownMenuItem
+                key={themeKey}
+                onClick={() => setTheme(themeKey as ThemeKey)}
+                className={cn(
+                  "cursor-pointer text-sm py-2.5",
+                  selectedTheme === themeKey &&
+                    "bg-accent text-accent-foreground"
+                )}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <span>{theme.name}</span>
+                  {selectedTheme === themeKey && (
+                    <Check className="w-3 h-3 text-primary" />
+                  )}
+                </div>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+          </React.Fragment>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
