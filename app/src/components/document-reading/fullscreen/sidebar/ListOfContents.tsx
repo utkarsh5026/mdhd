@@ -168,7 +168,7 @@ const ListOfContents: React.FC<ListOfContentsProps> = ({
               >
                 <button
                   className={cn(
-                    "w-full text-left px-3 py-2.5 rounded-lg",
+                    "w-full text-left px-3 py-2.5 rounded-2xl",
                     "flex items-center gap-3 group relative overflow-hidden",
                     getButtonClass(isActive, isRead, showProgress)
                   )}
