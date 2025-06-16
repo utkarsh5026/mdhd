@@ -369,7 +369,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div
         ref={codeRef}
-        className="my-8 relative font-fira-code no-swipe shadow-xl shadow-background/50 rounded-2xl border-1 border-border/40"
+        className="my-8 relative font-fira-code no-swipe shadow-background/50 rounded-2xl border-none"
       >
         {/* Code Block Header */}
         <div className="bg-card text-muted-foreground px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold border-b border-border flex justify-between items-center rounded-t-2xl">
@@ -503,9 +503,6 @@ const ThemeSelector = ({
           aria-label="Select theme"
         >
           <Palette className={cn(size === "small" ? "w-3 h-3" : "w-4 h-4")} />
-          {size === "small" && (
-            <span className="ml-1 text-xs sm:block hidden">Theme</span>
-          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
