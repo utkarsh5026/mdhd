@@ -385,9 +385,6 @@ const CodeRender: React.FC<CodeRenderProps> = ({
 
           {/* Header Actions */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Theme Selector */}
-            <ThemeSelector size="small" />
-
             {/* Copy Button */}
             <Button
               variant="ghost"

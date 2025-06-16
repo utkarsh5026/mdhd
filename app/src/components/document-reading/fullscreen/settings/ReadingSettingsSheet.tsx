@@ -12,6 +12,7 @@ import { Paintbrush, RotateCcw } from "lucide-react";
 import { useReadingSettings } from "../context/ReadingContext";
 import FontFamilySelector from "./FontFamilySelector";
 import ThemeSelector from "./ThemeSelector";
+import CodeThemeSelector from "./CodeThemeSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -34,7 +35,7 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg font-cascadia-code px-4 flex flex-col h-full max-h-full"
+        className="w-full sm:max-w-2xl font-cascadia-code px-4 flex flex-col h-full max-h-full"
       >
         <SheetHeader className="mb-6">
           <div className="flex items-center justify-between">
@@ -49,22 +50,29 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
         </SheetHeader>
 
         <ScrollArea className="flex-1 overflow-auto">
-          <Tabs defaultValue="text" className="w-full p-4">
-            <TabsList className="w-full mb-4">
+          <Tabs defaultValue="text" className="w-full">
+            <TabsList className="w-full mb-6">
               <TabsTrigger value="text" className="flex-1">
                 Text
               </TabsTrigger>
               <TabsTrigger value="appearance" className="flex-1">
                 Appearance
               </TabsTrigger>
+              <TabsTrigger value="code" className="flex-1">
+                Code
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="text" className="flex flex-col gap-12 p-4">
+            <TabsContent value="text" className="space-y-6 px-2">
               <FontFamilySelector />
             </TabsContent>
 
-            <TabsContent value="appearance" className="space-y-6">
+            <TabsContent value="appearance" className="space-y-6 px-2">
               <ThemeSelector />
+            </TabsContent>
+
+            <TabsContent value="code" className="space-y-6 px-2">
+              <CodeThemeSelector />
             </TabsContent>
           </Tabs>
         </ScrollArea>
