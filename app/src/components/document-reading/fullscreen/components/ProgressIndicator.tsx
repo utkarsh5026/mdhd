@@ -1,5 +1,11 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { MarkdownSection } from "@/services/section/parsing";
 
 interface MobileProgressIndicatorProps {
   currentIndex: number;
@@ -92,11 +98,12 @@ interface DesktopProgressIndicatorProps {
   currentIndex: number;
   total: number;
   onSelectSection: (index: number) => void;
+  sections: MarkdownSection[];
 }
 
 export const DesktopProgressIndicator: React.FC<
   DesktopProgressIndicatorProps
-> = ({ currentIndex, total, onSelectSection }) => (
+> = ({ currentIndex, total, onSelectSection, sections }) => (
   <div className="hidden lg:block fixed right-8 top-1/2 -translate-y-1/2 z-40">
     {/* Modern vertical container */}
     <div className="relative">
@@ -120,51 +127,64 @@ export const DesktopProgressIndicator: React.FC<
             total <= 15 ? index : Math.floor((index / 14) * (total - 1));
           const isActive = actualIndex === currentIndex;
           const isCompleted = actualIndex < currentIndex;
+          const section = sections[actualIndex];
 
           return (
-            <motion.button
-              key={index}
-              onClick={() => onSelectSection(actualIndex)}
-              className={cn(
-                "relative w-5 h-5 rounded-full transition-all duration-300 group z-10",
-                "border-2 backdrop-blur-sm",
-                isActive
-                  ? "bg-primary border-primary shadow-lg shadow-primary/40 scale-125"
-                  : isCompleted
-                  ? "bg-primary/80 border-primary/80 shadow-md shadow-primary/20"
-                  : "bg-cardBg border-border hover:border-secondary hover:bg-secondary/50"
-              )}
-              whileHover={{
-                scale: isActive ? 1.3 : 1.15,
-                rotate: isActive ? 0 : 90,
-              }}
-              whileTap={{ scale: 0.9 }}
-              title={`Go to section ${actualIndex + 1}`}
-            >
-              {/* Inner content */}
-              <div
-                className={cn(
-                  "absolute inset-1 rounded-full transition-all duration-300",
-                  isActive
-                    ? "bg-primaryForeground/30"
-                    : isCompleted
-                    ? "bg-primary/20"
-                    : "bg-transparent group-hover:bg-foreground/10"
-                )}
-              />
+            <Tooltip key={index}>
+              <TooltipTrigger asChild>
+                <motion.button
+                  onClick={() => onSelectSection(actualIndex)}
+                  className={cn(
+                    "relative w-5 h-5 rounded-full transition-all duration-300 group z-10",
+                    "border-2 backdrop-blur-sm",
+                    isActive
+                      ? "bg-primary border-primary shadow-lg shadow-primary/40 scale-125"
+                      : isCompleted
+                      ? "bg-primary/80 border-primary/80 shadow-md shadow-primary/20"
+                      : "bg-cardBg border-border hover:border-secondary hover:bg-secondary/50"
+                  )}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  {/* Active pulse effect */}
+                  {isActive && (
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2 border-primary/60"
+                      animate={{ scale: [1, 1.5], opacity: [0.6, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+                  )}
 
-              {/* Active pulse effect */}
-              {isActive && (
-                <motion.div
-                  className="absolute inset-0 rounded-full border-2 border-primary/60"
-                  animate={{ scale: [1, 1.5], opacity: [0.6, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              )}
-
-              {/* Hover glow */}
-              <div className="absolute inset-0 bg-primary/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
-            </motion.button>
+                  {/* Hover glow */}
+                  <div className="absolute inset-0 bg-primary/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
+                </motion.button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="left"
+                sideOffset={12}
+                className="max-w-xs bg-background border border-border shadow-xl font-cascadia-code rounded-2xl backdrop-blur-2xl"
+              >
+                <div className="flex flex-col gap-1.5 p-1">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={cn(
+                        "w-2 h-2 rounded-full flex-shrink-0",
+                        isActive
+                          ? "bg-primary"
+                          : isCompleted
+                          ? "bg-primary/80"
+                          : "bg-muted"
+                      )}
+                    />
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Section {actualIndex + 1}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground leading-snug">
+                    {section?.title || `Section ${actualIndex + 1}`}
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           );
         })}
       </div>
