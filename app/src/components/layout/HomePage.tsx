@@ -17,8 +17,6 @@ const MDHDHomepage = () => {
   const [isTyping, setIsTyping] = useState(false);
   const { currentTheme, setTheme } = useTheme();
 
-  console.log(readSections);
-
   const { scrollY } = useScroll();
   const backgroundY = useTransform(scrollY, [0, 500], [0, 150]);
 
@@ -30,7 +28,7 @@ const MDHDHomepage = () => {
   const handleStartReading = useCallback(() => {
     if (!markdownInput.trim()) return;
     setSections(parsedSections);
-    setReadSections(new Set<number>());
+    setReadSections(new Set<number>([0]));
     setIsFullscreen(true);
   }, [markdownInput, parsedSections]);
 

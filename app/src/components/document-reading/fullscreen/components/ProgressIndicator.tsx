@@ -292,6 +292,8 @@ export const DesktopProgressIndicator: React.FC<
   const [hasCompletedOnce, setHasCompletedOnce] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
 
+  console.log(readSections);
+
   const { percentage } = useMemo(() => {
     const totalWords = sections.reduce(
       (sum, section) => sum + section.wordCount,

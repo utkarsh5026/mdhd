@@ -22,6 +22,8 @@ interface FullscreenCardViewProps {
   markdown: string;
 }
 
+const CONTROLS_TIMEOUT = 4000;
+
 interface FullscreenCardContentProps extends FullscreenCardViewProps {
   settingsOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
@@ -116,7 +118,7 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
 
     controlsTimeoutRef.current = setTimeout(() => {
       setIsControlsVisible(false);
-    }, 2000);
+    }, CONTROLS_TIMEOUT);
   }, []);
 
   const handleInteraction = useCallback(() => {
