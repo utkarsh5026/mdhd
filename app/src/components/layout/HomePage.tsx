@@ -8,6 +8,7 @@ import { type MarkdownSection } from "@/services/section/parsing";
 import { useTheme } from "@/hooks";
 import MarkdownInput from "./MarkdownInput";
 import Hero from "./Hero";
+import { FaGithub } from "react-icons/fa";
 
 const MDHDHomepage = () => {
   const [markdownInput, setMarkdownInput] = useState("");
@@ -93,9 +94,6 @@ const MDHDHomepage = () => {
         style={{ y: backgroundY }}
       />
 
-      {/* Geometric background patterns */}
-
-      {/* Theme selector */}
       <div className="fixed top-6 right-6 z-50">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -109,7 +107,6 @@ const MDHDHomepage = () => {
         </motion.div>
       </div>
 
-      {/* Main content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-7xl mx-auto">
           <div
@@ -138,6 +135,25 @@ const MDHDHomepage = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="relative z-10 pb-10">
+        <motion.div
+          className="flex items-center justify-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2, duration: 0.5 }}
+        >
+          <a
+            href="https://github.com/utkarsh5026/mdhd"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 group"
+          >
+            <span>Made with 💖 by Utkarsh Priyadarshi</span>
+            <FaGithub className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+          </a>
+        </motion.div>
       </div>
     </div>
   );
