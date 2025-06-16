@@ -307,6 +307,7 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
         total={sections.length}
         onSelectSection={(index) => handleSelectCard(index)}
         sections={sections}
+        readSections={readSections}
       />
 
       {/* Swipe hint indicators for mobile */}
