@@ -13,9 +13,11 @@ const MDHDHomepage = () => {
   const [markdownInput, setMarkdownInput] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [sections, setSections] = useState<MarkdownSection[]>([]);
-  const [readSections] = useState(new Set<number>());
+  const [readSections, setReadSections] = useState(new Set<number>());
   const [isTyping, setIsTyping] = useState(false);
   const { currentTheme, setTheme } = useTheme();
+
+  console.log(readSections);
 
   const { scrollY } = useScroll();
   const backgroundY = useTransform(scrollY, [0, 500], [0, 150]);
@@ -28,6 +30,7 @@ const MDHDHomepage = () => {
   const handleStartReading = useCallback(() => {
     if (!markdownInput.trim()) return;
     setSections(parsedSections);
+    setReadSections(new Set<number>());
     setIsFullscreen(true);
   }, [markdownInput, parsedSections]);
 
@@ -39,9 +42,16 @@ const MDHDHomepage = () => {
     // Handle any cleanup if needed
   }, []);
 
-  const handleChangeSection = useCallback(async () => {
-    return true;
-  }, []);
+  const handleChangeSection = useCallback(
+    async (index: number) => {
+      const currentSection = sections[index];
+      if (currentSection) {
+        setReadSections((prev) => new Set(prev).add(index));
+      }
+      return true;
+    },
+    [sections]
+  );
 
   const getSection = useCallback(
     (index: number) => {
@@ -54,7 +64,6 @@ const MDHDHomepage = () => {
     .split(/\s+/)
     .filter((word) => word.length > 0).length;
 
-  // Handle typing animation
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     if (markdownInput) {
