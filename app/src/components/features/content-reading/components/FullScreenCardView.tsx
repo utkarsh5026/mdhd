@@ -9,11 +9,7 @@ import {
   fontFamilyMap,
 } from "@/components/features/settings/context/ReadingContext";
 import type { MarkdownSection } from "@/services/section/parsing";
-import {
-  Header,
-  NavigationControls,
-  DesktopProgressIndicator,
-} from "./components";
+import { Header, NavigationControls, DesktopProgressIndicator } from "./layout";
 import { useSwipeable } from "react-swipeable";
 
 interface FullscreenCardViewProps {

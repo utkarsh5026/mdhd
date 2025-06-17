@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { parseMarkdownIntoSections } from "@/services/section/parsing";
-import FullscreenCardView from "../features/content-reading/FullScreenCardView";
+import FullscreenCardView from "../features/content-reading/components/FullScreenCardView";
 import ThemeSelector from "../shared/theme/components/ThemeSelector";
 import { type MarkdownSection } from "@/services/section/parsing";
 import { useTheme } from "@/hooks";
