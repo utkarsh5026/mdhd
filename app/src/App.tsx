@@ -1,5 +1,6 @@
 import MDHDHomepage from "@/components/layout/HomePage";
 import LandingPage from "./components/landing/LandingPage";
+import LoadingPage from "./components/utils/init/LoadingAnimation";
 import { useTheme } from "./hooks";
 import "./index.css";
 import { useEffect, useState } from "react";
@@ -20,15 +21,21 @@ const App = () => {
     setShowLanding(false);
   };
 
+  const handleLoadingComplete = () => {
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+  }, []);
+
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-t-2 border-primary rounded-full"></div>
-      </div>
-    );
+    return <LoadingPage onComplete={handleLoadingComplete} />;
   }
 
-  // Show landing page for first-time visitors
   if (showLanding) {
     return <LandingPage onGetStarted={handleGetStarted} />;
   }
