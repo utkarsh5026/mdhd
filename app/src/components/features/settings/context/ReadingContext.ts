@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { FontFamily } from "@/stores/ui/reading-settings-store";
+import type { FontFamily } from "@/components/features/settings/store/reading-settings-store";
 
 export const fontFamilyMap: Record<FontFamily, string> = {
   "system-ui":

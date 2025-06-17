@@ -33,7 +33,10 @@ import {
   DialogOverlay,
 } from "@/components/ui/dialog";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { useCodeThemeStore, type ThemeKey } from "@/stores/ui/code-theme";
+import {
+  useCodeThemeStore,
+  type ThemeKey,
+} from "@/components/features/settings/store/code-theme";
 import { Button } from "@/components/ui/button";
 import { downloadAsFile, downloadAsImage } from "@/utils/download";
 import { Badge } from "@/components/ui/badge";

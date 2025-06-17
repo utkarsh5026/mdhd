@@ -1,5 +1,5 @@
 import React, { ReactNode, useMemo } from "react";
-import { useReadingSettingsStore } from "@/stores/ui/reading-settings-store";
+import { useReadingSettingsStore } from "@/components/features/settings/store/reading-settings-store";
 import {
   ReadingSettingsContext,
   type ReadingSettingsContextType,

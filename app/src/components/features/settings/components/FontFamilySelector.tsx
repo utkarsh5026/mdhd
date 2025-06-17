@@ -1,6 +1,6 @@
 import React from "react";
-import { useReadingSettings } from "../../document-reading/fullscreen/context/ReadingContext";
-import { FontFamily } from "@/stores/ui/reading-settings-store";
+import { useReadingSettings } from "@/components/features/settings/context/ReadingContext";
+import type { FontFamily } from "@/components/features/settings/store/reading-settings-store";
 import { Check, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";

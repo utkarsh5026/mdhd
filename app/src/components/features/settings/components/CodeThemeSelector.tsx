@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { useCodeThemeStore, type ThemeKey } from "@/stores/ui/code-theme";
+import {
+  useCodeThemeStore,
+  type ThemeKey,
+} from "@/components/features/settings/store/code-theme";
 import { Code, ChevronDown, ChevronUp, Palette } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
