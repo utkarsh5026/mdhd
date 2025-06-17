@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTheme } from "@/hooks/ui/use-theme";
+import { useTheme } from "@/components/shared/theme/hooks/use-theme";
 import {
   themes,
   ThemeOption as ThemeOptionType,
@@ -8,7 +8,7 @@ import {
 import { Palette, ChevronDown, ChevronUp } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
-import ThemeOption from "@/components/shared/theme/ThemeOption";
+import ThemeOption from "@/components/shared/theme/components/ThemeOption";
 
 // Group themes by their actual category property
 const themeCategories = themeCategoryDefinitions

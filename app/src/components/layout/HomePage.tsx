@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { parseMarkdownIntoSections } from "@/services/section/parsing";
 import FullscreenCardView from "../document-reading/fullscreen/FullScreenCardView";
-import ThemeSelector from "../shared/theme/ThemeSelector";
+import ThemeSelector from "../shared/theme/components/ThemeSelector";
 import { type MarkdownSection } from "@/services/section/parsing";
 import { useTheme } from "@/hooks";
 import MarkdownInput from "./MarkdownInput";

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useThemeStore } from "./theme-store";
+import { useThemeStore } from "@/components/shared/theme/store/theme-store";
 
 export type FontFamily =
   | "system-ui"

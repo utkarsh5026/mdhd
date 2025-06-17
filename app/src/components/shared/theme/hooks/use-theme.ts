@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useThemeStore } from "@/stores/ui/theme-store";
+import { useThemeStore } from "@/components/shared/theme/store/theme-store";
 import { ThemeOption } from "@/theme/themes";
 
 /**
