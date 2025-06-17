@@ -11,6 +11,7 @@ import {
 import type { MarkdownSection } from "@/services/section/parsing";
 import { Header, NavigationControls, DesktopProgressIndicator } from "./layout";
 import { useSwipeable } from "react-swipeable";
+import { useControls } from "@/components/features/content-reading/hooks/use-controls";
 
 interface FullscreenCardViewProps {
   onExit: () => Promise<void>;
@@ -20,8 +21,6 @@ interface FullscreenCardViewProps {
   readSections: Set<number>;
   markdown: string;
 }
-
-const CONTROLS_TIMEOUT = 4000;
 
 interface FullscreenCardContentProps extends FullscreenCardViewProps {
   settingsOpen: boolean;
@@ -46,8 +45,6 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isControlsVisible, setIsControlsVisible] = useState(true);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef<number>(Date.now());
@@ -87,6 +84,12 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
     }
   }, [currentIndex, changeSection]);
 
+  const { isControlsVisible, handleInteraction, handleDoubleClick } =
+    useControls({
+      goToNext,
+      goToPrevious,
+    });
+
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (eventData) => {
       if (eventData.event.target instanceof Element) {
@@ -107,33 +110,6 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
     trackTouch: true,
     trackMouse: true,
   });
-
-  const resetControlsTimeout = useCallback(() => {
-    if (controlsTimeoutRef.current) {
-      clearTimeout(controlsTimeoutRef.current);
-    }
-
-    setIsControlsVisible(true);
-
-    controlsTimeoutRef.current = setTimeout(() => {
-      setIsControlsVisible(false);
-    }, CONTROLS_TIMEOUT);
-  }, []);
-
-  const handleInteraction = useCallback(() => {
-    resetControlsTimeout();
-  }, [resetControlsTimeout]);
-
-  // 🖱️ Handle mouse movement to show controls when hovering at top
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      // Show controls when mouse is within 80px of the top or bottom
-      if (e.clientY <= 80 || e.clientY >= window.innerHeight - 80) {
-        handleInteraction();
-      }
-    },
-    [handleInteraction]
-  );
 
   /**
    * 📚 Initializes the reading when the markdown is loaded
@@ -180,49 +156,6 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
     if (index !== currentIndex) changeSection(index);
   };
 
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case "ArrowLeft":
-        case "ArrowUp":
-          goToPrevious();
-          handleInteraction();
-          break;
-        case "ArrowRight":
-        case "ArrowDown":
-        case " ":
-          e.preventDefault();
-          goToNext();
-          handleInteraction();
-          break;
-        case "Escape":
-          setIsControlsVisible(false);
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [goToNext, goToPrevious, handleInteraction, isControlsVisible]);
-
-  useEffect(() => {
-    resetControlsTimeout();
-    return () => {
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-      }
-    };
-  }, [resetControlsTimeout]);
-
-  // Add mouse movement listener for hover-at-top functionality
-  useEffect(() => {
-    document.addEventListener("mousemove", handleMouseMove);
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, [handleMouseMove]);
-
   const currentSection = getSection(currentIndex);
 
   if (sections.length === 0 || !currentSection) {
@@ -248,10 +181,7 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
       >
         <div
           {...swipeHandlers}
-          onDoubleClick={() => {
-            setIsControlsVisible(true);
-            resetControlsTimeout();
-          }}
+          onDoubleClick={handleDoubleClick}
           className="h-full"
         >
           <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24 h-auto">
