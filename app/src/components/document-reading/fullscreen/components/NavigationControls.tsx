@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavigationControlsProps {
@@ -9,6 +9,106 @@ interface NavigationControlsProps {
   onNext: () => void;
   isVisible: boolean;
 }
+
+interface NavigationButtonProps {
+  onClick: () => void;
+  disabled: boolean;
+  icon: LucideIcon;
+  rotateY: number;
+  iconDirection: "left" | "right";
+}
+
+const NavigationButton: React.FC<NavigationButtonProps> = ({
+  onClick,
+  disabled,
+  icon: Icon,
+  rotateY,
+  iconDirection,
+}) => (
+  <motion.button
+    onClick={onClick}
+    disabled={disabled}
+    className={cn(
+      "relative group touch-manipulation",
+      "p-3 sm:p-3.5 lg:p-4 rounded-full",
+      "transition-all duration-500 ease-out",
+      "border-2 backdrop-blur-md shadow-lg",
+      disabled
+        ? "bg-secondary/20 border-border/30 text-mutedForeground/50 cursor-not-allowed"
+        : "bg-cardBg/80 border-border/50 text-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:shadow-xl hover:shadow-primary/20"
+    )}
+    whileHover={
+      !disabled
+        ? {
+            scale: 1.1,
+            y: -2,
+            rotateY,
+          }
+        : {}
+    }
+    whileTap={!disabled ? { scale: 0.9 } : {}}
+    style={{
+      transformStyle: "preserve-3d",
+    }}
+  >
+    {/* Inner gradient layer */}
+    <div
+      className={cn(
+        "absolute inset-1 rounded-full transition-all duration-500",
+        disabled
+          ? "bg-transparent"
+          : "bg-gradient-to-br from-foreground/5 to-transparent group-hover:from-primary/10 group-hover:to-primary/5"
+      )}
+    />
+
+    {/* Icon with enhanced styling and spring movement */}
+    <motion.div
+      className="relative z-10"
+      whileHover={
+        !disabled
+          ? {
+              x: iconDirection === "left" ? -3 : 3,
+              scale: 1.1,
+            }
+          : {}
+      }
+      transition={{
+        type: "spring",
+        stiffness: 400,
+        damping: 17,
+      }}
+    >
+      <Icon
+        className={cn(
+          "transition-all duration-300",
+          "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6"
+        )}
+      />
+    </motion.div>
+
+    {/* Disabled overlay */}
+    {disabled && (
+      <div className="absolute inset-0 bg-secondary/10 rounded-full" />
+    )}
+
+    {/* Premium hover glow */}
+    {!disabled && (
+      <>
+        <div className="absolute inset-0 bg-primary/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 blur-xl" />
+        <div className="absolute inset-0 bg-primary/20 rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-md" />
+      </>
+    )}
+
+    {/* Active state indicator */}
+    {!disabled && (
+      <motion.div
+        className="absolute inset-0 border-2 border-primary/30 rounded-full opacity-0 group-hover:opacity-100"
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
+    )}
+  </motion.button>
+);
 
 const NavigationControls: React.FC<NavigationControlsProps> = ({
   currentIndex,
@@ -33,73 +133,13 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
             {/* Premium control group */}
             <div className="flex items-center gap-6 sm:gap-7 lg:gap-8">
               {/* Previous Button */}
-              <motion.button
+              <NavigationButton
                 onClick={onPrevious}
                 disabled={currentIndex === 0}
-                className={cn(
-                  "relative group touch-manipulation",
-                  "p-3 sm:p-3.5 lg:p-4 rounded-full",
-                  "transition-all duration-500 ease-out",
-                  "border-2 backdrop-blur-md shadow-lg",
-                  currentIndex === 0
-                    ? "bg-secondary/20 border-border/30 text-mutedForeground/50 cursor-not-allowed"
-                    : "bg-cardBg/80 border-border/50 text-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:shadow-xl hover:shadow-primary/20"
-                )}
-                whileHover={
-                  currentIndex !== 0
-                    ? {
-                        scale: 1.1,
-                        y: -2,
-                        rotateY: 15,
-                      }
-                    : {}
-                }
-                whileTap={currentIndex !== 0 ? { scale: 0.9 } : {}}
-                style={{
-                  transformStyle: "preserve-3d",
-                }}
-              >
-                {/* Inner gradient layer */}
-                <div
-                  className={cn(
-                    "absolute inset-1 rounded-full transition-all duration-500",
-                    currentIndex === 0
-                      ? "bg-transparent"
-                      : "bg-gradient-to-br from-foreground/5 to-transparent group-hover:from-primary/10 group-hover:to-primary/5"
-                  )}
-                />
-
-                {/* Icon with enhanced styling */}
-                <ChevronLeft
-                  className={cn(
-                    "relative z-10 transition-all duration-300",
-                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
-                    currentIndex !== 0 && "group-hover:scale-110"
-                  )}
-                />
-
-                {/* Disabled overlay */}
-                {currentIndex === 0 && (
-                  <div className="absolute inset-0 bg-secondary/10 rounded-full" />
-                )}
-
-                {/* Premium hover glow */}
-                {currentIndex !== 0 && (
-                  <>
-                    <div className="absolute inset-0 bg-primary/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 blur-xl" />
-                    <div className="absolute inset-0 bg-primary/20 rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-md" />
-                  </>
-                )}
-
-                {/* Active state indicator */}
-                {currentIndex !== 0 && (
-                  <motion.div
-                    className="absolute inset-0 border-2 border-primary/30 rounded-full opacity-0 group-hover:opacity-100"
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                )}
-              </motion.button>
+                icon={ChevronLeft}
+                rotateY={15}
+                iconDirection="left"
+              />
 
               {/* Modern separator with gradient */}
               <div className="relative">
@@ -108,73 +148,13 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
               </div>
 
               {/* Next Button */}
-              <motion.button
+              <NavigationButton
                 onClick={onNext}
                 disabled={currentIndex === total - 1}
-                className={cn(
-                  "relative group touch-manipulation",
-                  "p-3 sm:p-3.5 lg:p-4 rounded-full",
-                  "transition-all duration-500 ease-out",
-                  "border-2 backdrop-blur-md shadow-lg",
-                  currentIndex === total - 1
-                    ? "bg-secondary/20 border-border/30 text-mutedForeground/50 cursor-not-allowed"
-                    : "bg-cardBg/80 border-border/50 text-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:shadow-xl hover:shadow-primary/20"
-                )}
-                whileHover={
-                  currentIndex !== total - 1
-                    ? {
-                        scale: 1.1,
-                        y: -2,
-                        rotateY: -15,
-                      }
-                    : {}
-                }
-                whileTap={currentIndex !== total - 1 ? { scale: 0.9 } : {}}
-                style={{
-                  transformStyle: "preserve-3d",
-                }}
-              >
-                {/* Inner gradient layer */}
-                <div
-                  className={cn(
-                    "absolute inset-1 rounded-full transition-all duration-500",
-                    currentIndex === total - 1
-                      ? "bg-transparent"
-                      : "bg-gradient-to-br from-foreground/5 to-transparent group-hover:from-primary/10 group-hover:to-primary/5"
-                  )}
-                />
-
-                {/* Icon with enhanced styling */}
-                <ChevronRight
-                  className={cn(
-                    "relative z-10 transition-all duration-300",
-                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
-                    currentIndex !== total - 1 && "group-hover:scale-110"
-                  )}
-                />
-
-                {/* Disabled overlay */}
-                {currentIndex === total - 1 && (
-                  <div className="absolute inset-0 bg-secondary/10 rounded-full" />
-                )}
-
-                {/* Premium hover glow */}
-                {currentIndex !== total - 1 && (
-                  <>
-                    <div className="absolute inset-0 bg-primary/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 blur-xl" />
-                    <div className="absolute inset-0 bg-primary/20 rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-md" />
-                  </>
-                )}
-
-                {/* Active state indicator */}
-                {currentIndex !== total - 1 && (
-                  <motion.div
-                    className="absolute inset-0 border-2 border-primary/30 rounded-full opacity-0 group-hover:opacity-100"
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                )}
-              </motion.button>
+                icon={ChevronRight}
+                rotateY={-15}
+                iconDirection="right"
+              />
             </div>
 
             {/* Optional: Page indicator dots for mobile */}
