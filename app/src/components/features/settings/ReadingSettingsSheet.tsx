@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Paintbrush, RotateCcw } from "lucide-react";
-import { useReadingSettings } from "../context/ReadingContext";
+import { useReadingSettings } from "../../document-reading/fullscreen/context/ReadingContext";
 import FontFamilySelector from "./FontFamilySelector";
 import ThemeSelector from "./ThemeSelector";
 import CodeThemeSelector from "./CodeThemeSelector";
