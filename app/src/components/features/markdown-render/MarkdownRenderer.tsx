@@ -45,13 +45,16 @@ const CustomMarkdownRenderer: React.FC<CustomMarkdownRendererProps> = memo(
     lineHeight,
     letterSpacing,
   }) => {
-    const containerStyle: React.CSSProperties = {
-      fontFamily: fontFamily,
-      fontSize: fontSize !== undefined ? `${fontSize}` : undefined,
-      lineHeight: lineHeight !== undefined ? `${lineHeight}` : undefined,
-      letterSpacing:
-        letterSpacing !== undefined ? `${letterSpacing}px` : undefined,
-    };
+    const containerStyle: React.CSSProperties = useMemo(
+      () => ({
+        fontFamily: fontFamily,
+        fontSize: fontSize !== undefined ? `${fontSize}` : undefined,
+        lineHeight: lineHeight !== undefined ? `${lineHeight}` : undefined,
+        letterSpacing:
+          letterSpacing !== undefined ? `${letterSpacing}px` : undefined,
+      }),
+      [fontFamily, fontSize, lineHeight, letterSpacing]
+    );
 
     /**
      * 🧩 Custom component mapping for markdown elements
