@@ -4,7 +4,6 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { parseMarkdownIntoSections } from "@/services/section/parsing";
 import FullscreenCardView from "../features/content-reading/components/FullScreenCardView";
 import ThemeSelector from "../shared/theme/components/ThemeSelector";
-import { type MarkdownSection } from "@/services/section/parsing";
 import { useTheme } from "@/hooks";
 import MarkdownInput from "./MarkdownInput";
 import Hero from "./Hero";
@@ -13,8 +12,6 @@ import { FaGithub } from "react-icons/fa";
 const MDHDHomepage = () => {
   const [markdownInput, setMarkdownInput] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [sections, setSections] = useState<MarkdownSection[]>([]);
-  const [readSections, setReadSections] = useState(new Set<number>());
   const [isTyping, setIsTyping] = useState(false);
   const { currentTheme, setTheme } = useTheme();
 
@@ -28,36 +25,12 @@ const MDHDHomepage = () => {
 
   const handleStartReading = useCallback(() => {
     if (!markdownInput.trim()) return;
-    setSections(parsedSections);
-    setReadSections(new Set<number>([0]));
     setIsFullscreen(true);
-  }, [markdownInput, parsedSections]);
+  }, [markdownInput]);
 
   const handleExitFullscreen = useCallback(() => {
     setIsFullscreen(false);
   }, []);
-
-  const handleExitReading = useCallback(async () => {
-    // Handle any cleanup if needed
-  }, []);
-
-  const handleChangeSection = useCallback(
-    async (index: number) => {
-      const currentSection = sections[index];
-      if (currentSection) {
-        setReadSections((prev) => new Set(prev).add(index));
-      }
-      return true;
-    },
-    [sections]
-  );
-
-  const getSection = useCallback(
-    (index: number) => {
-      return sections[index] || null;
-    },
-    [sections]
-  );
 
   const wordCount = markdownInput
     .split(/\s+/)
@@ -75,11 +48,6 @@ const MDHDHomepage = () => {
   if (isFullscreen) {
     return (
       <FullscreenCardView
-        onExit={handleExitReading}
-        onChangeSection={handleChangeSection}
-        sections={sections}
-        getSection={getSection}
-        readSections={readSections}
         markdown={markdownInput}
         exitFullScreen={handleExitFullscreen}
       />

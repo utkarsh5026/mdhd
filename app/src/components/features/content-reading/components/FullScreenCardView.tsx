@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import CustomMarkdownRenderer from "@/components/features/markdown-render/MarkdownRenderer";
 import SectionsSheet from "./table-of-contents/SectionsSheet";
@@ -8,81 +8,43 @@ import {
   useReadingSettings,
   fontFamilyMap,
 } from "@/components/features/settings/context/ReadingContext";
-import type { MarkdownSection } from "@/services/section/parsing";
 import { Header, NavigationControls, DesktopProgressIndicator } from "./layout";
 import { useSwipeable } from "react-swipeable";
-import { useControls } from "@/components/features/content-reading/hooks/use-controls";
+import {
+  useControls,
+  useReading,
+} from "@/components/features/content-reading/hooks";
 
 interface FullscreenCardViewProps {
-  onExit: () => Promise<void>;
-  onChangeSection: (index: number) => Promise<boolean>;
-  sections: MarkdownSection[];
-  getSection: (index: number) => MarkdownSection | null;
-  readSections: Set<number>;
   markdown: string;
 }
 
 interface FullscreenCardContentProps extends FullscreenCardViewProps {
-  settingsOpen: boolean;
-  setSettingsOpen: (open: boolean) => void;
-  menuOpen: boolean;
-  setMenuOpen: (open: boolean) => void;
   exitFullScreen: () => void;
 }
 
 const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
-  settingsOpen,
-  setSettingsOpen,
-  menuOpen,
-  setMenuOpen,
   exitFullScreen,
-  onExit,
-  onChangeSection,
-  sections,
-  getSection,
-  readSections,
   markdown,
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef<number>(Date.now());
   const { settings } = useReadingSettings();
 
   const initializedRef = useRef(false);
 
-  /**
-   * 🔄 Smoothly transitions to a new section with a nice fade effect
-   * Tracks reading time and updates analytics too! 📊
-   */
-  const changeSection = useCallback(
-    async (newIndex: number) => {
-      await onExit();
-
-      setIsTransitioning(true);
-
-      setTimeout(async () => {
-        setCurrentIndex(newIndex);
-        setIsTransitioning(false);
-        await onChangeSection(newIndex);
-        startTimeRef.current = Date.now();
-      }, 200);
-    },
-    [onExit, onChangeSection]
-  );
-
-  const goToNext = useCallback(() => {
-    if (currentIndex < sections.length - 1) {
-      changeSection(currentIndex + 1);
-    }
-  }, [currentIndex, sections.length, changeSection]);
-
-  const goToPrevious = useCallback(() => {
-    if (currentIndex > 0) {
-      changeSection(currentIndex - 1);
-    }
-  }, [currentIndex, changeSection]);
+  const {
+    sections,
+    readSections,
+    currentIndex,
+    isTransitioning,
+    goToNext,
+    goToPrevious,
+    changeSection,
+    getSection,
+  } = useReading(markdown);
 
   const { isControlsVisible, handleInteraction, handleDoubleClick } =
     useControls({
@@ -112,14 +74,6 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
   });
 
   /**
-   * 📚 Initializes the reading when the markdown is loaded
-   */
-  useEffect(() => {
-    if (!markdown) return;
-    setCurrentIndex(0);
-  }, [markdown]);
-
-  /**
    * 📚 Initializes the reading when the sections are loaded
    */
   useEffect(() => {
@@ -135,11 +89,10 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
     return () => {
       if (initializedRef.current) {
         console.info("Will unmount");
-        onExit();
         initializedRef.current = false;
       }
     };
-  }, [onExit]);
+  }, []);
 
   /**
    * 📜 Scrolls back to the top when changing sections
@@ -265,18 +218,7 @@ const FullscreenCardView: React.FC<
     markdown: string;
     exitFullScreen: () => void;
   }
-> = ({
-  markdown,
-  onExit,
-  onChangeSection,
-  sections,
-  getSection,
-  readSections,
-  exitFullScreen,
-}) => {
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
+> = ({ markdown, exitFullScreen }) => {
   /**
    * 🔙 Handle browser back button to exit fullscreen
    * When user presses browser back button, we want to exit fullscreen
@@ -302,15 +244,6 @@ const FullscreenCardView: React.FC<
         {/* Content Area */}
         <FullscreenCardContent
           markdown={markdown}
-          settingsOpen={settingsOpen}
-          setSettingsOpen={setSettingsOpen}
-          menuOpen={menuOpen}
-          setMenuOpen={setMenuOpen}
-          onExit={onExit}
-          onChangeSection={onChangeSection}
-          sections={sections}
-          getSection={getSection}
-          readSections={readSections}
           exitFullScreen={exitFullScreen}
         />
       </div>
