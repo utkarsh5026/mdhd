@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
@@ -57,97 +57,100 @@ const CustomMarkdownRenderer: React.FC<CustomMarkdownRendererProps> = memo(
      * 🧩 Custom component mapping for markdown elements
      * Each element gets its own specialized renderer for consistent styling
      */
-    const components = {
-      /* 
+    const components = useMemo(
+      () => ({
+        /* 
     📚 Headings with different levels
     */
-      h1: (props: React.ComponentPropsWithoutRef<"h1">) => (
-        <HeadingRender level={1} {...props} />
-      ),
-      h2: (props: React.ComponentPropsWithoutRef<"h2">) => (
-        <HeadingRender level={2} {...props} />
-      ),
-      h3: (props: React.ComponentPropsWithoutRef<"h3">) => (
-        <HeadingRender level={3} {...props} />
-      ),
+        h1: (props: React.ComponentPropsWithoutRef<"h1">) => (
+          <HeadingRender level={1} {...props} />
+        ),
+        h2: (props: React.ComponentPropsWithoutRef<"h2">) => (
+          <HeadingRender level={2} {...props} />
+        ),
+        h3: (props: React.ComponentPropsWithoutRef<"h3">) => (
+          <HeadingRender level={3} {...props} />
+        ),
 
-      /* 
+        /* 
     📄 Paragraphs for text content
     */
-      p: (props: React.ComponentPropsWithoutRef<"p">) => (
-        <ParagraphRender {...props} style={containerStyle} />
-      ),
+        p: (props: React.ComponentPropsWithoutRef<"p">) => (
+          <ParagraphRender {...props} style={containerStyle} />
+        ),
 
-      /* 
+        /* 
     📋 Lists for organizing information
     */
-      ul: (props: React.ComponentPropsWithoutRef<"ul">) => (
-        <ListRender type="ul" props={{ ...props, style: containerStyle }} />
-      ),
-      ol: (props: React.ComponentPropsWithoutRef<"ol">) => (
-        <ListRender type="ol" props={{ ...props, style: containerStyle }} />
-      ),
-      li: (props: React.ComponentPropsWithoutRef<"li">) => (
-        <ListRender type="li" props={{ ...props, style: containerStyle }} />
-      ),
+        ul: (props: React.ComponentPropsWithoutRef<"ul">) => (
+          <ListRender type="ul" props={{ ...props, style: containerStyle }} />
+        ),
+        ol: (props: React.ComponentPropsWithoutRef<"ol">) => (
+          <ListRender type="ol" props={{ ...props, style: containerStyle }} />
+        ),
+        li: (props: React.ComponentPropsWithoutRef<"li">) => (
+          <ListRender type="li" props={{ ...props, style: containerStyle }} />
+        ),
 
-      /* 
+        /* 
     💬 Blockquotes for highlighting important text
     */
-      blockquote: (props: React.ComponentPropsWithoutRef<"blockquote">) => (
-        <BlockquoteRender {...props} style={containerStyle} />
-      ),
+        blockquote: (props: React.ComponentPropsWithoutRef<"blockquote">) => (
+          <BlockquoteRender {...props} style={containerStyle} />
+        ),
 
-      /* 
+        /* 
     💻 Code blocks with syntax highlighting
     */
-      code: (
-        props: React.ComponentPropsWithoutRef<"code"> & { inline?: boolean }
-      ) => <CodeRender {...props} />,
+        code: (
+          props: React.ComponentPropsWithoutRef<"code"> & { inline?: boolean }
+        ) => <CodeRender {...props} />,
 
-      /* 
+        /* 
     📊 Tables for structured data
     */
-      table: (props: React.ComponentPropsWithoutRef<"table">) => (
-        <TableRender type="table" props={props} />
-      ),
-      thead: (props: React.ComponentPropsWithoutRef<"thead">) => (
-        <TableRender type="thead" props={props} />
-      ),
-      tbody: (props: React.ComponentPropsWithoutRef<"tbody">) => (
-        <TableRender type="tbody" props={props} />
-      ),
-      tr: (props: React.ComponentPropsWithoutRef<"tr">) => (
-        <TableRender type="tr" props={props} />
-      ),
-      th: (props: React.ComponentPropsWithoutRef<"th">) => (
-        <TableRender type="th" props={props} />
-      ),
-      td: (props: React.ComponentPropsWithoutRef<"td">) => (
-        <TableRender type="td" props={props} />
-      ),
+        table: (props: React.ComponentPropsWithoutRef<"table">) => (
+          <TableRender type="table" props={props} />
+        ),
+        thead: (props: React.ComponentPropsWithoutRef<"thead">) => (
+          <TableRender type="thead" props={props} />
+        ),
+        tbody: (props: React.ComponentPropsWithoutRef<"tbody">) => (
+          <TableRender type="tbody" props={props} />
+        ),
+        tr: (props: React.ComponentPropsWithoutRef<"tr">) => (
+          <TableRender type="tr" props={props} />
+        ),
+        th: (props: React.ComponentPropsWithoutRef<"th">) => (
+          <TableRender type="th" props={props} />
+        ),
+        td: (props: React.ComponentPropsWithoutRef<"td">) => (
+          <TableRender type="td" props={props} />
+        ),
 
-      /* 
+        /* 
     ➖ Horizontal rule for section dividers
     */
-      hr: (props: React.ComponentPropsWithoutRef<"hr">) => (
-        <HorizontalRuleRender {...props} />
-      ),
+        hr: (props: React.ComponentPropsWithoutRef<"hr">) => (
+          <HorizontalRuleRender {...props} />
+        ),
 
-      /* 
+        /* 
     🔗 Links with special handling
     */
-      a: (props: React.ComponentPropsWithoutRef<"a">) => (
-        <LinkRender {...props}>{props.children}</LinkRender>
-      ),
+        a: (props: React.ComponentPropsWithoutRef<"a">) => (
+          <LinkRender {...props}>{props.children}</LinkRender>
+        ),
 
-      /* 
+        /* 
     🖼️ Images with optimized display
     */
-      img: (props: React.ComponentPropsWithoutRef<"img">) => (
-        <ImageRender {...props} />
-      ),
-    };
+        img: (props: React.ComponentPropsWithoutRef<"img">) => (
+          <ImageRender {...props} />
+        ),
+      }),
+      [containerStyle]
+    );
 
     return (
       <div
