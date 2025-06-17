@@ -8,7 +8,12 @@ import {
   useReadingSettings,
   fontFamilyMap,
 } from "@/components/features/settings/context/ReadingContext";
-import { Header, NavigationControls, DesktopProgressIndicator } from "./layout";
+import {
+  Header,
+  NavigationControls,
+  DesktopProgressIndicator,
+  LoadingState,
+} from "./layout";
 import { useSwipeable } from "react-swipeable";
 import {
   useControls,
@@ -30,10 +35,7 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const startTimeRef = useRef<number>(Date.now());
   const { settings } = useReadingSettings();
-
-  const initializedRef = useRef(false);
 
   const {
     sections,
@@ -44,6 +46,8 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
     goToPrevious,
     changeSection,
     getSection,
+    initializeReading,
+    resetReading,
   } = useReading(markdown);
 
   const { isControlsVisible, handleInteraction, handleDoubleClick } =
@@ -77,22 +81,12 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
    * 📚 Initializes the reading when the sections are loaded
    */
   useEffect(() => {
-    if (initializedRef.current) return;
-
-    const initializeReading = async () => {
-      initializedRef.current = true;
-      startTimeRef.current = Date.now();
-    };
-
     initializeReading();
 
     return () => {
-      if (initializedRef.current) {
-        console.info("Will unmount");
-        initializedRef.current = false;
-      }
+      resetReading();
     };
-  }, []);
+  }, [initializeReading, resetReading]);
 
   /**
    * 📜 Scrolls back to the top when changing sections
@@ -112,12 +106,7 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
   const currentSection = getSection(currentIndex);
 
   if (sections.length === 0 || !currentSection) {
-    return (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
-        <div className="animate-spin h-8 w-8 border-t-2 border-primary rounded-full mr-3"></div>
-        <span>Loading content...</span>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   const fontFamily = fontFamilyMap[settings.fontFamily];

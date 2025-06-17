@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { parseMarkdownIntoSections } from "@/services/section/parsing";
 import type { MarkdownSection } from "@/services/section/parsing";
 
@@ -58,22 +58,6 @@ export const useReading = (markdownInput: string): UseReadingReturn => {
 
   const startTimeRef = useRef<number>(Date.now());
   const initializedRef = useRef(false);
-
-  /**
-   * 📑 Parse markdown into sections
-   *
-   * ```ascii
-   *    📄 Input
-   *    ┌─────────┐
-   *    │ Markdown│ ➡️ Split into sections
-   *    │  Text   │
-   *    └─────────┘
-   * ```
-   */
-  const parsedSections = useMemo(() => {
-    if (!markdownInput.trim()) return [];
-    return parseMarkdownIntoSections(markdownInput);
-  }, [markdownInput]);
 
   /**
    * 📖 Mark section as read
@@ -182,12 +166,14 @@ export const useReading = (markdownInput: string): UseReadingReturn => {
    * ```
    */
   const initializeReading = useCallback(() => {
+    if (!markdownInput.trim()) return;
+    const parsedSections = parseMarkdownIntoSections(markdownInput);
     setSections(parsedSections);
     setReadSections(new Set([0]));
     setCurrentIndex(0);
     setIsInitialized(true);
     startTimeRef.current = Date.now();
-  }, [parsedSections]);
+  }, [markdownInput]);
 
   /**
    * 🔄 Reset reading state
@@ -208,28 +194,6 @@ export const useReading = (markdownInput: string): UseReadingReturn => {
     setIsTransitioning(false);
     initializedRef.current = false;
   }, []);
-
-  /**
-   * 🔄 Auto-initialize on markdown changes
-   *
-   * ```ascii
-   *    📄 Content
-   *    ┌─────────┐
-   *    │ Changes │ ➡️ Reset & Init
-   *    │ Detect  │
-   *    └─────────┘
-   * ```
-   */
-  useEffect(() => {
-    if (!markdownInput.trim()) {
-      resetReading();
-      return;
-    }
-
-    if (isInitialized) {
-      resetReading();
-    }
-  }, [markdownInput, isInitialized, resetReading]);
 
   return {
     sections,
