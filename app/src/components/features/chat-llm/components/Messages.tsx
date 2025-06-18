@@ -3,12 +3,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { RiLoader4Line } from "react-icons/ri";
 import { IoMdPerson } from "react-icons/io";
-import { ChatMessage } from "../store/chat-store";
+import type { ChatMessage, LLMProviderId } from "../types";
 
 interface MessagesProps {
   messages: ChatMessage[];
   isQueryLoading: boolean;
-  getProviderIcon: (providerId: string) => React.ReactNode;
+  getProviderIcon: (providerId: LLMProviderId) => React.ReactNode;
   messageEndRef: React.RefObject<HTMLDivElement>;
 }
 

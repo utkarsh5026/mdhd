@@ -7,22 +7,23 @@ import {
 import { cn } from "@/lib/utils";
 
 import { IoChevronDown, IoCheckmark } from "react-icons/io5";
+import type { LLMProvider, LLMProviderId } from "../types";
 
 interface ModelProviderProps {
   modelPopoverOpen: boolean;
   setModelPopoverOpen: (open: boolean) => void;
-  rag: any;
-  providers: any;
-  selectedProvider: string;
+  isInitialized: boolean;
+  providers: LLMProvider[];
+  selectedProvider: LLMProviderId;
   selectedModel: string;
-  handleModelSelect: (providerId: string, model: string) => void;
-  getProviderIcon: (providerId: string) => React.ReactNode;
+  handleModelSelect: (providerId: LLMProviderId, model: string) => void;
+  getProviderIcon: (providerId: LLMProviderId) => React.ReactNode;
 }
 
 const ModelProvider: React.FC<ModelProviderProps> = ({
   modelPopoverOpen,
   setModelPopoverOpen,
-  rag,
+  isInitialized,
   providers,
   selectedProvider,
   selectedModel,
@@ -35,7 +36,7 @@ const ModelProvider: React.FC<ModelProviderProps> = ({
         <Button
           variant="ghost"
           className="w-full justify-between h-9 text-xs rounded-2xl border-1 border-border bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/30"
-          disabled={!rag.isInitialized}
+          disabled={!isInitialized}
         >
           <div className="flex items-center gap-2">
             {getProviderIcon(selectedProvider)}
@@ -57,7 +58,7 @@ const ModelProvider: React.FC<ModelProviderProps> = ({
             {providers.map((provider) => (
               <div key={provider.id}>
                 <div className="flex items-center gap-2 mb-2">
-                  <provider.icon className="w-4 h-4 text-muted-foreground" />
+                  {getProviderIcon(provider.id as LLMProviderId)}
                   <span className="text-xs font-medium text-muted-foreground">
                     {provider.name}
                   </span>

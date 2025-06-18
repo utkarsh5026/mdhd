@@ -247,7 +247,6 @@ export const useUIState = () =>
     isQueryLoading: state.isQueryLoading,
   }));
 
-// Action hooks
 export const useChatActions = () =>
   useChatStore((state) => ({
     addMessage: state.addMessage,

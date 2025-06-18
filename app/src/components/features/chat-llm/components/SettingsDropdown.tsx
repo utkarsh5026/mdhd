@@ -9,17 +9,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { IoSettings, IoEye, IoEyeOff, IoSave, IoTrash } from "react-icons/io5";
-
-interface Provider {
-  id: string;
-  name: string;
-  icon?: React.ComponentType<any>;
-  description?: string;
-}
+import { LLMProviderId, LLMProvider } from "../types";
 
 interface SettingsDropdownProps {
-  providers: Provider[];
-  getProviderIcon: (providerId: string) => React.ReactNode;
+  providers: LLMProvider[];
+  getProviderIcon: (providerId: LLMProviderId) => React.ReactNode;
 }
 
 interface ApiKeys {
@@ -143,7 +137,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({
               {providers.map((provider) => (
                 <div key={provider.id} className="space-y-2">
                   <div className="flex items-center gap-2">
-                    {getProviderIcon(provider.id)}
+                    {getProviderIcon(provider.id as LLMProviderId)}
                     <span className="text-sm font-medium">{provider.name}</span>
                   </div>
 

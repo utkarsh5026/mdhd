@@ -14,28 +14,29 @@ import { cn } from "@/lib/utils";
 
 import { IoChevronDown, IoSearch } from "react-icons/io5";
 import type { MarkdownSection } from "@/services/section/parsing";
+import type { SeletctedSection } from "../types";
 
 interface SectionDropdownProps {
   sectionsDropdownOpen: boolean;
   setSectionsDropdownOpen: (open: boolean) => void;
-  rag: any;
-  selectedSections: string[];
+  selectedSections: SeletctedSection[];
   sectionsFilter: string;
   setSectionsFilter: (filter: string) => void;
   filteredSections: MarkdownSection[];
   handleSectionToggle: (sectionId: string) => void;
   currentSection: MarkdownSection | null;
+  isInitialized: boolean;
 }
 const SectionDropdown: React.FC<SectionDropdownProps> = ({
   sectionsDropdownOpen,
   setSectionsDropdownOpen,
-  rag,
   selectedSections,
   sectionsFilter,
   setSectionsFilter,
   filteredSections,
   handleSectionToggle,
   currentSection,
+  isInitialized,
 }) => {
   return (
     <DropdownMenu
@@ -46,7 +47,7 @@ const SectionDropdown: React.FC<SectionDropdownProps> = ({
         <Button
           variant="ghost"
           className="w-full justify-between h-9 text-xs rounded-2xl"
-          disabled={!rag.isInitialized}
+          disabled={!isInitialized}
         >
           <span className="text-xs truncate text-muted-foreground">
             {selectedSections.length === 0
@@ -82,7 +83,9 @@ const SectionDropdown: React.FC<SectionDropdownProps> = ({
               }}
             >
               <Checkbox
-                checked={selectedSections.includes(section.id)}
+                checked={selectedSections.some(
+                  (selectedSection) => selectedSection.id === section.id
+                )}
                 onChange={() => handleSectionToggle(section.id)}
                 className="mt-0.5"
               />
