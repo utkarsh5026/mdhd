@@ -124,7 +124,7 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 50, scale: 0.9 }}
         transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-        className="absolute bottom-0 left-0 right-0 z-50"
+        className="relative w-full z-50"
       >
         {/* Modern gradient background with sophisticated blur */}
         <div className="relative">

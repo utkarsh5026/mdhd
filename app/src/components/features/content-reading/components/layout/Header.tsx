@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Settings, List, LucideIcon } from "lucide-react";
+import { X, Settings, List, LucideIcon, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   onExit: () => void;
   onSettings: () => void;
   onMenu: () => void;
+  onChat: () => void;
   isVisible: boolean;
 }
 
@@ -119,6 +120,7 @@ const Header: React.FC<HeaderProps> = ({
   onExit,
   onSettings,
   onMenu,
+  onChat,
   isVisible,
 }) => (
   <AnimatePresence>
@@ -128,7 +130,7 @@ const Header: React.FC<HeaderProps> = ({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -50, scale: 0.9 }}
         transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-        className="absolute top-0 left-0 right-0 z-50"
+        className="relative w-full z-50"
       >
         {/* Modern gradient background with sophisticated blur */}
         <div className="relative">
@@ -145,6 +147,13 @@ const Header: React.FC<HeaderProps> = ({
             {/* Action Buttons - Right Side */}
             <div className="flex items-center gap-3 sm:gap-3.5 lg:gap-4">
               {/* Settings Button */}
+
+              <AnimatedButton
+                onClick={onChat}
+                icon={MessageCircle}
+                variant="primary"
+                animation={{ rotateZ: 180, rotateY: 180 }}
+              />
               <AnimatedButton
                 onClick={onSettings}
                 icon={Settings}

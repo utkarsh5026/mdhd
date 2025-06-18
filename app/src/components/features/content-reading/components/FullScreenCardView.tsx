@@ -19,6 +19,8 @@ import {
   useControls,
   useReading,
 } from "@/components/features/content-reading/hooks";
+import { RAGProvider } from "../../chat-llm/context/RagContext";
+import MDHDChatSidebar from "../../chat-llm/components/ChatBar";
 
 interface FullscreenCardViewProps {
   markdown: string;
@@ -34,6 +36,7 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
 }) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [chatSidebarVisible, setChatSidebarVisible] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { settings } = useReadingSettings();
 
@@ -54,6 +57,7 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
     useControls({
       goToNext,
       goToPrevious,
+      isChatSidebarVisible: chatSidebarVisible,
     });
 
   const swipeHandlers = useSwipeable({
@@ -113,90 +117,115 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
 
   return (
     <>
+      {/* Main Reading Area - adjusts when chat is visible */}
       <div
         className={cn(
-          "h-full overflow-y-auto bg-card",
-          isTransitioning ? "opacity-0" : "opacity-100",
-          "transition-opacity duration-200"
+          "h-full transition-all duration-300 ease-out relative",
+          chatSidebarVisible ? "ml-[33.333%]" : "ml-0"
         )}
-        ref={scrollRef}
       >
+        {/* Content Container */}
         <div
-          {...swipeHandlers}
-          onDoubleClick={handleDoubleClick}
-          className="h-full"
+          className={cn(
+            "h-full overflow-y-auto bg-card",
+            isTransitioning ? "opacity-0" : "opacity-100",
+            "transition-opacity duration-200"
+          )}
+          ref={scrollRef}
         >
-          <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24 h-auto">
-            <div className="max-w-2xl mx-auto rounded-2xl">
-              <div
-                key={currentIndex}
-                className="prose prose-lg prose-invert max-w-none"
-              >
-                <CustomMarkdownRenderer
-                  markdown={currentSection.content}
-                  className="fullscreen-card-content leading-relaxed"
-                  fontFamily={fontFamily}
-                />
+          <div
+            {...swipeHandlers}
+            onDoubleClick={handleDoubleClick}
+            className="h-full"
+          >
+            <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24 h-auto">
+              <div className="max-w-2xl mx-auto rounded-2xl">
+                <div
+                  key={currentIndex}
+                  className="prose prose-lg prose-invert max-w-none"
+                >
+                  <CustomMarkdownRenderer
+                    markdown={currentSection.content}
+                    className="fullscreen-card-content leading-relaxed"
+                    fontFamily={fontFamily}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Header - now positioned relative to main reading area */}
+        <div className="absolute top-0 left-0 right-0 z-50">
+          <Header
+            onChat={() => {
+              setChatSidebarVisible(true);
+              handleInteraction();
+            }}
+            onExit={() => {
+              exitFullScreen();
+            }}
+            onSettings={() => {
+              setSettingsOpen(true);
+              handleInteraction();
+            }}
+            onMenu={() => {
+              setMenuOpen(true);
+              handleInteraction();
+            }}
+            isVisible={isControlsVisible}
+          />
+        </div>
+
+        {/* Navigation controls - now positioned relative to main reading area */}
+        <div className="absolute bottom-0 left-0 right-0 z-50">
+          <NavigationControls
+            currentIndex={currentIndex}
+            total={sections.length}
+            onPrevious={() => {
+              goToPrevious();
+              handleInteraction();
+            }}
+            onNext={() => {
+              goToNext();
+              handleInteraction();
+            }}
+            isVisible={isControlsVisible}
+          />
+        </div>
+
+        {/* Desktop side progress - stays within main reading area */}
+        <DesktopProgressIndicator
+          currentIndex={currentIndex}
+          total={sections.length}
+          onSelectSection={(index) => handleSelectCard(index)}
+          sections={sections}
+          readSections={readSections}
+        />
+
+        {/* Sections Sheet - stays within main reading area */}
+        <SectionsSheet
+          currentIndex={currentIndex}
+          handleSelectCard={handleSelectCard}
+          menuOpen={menuOpen}
+          setMenuOpen={setMenuOpen}
+          sections={sections}
+          readSections={readSections}
+        />
+
+        {/* Reading Settings Sheet - stays within main reading area */}
+        <ReadingSettingsSheet
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+        />
       </div>
 
-      {/* Header */}
-      <Header
-        onExit={() => {
-          exitFullScreen();
-        }}
-        onSettings={() => {
-          setSettingsOpen(true);
-          handleInteraction();
-        }}
-        onMenu={() => {
-          setMenuOpen(true);
-          handleInteraction();
-        }}
-        isVisible={isControlsVisible}
-      />
-
-      {/* Navigation controls for mobile */}
-      <NavigationControls
-        currentIndex={currentIndex}
-        total={sections.length}
-        onPrevious={() => {
-          goToPrevious();
-          handleInteraction();
-        }}
-        onNext={() => {
-          goToNext();
-          handleInteraction();
-        }}
-        isVisible={isControlsVisible}
-      />
-
-      {/* Desktop side progress */}
-      <DesktopProgressIndicator
-        currentIndex={currentIndex}
-        total={sections.length}
-        onSelectSection={(index) => handleSelectCard(index)}
+      {/* Chat Sidebar - completely separate */}
+      <MDHDChatSidebar
+        isVisible={chatSidebarVisible}
+        onToggle={() => setChatSidebarVisible(!chatSidebarVisible)}
         sections={sections}
-        readSections={readSections}
-      />
-
-      {/* Swipe hint indicators for mobile */}
-
-      <SectionsSheet
-        currentIndex={currentIndex}
-        handleSelectCard={handleSelectCard}
-        menuOpen={menuOpen}
-        setMenuOpen={setMenuOpen}
-        sections={sections}
-        readSections={readSections}
-      />
-
-      <ReadingSettingsSheet
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
+        currentSection={currentSection}
       />
     </>
   );
@@ -228,15 +257,17 @@ const FullscreenCardView: React.FC<
   }, [exitFullScreen]);
 
   return (
-    <ReadingSettingsProvider>
-      <div className="fixed inset-0 z-50 bg-background text-foreground overflow-hidden">
-        {/* Content Area */}
-        <FullscreenCardContent
-          markdown={markdown}
-          exitFullScreen={exitFullScreen}
-        />
-      </div>
-    </ReadingSettingsProvider>
+    <RAGProvider>
+      <ReadingSettingsProvider>
+        <div className="fixed inset-0 z-50 bg-background text-foreground overflow-hidden">
+          {/* Content Area */}
+          <FullscreenCardContent
+            markdown={markdown}
+            exitFullScreen={exitFullScreen}
+          />
+        </div>
+      </ReadingSettingsProvider>
+    </RAGProvider>
   );
 };
 
