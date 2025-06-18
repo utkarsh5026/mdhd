@@ -104,6 +104,10 @@ export const useControls = ({
    */
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) {
+        return;
+      }
+
       switch (e.key) {
         case "ArrowLeft":
         case "ArrowUp":

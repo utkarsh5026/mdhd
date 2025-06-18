@@ -36,6 +36,8 @@ const MDHDChatSidebar: React.FC<MDHDChatSidebarProps> = ({
     googleApiKey: import.meta.env.VITE_GOOGLE_API_KEY,
   });
 
+  console.log(import.meta.env.VITE_OPENAI_API_KEY);
+
   const {
     isInitialized: llmInitialized,
     isLoading: llmLoading,
