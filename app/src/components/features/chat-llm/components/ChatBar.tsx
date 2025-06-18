@@ -12,6 +12,7 @@ import SectionDropdown from "./SectionDropdown";
 import SelectedSections from "./SelectedSections";
 import type { MarkdownSection } from "@/services/section/parsing";
 import Messages from "./Messages";
+import SettingsDropdown from "./SettingsDropdown";
 
 // Mock the RAG hook for demo
 const useRAG = () => {
@@ -323,14 +324,20 @@ ${
               <RiLoader4Line className="w-4 h-4 animate-spin text-muted-foreground" />
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggle}
-            className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-          >
-            <IoClose className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <SettingsDropdown
+              providers={providers}
+              getProviderIcon={getProviderIcon}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggle}
+              className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+            >
+              <IoClose className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Error Display */}
@@ -422,19 +429,116 @@ ${
                 }
                 className="text-sm rounded-2xl border-1 border-border bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/30"
               />
-              <Button
-                onClick={handleSendMessage}
-                disabled={
+              <motion.div
+                animate={{
+                  scale:
+                    !rag.isInitialized ||
+                    isQueryLoading ||
+                    !inputValue.trim() ||
+                    selectedSections.length === 0
+                      ? 0.95
+                      : 1,
+                }}
+                whileHover={
                   !rag.isInitialized ||
                   isQueryLoading ||
                   !inputValue.trim() ||
                   selectedSections.length === 0
+                    ? {}
+                    : {
+                        scale: 1.05,
+                        rotate: [0, -2, 2, 0],
+                      }
                 }
-                size="sm"
-                className="shrink-0 px-3 rounded-2xl border-1 border-border bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/30"
+                whileTap={
+                  !rag.isInitialized ||
+                  isQueryLoading ||
+                  !inputValue.trim() ||
+                  selectedSections.length === 0
+                    ? {}
+                    : { scale: 0.95 }
+                }
+                transition={{
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 17,
+                  rotate: { duration: 0.3 },
+                }}
               >
-                <IoSend className="w-4 h-4" />
-              </Button>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={
+                    !rag.isInitialized ||
+                    isQueryLoading ||
+                    !inputValue.trim() ||
+                    selectedSections.length === 0
+                  }
+                  size="sm"
+                  className={`
+                    shrink-0 px-3 rounded-2xl relative overflow-hidden group
+                    ${
+                      !rag.isInitialized ||
+                      isQueryLoading ||
+                      !inputValue.trim() ||
+                      selectedSections.length === 0
+                        ? "bg-muted/50 border border-border/50 text-muted-foreground/50 cursor-not-allowed"
+                        : "bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 border border-primary/40 text-primary hover:from-primary/30 hover:via-primary/50 hover:to-primary/30 hover:border-primary/60 hover:text-primary-foreground shadow-lg hover:shadow-primary/25"
+                    }
+                    transition-all duration-300 ease-out
+                    before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-primary/10 before:to-transparent
+                    before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700
+                    after:absolute after:inset-0 after:bg-gradient-to-r after:from-primary/5 after:to-primary/15 after:opacity-0 hover:after:opacity-100 after:transition-opacity after:duration-300
+                  `}
+                >
+                  <motion.div
+                    animate={
+                      isQueryLoading
+                        ? {
+                            rotate: 360,
+                            scale: [1, 1.1, 1],
+                          }
+                        : {}
+                    }
+                    transition={
+                      isQueryLoading
+                        ? {
+                            rotate: {
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "linear",
+                            },
+                            scale: {
+                              duration: 1,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            },
+                          }
+                        : {}
+                    }
+                  >
+                    <IoSend className="w-4 h-4 relative z-10" />
+                  </motion.div>
+
+                  {/* Animated glow effect */}
+                  {!rag.isInitialized ||
+                  isQueryLoading ||
+                  !inputValue.trim() ||
+                  selectedSections.length === 0 ? null : (
+                    <motion.div
+                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/20 to-primary/30 blur-md -z-10"
+                      animate={{
+                        opacity: [0.3, 0.6, 0.3],
+                        scale: [0.8, 1, 0.8],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    />
+                  )}
+                </Button>
+              </motion.div>
             </div>
           </div>
         </div>
