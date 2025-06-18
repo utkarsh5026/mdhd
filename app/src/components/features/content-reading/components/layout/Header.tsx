@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Settings, List } from "lucide-react";
+import { X, Settings, List, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
@@ -8,6 +8,112 @@ interface HeaderProps {
   onMenu: () => void;
   isVisible: boolean;
 }
+
+interface AnimatedButtonProps {
+  onClick: () => void;
+  icon: LucideIcon;
+  variant?: "danger" | "primary";
+  animation?: {
+    rotateZ?: number;
+    rotateY?: number;
+  };
+}
+
+const AnimatedButton: React.FC<AnimatedButtonProps> = ({
+  onClick,
+  icon: Icon,
+  variant = "primary",
+  animation = {},
+}) => {
+  const colors = {
+    danger: {
+      hover:
+        "hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400 hover:shadow-red-500/20",
+      gradient: "group-hover:from-red-500/10 group-hover:to-red-500/5",
+      glow: "bg-red-500/10",
+      glowStrong: "bg-red-500/20",
+      border: "border-red-500/30",
+    },
+    primary: {
+      hover:
+        "hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:shadow-primary/20",
+      gradient: "group-hover:from-primary/10 group-hover:to-primary/5",
+      glow: "bg-primary/10",
+      glowStrong: "bg-primary/20",
+      border: "border-primary/30",
+    },
+  };
+
+  const colorScheme = colors[variant];
+
+  return (
+    <motion.button
+      onClick={onClick}
+      className={cn(
+        "relative group touch-manipulation",
+        "p-3 sm:p-3.5 lg:p-4 rounded-full",
+        "transition-all duration-500 ease-out",
+        "border-2 backdrop-blur-md shadow-lg",
+        "bg-cardBg/80 border-border/50 text-foreground",
+        colorScheme.hover,
+        "hover:shadow-xl"
+      )}
+      whileHover={{
+        scale: 1.1,
+        y: -2,
+        ...animation,
+      }}
+      whileTap={{ scale: 0.9 }}
+      style={{
+        transformStyle: "preserve-3d",
+      }}
+    >
+      {/* Inner gradient layer */}
+      <div
+        className={cn(
+          "absolute inset-1 rounded-full transition-all duration-500",
+          "bg-gradient-to-br from-foreground/5 to-transparent",
+          colorScheme.gradient
+        )}
+      />
+
+      {/* Icon with enhanced styling */}
+      <Icon
+        className={cn(
+          "relative z-10 transition-all duration-300",
+          "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
+          "group-hover:scale-110"
+        )}
+      />
+
+      {/* Premium hover glow */}
+      <div
+        className={cn(
+          "absolute inset-0 rounded-full scale-150 opacity-0",
+          "group-hover:opacity-100 transition-all duration-700 blur-xl",
+          colorScheme.glow
+        )}
+      />
+      <div
+        className={cn(
+          "absolute inset-0 rounded-full scale-125 opacity-0",
+          "group-hover:opacity-100 transition-all duration-500 blur-md",
+          colorScheme.glowStrong
+        )}
+      />
+
+      {/* Active state indicator */}
+      <motion.div
+        className={cn(
+          "absolute inset-0 border-2 rounded-full opacity-0 group-hover:opacity-100",
+          colorScheme.border
+        )}
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
+    </motion.button>
+  );
+};
 
 const Header: React.FC<HeaderProps> = ({
   onExit,
@@ -29,98 +135,21 @@ const Header: React.FC<HeaderProps> = ({
           {/* Content container */}
           <div className="relative flex items-center justify-between p-4 sm:p-5 lg:p-6">
             {/* Exit Button - Left Side */}
-            <motion.button
+            <AnimatedButton
               onClick={onExit}
-              className={cn(
-                "relative group touch-manipulation",
-                "p-3 sm:p-3.5 lg:p-4 rounded-full",
-                "transition-all duration-500 ease-out",
-                "border-2 backdrop-blur-md shadow-lg",
-                "bg-cardBg/80 border-border/50 text-foreground",
-                "hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400",
-                "hover:shadow-xl hover:shadow-red-500/20"
-              )}
-              whileHover={{
-                scale: 1.1,
-                y: -2,
-                rotateZ: 90,
-              }}
-              whileTap={{ scale: 0.9 }}
-              style={{
-                transformStyle: "preserve-3d",
-              }}
-            >
-              {/* Inner gradient layer */}
-              <div className="absolute inset-1 rounded-full transition-all duration-500 bg-gradient-to-br from-foreground/5 to-transparent group-hover:from-red-500/10 group-hover:to-red-500/5" />
-
-              {/* Icon with enhanced styling */}
-              <X
-                className={cn(
-                  "relative z-10 transition-all duration-300",
-                  "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
-                  "group-hover:scale-110"
-                )}
-              />
-
-              {/* Premium hover glow */}
-              <div className="absolute inset-0 bg-red-500/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 blur-xl" />
-              <div className="absolute inset-0 bg-red-500/20 rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-md" />
-
-              {/* Active state indicator */}
-              <motion.div
-                className="absolute inset-0 border-2 border-red-500/30 rounded-full opacity-0 group-hover:opacity-100"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            </motion.button>
+              icon={X}
+              variant="danger"
+              animation={{ rotateZ: 90 }}
+            />
 
             {/* Action Buttons - Right Side */}
             <div className="flex items-center gap-3 sm:gap-3.5 lg:gap-4">
               {/* Settings Button */}
-              <motion.button
+              <AnimatedButton
                 onClick={onSettings}
-                className={cn(
-                  "relative group touch-manipulation",
-                  "p-3 sm:p-3.5 lg:p-4 rounded-full",
-                  "transition-all duration-500 ease-out",
-                  "border-2 backdrop-blur-md shadow-lg",
-                  "bg-cardBg/80 border-border/50 text-foreground",
-                  "hover:border-primary/50 hover:bg-primary/10 hover:text-primary",
-                  "hover:shadow-xl hover:shadow-primary/20"
-                )}
-                whileHover={{
-                  scale: 1.1,
-                  y: -2,
-                  rotateZ: 180,
-                }}
-                whileTap={{ scale: 0.9 }}
-                style={{
-                  transformStyle: "preserve-3d",
-                }}
-              >
-                {/* Inner gradient layer */}
-                <div className="absolute inset-1 rounded-full transition-all duration-500 bg-gradient-to-br from-foreground/5 to-transparent group-hover:from-primary/10 group-hover:to-primary/5" />
-
-                {/* Icon with enhanced styling */}
-                <Settings
-                  className={cn(
-                    "relative z-10 transition-all duration-300",
-                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
-                    "group-hover:scale-110"
-                  )}
-                />
-
-                {/* Premium hover glow */}
-                <div className="absolute inset-0 bg-primary/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 blur-xl" />
-                <div className="absolute inset-0 bg-primary/20 rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-md" />
-
-                {/* Active state indicator */}
-                <motion.div
-                  className="absolute inset-0 border-2 border-primary/30 rounded-full opacity-0 group-hover:opacity-100"
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              </motion.button>
+                icon={Settings}
+                animation={{ rotateZ: 180 }}
+              />
 
               {/* Modern separator */}
               <div className="relative">
@@ -129,50 +158,11 @@ const Header: React.FC<HeaderProps> = ({
               </div>
 
               {/* Menu Button */}
-              <motion.button
+              <AnimatedButton
                 onClick={onMenu}
-                className={cn(
-                  "relative group touch-manipulation",
-                  "p-3 sm:p-3.5 lg:p-4 rounded-full",
-                  "transition-all duration-500 ease-out",
-                  "border-2 backdrop-blur-md shadow-lg",
-                  "bg-cardBg/80 border-border/50 text-foreground",
-                  "hover:border-primary/50 hover:bg-primary/10 hover:text-primary",
-                  "hover:shadow-xl hover:shadow-primary/20"
-                )}
-                whileHover={{
-                  scale: 1.1,
-                  y: -2,
-                  rotateY: 180,
-                }}
-                whileTap={{ scale: 0.9 }}
-                style={{
-                  transformStyle: "preserve-3d",
-                }}
-              >
-                {/* Inner gradient layer */}
-                <div className="absolute inset-1 rounded-full transition-all duration-500 bg-gradient-to-br from-foreground/5 to-transparent group-hover:from-primary/10 group-hover:to-primary/5" />
-
-                {/* Icon with enhanced styling */}
-                <List
-                  className={cn(
-                    "relative z-10 transition-all duration-300",
-                    "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6",
-                    "group-hover:scale-110"
-                  )}
-                />
-
-                {/* Premium hover glow */}
-                <div className="absolute inset-0 bg-primary/10 rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-all duration-700 blur-xl" />
-                <div className="absolute inset-0 bg-primary/20 rounded-full scale-125 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-md" />
-
-                {/* Active state indicator */}
-                <motion.div
-                  className="absolute inset-0 border-2 border-primary/30 rounded-full opacity-0 group-hover:opacity-100"
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              </motion.button>
+                icon={List}
+                animation={{ rotateY: 180 }}
+              />
             </div>
 
             {/* Optional: Mobile breadcrumb indicator */}
