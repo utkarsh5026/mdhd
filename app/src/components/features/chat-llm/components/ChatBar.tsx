@@ -134,22 +134,6 @@ const useRAG = () => {
   };
 };
 
-interface ChatMessage {
-  id: string;
-  type: "user" | "assistant" | "system";
-  content: string;
-  timestamp: Date;
-  selectedSections?: string[];
-  model?: string;
-  provider?: string;
-  sources?: Array<{
-    sectionId: string;
-    sectionTitle: string;
-    excerpt: string;
-    relevanceScore: number;
-  }>;
-}
-
 interface MDHDChatSidebarProps {
   isVisible: boolean;
   onToggle: () => void;

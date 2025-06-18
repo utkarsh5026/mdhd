@@ -2,13 +2,16 @@ import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { RiLoader4Line } from "react-icons/ri";
+import { IoMdPerson } from "react-icons/io";
+import { ChatMessage } from "../store/chat-store";
 
 interface MessagesProps {
-  messages: any[];
+  messages: ChatMessage[];
   isQueryLoading: boolean;
   getProviderIcon: (providerId: string) => React.ReactNode;
   messageEndRef: React.RefObject<HTMLDivElement>;
 }
+
 const Messages: React.FC<MessagesProps> = ({
   messages,
   isQueryLoading,
@@ -23,29 +26,47 @@ const Messages: React.FC<MessagesProps> = ({
             key={message.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              "flex",
-              message.type === "user" ? "justify-end" : "justify-start"
-            )}
+            className={cn("flex w-full items-center")}
           >
             <div
               className={cn(
-                "max-w-[85%] rounded-2xl px-4 py-3 text-sm",
+                "rounded-2xl px-4 py-3 text-sm w-full",
                 message.type === "user"
-                  ? "bg-primary/10 text-primary-foreground backdrop-blur-2xl border-none"
+                  ? "bg-background/10 text-primary-foreground backdrop-blur-2xl border-none"
                   : message.type === "system"
                   ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
                   : "bg-muted"
               )}
             >
-              <p className="leading-relaxed whitespace-pre-wrap text-sm text-muted-foreground">
-                {message.content}
+              <p className="leading-relaxed whitespace-pre-wrap text-sm text-muted-foreground flex items-center justify-start gap-2">
+                <span className="flex items-center justify-center">
+                  {message.type === "user" && (
+                    <IoMdPerson className="w-3 h-3" />
+                  )}
+                </span>
+                <span>{message.content}</span>
               </p>
 
-              {/* Message metadata */}
-              {(message.type === "user" || message.type === "assistant") && (
+              {message.type === "user" && (
                 <div className="mt-3 flex items-center justify-between text-xs">
-                  <div className="flex items-start flex-col gap-1 text-muted-foreground">
+                  <div className="flex gap-1 text-muted-foreground">
+                    {message.selectedSections &&
+                      message.selectedSections.length > 0 &&
+                      message.selectedSections.map(({ title, id }) => (
+                        <Badge
+                          key={id}
+                          variant="secondary"
+                          className="text-xs text-muted-foreground rounded-2xl"
+                        >
+                          {title}
+                        </Badge>
+                      ))}
+                  </div>
+                </div>
+              )}
+              {message.type === "assistant" && (
+                <div className="mt-3 flex items-center justify-between text-xs">
+                  <div className="flex gap-1 text-muted-foreground">
                     {message.provider && message.model && (
                       <Badge
                         variant="outline"
@@ -77,14 +98,14 @@ const Messages: React.FC<MessagesProps> = ({
                       key={idx}
                       className="text-xs bg-background/50 rounded-lg p-2"
                     >
-                      <div className="font-medium mb-1">
-                        {source.sectionTitle}
-                      </div>
+                      <div className="font-medium mb-1">{source.title}</div>
                       <div className="text-muted-foreground mb-2">
                         {source.excerpt}
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        {Math.round(source.relevanceScore * 100)}% match
+                        {source.relevanceScore
+                          ? Math.round(source.relevanceScore * 100)
+                          : "No match"}
                       </Badge>
                     </div>
                   ))}
