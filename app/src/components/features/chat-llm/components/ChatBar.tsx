@@ -45,6 +45,7 @@ const MDHDChatSidebar: React.FC<MDHDChatSidebarProps> = ({
     messages,
     selectedProvider,
     selectedModel,
+    addMessage,
     addSystemMessage,
     availableProviders,
     streamMessage,
@@ -65,8 +66,7 @@ const MDHDChatSidebar: React.FC<MDHDChatSidebarProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null!);
 
-  // FIX: Debounced scroll only for complete messages
-  const scrollToBottomRef = useRef<NodeJS.Timeout>();
+  const scrollToBottomRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     // Clear existing timeout
     if (scrollToBottomRef.current) {
@@ -137,6 +137,13 @@ ${
     );
 
     try {
+      // Add the user message first
+      addMessage({
+        type: "user",
+        content: inputValue,
+        selectedSections: selectedSections,
+      });
+
       await streamMessage(inputValue, {
         sections: selectedSectionData,
         provider: selectedProvider,

@@ -22,6 +22,13 @@ export interface LLMQueryOptions {
   maxTokens?: number;
 }
 
+const generateMessageId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+};
+
 export const useLLM = (props: UseLLMProps) => {
   const [llmService, setLLMService] = useState<MDHDLLMService | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -68,7 +75,7 @@ export const useLLM = (props: UseLLMProps) => {
     (message: Omit<ChatMessage, "id" | "timestamp">) => {
       const newMessage: ChatMessage = {
         ...message,
-        id: Date.now().toString(),
+        id: generateMessageId(),
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, newMessage]);
