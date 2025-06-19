@@ -33,7 +33,7 @@ const Messages: React.FC<MessagesProps> = ({
               className={cn(
                 "rounded-2xl px-4 py-3 text-sm w-full max-w-full overflow-hidden",
                 message.type === "user"
-                  ? "bg-background/10 text-primary-foreground backdrop-blur-2xl border-none"
+                  ? "bg-background text-primary-foreground backdrop-blur-2xl border-none"
                   : message.type === "system"
                   ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
                   : "bg-muted"
@@ -44,12 +44,20 @@ const Messages: React.FC<MessagesProps> = ({
                   {message.type === "user" && (
                     <IoMdPerson className="w-3 h-3" />
                   )}
+                  {message.type === "assistant" && message.isStreaming && (
+                    <RiLoader4Line className="w-3 h-3 animate-spin text-primary" />
+                  )}
                 </span>
                 <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                   <ChatMarkdownRenderer
                     content={message.content}
                     className="text-inherit w-full max-w-full"
+                    isStreaming={message.isStreaming}
                   />
+                  {/* Add streaming cursor for better UX */}
+                  {message.isStreaming && message.content && (
+                    <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse" />
+                  )}
                 </div>
               </div>
 

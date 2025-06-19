@@ -77,6 +77,23 @@ export const useLLM = (props: UseLLMProps) => {
     []
   );
 
+  const updateMessage = useCallback((messageId: string, content: string) => {
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === messageId ? { ...msg, content } : msg))
+    );
+  }, []);
+
+  const setMessageStreamingState = useCallback(
+    (messageId: string, isStreaming: boolean) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, isStreaming } : msg
+        )
+      );
+    },
+    []
+  );
+
   const clearMessages = useCallback(() => {
     setMessages([]);
   }, []);
@@ -135,6 +152,68 @@ export const useLLM = (props: UseLLMProps) => {
     [isInitialized, llmService, addMessage, queryLLM]
   );
 
+  const streamMessage = useCallback(
+    async (content: string, options: LLMQueryOptions): Promise<ChatMessage> => {
+      if (!isInitialized || !llmService) {
+        throw new Error("LLM service not initialized");
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Create the assistant message placeholder
+        const assistantMessage = addMessage({
+          type: "assistant" as ChatMessageType,
+          content: "",
+          selectedSections: options.sections.map((s) => ({
+            id: s.id,
+            title: s.title,
+          })),
+          model: options.model,
+          provider: options.provider,
+          isStreaming: true,
+        });
+
+        let fullContent = "";
+
+        await llmService.streamQueryWithContext(
+          content,
+          {
+            sections: options.sections,
+            sources: [],
+            provider: options.provider,
+            model: options.model,
+            temperature: options.temperature || 0.7,
+          },
+          (chunk: string) => {
+            fullContent += chunk;
+            updateMessage(assistantMessage.id, fullContent);
+          }
+        );
+
+        // Mark streaming as complete
+        setMessageStreamingState(assistantMessage.id, false);
+
+        return assistantMessage;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to stream LLM response";
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      isInitialized,
+      llmService,
+      addMessage,
+      updateMessage,
+      setMessageStreamingState,
+    ]
+  );
+
   const updateProvider = useCallback(
     (providerId: LLMProviderId, model?: string) => {
       setSelectedProvider(providerId);
@@ -185,8 +264,11 @@ export const useLLM = (props: UseLLMProps) => {
     // Actions
     addMessage,
     addSystemMessage,
+    updateMessage,
+    setMessageStreamingState,
     clearMessages,
     sendMessage,
+    streamMessage,
     queryLLM,
     updateProvider,
 

@@ -46,8 +46,8 @@ const MDHDChatSidebar: React.FC<MDHDChatSidebarProps> = ({
     selectedProvider,
     selectedModel,
     addSystemMessage,
-    sendMessage,
     availableProviders,
+    streamMessage,
     updateProvider,
   } = useLLM({
     openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
@@ -114,7 +114,7 @@ ${
     );
 
     try {
-      await sendMessage(inputValue, {
+      await streamMessage(inputValue, {
         sections: selectedSectionData,
         provider: selectedProvider,
         model: selectedModel,

@@ -15,7 +15,7 @@ export class MDHDLLMService {
     {
       id: "openai",
       name: "OpenAI",
-      models: ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
+      models: ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
       description: "Powerful and versatile AI models",
     },
     {
@@ -153,5 +153,58 @@ Response:`);
     });
 
     return response;
+  }
+
+  async streamQueryWithContext(
+    query: string,
+    context: {
+      sections: MarkdownSection[];
+      sources: DocumentSource[];
+      provider: string;
+      model: string;
+      temperature?: number;
+    },
+    onChunk: (chunk: string) => void
+  ): Promise<void> {
+    const llm = this.getLLM(context.provider, context.model);
+
+    const contextText = context.sections
+      .map((section) => `## ${section.title}\n${section.content}`)
+      .join("\n\n");
+
+    const promptTemplate = PromptTemplate.fromTemplate(`
+You are an AI assistant helping users understand a markdown document. You have access to specific sections of the document.
+
+DOCUMENT SECTIONS:
+{context}
+
+RELEVANT EXCERPTS:
+{sources}
+
+USER QUESTION: {question}
+
+Please provide a helpful and accurate response based on the provided document sections. If the information isn't available in the given sections, clearly state that. Always reference specific sections when possible.
+
+Response:`);
+
+    const sourcesText = context.sources
+      .map((source) => `- ${source.sectionTitle}: ${source.excerpt}`)
+      .join("\n");
+
+    const chain = RunnableSequence.from([
+      promptTemplate,
+      llm,
+      new StringOutputParser(),
+    ]);
+
+    const stream = await chain.stream({
+      context: contextText,
+      sources: sourcesText,
+      question: query,
+    });
+
+    for await (const chunk of stream) {
+      onChunk(chunk);
+    }
   }
 }

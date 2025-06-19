@@ -12,6 +12,7 @@ import { toast } from "sonner";
 interface ChatMarkdownRendererProps {
   content: string;
   className?: string;
+  isStreaming?: boolean;
 }
 
 /**
@@ -21,9 +22,26 @@ interface ChatMarkdownRendererProps {
 const ChatMarkdownRenderer: React.FC<ChatMarkdownRendererProps> = ({
   content,
   className,
+  isStreaming = false,
 }) => {
   const { getCurrentThemeStyle } = useCodeThemeStore();
   const codeThemeStyle = getCurrentThemeStyle();
+
+  // Handle incomplete markdown during streaming
+  const safeContent = React.useMemo(() => {
+    if (!isStreaming) return content;
+
+    // For streaming, ensure we don't break markdown parsing
+    // Close any unclosed code blocks
+    let processedContent = content;
+    const codeBlockMatches = (content.match(/```/g) || []).length;
+    if (codeBlockMatches % 2 === 1) {
+      // Unclosed code block, add a temporary closing
+      processedContent += "\n```";
+    }
+
+    return processedContent;
+  }, [content, isStreaming]);
 
   const components = {
     // Headings - improved spacing for better readability
@@ -61,7 +79,7 @@ const ChatMarkdownRenderer: React.FC<ChatMarkdownRendererProps> = ({
       <li className="leading-relaxed py-0.5">{children}</li>
     ),
 
-    // Code - with syntax highlighting
+    // Code - with syntax highlighting and streaming awareness
     code: ({
       inline,
       className: codeClassName,
@@ -87,17 +105,19 @@ const ChatMarkdownRenderer: React.FC<ChatMarkdownRendererProps> = ({
           className="my-4 rounded-2xl overflow-x-auto relative"
           dir="ltr"
         >
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-0 right-0"
-            onClick={() => {
-              navigator.clipboard.writeText(String(children));
-              toast.success("Copied to clipboard");
-            }}
-          >
-            <Copy className="w-4 h-4" />
-          </Button>
+          {!isStreaming && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-0 right-0"
+              onClick={() => {
+                navigator.clipboard.writeText(String(children));
+                toast.success("Copied to clipboard");
+              }}
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+          )}
           <SyntaxHighlighter
             style={codeThemeStyle}
             language={language || "text"}
@@ -109,6 +129,7 @@ const ChatMarkdownRenderer: React.FC<ChatMarkdownRendererProps> = ({
               lineHeight: "1.5",
               borderRadius: "0.5rem",
               backgroundColor: "transparent",
+              opacity: isStreaming ? 0.8 : 1,
             }}
             wrapLongLines
             codeTagProps={{
@@ -187,7 +208,7 @@ const ChatMarkdownRenderer: React.FC<ChatMarkdownRendererProps> = ({
   return (
     <div className={cn("prose-chat text-inherit leading-relaxed", className)}>
       <ReactMarkdown components={components} remarkPlugins={[remarkGfm]}>
-        {content}
+        {safeContent}
       </ReactMarkdown>
     </div>
   );

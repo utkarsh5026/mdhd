@@ -25,6 +25,7 @@ export interface ChatMessage {
   model?: string;
   provider?: LLMProviderId;
   sources?: Array<SeletctedSection>;
+  isStreaming?: boolean;
 }
 
 export type DocumentSource = {
