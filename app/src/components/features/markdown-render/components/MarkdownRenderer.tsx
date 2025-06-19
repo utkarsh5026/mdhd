@@ -16,7 +16,7 @@ import {
 import type {
   ComponentSelection,
   ComponentType,
-} from "./services/component-service";
+} from "../services/component-service";
 import {
   CodeRender,
   TableRender,
@@ -25,7 +25,7 @@ import {
   BlockquoteRender,
   ListRender,
   ImageRender,
-} from "./components";
+} from "./renderers";
 
 interface InteractiveWrapperProps {
   componentType: ComponentType;
