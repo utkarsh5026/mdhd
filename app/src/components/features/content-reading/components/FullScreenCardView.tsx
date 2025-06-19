@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import CustomMarkdownRenderer from "@/components/features/markdown-render/MarkdownRenderer";
 import SectionsSheet from "./table-of-contents/SectionsSheet";
@@ -21,7 +21,9 @@ import {
 } from "@/components/features/content-reading/hooks";
 import { RAGProvider } from "../../chat-llm/context/RagContext";
 import MDHDChatSidebar from "../../chat-llm/components/ChatBar";
-
+import { AskDialog } from "../../chat-llm/components/ChatDialog";
+import { ComponentSelection } from "../../markdown-render/services/component-service";
+import { useSimpleChatStore } from "../../chat-llm/store/chat-store";
 interface FullscreenCardViewProps {
   markdown: string;
 }
@@ -40,6 +42,28 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const { settings } = useReadingSettings();
 
+  const setCurrentSection = useSimpleChatStore(
+    (state) => state.setCurrentSection
+  );
+  const openAskDialog = useSimpleChatStore((state) => state.openAskDialog);
+  const addComponentToChat = useSimpleChatStore(
+    (state) => state.addComponentToChat
+  );
+  const toggleVisibility = useSimpleChatStore(
+    (state) => state.toggleVisibility
+  );
+
+  const handleComponentAsk = useCallback(
+    (component: ComponentSelection) => {
+      openAskDialog(component);
+    },
+    [openAskDialog]
+  );
+
+  useEffect(() => {
+    toggleVisibility();
+  }, [toggleVisibility]);
+
   const {
     sections,
     readSections,
@@ -53,12 +77,28 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
     resetReading,
   } = useReading(markdown);
 
+  useEffect(() => {
+    console.log("currentIndex", currentIndex);
+    const section = getSection(currentIndex);
+    if (section) {
+      setCurrentSection(section.id, section.title);
+    }
+  }, [currentIndex, getSection, setCurrentSection]);
+
   const { isControlsVisible, handleInteraction, handleDoubleClick } =
     useControls({
       goToNext,
       goToPrevious,
       isChatSidebarVisible: chatSidebarVisible,
     });
+
+  const handleComponentAddToChat = useCallback(
+    (component: ComponentSelection) => {
+      addComponentToChat(component);
+      console.log(`Added ${component.type} to chat context`);
+    },
+    [addComponentToChat]
+  );
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (eventData) => {
@@ -148,6 +188,11 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
                     markdown={currentSection.content}
                     className="fullscreen-card-content leading-relaxed"
                     fontFamily={fontFamily}
+                    sectionId={currentSection.id}
+                    sectionTitle={currentSection.title}
+                    enableInteractions
+                    onComponentAsk={handleComponentAsk}
+                    onComponentAddToChat={handleComponentAddToChat}
                   />
                 </div>
               </div>
@@ -227,6 +272,8 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
         sections={sections}
         currentSection={currentSection}
       />
+
+      <AskDialog />
     </>
   );
 };

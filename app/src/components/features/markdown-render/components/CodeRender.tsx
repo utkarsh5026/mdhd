@@ -393,7 +393,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
               variant="ghost"
               size="sm"
               onClick={copyToClipboard}
-              className="h-8 px-2 transition-all duration-300"
+              className="h-8 px-2 transition-all duration-300 cursor-pointer"
               aria-label={copied ? "Copied!" : "Copy code"}
             >
               <div className="relative">
@@ -422,7 +422,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2"
+              className="h-8 px-2 cursor-pointer"
               aria-label="Open in dialog"
               onClick={() => setDialogOpen(true)}
             >
@@ -434,7 +434,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 px-2"
+                className="h-8 px-2 cursor-pointer"
                 aria-label={isOpen ? "Collapse code" : "Expand code"}
               >
                 {isOpen ? (
@@ -497,7 +497,7 @@ const ThemeSelector = ({
           variant="ghost"
           size={size === "small" ? "sm" : "icon"}
           className={cn(
-            "transition-colors",
+            "transition-colors cursor-pointer",
             size === "small" ? "h-8 px-3" : "p-2 h-10 w-10"
           )}
           aria-label="Select theme"

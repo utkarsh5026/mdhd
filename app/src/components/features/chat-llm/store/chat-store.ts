@@ -1,45 +1,41 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { MarkdownSection } from "@/services/section/parsing";
+import type { ComponentSelection } from "../../markdown-render/services/component-service";
 
 export type ChatMessageType = "user" | "assistant" | "system";
-
-export type SeletctedSection = {
-  id: string;
-  title: string;
-  excerpt?: string;
-  relevanceScore?: number;
-};
 
 export interface ChatMessage {
   id: string;
   type: ChatMessageType;
   content: string;
   timestamp: Date;
-  selectedSections?: SeletctedSection[];
+  selections?: ComponentSelection[]; // What was selected when asking
   model?: string;
   provider?: string;
-  sources?: Array<SeletctedSection>;
+  isStreaming?: boolean;
 }
 
-interface ChatState {
+interface SimpleChatState {
   // Chat messages
   messages: ChatMessage[];
   inputValue: string;
   isQueryLoading: boolean;
 
-  // Section management
-  selectedSections: string[];
-  sectionsFilter: string;
+  // Selected components for context
+  selectedComponents: ComponentSelection[];
+
+  // Current section info
+  currentSectionId: string;
+  currentSectionTitle: string;
 
   // Model/Provider selection
   selectedProvider: string;
   selectedModel: string;
 
   // UI state
-  sectionsDropdownOpen: boolean;
-  modelPopoverOpen: boolean;
   isVisible: boolean;
+  askDialogOpen: boolean;
+  currentAskComponent: ComponentSelection | null;
 
   // Actions
   addMessage: (message: ChatMessage) => void;
@@ -47,42 +43,46 @@ interface ChatState {
   setInputValue: (value: string) => void;
   setIsQueryLoading: (loading: boolean) => void;
 
-  // Section actions
-  toggleSection: (sectionId: string) => void;
-  removeSection: (sectionId: string) => void;
-  clearSelectedSections: () => void;
-  setSectionsFilter: (filter: string) => void;
-  autoSelectCurrentSection: (currentSection: MarkdownSection | null) => void;
+  // Component selection
+  addComponentToChat: (component: ComponentSelection) => void;
+  removeComponent: (componentId: string) => void;
+  clearComponents: () => void;
 
-  // Model/Provider actions
+  // Ask dialog
+  openAskDialog: (component: ComponentSelection) => void;
+  closeAskDialog: () => void;
+  askAboutComponent: (component: ComponentSelection, question: string) => void;
+
+  // Section management
+  setCurrentSection: (sectionId: string, sectionTitle: string) => void;
+
+  // Model/Provider
   setSelectedProvider: (provider: string) => void;
   setSelectedModel: (model: string) => void;
-  selectModel: (providerId: string, model: string) => void;
 
   // UI actions
-  setSectionsDropdownOpen: (open: boolean) => void;
-  setModelPopoverOpen: (open: boolean) => void;
   toggleVisibility: () => void;
   setVisibility: (visible: boolean) => void;
 
-  // Initialize with welcome message
-  initializeWelcomeMessage: (currentSection?: MarkdownSection | null) => void;
+  // Initialize welcome
+  initializeWelcome: () => void;
 }
 
-export const useChatStore = create<ChatState>()(
+export const useSimpleChatStore = create<SimpleChatState>()(
   devtools(
     persist(
       (set, get) => ({
         messages: [],
         inputValue: "",
         isQueryLoading: false,
-        selectedSections: [],
-        sectionsFilter: "",
+        selectedComponents: [],
+        currentSectionId: "",
+        currentSectionTitle: "",
         selectedProvider: "openai",
         selectedModel: "gpt-4o",
-        sectionsDropdownOpen: false,
-        modelPopoverOpen: false,
         isVisible: false,
+        askDialogOpen: false,
+        currentAskComponent: null,
 
         // Message actions
         addMessage: (message) =>
@@ -102,53 +102,96 @@ export const useChatStore = create<ChatState>()(
         setIsQueryLoading: (loading) =>
           set({ isQueryLoading: loading }, false, "setIsQueryLoading"),
 
-        // Section actions
-        toggleSection: (sectionId) =>
+        // Component selection
+        addComponentToChat: (component) =>
           set(
-            (state) => ({
-              selectedSections: state.selectedSections.includes(sectionId)
-                ? state.selectedSections.filter((id) => id !== sectionId)
-                : [...state.selectedSections, sectionId],
-            }),
+            (state) => {
+              // Don't add duplicates
+              const exists = state.selectedComponents.some(
+                (c) => c.id === component.id
+              );
+              if (exists) return state;
+
+              return {
+                selectedComponents: [...state.selectedComponents, component],
+                isVisible: true, // Auto-open chat when something is added
+              };
+            },
             false,
-            "toggleSection"
+            "addComponentToChat"
           ),
 
-        removeSection: (sectionId) =>
+        removeComponent: (componentId) =>
           set(
             (state) => ({
-              selectedSections: state.selectedSections.filter(
-                (id) => id !== sectionId
+              selectedComponents: state.selectedComponents.filter(
+                (c) => c.id !== componentId
               ),
             }),
             false,
-            "removeSection"
+            "removeComponent"
           ),
 
-        clearSelectedSections: () =>
-          set({ selectedSections: [] }, false, "clearSelectedSections"),
+        clearComponents: () =>
+          set({ selectedComponents: [] }, false, "clearComponents"),
 
-        setSectionsFilter: (filter) =>
-          set({ sectionsFilter: filter }, false, "setSectionsFilter"),
+        // Ask dialog
+        openAskDialog: (component) =>
+          set(
+            {
+              askDialogOpen: true,
+              currentAskComponent: component,
+              inputValue: `What does this ${component.type} do?`, // Default question
+            },
+            false,
+            "openAskDialog"
+          ),
 
-        autoSelectCurrentSection: (currentSection) => {
+        closeAskDialog: () =>
+          set(
+            {
+              askDialogOpen: false,
+              currentAskComponent: null,
+              inputValue: "",
+            },
+            false,
+            "closeAskDialog"
+          ),
+
+        askAboutComponent: (component, question) => {
           const state = get();
-          if (
-            currentSection &&
-            !state.selectedSections.includes(currentSection.id)
-          ) {
-            set(
-              (state) => ({
-                selectedSections: [
-                  currentSection.id,
-                  ...state.selectedSections,
-                ],
-              }),
-              false,
-              "autoSelectCurrentSection"
-            );
+
+          // Add user message
+          const userMessage: ChatMessage = {
+            id: `user-${Date.now()}`,
+            type: "user",
+            content: question,
+            timestamp: new Date(),
+            selections: [component],
+          };
+
+          state.addMessage(userMessage);
+
+          // Add component to context if not already there
+          const exists = state.selectedComponents.some(
+            (c) => c.id === component.id
+          );
+          if (!exists) {
+            state.addComponentToChat(component);
           }
+
+          // Close ask dialog and open main chat
+          state.closeAskDialog();
+          state.setVisibility(true);
         },
+
+        // Section management
+        setCurrentSection: (sectionId, sectionTitle) =>
+          set(
+            { currentSectionId: sectionId, currentSectionTitle: sectionTitle },
+            false,
+            "setCurrentSection"
+          ),
 
         // Model/Provider actions
         setSelectedProvider: (provider) =>
@@ -157,24 +200,7 @@ export const useChatStore = create<ChatState>()(
         setSelectedModel: (model) =>
           set({ selectedModel: model }, false, "setSelectedModel"),
 
-        selectModel: (providerId, model) =>
-          set(
-            {
-              selectedProvider: providerId,
-              selectedModel: model,
-              modelPopoverOpen: false,
-            },
-            false,
-            "selectModel"
-          ),
-
         // UI actions
-        setSectionsDropdownOpen: (open) =>
-          set({ sectionsDropdownOpen: open }, false, "setSectionsDropdownOpen"),
-
-        setModelPopoverOpen: (open) =>
-          set({ modelPopoverOpen: open }, false, "setModelPopoverOpen"),
-
         toggleVisibility: () =>
           set(
             (state) => ({ isVisible: !state.isVisible }),
@@ -185,39 +211,31 @@ export const useChatStore = create<ChatState>()(
         setVisibility: (visible) =>
           set({ isVisible: visible }, false, "setVisibility"),
 
-        // Initialize welcome message
-        initializeWelcomeMessage: (currentSection) => {
+        // Initialize welcome
+        initializeWelcome: () => {
           const state = get();
           if (state.messages.length === 0) {
             const welcomeMessage: ChatMessage = {
-              id: Date.now().toString(),
+              id: "welcome",
               type: "system",
-              content: `🤖 Welcome to MDHD AI Assistant! 
+              content: `🤖 Welcome to MDHD AI Assistant!
 
-Select sections and choose a model to start asking questions about your document.
+**How to use:**
+📄 Hover over any code block, table, list, or other content
+💬 Click "Ask" to ask a specific question about that component
+➕ Click "+" to add it to your chat context
 
-${
-  currentSection
-    ? `Currently reading: "${currentSection.title}"`
-    : "Ready to help!"
-}`,
+You can mix and match different components to ask complex questions!`,
               timestamp: new Date(),
             };
 
-            set(
-              (state) => ({
-                messages: [...state.messages, welcomeMessage],
-              }),
-              false,
-              "initializeWelcomeMessage"
-            );
+            state.addMessage(welcomeMessage);
           }
         },
       }),
       {
-        name: "mdhd-chat-store",
+        name: "mdhd-simple-chat-store",
         partialize: (state) => ({
-          // Only persist these values
           selectedProvider: state.selectedProvider,
           selectedModel: state.selectedModel,
           isVisible: state.isVisible,
@@ -225,45 +243,40 @@ ${
       }
     ),
     {
-      name: "mdhd-chat-store",
+      name: "mdhd-simple-chat-store",
     }
   )
 );
 
-export const useChatMessages = () => useChatStore((state) => state.messages);
-export const useInputValue = () => useChatStore((state) => state.inputValue);
-export const useSelectedSections = () =>
-  useChatStore((state) => state.selectedSections);
-export const useModelSelection = () =>
-  useChatStore((state) => ({
-    selectedProvider: state.selectedProvider,
-    selectedModel: state.selectedModel,
-  }));
-export const useUIState = () =>
-  useChatStore((state) => ({
-    sectionsDropdownOpen: state.sectionsDropdownOpen,
-    modelPopoverOpen: state.modelPopoverOpen,
-    isVisible: state.isVisible,
-    isQueryLoading: state.isQueryLoading,
+// Convenience hooks
+export const useChatMessages = () =>
+  useSimpleChatStore((state) => state.messages);
+export const useSelectedComponents = () =>
+  useSimpleChatStore((state) => state.selectedComponents);
+export const useChatVisibility = () =>
+  useSimpleChatStore((state) => state.isVisible);
+export const useAskDialog = () =>
+  useSimpleChatStore((state) => ({
+    isOpen: state.askDialogOpen,
+    component: state.currentAskComponent,
   }));
 
 export const useChatActions = () =>
-  useChatStore((state) => ({
+  useSimpleChatStore((state) => ({
     addMessage: state.addMessage,
     clearMessages: state.clearMessages,
     setInputValue: state.setInputValue,
     setIsQueryLoading: state.setIsQueryLoading,
-    toggleSection: state.toggleSection,
-    removeSection: state.removeSection,
-    clearSelectedSections: state.clearSelectedSections,
-    setSectionsFilter: state.setSectionsFilter,
-    autoSelectCurrentSection: state.autoSelectCurrentSection,
+    addComponentToChat: state.addComponentToChat,
+    removeComponent: state.removeComponent,
+    clearComponents: state.clearComponents,
+    openAskDialog: state.openAskDialog,
+    closeAskDialog: state.closeAskDialog,
+    askAboutComponent: state.askAboutComponent,
+    setCurrentSection: state.setCurrentSection,
     setSelectedProvider: state.setSelectedProvider,
     setSelectedModel: state.setSelectedModel,
-    selectModel: state.selectModel,
-    setSectionsDropdownOpen: state.setSectionsDropdownOpen,
-    setModelPopoverOpen: state.setModelPopoverOpen,
     toggleVisibility: state.toggleVisibility,
     setVisibility: state.setVisibility,
-    initializeWelcomeMessage: state.initializeWelcomeMessage,
+    initializeWelcome: state.initializeWelcome,
   }));
