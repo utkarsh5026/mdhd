@@ -236,8 +236,9 @@ ${
         )}
       </div>
 
-      <div className="flex-1 flex flex-col overflow-y-auto">
-        <ScrollArea className="flex-1 px-4">
+      {/* Messages Area - Scrollable */}
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full px-4">
           <Messages
             messages={messages}
             isQueryLoading={llmLoading}
@@ -245,171 +246,171 @@ ${
             messageEndRef={messagesEndRef}
           />
         </ScrollArea>
+      </div>
 
-        {/* Input Area */}
-        <div className="p-4 border-t border-border">
-          <div className="mb-4">
-            <div className="flex gap-2">
-              {/* Model Selection */}
-              <div className="flex-1">
-                <ModelProvider
-                  modelPopoverOpen={modelPopoverOpen}
-                  setModelPopoverOpen={setModelPopoverOpen}
-                  isInitialized={llmInitialized}
-                  providers={availableProviders}
-                  selectedProvider={selectedProvider}
-                  selectedModel={selectedModel}
-                  handleModelSelect={handleModelSelect}
-                  getProviderIcon={getProviderIcon}
-                />
-              </div>
+      {/* Input Area - Fixed at Bottom */}
+      <div className="p-4 border-t border-border">
+        <div className="mb-4">
+          <div className="flex gap-2">
+            {/* Model Selection */}
+            <div className="flex-1">
+              <ModelProvider
+                modelPopoverOpen={modelPopoverOpen}
+                setModelPopoverOpen={setModelPopoverOpen}
+                isInitialized={llmInitialized}
+                providers={availableProviders}
+                selectedProvider={selectedProvider}
+                selectedModel={selectedModel}
+                handleModelSelect={handleModelSelect}
+                getProviderIcon={getProviderIcon}
+              />
+            </div>
 
-              <div className="flex-1">
-                <SectionDropdown
-                  sectionsDropdownOpen={sectionsDropdownOpen}
-                  setSectionsDropdownOpen={setSectionsDropdownOpen}
-                  isInitialized={rag.isInitialized}
-                  selectedSections={selectedSections}
-                  sectionsFilter={sectionsFilter}
-                  setSectionsFilter={setSectionsFilter}
-                  filteredSections={filteredSections}
-                  handleSectionToggle={handleSectionToggle}
-                  currentSection={currentSection}
-                />
-              </div>
+            <div className="flex-1">
+              <SectionDropdown
+                sectionsDropdownOpen={sectionsDropdownOpen}
+                setSectionsDropdownOpen={setSectionsDropdownOpen}
+                isInitialized={rag.isInitialized}
+                selectedSections={selectedSections}
+                sectionsFilter={sectionsFilter}
+                setSectionsFilter={setSectionsFilter}
+                filteredSections={filteredSections}
+                handleSectionToggle={handleSectionToggle}
+                currentSection={currentSection}
+              />
             </div>
           </div>
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <Input
-                placeholder={
-                  !llmInitialized
-                    ? "Initializing..."
-                    : selectedSections.length === 0
-                    ? "Select sections first..."
-                    : "Ask about the selected sections..."
-                }
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && !e.shiftKey && handleSendMessage()
-                }
+        </div>
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <Input
+              placeholder={
+                !llmInitialized
+                  ? "Initializing..."
+                  : selectedSections.length === 0
+                  ? "Select sections first..."
+                  : "Ask about the selected sections..."
+              }
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={(e) =>
+                e.key === "Enter" && !e.shiftKey && handleSendMessage()
+              }
+              disabled={
+                !llmInitialized || llmLoading || selectedSections.length === 0
+              }
+              className="text-sm rounded-2xl border-1 border-border bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/30"
+            />
+            <motion.div
+              animate={{
+                scale:
+                  !llmInitialized ||
+                  llmLoading ||
+                  !inputValue.trim() ||
+                  selectedSections.length === 0
+                    ? 0.95
+                    : 1,
+              }}
+              whileHover={
+                !llmInitialized ||
+                llmLoading ||
+                !inputValue.trim() ||
+                selectedSections.length === 0
+                  ? {}
+                  : {
+                      scale: 1.05,
+                      rotate: [0, -2, 2, 0],
+                    }
+              }
+              whileTap={
+                !llmInitialized ||
+                llmLoading ||
+                !inputValue.trim() ||
+                selectedSections.length === 0
+                  ? {}
+                  : { scale: 0.95 }
+              }
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 17,
+                rotate: { duration: 0.3 },
+              }}
+            >
+              <Button
+                onClick={handleSendMessage}
                 disabled={
-                  !llmInitialized || llmLoading || selectedSections.length === 0
-                }
-                className="text-sm rounded-2xl border-1 border-border bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/30"
-              />
-              <motion.div
-                animate={{
-                  scale:
-                    !llmInitialized ||
-                    llmLoading ||
-                    !inputValue.trim() ||
-                    selectedSections.length === 0
-                      ? 0.95
-                      : 1,
-                }}
-                whileHover={
                   !llmInitialized ||
                   llmLoading ||
                   !inputValue.trim() ||
                   selectedSections.length === 0
-                    ? {}
-                    : {
-                        scale: 1.05,
-                        rotate: [0, -2, 2, 0],
-                      }
                 }
-                whileTap={
-                  !llmInitialized ||
-                  llmLoading ||
-                  !inputValue.trim() ||
-                  selectedSections.length === 0
-                    ? {}
-                    : { scale: 0.95 }
-                }
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 17,
-                  rotate: { duration: 0.3 },
-                }}
-              >
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={
+                size="sm"
+                className={`
+                  shrink-0 px-3 rounded-2xl relative overflow-hidden group
+                  ${
                     !llmInitialized ||
                     llmLoading ||
                     !inputValue.trim() ||
                     selectedSections.length === 0
+                      ? "bg-muted/50 border border-border/50 text-muted-foreground/50 cursor-not-allowed"
+                      : "bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 border border-primary/40 text-primary hover:from-primary/30 hover:via-primary/50 hover:to-primary/30 hover:border-primary/60 hover:text-primary-foreground shadow-lg hover:shadow-primary/25"
                   }
-                  size="sm"
-                  className={`
-                    shrink-0 px-3 rounded-2xl relative overflow-hidden group
-                    ${
-                      !llmInitialized ||
-                      llmLoading ||
-                      !inputValue.trim() ||
-                      selectedSections.length === 0
-                        ? "bg-muted/50 border border-border/50 text-muted-foreground/50 cursor-not-allowed"
-                        : "bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 border border-primary/40 text-primary hover:from-primary/30 hover:via-primary/50 hover:to-primary/30 hover:border-primary/60 hover:text-primary-foreground shadow-lg hover:shadow-primary/25"
-                    }
-                    transition-all duration-300 ease-out
-                    before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-primary/10 before:to-transparent
-                    before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700
-                    after:absolute after:inset-0 after:bg-gradient-to-r after:from-primary/5 after:to-primary/15 after:opacity-0 hover:after:opacity-100 after:transition-opacity after:duration-300
-                  `}
+                  transition-all duration-300 ease-out
+                  before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-primary/10 before:to-transparent
+                  before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700
+                  after:absolute after:inset-0 after:bg-gradient-to-r after:from-primary/5 after:to-primary/15 after:opacity-0 hover:after:opacity-100 after:transition-opacity after:duration-300
+                `}
+              >
+                <motion.div
+                  animate={
+                    llmLoading
+                      ? {
+                          rotate: 360,
+                          scale: [1, 1.1, 1],
+                        }
+                      : {}
+                  }
+                  transition={
+                    llmLoading
+                      ? {
+                          rotate: {
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "linear",
+                          },
+                          scale: {
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          },
+                        }
+                      : {}
+                  }
                 >
-                  <motion.div
-                    animate={
-                      llmLoading
-                        ? {
-                            rotate: 360,
-                            scale: [1, 1.1, 1],
-                          }
-                        : {}
-                    }
-                    transition={
-                      llmLoading
-                        ? {
-                            rotate: {
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "linear",
-                            },
-                            scale: {
-                              duration: 1,
-                              repeat: Infinity,
-                              ease: "easeInOut",
-                            },
-                          }
-                        : {}
-                    }
-                  >
-                    <IoSend className="w-4 h-4 relative z-10" />
-                  </motion.div>
+                  <IoSend className="w-4 h-4 relative z-10" />
+                </motion.div>
 
-                  {/* Animated glow effect */}
-                  {!llmInitialized ||
-                  llmLoading ||
-                  !inputValue.trim() ||
-                  selectedSections.length === 0 ? null : (
-                    <motion.div
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/20 to-primary/30 blur-md -z-10"
-                      animate={{
-                        opacity: [0.3, 0.6, 0.3],
-                        scale: [0.8, 1, 0.8],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
-                    />
-                  )}
-                </Button>
-              </motion.div>
-            </div>
+                {/* Animated glow effect */}
+                {!llmInitialized ||
+                llmLoading ||
+                !inputValue.trim() ||
+                selectedSections.length === 0 ? null : (
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/20 to-primary/30 blur-md -z-10"
+                    animate={{
+                      opacity: [0.3, 0.6, 0.3],
+                      scale: [0.8, 1, 0.8],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                )}
+              </Button>
+            </motion.div>
           </div>
         </div>
       </div>
