@@ -28,11 +28,13 @@ import { useSimpleChatStore } from "../../../chat-llm/store/chat-store";
 interface ChatDropdownProps {
   currentComponent: ComponentSelection;
   onAskWithQuestion: (question: string) => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const ChatDropdown: React.FC<ChatDropdownProps> = ({
   currentComponent,
   onAskWithQuestion,
+  onOpenChange,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -45,13 +47,17 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
   );
 
   // Focus input when dropdown opens
-  const handleDropdownOpenChange = useCallback((open: boolean) => {
-    setDropdownOpen(open);
-    if (!open) {
-      setShowChat(false);
-      setCustomQuestion("");
-    }
-  }, []);
+  const handleDropdownOpenChange = useCallback(
+    (open: boolean) => {
+      setDropdownOpen(open);
+      onOpenChange?.(open); // Notify parent component
+      if (!open) {
+        setShowChat(false);
+        setCustomQuestion("");
+      }
+    },
+    [onOpenChange]
+  );
 
   const questions = getQuestionsForComponentType(currentComponent.type);
 
@@ -188,7 +194,9 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
               {questions.map((question, index) => (
                 <DropdownMenuItem
                   key={index}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     onAskWithQuestion(question);
                     setShowChat(true);
                   }}

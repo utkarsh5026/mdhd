@@ -102,6 +102,12 @@ export const getQuestionsForComponentType = (
       "What are the key points here?",
       "Explain this in simpler terms",
     ],
+    section: [
+      "Summarize this entire section",
+      "What are the main topics covered here?",
+      "How does this section relate to the overall content?",
+      "What are the key takeaways from this section?",
+    ],
   };
 
   return [...(typeSpecificQuestions[componentType] || []), ...commonQuestions];

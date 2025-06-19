@@ -34,6 +34,7 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
   className,
 }) => {
   const [isHovering, setIsHovering] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Chat store hooks
@@ -171,6 +172,9 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
     (c) => c.content === currentComponent.content && c.type === componentType
   );
 
+  // Show buttons when hovering OR when dropdown is open
+  const showButtons = isHovering || isDropdownOpen;
+
   return (
     <div
       ref={contentRef}
@@ -186,7 +190,7 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
 
       {/* Interaction buttons */}
       <AnimatePresence>
-        {isHovering && (onAsk || onAddToChat) && (
+        {showButtons && (onAsk || onAddToChat) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -198,6 +202,7 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
               <ChatDropdown
                 currentComponent={currentComponent}
                 onAskWithQuestion={handleAskWithQuestion}
+                onOpenChange={setIsDropdownOpen}
               />
             )}
 
