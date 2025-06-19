@@ -27,6 +27,10 @@ const Messages: React.FC<MessagesProps> = ({
             key={message.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: message.isStreaming ? 0.1 : 0.3,
+              ease: "easeOut",
+            }}
             className={cn("flex w-full items-center max-w-full")}
           >
             <div
@@ -54,9 +58,13 @@ const Messages: React.FC<MessagesProps> = ({
                     className="text-inherit w-full max-w-full"
                     isStreaming={message.isStreaming}
                   />
-                  {/* Add streaming cursor for better UX */}
                   {message.isStreaming && message.content && (
-                    <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse" />
+                    <span
+                      className="inline-block w-2 h-4 bg-primary ml-1 opacity-75"
+                      style={{
+                        animation: "pulse 1.5s ease-in-out infinite",
+                      }}
+                    />
                   )}
                 </div>
               </div>

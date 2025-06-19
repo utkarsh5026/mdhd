@@ -65,11 +65,34 @@ const MDHDChatSidebar: React.FC<MDHDChatSidebarProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null!);
 
+  // FIX: Debounced scroll only for complete messages
+  const scrollToBottomRef = useRef<NodeJS.Timeout>();
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    // Clear existing timeout
+    if (scrollToBottomRef.current) {
+      clearTimeout(scrollToBottomRef.current);
+    }
 
-  // Auto-select current section when it changes
+    // Only scroll when streaming is complete or new message added
+    const lastMessage = messages[messages.length - 1];
+    const shouldScroll = !lastMessage?.isStreaming || messages.length === 1;
+
+    if (shouldScroll) {
+      scrollToBottomRef.current = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+        });
+      }, 100); // Small delay to prevent excessive scrolling
+    }
+
+    return () => {
+      if (scrollToBottomRef.current) {
+        clearTimeout(scrollToBottomRef.current);
+      }
+    };
+  }, [messages.length, messages[messages.length - 1]?.isStreaming]);
+
   useEffect(() => {
     if (
       currentSection &&
@@ -162,19 +185,6 @@ ${
         (selectedSection) => selectedSection.id === section.id
       )
     );
-  };
-
-  const getProviderIcon = (providerId: LLMProviderId) => {
-    switch (providerId) {
-      case "openai":
-        return <SiOpenai className="w-4 h-4" />;
-      case "anthropic":
-        return <SiAnthropic className="w-4 h-4" />;
-      case "google":
-        return <SiGoogle className="w-4 h-4" />;
-      default:
-        return <RiRobot2Fill className="w-4 h-4" />;
-    }
   };
 
   if (!isVisible) return null;
@@ -416,6 +426,19 @@ ${
       </div>
     </motion.div>
   );
+};
+
+const getProviderIcon = (providerId: LLMProviderId) => {
+  switch (providerId) {
+    case "openai":
+      return <SiOpenai className="w-4 h-4" />;
+    case "anthropic":
+      return <SiAnthropic className="w-4 h-4" />;
+    case "google":
+      return <SiGoogle className="w-4 h-4" />;
+    default:
+      return <RiRobot2Fill className="w-4 h-4" />;
+  }
 };
 
 export default MDHDChatSidebar;

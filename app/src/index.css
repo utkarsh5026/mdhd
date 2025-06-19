@@ -98,3 +98,18 @@
   display: none !important;
   width: 0 !important;
 }
+
+/* Add this for better streaming animation performance */
+.prose-chat * {
+  will-change: auto;
+}
+
+/* Improve animation smoothness */
+@keyframes gentlePulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+.streaming-cursor {
+  animation: gentlePulse 1.5s ease-in-out infinite;
+}
