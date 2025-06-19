@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { RiLoader4Line } from "react-icons/ri";
 import { IoMdPerson } from "react-icons/io";
+import ChatMarkdownRenderer from "./ChatMarkdownRenderer";
 import type { ChatMessage, LLMProviderId } from "../types";
 
 interface MessagesProps {
@@ -26,11 +27,11 @@ const Messages: React.FC<MessagesProps> = ({
             key={message.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn("flex w-full items-center")}
+            className={cn("flex w-full items-center max-w-full")}
           >
             <div
               className={cn(
-                "rounded-2xl px-4 py-3 text-sm w-full",
+                "rounded-2xl px-4 py-3 text-sm w-full max-w-full overflow-hidden",
                 message.type === "user"
                   ? "bg-background/10 text-primary-foreground backdrop-blur-2xl border-none"
                   : message.type === "system"
@@ -38,14 +39,19 @@ const Messages: React.FC<MessagesProps> = ({
                   : "bg-muted"
               )}
             >
-              <p className="leading-relaxed whitespace-pre-wrap text-sm text-muted-foreground flex items-center justify-start gap-2">
-                <span className="flex items-center justify-center">
+              <div className="leading-relaxed text-sm text-muted-foreground flex items-start justify-start gap-2 max-w-full">
+                <span className="flex items-center justify-center mt-1 flex-shrink-0">
                   {message.type === "user" && (
                     <IoMdPerson className="w-3 h-3" />
                   )}
                 </span>
-                <span>{message.content}</span>
-              </p>
+                <div className="flex-1 min-w-0 max-w-full overflow-hidden">
+                  <ChatMarkdownRenderer
+                    content={message.content}
+                    className="text-inherit w-full max-w-full"
+                  />
+                </div>
+              </div>
 
               {message.type === "user" && (
                 <div className="mt-3 flex items-center justify-between text-xs">

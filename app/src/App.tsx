@@ -4,6 +4,7 @@ import LoadingPage from "./components/utils/init/LoadingAnimation";
 import { useTheme } from "./hooks";
 import "./index.css";
 import { useEffect, useState } from "react";
+import { Toaster } from "sonner";
 
 const App = () => {
   const [showLanding, setShowLanding] = useState(true);
@@ -40,7 +41,12 @@ const App = () => {
     return <LandingPage onGetStarted={handleGetStarted} />;
   }
 
-  return <MDHDHomepage />;
+  return (
+    <>
+      <MDHDHomepage />
+      <Toaster />
+    </>
+  );
 };
 
 export default App;
