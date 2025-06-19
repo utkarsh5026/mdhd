@@ -210,7 +210,7 @@ const ChatMarkdownRenderer: React.FC<ChatMarkdownRendererProps> = ({
       ),
     }),
     [codeThemeStyle, isStreaming]
-  ); // Add dependencies
+  );
 
   return (
     <div className={cn("prose-chat text-inherit leading-relaxed", className)}>
