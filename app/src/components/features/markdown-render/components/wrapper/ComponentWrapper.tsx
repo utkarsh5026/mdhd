@@ -3,18 +3,14 @@ import type {
   ComponentType,
 } from "../../services/component-service";
 import { useState, useCallback, useRef } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { MessageSquare, Plus, ChevronDown, Send } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
+
+// Import chat store
+import { useSimpleChatStore } from "../../../chat-llm/store/chat-store";
+import ChatDropdown from "../chat-dropdown/ChatDropdown";
 
 interface ComponentWrapperProps {
   componentType: ComponentType;
@@ -27,68 +23,6 @@ interface ComponentWrapperProps {
   className?: string;
 }
 
-/**
- * Get predefined questions based on component type
- */
-const getQuestionsForComponentType = (
-  componentType: ComponentType
-): string[] => {
-  const commonQuestions = [
-    "Explain this in simple terms",
-    "What is the purpose of this?",
-    "How does this work?",
-    "Can you provide more context?",
-  ];
-
-  const typeSpecificQuestions: Record<ComponentType, string[]> = {
-    code: [
-      "What does this code do?",
-      "Explain this code step by step",
-      "Are there any potential issues with this code?",
-      "How can this code be improved?",
-      "What language/framework is this?",
-    ],
-    table: [
-      "What does this data show?",
-      "Explain the relationships in this table",
-      "What are the key insights from this data?",
-      "How should I interpret this table?",
-    ],
-    heading: [
-      "What is covered in this section?",
-      "Summarize this section",
-      "What are the main points here?",
-    ],
-    list: [
-      "Explain each item in this list",
-      "What's the significance of these points?",
-      "How are these items related?",
-      "Prioritize these items by importance",
-    ],
-    blockquote: [
-      "Who said this quote?",
-      "What's the context of this quote?",
-      "Explain the meaning of this quote",
-    ],
-    image: [
-      "Describe what's in this image",
-      "What does this image represent?",
-      "How does this image relate to the content?",
-    ],
-    paragraph: [
-      "Summarize this paragraph",
-      "What are the key points here?",
-      "Explain this in simpler terms",
-    ],
-  };
-
-  return [...(typeSpecificQuestions[componentType] || []), ...commonQuestions];
-};
-
-/**
- * Simple wrapper that adds hover interactions to any markdown component
- * Extracts content directly from the wrapped element when needed
- */
 const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
   componentType,
   children,
@@ -100,10 +34,15 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
   className,
 }) => {
   const [isHovering, setIsHovering] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [customQuestion, setCustomQuestion] = useState("");
   const contentRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Chat store hooks
+  const selectedComponents = useSimpleChatStore(
+    (state) => state.selectedComponents
+  );
+  const addComponentToChat = useSimpleChatStore(
+    (state) => state.addComponentToChat
+  );
 
   // Extract content from the wrapped element
   const extractContent = useCallback((): string => {
@@ -174,9 +113,12 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
         sectionTitle,
         metadata,
       };
-      onAsk?.(selection, question);
-      setDropdownOpen(false);
-      setCustomQuestion("");
+
+      // Add component to chat if not already there
+      const exists = selectedComponents.some((c) => c.id === selection.id);
+      if (!exists) {
+        addComponentToChat(selection);
+      }
     },
     [
       generateId,
@@ -186,26 +128,9 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
       sectionId,
       sectionTitle,
       metadata,
-      onAsk,
+      selectedComponents,
+      addComponentToChat,
     ]
-  );
-
-  const handleSubmitCustomQuestion = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      handleAskWithQuestion(customQuestion);
-    },
-    [customQuestion, handleAskWithQuestion]
-  );
-
-  const handleKeyPress = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleAskWithQuestion(customQuestion);
-      }
-    },
-    [customQuestion, handleAskWithQuestion]
   );
 
   const handleAddToChat = useCallback(() => {
@@ -218,7 +143,8 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
       sectionTitle,
       metadata,
     };
-    onAddToChat?.(selection);
+
+    addComponentToChat(selection);
   }, [
     generateId,
     componentType,
@@ -227,31 +153,30 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
     sectionId,
     sectionTitle,
     metadata,
-    onAddToChat,
+    addComponentToChat,
   ]);
 
-  // Focus input when dropdown opens
-  const handleDropdownOpenChange = useCallback((open: boolean) => {
-    setDropdownOpen(open);
-    if (open) {
-      // Focus the input after a small delay to ensure dropdown is rendered
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
-    } else {
-      setCustomQuestion("");
-    }
-  }, []);
+  // Create current component selection
+  const currentComponent: ComponentSelection = {
+    id: generateId(),
+    type: componentType,
+    title: generateTitle(),
+    content: extractContent(),
+    sectionId,
+    sectionTitle,
+    metadata,
+  };
 
-  const questions = getQuestionsForComponentType(componentType);
+  const isInContext = selectedComponents.some(
+    (c) => c.content === currentComponent.content && c.type === componentType
+  );
 
   return (
     <div
       ref={contentRef}
       className={cn(
         "relative group transition-all duration-200 rounded-2xl",
-        (isHovering || dropdownOpen) &&
-          "bg-transparent ring-1 ring-primary/20 border-none",
+        isHovering && "bg-transparent ring-1 ring-primary/20 border-none",
         className
       )}
       onMouseEnter={() => setIsHovering(true)}
@@ -261,7 +186,7 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
 
       {/* Interaction buttons */}
       <AnimatePresence>
-        {(isHovering || dropdownOpen) && (onAsk || onAddToChat) && (
+        {isHovering && (onAsk || onAddToChat) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -270,81 +195,33 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
             className="absolute -top-2 -right-2 flex gap-1 z-10"
           >
             {onAsk && (
-              <DropdownMenu
-                open={dropdownOpen}
-                onOpenChange={handleDropdownOpenChange}
-              >
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="h-7 px-2 py-0 shadow-md bg-background border border-border hover:bg-primary hover:text-primary-foreground rounded-full cursor-pointer"
-                  >
-                    <MessageSquare className="h-3 w-3 mr-1" />
-                    <ChevronDown className="h-2 w-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-72 max-h-96 overflow-hidden"
-                  side="bottom"
-                  sideOffset={5}
-                >
-                  {/* Custom Question Input */}
-                  <div className="p-3 border-b border-border">
-                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground mb-2 px-0">
-                      Ask about this {componentType}
-                    </DropdownMenuLabel>
-                    <form
-                      onSubmit={handleSubmitCustomQuestion}
-                      className="flex gap-2"
-                    >
-                      <Input
-                        ref={inputRef}
-                        value={customQuestion}
-                        onChange={(e) => setCustomQuestion(e.target.value)}
-                        placeholder="Type your question..."
-                        className="text-sm h-8 flex-1"
-                        onKeyPress={handleKeyPress}
-                      />
-                      <Button
-                        type="submit"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        disabled={!customQuestion.trim()}
-                      >
-                        <Send className="h-3 w-3" />
-                      </Button>
-                    </form>
-                  </div>
-
-                  {/* Predefined Questions */}
-                  <div className="max-h-60 overflow-y-auto">
-                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
-                      Quick questions
-                    </DropdownMenuLabel>
-                    {questions.map((question, index) => (
-                      <DropdownMenuItem
-                        key={index}
-                        onClick={() => handleAskWithQuestion(question)}
-                        className="text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground px-3 py-2"
-                      >
-                        {question}
-                      </DropdownMenuItem>
-                    ))}
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <ChatDropdown
+                currentComponent={currentComponent}
+                onAskWithQuestion={handleAskWithQuestion}
+              />
             )}
 
             {onAddToChat && (
               <Button
                 size="sm"
                 variant="secondary"
-                className="h-7 w-7 p-0 shadow-md bg-background border border-border hover:bg-green-600 hover:text-white rounded-full cursor-pointer"
+                className={cn(
+                  "h-7 w-7 p-0 shadow-md border border-border rounded-full cursor-pointer transition-colors",
+                  isInContext
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800"
+                    : "bg-background hover:bg-green-600 hover:text-white"
+                )}
                 onClick={handleAddToChat}
+                disabled={isInContext}
+                title={
+                  isInContext ? "Already in context" : "Add to chat context"
+                }
               >
-                <Plus className="h-3 w-3" />
+                {isInContext ? (
+                  <Sparkles className="h-3 w-3" />
+                ) : (
+                  <Plus className="h-3 w-3" />
+                )}
               </Button>
             )}
           </motion.div>
