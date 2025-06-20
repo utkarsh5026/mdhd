@@ -1,33 +1,43 @@
 import { useState } from "react";
 import { ComponentSelection } from "../../services/component-service";
-import { useSimpleChatStore } from "../../../chat-llm/store/chat-store";
+import { useEnhancedChatStore } from "../../../chat-llm/store/chat-store";
 import { ChatMessage } from "../../../chat-llm/store/chat-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 
-const ChatInput: React.FC<{
+interface ChatInputProps {
   currentComponent: ComponentSelection;
   onQuestionSubmit: (question: string) => void;
-}> = ({ currentComponent, onQuestionSubmit }) => {
+  variant?: "default" | "chat";
+}
+
+const ChatInput: React.FC<ChatInputProps> = ({
+  currentComponent,
+  onQuestionSubmit,
+  variant = "default",
+}) => {
   const [localQuestion, setLocalQuestion] = useState("");
-  const selectedComponents = useSimpleChatStore(
-    (state) => state.selectedComponents
+  const selectedComponents = useEnhancedChatStore(
+    (state) => state.getActiveConversation()?.selectedComponents
   );
-  const addComponentToChat = useSimpleChatStore(
-    (state) => state.addComponentToChat
+  const addComponentToChat = useEnhancedChatStore(
+    (state) => state.addComponentToConversation
   );
-  const addMessage = useSimpleChatStore((state) => state.addMessage);
-  const setIsQueryLoading = useSimpleChatStore(
+  const addMessage = useEnhancedChatStore((state) => state.addMessage);
+  const setIsQueryLoading = useEnhancedChatStore(
     (state) => state.setIsQueryLoading
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!localQuestion.trim()) return;
 
     // Add component to context if not already there
-    const exists = selectedComponents.some((c) => c.id === currentComponent.id);
+    const exists = selectedComponents?.some(
+      (c) => c.id === currentComponent.id
+    );
     if (!exists) {
       addComponentToChat(currentComponent);
     }
@@ -84,25 +94,37 @@ ${currentComponent.content.slice(0, 200)}...
     }
   };
 
+  const containerClass =
+    variant === "chat" ? "p-3 border-t border-border bg-muted/30" : "";
+
+  const inputClass =
+    variant === "chat"
+      ? "text-sm h-8 flex-1 border-none font-cascadia-code focus-visible:border-none"
+      : "text-sm h-8 flex-1 border-none font-cascadia-code focus-visible:border-none rounded-2xl focus-visible:ring-0 focus-visible:ring-offset-0";
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-3 border-t border-border bg-muted/30"
-    >
+    <form onSubmit={handleSubmit} className={containerClass}>
       <div className="flex gap-2">
         <Input
           value={localQuestion}
           onChange={(e) => setLocalQuestion(e.target.value)}
-          placeholder="Ask about this component..."
-          className="text-sm h-8 flex-1"
+          placeholder={
+            variant === "chat"
+              ? "Ask about this component..."
+              : "Type your question..."
+          }
+          className={inputClass}
           onKeyPress={handleKeyPress}
           autoFocus
         />
         <Button
           type="submit"
           size="sm"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 rounded-full"
           disabled={!localQuestion.trim()}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
         >
           <Send className="h-3 w-3" />
         </Button>

@@ -1,10 +1,11 @@
-import { useSimpleChatStore } from "../../../chat-llm/store/chat-store";
+import { useEnhancedChatStore } from "../../../chat-llm/store/chat-store";
 import { ComponentSelection } from "../../services/component-service";
 import { MessageCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { getComponentIcon, getComponentColorScheme } from "./utils";
 import { Trash2 } from "lucide-react";
+import ChatMarkdownRenderer from "@/components/features/chat-llm/components/ChatMarkdownRenderer";
 
 interface DropdownChatMessagesProps {
   currentComponent: ComponentSelection;
@@ -13,12 +14,14 @@ interface DropdownChatMessagesProps {
 const DropdownChatMessages: React.FC<DropdownChatMessagesProps> = ({
   currentComponent,
 }) => {
-  const messages = useSimpleChatStore((state) => state.messages);
-  const isQueryLoading = useSimpleChatStore((state) => state.isQueryLoading);
+  const messages = useEnhancedChatStore(
+    (state) => state.getActiveConversation()?.messages
+  );
+  const isQueryLoading = useEnhancedChatStore((state) => state.isQueryLoading);
 
   // Filter messages that are relevant to this component or general conversation
   const relevantMessages = messages
-    .filter(
+    ?.filter(
       (message) =>
         message.type === "system" ||
         message.selections?.some((sel) => sel.id === currentComponent.id) ||
@@ -26,7 +29,7 @@ const DropdownChatMessages: React.FC<DropdownChatMessagesProps> = ({
     )
     .slice(-3); // Show last 3 relevant messages
 
-  if (relevantMessages.length === 0 && !isQueryLoading) {
+  if (relevantMessages?.length === 0 && !isQueryLoading) {
     return (
       <div className="p-3 text-center text-muted-foreground text-sm">
         <MessageCircle className="w-6 h-6 mx-auto mb-2 opacity-50" />
@@ -38,7 +41,7 @@ const DropdownChatMessages: React.FC<DropdownChatMessagesProps> = ({
   return (
     <ScrollArea className="max-h-60 p-2">
       <div className="space-y-3">
-        {relevantMessages.map((message) => (
+        {relevantMessages?.map((message) => (
           <div key={message.id} className="space-y-1">
             <div
               className={cn(
@@ -50,7 +53,7 @@ const DropdownChatMessages: React.FC<DropdownChatMessagesProps> = ({
                   : "bg-secondary text-secondary-foreground mr-4"
               )}
             >
-              <div className="whitespace-pre-wrap">{message.content}</div>
+              <ChatMarkdownRenderer content={message.content} />
 
               {/* Show what was asked about for user messages */}
               {message.type === "user" && message.selections && (

@@ -23,7 +23,7 @@ import {
 } from "./utils";
 import DropdownChatMessages from "./DropdownMessages";
 import ChatInput from "./ChatInput";
-import { useSimpleChatStore } from "../../../chat-llm/store/chat-store";
+import { useEnhancedChatStore } from "../../../chat-llm/store/chat-store";
 
 interface ChatDropdownProps {
   currentComponent: ComponentSelection;
@@ -42,8 +42,8 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Chat store hooks
-  const selectedComponents = useSimpleChatStore(
-    (state) => state.selectedComponents
+  const currentAskComponent = useEnhancedChatStore(
+    (state) => state.currentAskComponent
   );
 
   // Focus input when dropdown opens
@@ -62,10 +62,9 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
   const questions = getQuestionsForComponentType(currentComponent.type);
 
   // Check if this component is already in context
-  const isInContext = selectedComponents.some(
-    (c) =>
-      c.content === currentComponent.content && c.type === currentComponent.type
-  );
+  const isInContext =
+    currentAskComponent?.content === currentComponent.content &&
+    currentAskComponent?.type === currentComponent.type;
 
   return (
     <DropdownMenu open={dropdownOpen} onOpenChange={handleDropdownOpenChange}>
