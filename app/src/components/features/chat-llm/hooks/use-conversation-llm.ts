@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLLM } from "./use-llm";
-import { useEnhancedChatStore } from "../store/chat-store";
+import {
+  useActiveConversation,
+  useConversationStore,
+} from "../store/conversation-store";
 import type { MarkdownSection } from "@/services/section/parsing";
-import type { ComponentSelection } from "../../markdown-render/services/component-service";
 import type { LLMProviderId } from "../types";
+import type { ComponentSelection } from "../../markdown-render/types";
+import useComponent from "./use-component";
+import { useMessageActions } from "./use-messages";
 
 /**
  * Enhanced LLM integration that bridges the LLM service with conversation management
@@ -22,7 +27,18 @@ export const useConversationLLM = (llmConfig: {
   const [currentStreamingConversation, setCurrentStreamingConversation] =
     useState<string | null>(null);
 
-  // LLM service hooks
+  const createConversation = useConversationStore(
+    (state) => state.createConversation
+  );
+  const getConversation = useConversationStore(
+    (state) => state.getConversation
+  );
+
+  const activeConversation = useActiveConversation();
+  const { addComponentToConversation } = useComponent();
+  const { addMessage, setMessageStreaming } = useMessageActions();
+  const [isQueryLoading, setIsQueryLoading] = useState(false);
+
   const {
     selectedProvider,
     selectedModel,
@@ -34,17 +50,6 @@ export const useConversationLLM = (llmConfig: {
     error,
     isProviderModelAvailable,
   } = useLLM(llmConfig);
-
-  // Chat store hooks - get all the actions we need
-  const {
-    addMessage,
-    setMessageStreaming,
-    setIsQueryLoading,
-    addComponentToConversation,
-    createConversation,
-    getActiveConversation,
-    getConversation,
-  } = useEnhancedChatStore();
 
   /**
    * Convert ComponentSelection to MarkdownSection for LLM processing
@@ -118,20 +123,17 @@ Please provide a helpful response based on the provided content.`;
         throw new Error("LLM service not initialized");
       }
 
-      // Determine target conversation
       let targetConversationId = conversationId;
 
       if (!targetConversationId && options?.createNewIfNeeded) {
-        // Create new conversation
         targetConversationId = createConversation(
           options.conversationTitle || `Chat: ${message.slice(0, 30)}...`,
           options.components?.[0]
         );
 
-        // Add additional components if provided
         if (options.components && options.components.length > 1) {
           options.components.slice(1).forEach((component) => {
-            addComponentToConversation(component, targetConversationId);
+            addComponentToConversation(component, targetConversationId!);
           });
         }
       }
@@ -154,12 +156,13 @@ Please provide a helpful response based on the provided content.`;
         // Add user message to conversation
         const userMessageId = `msg_${Date.now()}_${Math.random()
           .toString(36)
-          .substr(2, 9)}`;
+          .substring(2, 9)}`;
         addMessage(
           {
             id: userMessageId,
             type: "user",
             content: message,
+            timestamp: new Date(),
             selections: options?.components,
           },
           targetConversationId
@@ -168,12 +171,13 @@ Please provide a helpful response based on the provided content.`;
         // Create assistant message placeholder
         const assistantMessageId = `msg_${Date.now() + 1}_${Math.random()
           .toString(36)
-          .substr(2, 9)}`;
+          .substring(2, 9)}`;
         addMessage(
           {
             id: assistantMessageId,
             type: "assistant",
             content: "",
+            timestamp: new Date(),
             isStreaming: true,
             model: selectedModel,
             provider: selectedProvider,
@@ -225,15 +229,14 @@ Please provide a helpful response based on the provided content.`;
       createConversation,
       addComponentToConversation,
       getConversation,
-      addMessage,
-      setIsQueryLoading,
-      setMessageStreaming,
       selectedProvider,
       selectedModel,
       convertComponentsToSections,
       generateContextualPrompt,
       streamMessage,
       isInitialized,
+      addMessage,
+      setMessageStreaming,
     ]
   );
 
@@ -247,7 +250,6 @@ Please provide a helpful response based on the provided content.`;
       question: string,
       conversationId?: string
     ): Promise<string> => {
-      // If no conversation specified, create a new one focused on this component
       const targetConversationId =
         conversationId ||
         createConversation(
@@ -255,14 +257,10 @@ Please provide a helpful response based on the provided content.`;
           component
         );
 
-      // Add component to conversation if not already there
       addComponentToConversation(component, targetConversationId);
-
-      // Send the question
       await sendMessageToConversation(question, targetConversationId, {
         components: [component],
       });
-
       return targetConversationId;
     },
     [sendMessageToConversation, createConversation, addComponentToConversation]
@@ -274,8 +272,6 @@ Please provide a helpful response based on the provided content.`;
    */
   const sendMessageToActiveConversation = useCallback(
     async (message: string) => {
-      const activeConversation = getActiveConversation();
-
       if (!activeConversation) {
         // Create new conversation if none active
         return sendMessageToConversation(message, undefined, {
@@ -286,7 +282,7 @@ Please provide a helpful response based on the provided content.`;
 
       return sendMessageToConversation(message, activeConversation.id);
     },
-    [sendMessageToConversation, getActiveConversation]
+    [sendMessageToConversation, activeConversation]
   );
 
   /**
@@ -362,6 +358,7 @@ Please provide a helpful response based on the provided content.`;
     isLoading,
     error,
     availableProviders,
+    isQueryLoading,
 
     // Conversation actions
     sendMessageToConversation,
@@ -389,9 +386,7 @@ export const useActiveConversationLLM = (llmConfig: {
   googleApiKey?: string;
 }) => {
   const conversationLLM = useConversationLLM(llmConfig);
-  const getActiveConversation = useEnhancedChatStore(
-    (state) => state.getActiveConversation
-  );
+  const activeConversation = useActiveConversation();
 
   const sendMessage = useCallback(
     async (message: string) => {
@@ -402,20 +397,19 @@ export const useActiveConversationLLM = (llmConfig: {
 
   const askAboutComponent = useCallback(
     async (component: ComponentSelection, question: string) => {
-      const activeConversation = getActiveConversation();
       return conversationLLM.askAboutComponent(
         component,
         question,
         activeConversation?.id
       );
     },
-    [conversationLLM, getActiveConversation]
+    [conversationLLM, activeConversation]
   );
 
   return {
     ...conversationLLM,
     sendMessage,
     askAboutComponent,
-    activeConversation: getActiveConversation(),
+    activeConversation,
   };
 };
