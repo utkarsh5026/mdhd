@@ -9,14 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useConversation, useConversationActions } from "../hooks";
 
 import {
   IoTrashOutline,
   IoChatbubbleOutline,
   IoArrowUp,
 } from "react-icons/io5";
-
-import { useEnhancedChatStore } from "../store/chat-store";
 
 /**
  * Conversation List Component for managing multiple conversations
@@ -25,15 +24,9 @@ export const ConversationListDialog: React.FC<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }> = ({ open, onOpenChange }) => {
-  const {
-    getConversationSummaries,
-    setActiveConversation,
-    deleteConversation,
-    createConversation,
-    activeConversationId,
-  } = useEnhancedChatStore();
-
-  const conversations = getConversationSummaries();
+  const { conversations, setActiveConversation, activeConversation } =
+    useConversation();
+  const { createConversation, deleteConversation } = useConversationActions();
 
   const handleSelectConversation = (conversationId: string) => {
     setActiveConversation(conversationId);
@@ -80,14 +73,14 @@ export const ConversationListDialog: React.FC<{
           {/* Conversations list */}
           <ScrollArea className="max-h-96">
             <div className="space-y-2">
-              {conversations.map((conv) => (
+              {Array.from(conversations.values()).map((conv) => (
                 <motion.div
                   key={conv.id}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className={cn(
                     "p-3 rounded-xl border cursor-pointer transition-all group",
-                    activeConversationId === conv.id
+                    activeConversation?.id === conv.id
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50"
                   )}
@@ -98,14 +91,14 @@ export const ConversationListDialog: React.FC<{
                       <div className="font-medium text-sm truncate">
                         {conv.title}
                       </div>
-                      {conv.lastMessage && (
+                      {conv.messages.length > 0 && (
                         <div className="text-xs text-muted-foreground truncate mt-1">
-                          {conv.lastMessage}
+                          {conv.messages[conv.messages.length - 1].content}
                         </div>
                       )}
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                        <span>{conv.messageCount} messages</span>
-                        <span>{conv.componentCount} components</span>
+                        <span>{conv.messages.length} messages</span>
+                        <span>{conv.selectedComponents.length} components</span>
                         <span>
                           {new Date(conv.updatedAt).toLocaleDateString()}
                         </span>
@@ -128,7 +121,7 @@ export const ConversationListDialog: React.FC<{
             </div>
           </ScrollArea>
 
-          {conversations.length === 0 && (
+          {Object.keys(conversations).length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <IoChatbubbleOutline className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <div className="text-sm">No conversations yet</div>

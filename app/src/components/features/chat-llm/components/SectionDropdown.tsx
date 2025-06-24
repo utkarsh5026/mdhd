@@ -14,12 +14,12 @@ import { cn } from "@/lib/utils";
 
 import { IoChevronDown, IoSearch } from "react-icons/io5";
 import type { MarkdownSection } from "@/services/section/parsing";
-import type { SeletctedSection } from "../types";
+import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
 
 interface SectionDropdownProps {
   sectionsDropdownOpen: boolean;
   setSectionsDropdownOpen: (open: boolean) => void;
-  selectedSections: SeletctedSection[];
+  selectedSections: ComponentSelection[];
   sectionsFilter: string;
   setSectionsFilter: (filter: string) => void;
   filteredSections: MarkdownSection[];

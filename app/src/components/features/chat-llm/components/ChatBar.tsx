@@ -4,6 +4,14 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  useConversation,
+  useConversationActions,
+  useChatUI,
+  useComponent,
+  useLLMState,
+} from "../hooks";
+import type { Conversation, ChatMessage } from "../types";
 
 import {
   IoSend,
@@ -17,21 +25,16 @@ import {
   IoTimeOutline,
 } from "react-icons/io5";
 import { RiRobot2Fill, RiLoader4Line } from "react-icons/ri";
-import { SiAnthropic, SiGoogle, SiOpenai } from "react-icons/si";
 
 import ModelProvider from "./ModelProvider";
 import SettingsDropdown from "./SettingsDropdown";
 import ChatMarkdownRenderer from "./ChatMarkdownRenderer";
-import {
-  useEnhancedChatStore,
-  type Conversation,
-  type ChatMessage,
-} from "../store/chat-store";
 import { useConversationLLM } from "../hooks/use-conversation-llm";
 import type { MarkdownSection } from "@/services/section/parsing";
 import type { LLMProviderId } from "../types";
 import type { ComponentSelection } from "../../markdown-render/services/component-service";
 import { ConversationListDialog } from "./ChatDialog";
+import { getProviderIcon } from "./utils";
 
 interface EnhancedChatSidebarProps {
   isVisible: boolean;
@@ -39,22 +42,6 @@ interface EnhancedChatSidebarProps {
   sections: MarkdownSection[];
   currentSection: MarkdownSection | null;
 }
-
-/**
- * Get provider icon component
- */
-const getProviderIcon = (providerId: LLMProviderId) => {
-  switch (providerId) {
-    case "openai":
-      return <SiOpenai className="w-4 h-4" />;
-    case "anthropic":
-      return <SiAnthropic className="w-4 h-4" />;
-    case "google":
-      return <SiGoogle className="w-4 h-4" />;
-    default:
-      return <RiRobot2Fill className="w-4 h-4" />;
-  }
-};
 
 /**
  * Component Badge for displaying in conversation context
@@ -262,108 +249,54 @@ const ConversationHeader: React.FC<{
 const EnhancedChatSidebar: React.FC<EnhancedChatSidebarProps> = ({
   isVisible,
   onToggle,
-  currentSection,
 }) => {
   const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
   const [conversationListOpen, setConversationListOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Enhanced chat store
-  const {
-    getActiveConversation,
-    getConversationSummaries,
-    inputValue,
-    setInputValue,
-    isQueryLoading,
-    createConversation,
-    deleteConversation,
-    removeComponentFromConversation,
-    selectedProvider,
-    selectedModel,
-    setSelectedProvider,
-    setSelectedModel,
-    setCurrentSection,
-  } = useEnhancedChatStore();
+  const { createConversation, deleteConversation } = useConversationActions();
+  const { activeConversation, conversationSummaries } = useConversation();
+  const { inputValue, setInputValue } = useChatUI();
+  const { removeComponentFromConversation } = useComponent();
+  const { isQueryLoading, sendMessageToConversation } = useConversationLLM();
+  const { isInitialized, availableProviders, error } = useLLMState();
 
-  // LLM integration
-  const conversationLLM = useConversationLLM({
-    openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
-    anthropicApiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-    googleApiKey: import.meta.env.VITE_GOOGLE_API_KEY,
-  });
-
-  // Update current section in store when it changes
-  useEffect(() => {
-    if (currentSection) {
-      setCurrentSection(currentSection.id, currentSection.title);
-    }
-  }, [currentSection, setCurrentSection]);
-
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   });
 
-  // Initialize welcome conversation if none exist
   useEffect(() => {
-    const summaries = getConversationSummaries();
-    if (summaries.length === 0 && conversationLLM.isInitialized) {
+    if (conversationSummaries.length === 0 && isInitialized) {
       createConversation("Welcome to MDHD AI");
       // Add welcome message through the store
       // This should be handled by the initialization logic
     }
-  }, [
-    conversationLLM.isInitialized,
-    getConversationSummaries,
-    createConversation,
-  ]);
-
-  const activeConversation = getActiveConversation();
-  const error = conversationLLM.error;
+  }, [isInitialized, conversationSummaries, createConversation]);
 
   /**
    * Handle sending a message
    */
   const handleSendMessage = async () => {
-    if (
-      !inputValue.trim() ||
-      isQueryLoading ||
-      !conversationLLM.isInitialized
-    ) {
+    if (!inputValue.trim() || isQueryLoading || !isInitialized) {
       return;
     }
 
     try {
       if (!activeConversation) {
-        // Create new conversation
-        await conversationLLM.sendMessageToConversation(inputValue, undefined, {
+        await sendMessageToConversation(inputValue, undefined, {
           createNewIfNeeded: true,
           conversationTitle: `Chat: ${inputValue.slice(0, 30)}...`,
         });
       } else {
-        // Send to active conversation
-        await conversationLLM.sendMessageToConversation(
-          inputValue,
-          activeConversation.id
-        );
+        await sendMessageToConversation(inputValue, activeConversation.id);
       }
 
       setInputValue("");
     } catch (error) {
       console.error("Failed to send message:", error);
     }
-  };
-
-  /**
-   * Handle model selection
-   */
-  const handleModelSelect = (providerId: LLMProviderId, model: string) => {
-    conversationLLM.updateProvider(providerId, model);
-    setSelectedProvider(providerId);
-    setSelectedModel(model);
-    setModelPopoverOpen(false);
   };
 
   /**
@@ -420,7 +353,7 @@ const EnhancedChatSidebar: React.FC<EnhancedChatSidebarProps> = ({
               </div>
               <div className="flex items-center gap-1">
                 <SettingsDropdown
-                  providers={conversationLLM.availableProviders}
+                  providers={availableProviders}
                   getProviderIcon={getProviderIcon}
                 />
                 <Button
@@ -560,11 +493,6 @@ const EnhancedChatSidebar: React.FC<EnhancedChatSidebarProps> = ({
                 <ModelProvider
                   modelPopoverOpen={modelPopoverOpen}
                   setModelPopoverOpen={setModelPopoverOpen}
-                  isInitialized={conversationLLM.isInitialized}
-                  providers={conversationLLM.availableProviders}
-                  selectedProvider={selectedProvider as LLMProviderId}
-                  selectedModel={selectedModel}
-                  handleModelSelect={handleModelSelect}
                   getProviderIcon={getProviderIcon}
                 />
               </div>
@@ -575,7 +503,7 @@ const EnhancedChatSidebar: React.FC<EnhancedChatSidebarProps> = ({
             <div className="flex gap-2">
               <Input
                 placeholder={
-                  !conversationLLM.isInitialized
+                  !isInitialized
                     ? "Initializing..."
                     : "Ask about your document..."
                 }
@@ -584,22 +512,18 @@ const EnhancedChatSidebar: React.FC<EnhancedChatSidebarProps> = ({
                 onKeyPress={(e) =>
                   e.key === "Enter" && !e.shiftKey && handleSendMessage()
                 }
-                disabled={!conversationLLM.isInitialized || isQueryLoading}
+                disabled={!isInitialized || isQueryLoading}
                 className="text-sm rounded-2xl border-1 border-border bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/30"
               />
               <motion.div
                 animate={{
                   scale:
-                    !conversationLLM.isInitialized ||
-                    isQueryLoading ||
-                    !inputValue.trim()
+                    !isInitialized || isQueryLoading || !inputValue.trim()
                       ? 0.95
                       : 1,
                 }}
                 whileHover={
-                  !conversationLLM.isInitialized ||
-                  isQueryLoading ||
-                  !inputValue.trim()
+                  !isInitialized || isQueryLoading || !inputValue.trim()
                     ? {}
                     : {
                         scale: 1.05,
@@ -607,9 +531,7 @@ const EnhancedChatSidebar: React.FC<EnhancedChatSidebarProps> = ({
                       }
                 }
                 whileTap={
-                  !conversationLLM.isInitialized ||
-                  isQueryLoading ||
-                  !inputValue.trim()
+                  !isInitialized || isQueryLoading || !inputValue.trim()
                     ? {}
                     : { scale: 0.95 }
                 }
@@ -623,9 +545,7 @@ const EnhancedChatSidebar: React.FC<EnhancedChatSidebarProps> = ({
                 <Button
                   onClick={handleSendMessage}
                   disabled={
-                    !conversationLLM.isInitialized ||
-                    isQueryLoading ||
-                    !inputValue.trim()
+                    !isInitialized || isQueryLoading || !inputValue.trim()
                   }
                   size="sm"
                   className="shrink-0 px-3 rounded-2xl relative overflow-hidden group bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 border border-primary/40 text-primary hover:from-primary/30 hover:via-primary/50 hover:to-primary/30 hover:border-primary/60 hover:text-primary-foreground shadow-lg hover:shadow-primary/25 transition-all duration-300 ease-out cursor-pointer"
