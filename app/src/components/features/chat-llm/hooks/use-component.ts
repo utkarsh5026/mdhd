@@ -1,11 +1,7 @@
 import { useCallback } from "react";
-import {
-  useActiveConversation,
-  useConversationStore,
-  useConversations,
-} from "../store/conversation-store";
-import type { ComponentSelection } from "../../markdown-render/types";
+import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
 import type { Conversation } from "../types";
+import { useConversation, useConversationActions } from "./use-conversation";
 
 const DEFAULT_TITLE_LENGTH = 30;
 
@@ -28,14 +24,8 @@ const componentExists = (
 };
 
 export const useComponent = () => {
-  const activeConversation = useActiveConversation();
-  const createConversation = useConversationStore(
-    (state) => state.createConversation
-  );
-  const updateConversation = useConversationStore(
-    (state) => state.updateConversation
-  );
-  const conversations = useConversations();
+  const { createConversation, updateConversation } = useConversationActions();
+  const { activeConversation, conversations } = useConversation();
 
   const updateConversationWithTimestamp = useCallback(
     (conversationId: string, updates: Conversation) => {

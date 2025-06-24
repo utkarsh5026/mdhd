@@ -6,7 +6,7 @@ import {
 import type { ComponentSelection } from "../../markdown-render/types";
 import useComponent from "./use-component";
 import { useMessageActions, useStreamMessage } from "./use-messages";
-import { useLLMActions, useLLMState } from "./use-llm";
+import { useLLMState } from "./use-llm";
 
 /**
  * Enhanced LLM integration that bridges the LLM service with conversation management
@@ -33,10 +33,7 @@ export const useConversationLLM = () => {
   const { addMessage, setMessageStreaming } = useMessageActions();
   const [isQueryLoading, setIsQueryLoading] = useState(false);
 
-  const { isInitialized, selectedProvider, selectedModel, availableProviders } =
-    useLLMState();
-
-  const { updateProvider, isProviderModelAvailable } = useLLMActions();
+  const { isInitialized, selectedProvider, selectedModel } = useLLMState();
   const { streamMessage } = useStreamMessage();
 
   /**
@@ -249,8 +246,6 @@ export const useConversationLLM = () => {
   );
 
   return {
-    isInitialized,
-    availableProviders,
     isQueryLoading,
 
     sendMessageToConversation,
@@ -258,13 +253,8 @@ export const useConversationLLM = () => {
     askAboutComponent,
     addComponentsAndAsk,
 
-    // Current state
     isStreaming: currentStreamingConversation !== null,
     streamingConversationId: currentStreamingConversation,
-
-    // Provider management
-    updateProvider,
-    isProviderModelAvailable,
   };
 };
 

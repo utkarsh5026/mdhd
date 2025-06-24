@@ -19,7 +19,6 @@ type Actions = {
     initialComponent?: ComponentSelection
   ) => string;
   deleteConversation: (conversationId: string) => void;
-  setActiveConversation: (conversationId: string | null) => void;
   updateConversationTitle: (conversationId: string, title: string) => void;
   updateConversation: (
     conversationId: string,
@@ -107,7 +106,7 @@ export const useConversationStore = create<State & Actions>()(
             "deleteConversation"
           ),
 
-        setActiveConversation: (conversationId) =>
+        setActiveConversation: (conversationId: string) =>
           set(
             { activeConversationId: conversationId },
             false,
@@ -180,7 +179,10 @@ export const useConversationStore = create<State & Actions>()(
           currentSectionId: state.currentSectionId,
           currentSectionTitle: state.currentSectionTitle,
         }),
-        merge: (persistedState: any, currentState: State & Actions) => {
+        merge: (
+          persistedState: PersistedState,
+          currentState: State & Actions
+        ) => {
           const conversations = new Map(persistedState.conversations || []);
           return {
             ...currentState,
