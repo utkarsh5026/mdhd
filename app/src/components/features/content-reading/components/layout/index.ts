@@ -5,6 +5,7 @@ import {
   DesktopProgressIndicator,
 } from "./ProgressIndicator";
 import LoadingState from "./LoadingState";
+import ContentReader from "./ContentReader";
 
 export {
   Header,
@@ -12,4 +13,5 @@ export {
   MobileProgressIndicator,
   DesktopProgressIndicator,
   LoadingState,
+  ContentReader,
 };
