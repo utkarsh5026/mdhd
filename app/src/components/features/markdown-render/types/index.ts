@@ -1,5 +1,3 @@
-// Simple unified selection system - much cleaner!
-
 export type ComponentType =
   | "code"
   | "table"
@@ -8,7 +6,7 @@ export type ComponentType =
   | "paragraph"
   | "heading"
   | "image"
-  | "section"; // Full section
+  | "section";
 
 export interface ComponentSelection {
   id: string;
@@ -18,7 +16,6 @@ export interface ComponentSelection {
   sectionId: string; // Which section this belongs to
   sectionTitle: string;
 
-  // Simple metadata extracted from the element
   metadata?: {
     language?: string; // For code blocks
     level?: number; // For headings
