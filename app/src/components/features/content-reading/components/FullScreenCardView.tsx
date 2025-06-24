@@ -1,39 +1,31 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import CustomMarkdownRenderer from "@/components/features/markdown-render/components/MarkdownRenderer";
 import SectionsSheet from "./table-of-contents/SectionsSheet";
 import ReadingSettingsSheet from "@/components/features/settings/components/ReadingSettingsSheet";
 import { ReadingSettingsProvider } from "@/components/features/settings/context/ReadingSettingsProvider";
-import {
-  useReadingSettings,
-  fontFamilyMap,
-} from "@/components/features/settings/context/ReadingContext";
 import {
   Header,
   NavigationControls,
   DesktopProgressIndicator,
   LoadingState,
+  ContentReader,
 } from "./layout";
-import { useSwipeable } from "react-swipeable";
 import {
   useControls,
   useReading,
 } from "@/components/features/content-reading/hooks";
-import EnhancedChatSidebar from "../../chat-llm/components/ChatBar";
 import LLMProvider from "../../chat-llm/context/llm/LLMProvider";
-import { useConversationLLM, useComponent } from "../../chat-llm/hooks";
-import { ComponentSelection } from "../../markdown-render/services/component-service";
-import { useActiveConversation } from "../../chat-llm/store/conversation-store";
+import ChatSidebar from "../../chat-llm/components/ChatBar";
 
-interface FullscreenCardViewProps {
+interface MarkdownViewerProps {
   markdown: string;
 }
 
-interface FullscreenCardContentProps extends FullscreenCardViewProps {
+interface MarkdownViewerProviderProps extends MarkdownViewerProps {
   exitFullScreen: () => void;
 }
 
-const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
+const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
   exitFullScreen,
   markdown,
 }) => {
@@ -41,21 +33,6 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatSidebarVisible, setChatSidebarVisible] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { settings } = useReadingSettings();
-
-  const { askAboutComponent } = useConversationLLM();
-  const { addComponentToConversation } = useComponent();
-  const activeConversation = useActiveConversation();
-
-  const handleComponentAddToChat = useCallback(
-    (component: ComponentSelection) => {
-      if (!activeConversation?.id) {
-        return;
-      }
-      addComponentToConversation(component, activeConversation.id);
-    },
-    [addComponentToConversation, activeConversation?.id]
-  );
 
   const {
     sections,
@@ -76,27 +53,6 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
       goToPrevious,
       isChatSidebarVisible: chatSidebarVisible,
     });
-
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: (eventData) => {
-      if (eventData.event.target instanceof Element) {
-        const target = eventData.event.target.closest(".no-swipe");
-        if (target) return;
-      }
-      goToNext();
-    },
-    onSwipedRight: (eventData) => {
-      if (eventData.event.target instanceof Element) {
-        const target = eventData.event.target.closest(".no-swipe");
-        if (target) return;
-      }
-      goToPrevious();
-    },
-    delta: 10,
-    preventScrollOnSwipe: true,
-    trackTouch: true,
-    trackMouse: true,
-  });
 
   /**
    * Initialize reading when sections are loaded
@@ -128,8 +84,6 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
     return <LoadingState />;
   }
 
-  const fontFamily = fontFamilyMap[settings.fontFamily];
-
   return (
     <>
       {/* Main Reading Area - adjusts when chat is visible */}
@@ -140,43 +94,16 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
         )}
       >
         {/* Content Container */}
-        <div
-          className={cn(
-            "h-full overflow-y-auto bg-card",
-            isTransitioning ? "opacity-0" : "opacity-100",
-            "transition-opacity duration-200"
-          )}
-          ref={scrollRef}
-        >
-          <div
-            {...swipeHandlers}
-            onDoubleClick={handleDoubleClick}
-            className="h-full"
-          >
-            <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24 h-auto">
-              <div className="max-w-2xl mx-auto rounded-2xl">
-                <div
-                  key={currentIndex}
-                  className="prose prose-lg prose-invert max-w-none"
-                >
-                  {/* Enhanced Markdown Renderer with Conversation Integration */}
-                  <CustomMarkdownRenderer
-                    markdown={currentSection.content}
-                    className="fullscreen-card-content leading-relaxed"
-                    fontFamily={fontFamily}
-                    sectionId={currentSection.id}
-                    sectionTitle={currentSection.title}
-                    enableInteractions
-                    onComponentAsk={askAboutComponent}
-                    onComponentAddToChat={handleComponentAddToChat}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ContentReader
+          markdown={markdown}
+          goToNext={goToNext}
+          goToPrevious={goToPrevious}
+          isTransitioning={isTransitioning}
+          scrollRef={scrollRef}
+          handleDoubleClick={handleDoubleClick}
+          currentSection={currentSection}
+        />
 
-        {/* Header */}
         <div className="absolute top-0 left-0 right-0 z-50">
           <Header
             onChat={() => {
@@ -198,7 +125,6 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
           />
         </div>
 
-        {/* Navigation controls */}
         <div className="absolute bottom-0 left-0 right-0 z-50">
           <NavigationControls
             currentIndex={currentIndex}
@@ -241,32 +167,22 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
         />
       </div>
 
-      {/* Enhanced Chat Sidebar */}
-      <EnhancedChatSidebar
+      <ChatSidebar
         isVisible={chatSidebarVisible}
         onToggle={() => setChatSidebarVisible(!chatSidebarVisible)}
         sections={sections}
         currentSection={currentSection}
       />
-
-      {/* Enhanced Ask Dialog */}
-      {/* <EnhancedAskDialog /> */}
     </>
   );
 };
 
-/**
- * Main FullscreenCardView Component with Enhanced Chat Integration
- */
-const FullscreenCardView: React.FC<
-  FullscreenCardViewProps & {
+const MarkdownViewerProvider: React.FC<
+  MarkdownViewerProps & {
     markdown: string;
     exitFullScreen: () => void;
   }
 > = ({ markdown, exitFullScreen }) => {
-  /**
-   * Handle browser back button to exit fullscreen
-   */
   useEffect(() => {
     window.history.pushState({ fullscreen: true }, "");
 
@@ -288,17 +204,16 @@ const FullscreenCardView: React.FC<
         anthropicApiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
         googleApiKey: import.meta.env.VITE_GOOGLE_API_KEY,
       }}
+      defaultProvider="openai"
+      defaultModel="gpt-4o-mini"
     >
       <ReadingSettingsProvider>
         <div className="fixed inset-0 z-50 bg-background text-foreground overflow-hidden">
-          <FullscreenCardContent
-            markdown={markdown}
-            exitFullScreen={exitFullScreen}
-          />
+          <MarkdownViewer markdown={markdown} exitFullScreen={exitFullScreen} />
         </div>
       </ReadingSettingsProvider>
     </LLMProvider>
   );
 };
 
-export default FullscreenCardView;
+export default MarkdownViewerProvider;
