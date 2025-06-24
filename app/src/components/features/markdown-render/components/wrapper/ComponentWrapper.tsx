@@ -6,10 +6,10 @@ import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Plus, Sparkles, Check } from "lucide-react";
+import { Plus, Sparkles, Check, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { useEnhancedChatStore } from "../../../chat-llm/store/chat-store";
-import ChatDropdown from "../chat-dropdown/ChatDropdown";
+import EnhancedChatDropdown from "../chat-dropdown/ChatDropdown";
 
 interface ComponentWrapperProps {
   componentType: ComponentType;
@@ -22,17 +22,7 @@ interface ComponentWrapperProps {
   className?: string;
 }
 
-/**
- * Enhanced Component Wrapper with full conversation integration
- *
- * This wrapper provides rich interaction capabilities for markdown components:
- * - Ask questions about specific components via dialog
- * - Add components to active conversation context
- * - Visual feedback for component states
- * - Dropdown chat interface for quick questions
- * - Seamless integration with conversation management
- */
-const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
+const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
   componentType,
   children,
   sectionId,
@@ -47,14 +37,13 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
   const [showAddedFeedback, setShowAddedFeedback] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Enhanced chat store hooks
-  const getActiveConversation = useEnhancedChatStore(
-    (state) => state.getActiveConversation
+  // Chat store hooks
+  const selectedComponents = useEnhancedChatStore(
+    (state) => state.currentAskComponent
   );
-  const addComponentToConversation = useEnhancedChatStore(
+  const addComponentToChat = useEnhancedChatStore(
     (state) => state.addComponentToConversation
   );
-  const setVisibility = useEnhancedChatStore((state) => state.setVisibility);
 
   /**
    * Extract meaningful content from the wrapped component
@@ -188,15 +177,6 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
   }, [componentType, metadata, extractContent]);
 
   /**
-   * Handle asking a question about this component
-   * Show dropdown instead of opening dialog
-   */
-  const handleAsk = useCallback(() => {
-    // Toggle the dropdown instead of opening dialog
-    setIsDropdownOpen(true);
-  }, []);
-
-  /**
    * Handle adding component to current conversation
    * Creates conversation if none exists, provides visual feedback
    */
@@ -211,21 +191,18 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
       metadata,
     };
 
-    // Add to active conversation (will create new one if needed)
-    addComponentToConversation(selection);
+    // Add to chat context
+    addComponentToChat(selection);
 
     // Show visual feedback
     setShowAddedFeedback(true);
     setTimeout(() => setShowAddedFeedback(false), 2000);
 
     // Show success toast
-    toast.success(`Added ${componentType} to conversation`, {
+    toast.success(`Added ${componentType} to chat context`, {
       description: selection.title,
       duration: 3000,
     });
-
-    // Auto-open chat sidebar
-    setVisibility(true);
 
     // Call legacy callback if provided
     onAddToChat?.(selection);
@@ -237,16 +214,16 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
     sectionId,
     sectionTitle,
     metadata,
-    addComponentToConversation,
-    setVisibility,
+    addComponentToChat,
     onAddToChat,
   ]);
 
   /**
-   * Handle asking with a specific question (from dropdown)
+   * Handle sending message about this component
+   * This integrates with your LLM service
    */
-  const handleAskWithQuestion = useCallback(
-    (question: string) => {
+  const handleSendMessage = useCallback(
+    async (message: string): Promise<string> => {
       const selection: ComponentSelection = {
         id: generateId(),
         type: componentType,
@@ -257,9 +234,49 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
         metadata,
       };
 
-      // This will be handled by the conversation LLM hook
-      // The dropdown should integrate with the ask dialog or conversation system
-      onAsk?.(selection, question);
+      // Add component to context automatically when asking
+      const exists =
+        selectedComponents?.content === currentComponent.content &&
+        selectedComponents?.type === componentType;
+
+      if (!exists) {
+        addComponentToChat(selection);
+      }
+
+      // Call the legacy onAsk callback if provided for backwards compatibility
+      if (onAsk) {
+        onAsk(selection, message);
+      }
+
+      // Here you would integrate with your actual LLM service
+      // For now, return a mock response based on component type and message
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const mockResponses = {
+            code: `This is a ${metadata.language || "code"} snippet. ${
+              message.toLowerCase().includes("explain")
+                ? "Let me break down what this code does step by step..."
+                : "I can help you understand this code better."
+            }`,
+            table: `This table contains structured data. ${
+              message.toLowerCase().includes("explain")
+                ? "Let me analyze the data patterns and relationships..."
+                : "I can help interpret this data for you."
+            }`,
+            heading: `This is a section heading: "${generateTitle()}". ${
+              message.toLowerCase().includes("summarize")
+                ? "This section covers the main topic and its key concepts..."
+                : "I can provide more context about this section."
+            }`,
+            default: `I can help explain this ${componentType} component. What specific aspect would you like me to clarify?`,
+          };
+
+          const response =
+            mockResponses[componentType as keyof typeof mockResponses] ||
+            mockResponses.default;
+          resolve(response);
+        }, 1000 + Math.random() * 1000); // Simulate network delay
+      });
     },
     [
       generateId,
@@ -269,21 +286,16 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
       sectionId,
       sectionTitle,
       metadata,
+      selectedComponents,
+      addComponentToChat,
       onAsk,
     ]
   );
 
-  // Check if component is already in active conversation
-  const activeConversation = getActiveConversation();
+  // Check if component is already in context
   const isInContext =
-    activeConversation?.selectedComponents.some((comp) => {
-      const currentContent = extractContent();
-      return (
-        comp.content === currentContent &&
-        comp.type === componentType &&
-        comp.sectionId === sectionId
-      );
-    }) || false;
+    selectedComponents?.content === extractContent() &&
+    selectedComponents?.type === componentType;
 
   // Create current component selection for dropdown
   const currentComponent: ComponentSelection = {
@@ -296,7 +308,7 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
     metadata,
   };
 
-  // Update the showButtons logic to keep buttons visible when dropdown is open
+  // Show buttons when hovering OR when dropdown is open OR showing feedback
   const showButtons = isHovering || isDropdownOpen || showAddedFeedback;
 
   return (
@@ -317,7 +329,7 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
     >
       {children}
 
-      {/* Interaction buttons - Always render ChatDropdown when open */}
+      {/* Interaction buttons */}
       <AnimatePresence>
         {showButtons && (
           <motion.div
@@ -333,11 +345,11 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
             }}
             className="absolute -top-3 -right-3 flex gap-2 z-20"
           >
-            {/* Chat Dropdown Button - Always render when dropdown is open */}
+            {/* Enhanced Chat Dropdown */}
             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <ChatDropdown
+              {/* <EnhancedChatDropdown
                 currentComponent={currentComponent}
-                onAskWithQuestion={handleAskWithQuestion}
+                onSendMessage={handleSendMessage}
                 open={isDropdownOpen}
                 onOpenChange={(open) => {
                   setIsDropdownOpen(open);
@@ -346,65 +358,75 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
                     setIsHovering(false);
                   }
                 }}
-              />
+              /> */}
+              <Button
+                size="sm"
+                variant="secondary"
+                className={cn(
+                  "h-7 px-2 py-0 shadow-md bg-background border border-border rounded-full transition-all duration-200",
+                  "hover:bg-primary hover:text-primary-foreground hover:border-primary",
+                  "bg-primary text-primary-foreground border-primary",
+                  className
+                )}
+              >
+                <MessageSquare className="h-3 w-3" />
+              </Button>
             </motion.div>
 
-            {/* Add to Chat Button - Only show when hovering or showing feedback */}
-            {(showButtons || showAddedFeedback) && (
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={handleAddToChat}
-                  disabled={isInContext}
-                  className={cn(
-                    "h-8 w-8 p-0 shadow-lg border border-border rounded-full transition-all duration-200 cursor-pointer group",
-                    isInContext
-                      ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800"
-                      : showAddedFeedback
-                      ? "bg-green-500 text-white border-green-500"
-                      : "bg-background hover:bg-green-600 hover:text-white hover:border-green-600"
+            {/* Add to Chat Button */}
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleAddToChat}
+                disabled={isInContext}
+                className={cn(
+                  "h-8 w-8 p-0 shadow-lg border border-border rounded-full transition-all duration-200 cursor-pointer group",
+                  isInContext
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800"
+                    : showAddedFeedback
+                    ? "bg-green-500 text-white border-green-500"
+                    : "bg-background hover:bg-green-600 hover:text-white hover:border-green-600"
+                )}
+                title={
+                  isInContext
+                    ? "Already in chat context"
+                    : "Add to chat context"
+                }
+              >
+                <AnimatePresence mode="wait">
+                  {showAddedFeedback ? (
+                    <motion.div
+                      key="check"
+                      initial={{ scale: 0, rotate: -90 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      exit={{ scale: 0, rotate: 90 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Check className="h-4 w-4" />
+                    </motion.div>
+                  ) : isInContext ? (
+                    <motion.div
+                      key="sparkles"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="plus"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                    >
+                      <Plus className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                    </motion.div>
                   )}
-                  title={
-                    isInContext
-                      ? "Already in conversation context"
-                      : "Add to conversation context"
-                  }
-                >
-                  <AnimatePresence mode="wait">
-                    {showAddedFeedback ? (
-                      <motion.div
-                        key="check"
-                        initial={{ scale: 0, rotate: -90 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        exit={{ scale: 0, rotate: 90 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Check className="h-4 w-4" />
-                      </motion.div>
-                    ) : isInContext ? (
-                      <motion.div
-                        key="sparkles"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
-                      >
-                        <Sparkles className="h-4 w-4" />
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="plus"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
-                      >
-                        <Plus className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Button>
-              </motion.div>
-            )}
+                </AnimatePresence>
+              </Button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -422,8 +444,21 @@ const EnhancedComponentWrapper: React.FC<ComponentWrapperProps> = ({
           </div>
         </motion.div>
       )}
+
+      <EnhancedChatDropdown
+        currentComponent={currentComponent}
+        onSendMessage={handleSendMessage}
+        open={isDropdownOpen}
+        onOpenChange={(open) => {
+          setIsDropdownOpen(open);
+          // When dropdown closes, also reset hover state
+          if (!open) {
+            setIsHovering(false);
+          }
+        }}
+      />
     </div>
   );
 };
 
-export default EnhancedComponentWrapper;
+export default ComponentWrapper;

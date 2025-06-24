@@ -19,11 +19,10 @@ import {
   useControls,
   useReading,
 } from "@/components/features/content-reading/hooks";
-
-// Enhanced chat imports
 import EnhancedChatSidebar from "../../chat-llm/components/ChatBar";
 import { useChatIntegration } from "../../chat-llm/hooks/use-chat-integration";
 import type { ComponentSelection } from "../../markdown-render/services/component-service";
+import LLMProvider from "../../chat-llm/context/llm/LLMProvider";
 
 interface FullscreenCardViewProps {
   markdown: string;
@@ -319,14 +318,22 @@ const FullscreenCardView: React.FC<
   }, [exitFullScreen]);
 
   return (
-    <ReadingSettingsProvider>
-      <div className="fixed inset-0 z-50 bg-background text-foreground overflow-hidden">
-        <FullscreenCardContent
-          markdown={markdown}
-          exitFullScreen={exitFullScreen}
-        />
-      </div>
-    </ReadingSettingsProvider>
+    <LLMProvider
+      config={{
+        openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
+        anthropicApiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
+        googleApiKey: import.meta.env.VITE_GOOGLE_API_KEY,
+      }}
+    >
+      <ReadingSettingsProvider>
+        <div className="fixed inset-0 z-50 bg-background text-foreground overflow-hidden">
+          <FullscreenCardContent
+            markdown={markdown}
+            exitFullScreen={exitFullScreen}
+          />
+        </div>
+      </ReadingSettingsProvider>
+    </LLMProvider>
   );
 };
 

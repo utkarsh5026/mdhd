@@ -6,6 +6,7 @@ import {
 } from "../store/conversation-store";
 import type { ComponentSelection } from "../../markdown-render/types";
 import type { Conversation } from "../types";
+import { MarkdownSection } from "@/services/section/parsing";
 
 const DEFAULT_TITLE_LENGTH = 30;
 
@@ -115,10 +116,29 @@ const useComponent = () => {
     [activeConversation, conversations, updateConversationWithTimestamp]
   );
 
+  /**
+   * Convert ComponentSelection to MarkdownSection for LLM processing
+   * This bridges the component system with the LLM's expected input format
+   */
+  const convertComponentsToSections = useCallback(
+    (components: ComponentSelection[]): MarkdownSection[] => {
+      return components.map((component, index) => ({
+        id: component.id,
+        title: component.title,
+        content: component.content,
+        level: (component.metadata?.level || 1) as 0 | 2 | 1,
+        wordCount: component.content.split(/\s+/).length,
+        slug: `component-${index}`,
+      }));
+    },
+    []
+  );
+
   return {
     addComponentToConversation,
     removeComponentFromConversation,
     clearComponentsFromConversation,
+    convertComponentsToSections,
   };
 };
 

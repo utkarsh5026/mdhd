@@ -48,7 +48,6 @@ interface ChatState {
   conversations: Map<string, Conversation>;
   activeConversationId: string | null;
 
-  // UI State
   inputValue: string;
   isQueryLoading: boolean;
   isVisible: boolean;

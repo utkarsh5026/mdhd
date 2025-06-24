@@ -1,14 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
-import { useLLM } from "./use-llm";
+import { useCallback, useState } from "react";
 import {
   useActiveConversation,
   useConversationStore,
 } from "../store/conversation-store";
-import type { MarkdownSection } from "@/services/section/parsing";
-import type { LLMProviderId } from "../types";
 import type { ComponentSelection } from "../../markdown-render/types";
 import useComponent from "./use-component";
-import { useMessageActions } from "./use-messages";
+import { useMessageActions, useStreamMessage } from "./use-messages";
+import { useLLMActions, useLLMState } from "./use-llm";
 
 /**
  * Enhanced LLM integration that bridges the LLM service with conversation management
@@ -19,11 +17,7 @@ import { useMessageActions } from "./use-messages";
  * - Managing conversation context with components
  * - Automatic conversation creation when needed
  */
-export const useConversationLLM = (llmConfig: {
-  openAIApiKey?: string;
-  anthropicApiKey?: string;
-  googleApiKey?: string;
-}) => {
+export const useConversationLLM = () => {
   const [currentStreamingConversation, setCurrentStreamingConversation] =
     useState<string | null>(null);
 
@@ -39,71 +33,16 @@ export const useConversationLLM = (llmConfig: {
   const { addMessage, setMessageStreaming } = useMessageActions();
   const [isQueryLoading, setIsQueryLoading] = useState(false);
 
-  const {
-    selectedProvider,
-    selectedModel,
-    streamMessage,
-    isInitialized,
-    availableProviders,
-    updateProvider,
-    isLoading,
-    error,
-    isProviderModelAvailable,
-  } = useLLM(llmConfig);
+  const { isInitialized, selectedProvider, selectedModel, availableProviders } =
+    useLLMState();
 
-  /**
-   * Convert ComponentSelection to MarkdownSection for LLM processing
-   * This bridges the component system with the LLM's expected input format
-   */
-  const convertComponentsToSections = useCallback(
-    (components: ComponentSelection[]): MarkdownSection[] => {
-      return components.map((component, index) => ({
-        id: component.id,
-        title: component.title,
-        content: component.content,
-        level: (component.metadata?.level || 1) as 0 | 2 | 1,
-        wordCount: component.content.split(/\s+/).length,
-        slug: `component-${index}`,
-      }));
-    },
-    []
-  );
+  const { updateProvider, isProviderModelAvailable } = useLLMActions();
+  const { streamMessage } = useStreamMessage();
 
   /**
    * Generate a contextual prompt that includes component information
    * This helps the LLM understand what components the user is asking about
    */
-  const generateContextualPrompt = useCallback(
-    (
-      question: string,
-      components: ComponentSelection[],
-      sectionContext?: { id: string; title: string }
-    ): string => {
-      let prompt = question;
-
-      if (sectionContext) {
-        prompt = `Context: This question is about content from the section "${sectionContext.title}".
-
-${question}`;
-      }
-
-      if (components.length > 0) {
-        const componentDescriptions = components
-          .map((comp) => `- ${comp.type}: ${comp.title}`)
-          .join("\n");
-
-        prompt = `${prompt}
-
-Available components to reference:
-${componentDescriptions}
-
-Please provide a helpful response based on the provided content.`;
-      }
-
-      return prompt;
-    },
-    []
-  );
 
   /**
    * Send a message to a specific conversation and get an AI response
@@ -153,45 +92,25 @@ Please provide a helpful response based on the provided content.`;
       setCurrentStreamingConversation(targetConversationId);
 
       try {
-        // Add user message to conversation
-        const userMessageId = `msg_${Date.now()}_${Math.random()
-          .toString(36)
-          .substring(2, 9)}`;
-        addMessage(
+        const userMessageId = addMessage(
           {
-            id: userMessageId,
-            type: "user",
             content: message,
-            timestamp: new Date(),
             selections: options?.components,
           },
+          "user",
           targetConversationId
         );
 
-        // Create assistant message placeholder
-        const assistantMessageId = `msg_${Date.now() + 1}_${Math.random()
-          .toString(36)
-          .substring(2, 9)}`;
-        addMessage(
+        const assistantMessageId = addMessage(
           {
-            id: assistantMessageId,
-            type: "assistant",
             content: "",
-            timestamp: new Date(),
-            isStreaming: true,
-            model: selectedModel,
-            provider: selectedProvider,
+            selections: options?.components,
           },
+          "assistant",
           targetConversationId
         );
 
-        // Convert components to sections for LLM
-        const sections = convertComponentsToSections(
-          conversation.selectedComponents
-        );
-
-        // Generate contextual prompt
-        const contextualPrompt = generateContextualPrompt(
+        const contextualPrompt = _generateContextualPrompt(
           message,
           conversation.selectedComponents,
           conversation.currentSectionId
@@ -203,14 +122,16 @@ Please provide a helpful response based on the provided content.`;
         );
 
         // Stream response from LLM
-        await streamMessage(contextualPrompt, {
-          sections,
-          provider: selectedProvider,
-          model: selectedModel,
-        });
+        await streamMessage(
+          contextualPrompt,
+          {
+            components: conversation.selectedComponents,
+            provider: selectedProvider,
+            model: selectedModel,
+          },
+          targetConversationId
+        );
 
-        // The streamMessage should handle updating the message content
-        // But we need to mark streaming as complete
         setMessageStreaming(assistantMessageId, false, targetConversationId);
 
         return {
@@ -231,12 +152,10 @@ Please provide a helpful response based on the provided content.`;
       getConversation,
       selectedProvider,
       selectedModel,
-      convertComponentsToSections,
-      generateContextualPrompt,
-      streamMessage,
       isInitialized,
       addMessage,
       setMessageStreaming,
+      streamMessage,
     ]
   );
 
@@ -273,7 +192,6 @@ Please provide a helpful response based on the provided content.`;
   const sendMessageToActiveConversation = useCallback(
     async (message: string) => {
       if (!activeConversation) {
-        // Create new conversation if none active
         return sendMessageToConversation(message, undefined, {
           createNewIfNeeded: true,
           conversationTitle: `Chat: ${message.slice(0, 30)}...`,
@@ -327,40 +245,11 @@ Please provide a helpful response based on the provided content.`;
     [createConversation, addComponentToConversation, sendMessageToConversation]
   );
 
-  /**
-   * Initialize LLM integration
-   * Sets up welcome messages and provider configuration
-   */
-  useEffect(() => {
-    if (isInitialized && availableProviders.length > 0) {
-      // Update provider/model if current selection is not available
-      const currentProvider = availableProviders.find(
-        (p) => p.id === selectedProvider
-      );
-      if (!currentProvider) {
-        const firstProvider = availableProviders[0];
-        updateProvider(firstProvider.id as LLMProviderId);
-      } else if (!currentProvider.models.includes(selectedModel || "")) {
-        updateProvider(selectedProvider as LLMProviderId);
-      }
-    }
-  }, [
-    isInitialized,
-    availableProviders,
-    selectedProvider,
-    selectedModel,
-    updateProvider,
-  ]);
-
   return {
-    // LLM service state
     isInitialized,
-    isLoading,
-    error,
     availableProviders,
     isQueryLoading,
 
-    // Conversation actions
     sendMessageToConversation,
     sendMessageToActiveConversation,
     askAboutComponent,
@@ -380,12 +269,8 @@ Please provide a helpful response based on the provided content.`;
  * Hook for using LLM with the currently active conversation
  * Simplified interface for common use cases
  */
-export const useActiveConversationLLM = (llmConfig: {
-  openAIApiKey?: string;
-  anthropicApiKey?: string;
-  googleApiKey?: string;
-}) => {
-  const conversationLLM = useConversationLLM(llmConfig);
+export const useActiveConversationLLM = () => {
+  const conversationLLM = useConversationLLM();
   const activeConversation = useActiveConversation();
 
   const sendMessage = useCallback(
@@ -412,4 +297,33 @@ export const useActiveConversationLLM = (llmConfig: {
     askAboutComponent,
     activeConversation,
   };
+};
+
+const _generateContextualPrompt = (
+  question: string,
+  components: ComponentSelection[],
+  sectionContext?: { id: string; title: string }
+): string => {
+  let prompt = question;
+
+  if (sectionContext) {
+    prompt = `Context: This question is about content from the section "${sectionContext.title}".
+
+${question}`;
+  }
+
+  if (components.length > 0) {
+    const componentDescriptions = components
+      .map((comp) => `- ${comp.type}: ${comp.title}`)
+      .join("\n");
+
+    prompt = `${prompt}
+
+Available components to reference:
+${componentDescriptions}
+
+Please provide a helpful response based on the provided content.`;
+  }
+
+  return prompt;
 };

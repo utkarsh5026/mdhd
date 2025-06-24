@@ -8,6 +8,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
 import type { MarkdownSection } from "@/services/section/parsing";
 import type { DocumentSource, LLMProvider } from "../types";
+import { ComponentSelection } from "../../markdown-render/types";
 
 export class MDHDLLMService {
   private providers: Map<string, BaseLanguageModel> = new Map();
@@ -158,7 +159,7 @@ Response:`);
   async streamQueryWithContext(
     query: string,
     context: {
-      sections: MarkdownSection[];
+      components: ComponentSelection[];
       sources: DocumentSource[];
       provider: string;
       model: string;
@@ -168,8 +169,8 @@ Response:`);
   ): Promise<void> {
     const llm = this.getLLM(context.provider, context.model);
 
-    const contextText = context.sections
-      .map((section) => `## ${section.title}\n${section.content}`)
+    const contextText = context.components
+      .map((component) => `## ${component.title}\n${component.content}`)
       .join("\n\n");
 
     const promptTemplate = PromptTemplate.fromTemplate(`
