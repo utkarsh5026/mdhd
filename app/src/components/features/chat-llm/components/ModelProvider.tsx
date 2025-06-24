@@ -5,31 +5,25 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-
 import { IoChevronDown, IoCheckmark } from "react-icons/io5";
-import type { LLMProvider, LLMProviderId } from "../types";
+import type { LLMProviderId } from "../types";
+import { useLLMState, useLLMActions } from "../hooks";
 
 interface ModelProviderProps {
   modelPopoverOpen: boolean;
   setModelPopoverOpen: (open: boolean) => void;
-  isInitialized: boolean;
-  providers: LLMProvider[];
-  selectedProvider: LLMProviderId;
-  selectedModel: string;
-  handleModelSelect: (providerId: LLMProviderId, model: string) => void;
   getProviderIcon: (providerId: LLMProviderId) => React.ReactNode;
 }
 
 const ModelProvider: React.FC<ModelProviderProps> = ({
   modelPopoverOpen,
   setModelPopoverOpen,
-  isInitialized,
-  providers,
-  selectedProvider,
-  selectedModel,
-  handleModelSelect,
   getProviderIcon,
 }) => {
+  const { selectedProvider, selectedModel, availableProviders, isInitialized } =
+    useLLMState();
+  const { updateProvider } = useLLMActions();
+
   return (
     <Popover open={modelPopoverOpen} onOpenChange={setModelPopoverOpen}>
       <PopoverTrigger asChild>
@@ -55,7 +49,7 @@ const ModelProvider: React.FC<ModelProviderProps> = ({
       >
         <div className="p-3">
           <div className="space-y-3">
-            {providers.map((provider) => (
+            {availableProviders.map((provider) => (
               <div key={provider.id}>
                 <div className="flex items-center gap-2 mb-2">
                   {getProviderIcon(provider.id as LLMProviderId)}
@@ -67,7 +61,7 @@ const ModelProvider: React.FC<ModelProviderProps> = ({
                   {provider.models.map((model) => (
                     <button
                       key={model}
-                      onClick={() => handleModelSelect(provider.id, model)}
+                      onClick={() => updateProvider(provider.id, model)}
                       className={cn(
                         "w-full text-left px-3 py-2 rounded-2xl text-xs transition-colors",
                         selectedProvider === provider.id &&
