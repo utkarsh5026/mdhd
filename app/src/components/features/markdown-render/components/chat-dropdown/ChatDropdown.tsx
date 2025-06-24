@@ -1,34 +1,20 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  X,
-  Send,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
-  Bot,
-  User,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { ComponentSelection } from "../../services/component-service";
+import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
 import {
   getComponentIcon,
   getComponentColorScheme,
   getQuestionsForComponentType,
 } from "./utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-} from "@/components/ui/dropdown-menu";
+import ChatInput from "./ChatInput";
+import QuestionsAvailable from "./QuestionsAvailable";
+import ChatMessages from "./ChatMessages";
 
 interface ChatMessage {
   id: string;
@@ -37,7 +23,7 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-interface ChatDropdownProps {
+interface ChatDialogProps {
   currentComponent: ComponentSelection;
   onSendMessage: (message: string) => Promise<string>;
   open?: boolean;
@@ -45,45 +31,48 @@ interface ChatDropdownProps {
   className?: string;
 }
 
-const ChatDropdown: React.FC<ChatDropdownProps> = ({
+/**
+ * Enhanced Chat Dialog Component
+ *
+ * A modern, intuitive dialog for chatting about document components.
+ * Provides a clean interface with suggested questions, message history,
+ * and real-time conversation flow.
+ */
+const ChatDialog: React.FC<ChatDialogProps> = ({
   currentComponent,
   onSendMessage,
-  open,
+  open = false,
   onOpenChange,
 }) => {
-  const [internalOpen, setInternalOpen] = useState(false);
-  const [chatExpanded, setChatExpanded] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [hasStartedChat, setHasStartedChat] = useState(false);
 
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isControlled = open !== undefined && onOpenChange !== undefined;
-  const isOpen = isControlled ? open : internalOpen;
-
-  const handleOpenChange = useCallback(
-    (newOpen: boolean) => {
-      if (isControlled) {
-        onOpenChange?.(newOpen);
-      } else {
-        setInternalOpen(newOpen);
-      }
-
-      // Reset state when closing
-      if (!newOpen) {
-        setChatExpanded(false);
-        setInputValue("");
-        setMessages([]);
-      }
-    },
-    [isControlled, onOpenChange]
-  );
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 200);
+    if (open && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 150);
     }
-  }, [isOpen]);
+  }, [open]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isLoading]);
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setMessages([]);
+      setInputValue("");
+      setIsLoading(false);
+      setHasStartedChat(false);
+    }
+  }, [open]);
 
   const handleSendMessage = useCallback(
     async (message: string) => {
@@ -99,11 +88,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
       setMessages((prev) => [...prev, userMessage]);
       setInputValue("");
       setIsLoading(true);
-
-      // Expand chat to show the conversation
-      if (!chatExpanded) {
-        setChatExpanded(true);
-      }
+      setHasStartedChat(true);
 
       try {
         const response = await onSendMessage(message.trim());
@@ -119,7 +104,6 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
       } catch (error) {
         console.error("Failed to send message:", error);
 
-        // Add error message
         const errorMessage: ChatMessage = {
           id: `error-${Date.now()}`,
           type: "assistant",
@@ -133,7 +117,7 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
         setIsLoading(false);
       }
     },
-    [onSendMessage, isLoading, chatExpanded]
+    [onSendMessage, isLoading]
   );
 
   const handleQuestionClick = useCallback((question: string) => {
@@ -143,207 +127,83 @@ const ChatDropdown: React.FC<ChatDropdownProps> = ({
     }
   }, []);
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage(inputValue);
+      }
+    },
+    [inputValue, handleSendMessage]
+  );
+
   const suggestedQuestions = getQuestionsForComponentType(
     currentComponent.type
   );
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
-      <DropdownMenuContent className="max-w-2xl p-0 rounded-2xl bg-card/95 backdrop-blur-xl shadow-2xl font-cascadia-code border-4">
-        <div className="flex flex-col max-h-[600px] border-4 border-primary bg-card">
-          <div className="flex items-center justify-between p-4 border-b border-border/50 bg-gradient-to-r from-muted/50 to-muted/30 rounded-t-2xl">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl w-[90vw] h-[80vh] max-h-[700px] min-h-[500px] p-0 flex flex-col font-cascadia-code rounded-2xl border-2 border-border overflow-hidden">
+        {/* Header */}
+        <DialogHeader className="flex-shrink-0 p-6 border-b border-border bg-gradient-to-r from-muted/50 to-muted/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* Component Icon */}
               <div
                 className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-lg text-sm",
+                  "flex items-center justify-center w-10 h-10 rounded-xl text-sm font-medium",
                   getComponentColorScheme(currentComponent.type)
                 )}
               >
                 {getComponentIcon(currentComponent.type)}
               </div>
 
+              {/* Component Info */}
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm capitalize">
-                  {currentComponent.type}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
+                <DialogTitle className="text-lg font-semibold capitalize">
+                  Ask about this {currentComponent.type}
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground truncate mt-1">
                   {currentComponent.title}
-                </div>
+                </p>
               </div>
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleOpenChange(false)}
-              className="h-8 w-8 p-0 rounded-full hover:bg-destructive/10 hover:text-destructive"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
+        </DialogHeader>
 
-          {/* Chat Messages - Collapsible */}
-          {messages.length > 0 && (
-            <Collapsible open={chatExpanded} onOpenChange={setChatExpanded}>
-              <div className="border-b border-border/50">
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between px-4 py-2 h-auto rounded-none hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Bot className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">Conversation</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {messages.length}
-                      </Badge>
-                    </div>
-
-                    {chatExpanded ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-
-                <CollapsibleContent>
-                  <ScrollArea className="max-h-80 p-3">
-                    <div className="space-y-3">
-                      {messages.map((message) => (
-                        <motion.div
-                          key={message.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={cn(
-                            "flex gap-2",
-                            message.type === "user"
-                              ? "justify-end"
-                              : "justify-start"
-                          )}
-                        >
-                          {message.type === "assistant" && (
-                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                              <Bot className="h-3 w-3 text-primary" />
-                            </div>
-                          )}
-
-                          <div
-                            className={cn(
-                              "max-w-[80%] rounded-2xl px-3 py-2 text-sm",
-                              message.type === "user"
-                                ? "bg-primary text-primary-foreground ml-8"
-                                : "bg-muted text-foreground mr-8"
-                            )}
-                          >
-                            <div className="whitespace-pre-wrap break-words">
-                              {message.content}
-                            </div>
-                          </div>
-
-                          {message.type === "user" && (
-                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                              <User className="h-3 w-3" />
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-
-                      {isLoading && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="flex gap-2 justify-start"
-                        >
-                          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Bot className="h-3 w-3 text-primary animate-pulse" />
-                          </div>
-                          <div className="bg-muted text-foreground rounded-2xl px-3 py-2 text-sm">
-                            <div className="flex items-center gap-1">
-                              <span>Thinking</span>
-                              <motion.span
-                                animate={{ opacity: [1, 0, 1] }}
-                                transition={{ duration: 1, repeat: Infinity }}
-                              >
-                                ...
-                              </motion.span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CollapsibleContent>
-              </div>
-            </Collapsible>
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Messages or Welcome Screen */}
+          {!hasStartedChat ? (
+            <QuestionsAvailable
+              currentComponent={currentComponent}
+              suggestedQuestions={suggestedQuestions}
+              handleQuestionClick={handleQuestionClick}
+            />
+          ) : (
+            <ChatMessages
+              messages={messages}
+              isLoading={isLoading}
+              messagesEndRef={messagesEndRef}
+            />
           )}
 
-          {/* Suggested Questions */}
-          <div className="p-4 border-b border-border/50 bg-muted/20">
-            <div className="text-xs font-medium text-muted-foreground mb-3">
-              Quick questions:
-            </div>
-            <div className="grid gap-2">
-              {suggestedQuestions.map((question, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleQuestionClick(question)}
-                  className="justify-start text-left h-auto p-2 text-xs hover:bg-accent/50 rounded-lg"
-                >
-                  <Sparkles className="h-3 w-3 mr-2 flex-shrink-0 text-primary" />
-                  <span className="truncate">{question}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-
           {/* Input Area */}
-          <div className="p-4 bg-gradient-to-t from-muted/30 to-transparent rounded-b-2xl">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage(inputValue);
-              }}
-              className="flex gap-2"
-            >
-              <Input
-                ref={inputRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask about this component..."
-                disabled={isLoading}
-                className="flex-1 text-sm border-border/50 focus-visible:ring-primary/50 rounded-xl"
-              />
-
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!inputValue.trim() || isLoading}
-                className="px-3 rounded-xl hover:scale-105 transition-transform"
-              >
-                {isLoading ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      ease: "linear",
-                    }}
-                  >
-                    <Bot className="h-4 w-4" />
-                  </motion.div>
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </form>
-          </div>
+          <ChatInput
+            inputRef={inputRef}
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            handleKeyDown={handleKeyDown}
+            isLoading={isLoading}
+            handleSendMessage={handleSendMessage}
+            hasStartedChat={hasStartedChat}
+            suggestedQuestions={suggestedQuestions}
+            handleQuestionClick={handleQuestionClick}
+          />
         </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default ChatDropdown;
+export default ChatDialog;
