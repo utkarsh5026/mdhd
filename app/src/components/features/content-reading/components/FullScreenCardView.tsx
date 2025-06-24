@@ -20,9 +20,10 @@ import {
   useReading,
 } from "@/components/features/content-reading/hooks";
 import EnhancedChatSidebar from "../../chat-llm/components/ChatBar";
-import { useChatIntegration } from "../../chat-llm/hooks/use-chat-integration";
-import type { ComponentSelection } from "../../markdown-render/services/component-service";
 import LLMProvider from "../../chat-llm/context/llm/LLMProvider";
+import { useConversationLLM, useComponent } from "../../chat-llm/hooks";
+import { ComponentSelection } from "../../markdown-render/services/component-service";
+import { useActiveConversation } from "../../chat-llm/store/conversation-store";
 
 interface FullscreenCardViewProps {
   markdown: string;
@@ -42,8 +43,19 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const { settings } = useReadingSettings();
 
-  // Enhanced chat integration
-  const chatIntegration = useChatIntegration();
+  const { askAboutComponent } = useConversationLLM();
+  const { addComponentToConversation } = useComponent();
+  const activeConversation = useActiveConversation();
+
+  const handleComponentAddToChat = useCallback(
+    (component: ComponentSelection) => {
+      if (!activeConversation?.id) {
+        return;
+      }
+      addComponentToConversation(component, activeConversation.id);
+    },
+    [addComponentToConversation, activeConversation?.id]
+  );
 
   const {
     sections,
@@ -58,60 +70,12 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
     resetReading,
   } = useReading(markdown);
 
-  // Update current section in chat store when section changes
-  useEffect(() => {
-    const section = getSection(currentIndex);
-    if (section && chatIntegration.isInitialized) {
-      // This is handled internally by the enhanced chat store
-      // No need to manually call setCurrentSection
-    }
-  }, [currentIndex, getSection, chatIntegration.isInitialized]);
-
   const { isControlsVisible, handleInteraction, handleDoubleClick } =
     useControls({
       goToNext,
       goToPrevious,
       isChatSidebarVisible: chatSidebarVisible,
     });
-
-  /**
-   * Enhanced component interaction handlers
-   * These now integrate with the conversation system
-   */
-  const handleComponentAsk = useCallback(
-    (component: ComponentSelection) => {
-      // Use the enhanced ask dialog system
-      chatIntegration.openAskDialog(component);
-    },
-    [chatIntegration]
-  );
-
-  const handleComponentAddToChat = useCallback(
-    (component: ComponentSelection) => {
-      // Add to active conversation or create new one
-      chatIntegration.addComponentToChat(component);
-
-      // Auto-open chat sidebar for better UX
-      setChatSidebarVisible(true);
-      handleInteraction();
-    },
-    [chatIntegration, handleInteraction]
-  );
-
-  // Initialize chat system when component mounts
-  useEffect(() => {
-    if (
-      chatIntegration.isInitialized &&
-      chatIntegration.conversations.length === 0
-    ) {
-      // Create welcome conversation if none exist
-      chatIntegration.createConversation("Welcome to MDHD AI");
-    }
-  }, [
-    chatIntegration.isInitialized,
-    chatIntegration.conversations.length,
-    chatIntegration.createConversation,
-  ]);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (eventData) => {
@@ -203,7 +167,7 @@ const FullscreenCardContent: React.FC<FullscreenCardContentProps> = ({
                     sectionId={currentSection.id}
                     sectionTitle={currentSection.title}
                     enableInteractions
-                    onComponentAsk={handleComponentAsk}
+                    onComponentAsk={askAboutComponent}
                     onComponentAddToChat={handleComponentAddToChat}
                   />
                 </div>

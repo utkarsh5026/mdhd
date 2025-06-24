@@ -92,7 +92,7 @@ export const useConversationLLM = () => {
       setCurrentStreamingConversation(targetConversationId);
 
       try {
-        const userMessageId = addMessage(
+        addMessage(
           {
             content: message,
             selections: options?.components,
@@ -110,6 +110,10 @@ export const useConversationLLM = () => {
           targetConversationId
         );
 
+        if (!assistantMessageId) {
+          throw new Error("Failed to add assistant message");
+        }
+
         const contextualPrompt = _generateContextualPrompt(
           message,
           conversation.selectedComponents,
@@ -121,7 +125,6 @@ export const useConversationLLM = () => {
             : undefined
         );
 
-        // Stream response from LLM
         await streamMessage(
           contextualPrompt,
           {

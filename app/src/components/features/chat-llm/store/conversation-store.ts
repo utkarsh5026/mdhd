@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
-import type { Conversation, ConversationSummary } from "./chat-store";
+import type { Conversation, ConversationSummary } from "../types";
 
 const generateConversationId = () =>
   `conv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
