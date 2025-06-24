@@ -95,11 +95,6 @@ const LLMProvider: React.FC<LLMProviderProps> = ({
     [selectedProvider]
   );
 
-  // =============================================================================
-  // EFFECTS
-  // =============================================================================
-
-  // Initialize service when config changes
   useEffect(() => {
     const currentConfig = {
       openAIApiKey: config.openAIApiKey,
@@ -107,7 +102,6 @@ const LLMProvider: React.FC<LLMProviderProps> = ({
       googleApiKey: config.googleApiKey,
     };
 
-    // Compare with previous config
     const prevConfig = configRef.current;
     const configChanged =
       JSON.stringify(currentConfig) !== JSON.stringify(prevConfig);
@@ -115,13 +109,64 @@ const LLMProvider: React.FC<LLMProviderProps> = ({
     if (!initRef.current || configChanged) {
       initRef.current = true;
       configRef.current = currentConfig;
-      initializeService(currentConfig);
-    }
-  }, [config, initializeService]);
 
-  // =============================================================================
-  // ACTION HANDLERS
-  // =============================================================================
+      const init = async () => {
+        const hasAnyKey = Object.values(currentConfig).some((key) => key);
+
+        if (!hasAnyKey) {
+          setError("No API keys provided");
+          setIsInitialized(false);
+          return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+          const service = new MDHDLLMService({
+            openai: currentConfig.openAIApiKey,
+            anthropic: currentConfig.anthropicApiKey,
+            google: currentConfig.googleApiKey,
+          });
+
+          setLLMService(service);
+          setIsInitialized(true);
+
+          const providers = service.getAvailableProviders();
+          if (providers.length > 0) {
+            const currentProviderAvailable = providers.some(
+              (p) => p.id === selectedProvider
+            );
+
+            if (!currentProviderAvailable) {
+              const firstProvider = providers[0];
+              setSelectedProvider(firstProvider.id);
+              if (firstProvider.models.length > 0) {
+                setSelectedModel(firstProvider.models[0]);
+              }
+            }
+          }
+        } catch (err) {
+          const errorMessage =
+            err instanceof Error
+              ? err.message
+              : "Failed to initialize LLM service";
+          setError(errorMessage);
+          setIsInitialized(false);
+          setLLMService(null);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      init();
+    }
+  }, [
+    config.openAIApiKey,
+    config.anthropicApiKey,
+    config.googleApiKey,
+    selectedProvider,
+  ]);
 
   const updateProvider = useCallback(
     (providerId: LLMProviderId, model?: string) => {
@@ -130,7 +175,6 @@ const LLMProvider: React.FC<LLMProviderProps> = ({
       if (model) {
         setSelectedModel(model);
       } else {
-        // Auto-select first available model for the provider
         const provider = availableProviders.find((p) => p.id === providerId);
         if (provider && provider.models.length > 0) {
           setSelectedModel(provider.models[0]);
@@ -164,13 +208,8 @@ const LLMProvider: React.FC<LLMProviderProps> = ({
     setError(null);
   }, []);
 
-  // =============================================================================
-  // CONTEXT VALUE
-  // =============================================================================
-
   const contextValue: LLMContextValue = useMemo(
     () => ({
-      // State
       llmService,
       isInitialized,
       isLoading,
@@ -179,7 +218,6 @@ const LLMProvider: React.FC<LLMProviderProps> = ({
       selectedModel,
       availableProviders,
 
-      // Actions
       updateProvider,
       getCurrentProvider,
       isProviderModelAvailable,
@@ -201,10 +239,6 @@ const LLMProvider: React.FC<LLMProviderProps> = ({
       clearError,
     ]
   );
-
-  // =============================================================================
-  // RENDER
-  // =============================================================================
 
   return (
     <LLMContext.Provider value={contextValue}>{children}</LLMContext.Provider>

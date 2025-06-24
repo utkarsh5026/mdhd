@@ -9,7 +9,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   X,
   Send,
@@ -26,6 +25,10 @@ import {
   getComponentColorScheme,
   getQuestionsForComponentType,
 } from "./utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+} from "@/components/ui/dropdown-menu";
 
 interface ChatMessage {
   id: string;
@@ -34,7 +37,7 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-interface EnhancedChatDropdownProps {
+interface ChatDropdownProps {
   currentComponent: ComponentSelection;
   onSendMessage: (message: string) => Promise<string>;
   open?: boolean;
@@ -42,7 +45,7 @@ interface EnhancedChatDropdownProps {
   className?: string;
 }
 
-const EnhancedChatDropdown: React.FC<EnhancedChatDropdownProps> = ({
+const ChatDropdown: React.FC<ChatDropdownProps> = ({
   currentComponent,
   onSendMessage,
   open,
@@ -145,10 +148,9 @@ const EnhancedChatDropdown: React.FC<EnhancedChatDropdownProps> = ({
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg p-0 rounded-2xl bg-card/95 backdrop-blur-xl border-0 shadow-2xl font-cascadia-code">
-        <div className="flex flex-col max-h-[600px]">
-          {/* Header */}
+    <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
+      <DropdownMenuContent className="max-w-2xl p-0 rounded-2xl bg-card/95 backdrop-blur-xl shadow-2xl font-cascadia-code border-4">
+        <div className="flex flex-col max-h-[600px] border-4 border-primary bg-card">
           <div className="flex items-center justify-between p-4 border-b border-border/50 bg-gradient-to-r from-muted/50 to-muted/30 rounded-t-2xl">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div
@@ -339,9 +341,9 @@ const EnhancedChatDropdown: React.FC<EnhancedChatDropdownProps> = ({
             </form>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
-export default EnhancedChatDropdown;
+export default ChatDropdown;

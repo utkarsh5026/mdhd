@@ -197,9 +197,3 @@ export const useConversationStore = create<State & Actions>()(
 
 export const useConversations = () =>
   useConversationStore((state) => state.conversations);
-
-export const useActiveConversation = () =>
-  useConversationStore((state) => state.getActiveConversation());
-
-export const useConversationSummaries = () =>
-  useConversationStore((state) => state.getConversationSummaries());
