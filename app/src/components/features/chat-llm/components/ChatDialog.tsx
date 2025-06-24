@@ -7,18 +7,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 import { useConversation, useConversationActions } from "../hooks";
-
-import {
-  IoTrashOutline,
-  IoChatbubbleOutline,
-  IoArrowUp,
-} from "react-icons/io5";
+import { IoTrashOutline, IoAddOutline } from "react-icons/io5";
+import { Conversation } from "../types";
 
 /**
- * Conversation List Component for managing multiple conversations
+ * Enhanced Conversation List Component with modern UI/UX
  */
 export const ConversationListDialog: React.FC<{
   open: boolean;
@@ -33,103 +29,128 @@ export const ConversationListDialog: React.FC<{
     onOpenChange(false);
   };
 
-  const handleDeleteConversation = (conversationId: string) => {
-    if (confirm("Are you sure you want to delete this conversation?")) {
-      deleteConversation(conversationId);
-    }
-  };
-
   const handleCreateNew = () => {
     createConversation();
     onOpenChange(false);
   };
 
+  const conversationArray = Array.from(conversations.values()).sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md font-cascadia-code rounded-2xl">
+      <DialogContent className="max-w-xl font-cascadia-code rounded-3xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <IoChatbubbleOutline className="w-5 h-5" />
-            Conversations
-          </DialogTitle>
+          <DialogTitle>Conversations</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
-          {/* New conversation button */}
+        <div className="space-y-4">
           <Button
             onClick={handleCreateNew}
-            className="w-full justify-start gap-2 h-auto p-3 rounded-xl"
-            variant="outline"
+            className="w-full justify-start gap-2 rounded-2xl border-none hover:bg-primary/90 hover:text-primary hover:scale-105 transition-all duration-300 cursor-pointer"
+            variant="ghost"
           >
-            <IoArrowUp className="w-4 h-4" />
-            <div className="text-left">
-              <div className="font-medium">Start New Conversation</div>
-              <div className="text-xs text-muted-foreground">
-                Begin a fresh discussion
-              </div>
-            </div>
+            <IoAddOutline className="w-4 h-4" />
+            New Conversation
           </Button>
 
-          {/* Conversations list */}
-          <ScrollArea className="max-h-96">
+          <ScrollArea className="h-[400px]">
             <div className="space-y-2">
-              {Array.from(conversations.values()).map((conv) => (
-                <motion.div
+              {conversationArray.map((conv) => (
+                <ConversationItem
                   key={conv.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={cn(
-                    "p-3 rounded-xl border cursor-pointer transition-all group",
-                    activeConversation?.id === conv.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  )}
-                  onClick={() => handleSelectConversation(conv.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {conv.title}
-                      </div>
-                      {conv.messages.length > 0 && (
-                        <div className="text-xs text-muted-foreground truncate mt-1">
-                          {conv.messages[conv.messages.length - 1].content}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                        <span>{conv.messages.length} messages</span>
-                        <span>{conv.selectedComponents.length} components</span>
-                        <span>
-                          {new Date(conv.updatedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteConversation(conv.id);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                    >
-                      <IoTrashOutline className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </motion.div>
+                  conversation={conv}
+                  isActive={activeConversation?.id === conv.id}
+                  onSelect={() => handleSelectConversation(conv.id)}
+                  onDelete={() => deleteConversation(conv.id)}
+                />
               ))}
             </div>
           </ScrollArea>
 
-          {Object.keys(conversations).length === 0 && (
+          {conversations.size === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              <IoChatbubbleOutline className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <div className="text-sm">No conversations yet</div>
-              <div className="text-xs">Start by asking a question!</div>
+              <p>No conversations yet</p>
+              <p className="text-sm mt-1">Start a new conversation to begin</p>
             </div>
           )}
         </div>
       </DialogContent>
     </Dialog>
   );
+};
+
+interface ConversationItemProps {
+  conversation: Conversation;
+  isActive: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+}
+
+const ConversationItem: React.FC<ConversationItemProps> = ({
+  conversation,
+  isActive,
+  onSelect,
+  onDelete,
+}) => {
+  return (
+    <div
+      className={cn(
+        "p-3  border cursor-pointer hover:bg-muted/50 transition-colors group rounded-2xl",
+        isActive && "border-primary bg-primary/5"
+      )}
+      onClick={onSelect}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div
+            className="font-medium text-sm truncate"
+            title={conversation.title}
+          >
+            {conversation.title}
+          </div>
+          {conversation.messages.length > 0 && (
+            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              {conversation.messages[conversation.messages.length - 1].content}
+            </div>
+          )}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+            <span>{conversation.messages.length} messages</span>
+            <span>{formatLastActivity(new Date(conversation.updatedAt))}</span>
+            {isActive && (
+              <Badge
+                variant="default"
+                className="text-xs bg-primary/10 text-primary rounded-full"
+              >
+                active
+              </Badge>
+            )}
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 cursor-pointer hover:bg-primary/60 hover:text-destructive rounded-full transition-all duration-300"
+        >
+          <IoTrashOutline className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const formatLastActivity = (date: Date) => {
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const hours = diff / (1000 * 60 * 60);
+
+  if (hours < 1) return "Just now";
+  if (hours < 24) return `${Math.floor(hours)}h ago`;
+  if (hours < 48) return "Yesterday";
+  return date.toLocaleDateString();
 };
