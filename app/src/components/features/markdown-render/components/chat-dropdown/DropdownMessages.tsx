@@ -1,4 +1,3 @@
-import { useEnhancedChatStore } from "../../../chat-llm/store/chat-store";
 import { ComponentSelection } from "../../services/component-service";
 import { MessageCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -6,6 +5,10 @@ import { cn } from "@/lib/utils";
 import { getComponentIcon, getComponentColorScheme } from "./utils";
 import { Trash2 } from "lucide-react";
 import ChatMarkdownRenderer from "@/components/features/chat-llm/components/ChatMarkdownRenderer";
+import {
+  useConversation,
+  useConversationLLM,
+} from "@/components/features/chat-llm/hooks";
 
 interface DropdownChatMessagesProps {
   currentComponent: ComponentSelection;
@@ -14,12 +17,10 @@ interface DropdownChatMessagesProps {
 const DropdownChatMessages: React.FC<DropdownChatMessagesProps> = ({
   currentComponent,
 }) => {
-  const messages = useEnhancedChatStore(
-    (state) => state.getActiveConversation()?.messages
-  );
-  const isQueryLoading = useEnhancedChatStore((state) => state.isQueryLoading);
+  const { activeConversation } = useConversation();
+  const messages = activeConversation?.messages;
+  const { isQueryLoading } = useConversationLLM();
 
-  // Filter messages that are relevant to this component or general conversation
   const relevantMessages = messages
     ?.filter(
       (message) =>

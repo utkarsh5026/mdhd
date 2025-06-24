@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { ComponentSelection } from "../../services/component-service";
-import { useEnhancedChatStore } from "../../../chat-llm/store/chat-store";
-import { ChatMessage } from "../../../chat-llm/store/chat-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
+import {
+  useConversation,
+  useMessageActions,
+} from "@/components/features/chat-llm/hooks";
 
 interface ChatInputProps {
   currentComponent: ComponentSelection;
@@ -18,54 +20,35 @@ const ChatInput: React.FC<ChatInputProps> = ({
   variant = "default",
 }) => {
   const [localQuestion, setLocalQuestion] = useState("");
-  const selectedComponents = useEnhancedChatStore(
-    (state) => state.getActiveConversation()?.selectedComponents
-  );
-  const addComponentToChat = useEnhancedChatStore(
-    (state) => state.addComponentToConversation
-  );
-  const addMessage = useEnhancedChatStore((state) => state.addMessage);
-  const setIsQueryLoading = useEnhancedChatStore(
-    (state) => state.setIsQueryLoading
-  );
+  const { activeConversation } = useConversation();
+  const { addMessage } = useMessageActions();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!localQuestion.trim()) return;
 
-    // Add component to context if not already there
-    const exists = selectedComponents?.some(
+    const exists = activeConversation?.selectedComponents?.some(
       (c) => c.id === currentComponent.id
     );
-    if (!exists) {
-      addComponentToChat(currentComponent);
-    }
+    if (exists || !activeConversation?.id) return;
 
-    // Add user message
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: "user",
+    const activeConversationId = activeConversation.id;
+
+    const userMessage = {
       content: localQuestion,
-      timestamp: new Date(),
       selections: [currentComponent],
     };
 
-    addMessage(userMessage);
-
-    // Call the original handler
+    addMessage(userMessage, "user", activeConversationId);
     onQuestionSubmit(localQuestion);
 
     const currentInput = localQuestion;
     setLocalQuestion("");
-    setIsQueryLoading(true);
 
     try {
-      // Simulate LLM response (replace with actual LLM integration)
       setTimeout(() => {
-        const assistantMessage: ChatMessage = {
-          id: `assistant-${Date.now()}`,
-          type: "assistant",
+        const assistantMessage = {
           content: `Based on your question about this ${
             currentComponent.type
           }: "${currentInput}"
@@ -75,14 +58,10 @@ I can help explain this component. Here's what I understand:
 ${currentComponent.content.slice(0, 200)}...
 
 [This response will be enhanced when you integrate with your LLM service]`,
-          timestamp: new Date(),
         };
-
-        addMessage(assistantMessage);
-        setIsQueryLoading(false);
+        addMessage(assistantMessage, "assistant", activeConversationId);
       }, 1500);
     } catch (error) {
-      setIsQueryLoading(false);
       console.error("Failed to get response:", error);
     }
   };

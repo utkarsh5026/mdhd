@@ -1,5 +1,3 @@
-// app/src/components/features/markdown-render/components/chat-dropdown/EnhancedChatDropdown.tsx
-
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -11,9 +9,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
-  MessageSquare,
   X,
   Send,
   ChevronDown,
@@ -50,7 +47,6 @@ const EnhancedChatDropdown: React.FC<EnhancedChatDropdownProps> = ({
   onSendMessage,
   open,
   onOpenChange,
-  className,
 }) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const [chatExpanded, setChatExpanded] = useState(false);
@@ -80,7 +76,6 @@ const EnhancedChatDropdown: React.FC<EnhancedChatDropdownProps> = ({
     [isControlled, onOpenChange]
   );
 
-  // Focus input when dialog opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 200);
