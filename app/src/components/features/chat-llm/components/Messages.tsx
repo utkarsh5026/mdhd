@@ -22,120 +22,96 @@ const Messages: React.FC<MessagesProps> = ({
   return (
     <div className="space-y-4 py-4">
       <AnimatePresence>
-        {messages.map((message) => (
-          <motion.div
-            key={message.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: message.isStreaming ? 0.1 : 0.3,
-              ease: "easeOut",
-            }}
-            className={cn("flex w-full items-center max-w-full")}
-          >
-            <div
-              className={cn(
-                "rounded-2xl px-4 py-3 text-sm w-full max-w-full overflow-hidden",
-                message.type === "user"
-                  ? "bg-background text-primary-foreground backdrop-blur-2xl border-none"
-                  : message.type === "assistant"
-                  ? "bg-transparent"
-                  : "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-              )}
+        {messages.map(
+          ({ id, isStreaming, type, content, selections, provider, model }) => (
+            <motion.div
+              key={id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: isStreaming ? 0.1 : 0.3,
+                ease: "easeOut",
+              }}
+              className={cn("flex w-full items-center max-w-full")}
             >
-              <div className="leading-relaxed text-sm text-muted-foreground flex items-start justify-start gap-2 max-w-full">
-                <span className="flex items-center justify-center mt-1 flex-shrink-0">
-                  {message.type === "user" && (
-                    <IoMdPerson className="w-3 h-3" />
-                  )}
-                  {message.type === "assistant" && message.isStreaming && (
-                    <RiLoader4Line className="w-3 h-3 animate-spin text-primary" />
-                  )}
-                </span>
-                <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                  <ChatMarkdownRenderer
-                    content={message.content}
-                    className="text-inherit w-full max-w-full"
-                    isStreaming={message.isStreaming}
-                  />
-                  {message.isStreaming && message.content && (
-                    <span
-                      className="inline-block w-2 h-4 bg-primary ml-1 opacity-75"
-                      style={{
-                        animation: "pulse 1.5s ease-in-out infinite",
-                      }}
+              <div
+                className={cn(
+                  "rounded-2xl px-4 py-3 text-sm w-full max-w-full overflow-hidden",
+                  type === "user"
+                    ? "bg-background text-primary-foreground backdrop-blur-2xl border-none"
+                    : type === "assistant"
+                    ? "bg-transparent"
+                    : "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                )}
+              >
+                <div className="leading-relaxed text-sm text-muted-foreground flex items-start justify-start gap-2 max-w-full">
+                  <span className="flex items-center justify-center mt-1 flex-shrink-0">
+                    {type === "user" && <IoMdPerson className="w-3 h-3" />}
+                    {type === "assistant" && isStreaming && (
+                      <RiLoader4Line className="w-3 h-3 animate-spin text-primary" />
+                    )}
+                  </span>
+                  <div className="flex-1 min-w-0 max-w-full overflow-hidden">
+                    <ChatMarkdownRenderer
+                      content={content}
+                      className="text-inherit w-full max-w-full"
+                      isStreaming={isStreaming}
                     />
-                  )}
-                </div>
-              </div>
-
-              {message.type === "user" && (
-                <div className="mt-3 flex items-center justify-between text-xs">
-                  <div className="flex gap-1 text-muted-foreground">
-                    {message.selectedSections &&
-                      message.selectedSections.length > 0 &&
-                      message.selectedSections.map(({ title, id }) => (
-                        <Badge
-                          key={id}
-                          variant="secondary"
-                          className="text-xs text-muted-foreground rounded-2xl"
-                        >
-                          {title}
-                        </Badge>
-                      ))}
+                    {isStreaming && content && (
+                      <span
+                        className="inline-block w-2 h-4 bg-primary ml-1 opacity-75"
+                        style={{
+                          animation: "pulse 1.5s ease-in-out infinite",
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
-              )}
-              {message.type === "assistant" && (
-                <div className="mt-3 flex items-center justify-between text-xs">
-                  <div className="flex gap-1 text-muted-foreground">
-                    {message.provider && message.model && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs text-muted-foreground"
-                      >
-                        {getProviderIcon(message.provider)}
-                        <span className="ml-1">{message.model}</span>
-                      </Badge>
-                    )}
-                    {message.selectedSections &&
-                      message.selectedSections.length > 0 && (
+
+                {type === "user" && (
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <div className="flex gap-1 text-muted-foreground">
+                      {selections &&
+                        selections.length > 0 &&
+                        selections.map(({ title, id }) => (
+                          <Badge
+                            key={id}
+                            variant="secondary"
+                            className="text-xs text-muted-foreground rounded-2xl"
+                          >
+                            {title}
+                          </Badge>
+                        ))}
+                    </div>
+                  </div>
+                )}
+                {type === "assistant" && (
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <div className="flex gap-1 text-muted-foreground">
+                      {provider && model && (
                         <Badge
                           variant="outline"
                           className="text-xs text-muted-foreground"
                         >
-                          {message.selectedSections.length} sections
+                          {getProviderIcon(provider)}
+                          <span className="ml-1">{model}</span>
                         </Badge>
                       )}
-                  </div>
-                </div>
-              )}
-
-              {/* Sources */}
-              {message.sources && message.sources.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  <div className="text-xs text-muted-foreground">Sources:</div>
-                  {message.sources.map((source, idx) => (
-                    <div
-                      key={idx}
-                      className="text-xs bg-background/50 rounded-lg p-2"
-                    >
-                      <div className="font-medium mb-1">{source.title}</div>
-                      <div className="text-muted-foreground mb-2">
-                        {source.excerpt}
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {source.relevanceScore
-                          ? Math.round(source.relevanceScore * 100)
-                          : "No match"}
-                      </Badge>
+                      {selections && selections.length > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs text-muted-foreground"
+                        >
+                          {selections.length} sections
+                        </Badge>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )
+        )}
       </AnimatePresence>
 
       {isQueryLoading && (
