@@ -18,7 +18,7 @@ export interface ChatMessage {
   timestamp: Date;
   selections?: ComponentSelection[]; // What was selected when asking
   model?: string;
-  provider?: string;
+  provider?: LLMProviderId;
   isStreaming?: boolean;
 }
 
