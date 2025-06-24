@@ -1,6 +1,5 @@
 import {
   useConversationStore,
-  useActiveConversation,
   useConversations,
 } from "../store/conversation-store";
 import type {
@@ -11,6 +10,7 @@ import type {
 } from "../types";
 import { useCallback, useState } from "react";
 import { useLLMState } from "./use-llm";
+import { useActiveConversation } from "./use-conversation";
 
 const generateMessageId = (): string => {
   return `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;

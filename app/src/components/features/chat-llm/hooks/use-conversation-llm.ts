@@ -1,12 +1,12 @@
 import { useCallback, useState } from "react";
 import {
-  useActiveConversation,
   useConversationStore,
 } from "../store/conversation-store";
 import type { ComponentSelection } from "../../markdown-render/types";
 import useComponent from "./use-component";
 import { useMessageActions, useStreamMessage } from "./use-messages";
 import { useLLMState } from "./use-llm";
+import { useActiveConversation } from "./use-conversation";
 
 /**
  * Enhanced LLM integration that bridges the LLM service with conversation management

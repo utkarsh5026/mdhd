@@ -1,10 +1,8 @@
 import {
   useConversations,
-  useActiveConversation,
   useConversationStore,
-  useConversationSummaries,
 } from "../store/conversation-store";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Conversation } from "../types";
 import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
 
@@ -82,4 +80,38 @@ export const useConversationActions = () => {
     deleteConversation,
     updateConversation,
   };
+};
+
+export const useActiveConversation = () => {
+  const activeConversationId = useConversationStore(
+    (state) => state.activeConversationId
+  );
+  const conversations = useConversationStore((state) => state.conversations);
+
+  return useMemo(() => {
+    if (!activeConversationId) return null;
+    return conversations.get(activeConversationId) || null;
+  }, [activeConversationId, conversations]);
+};
+
+export const useConversationSummaries = () => {
+  const conversations = useConversationStore((state) => state.conversations);
+
+  return useMemo(() => {
+    return Array.from(conversations.values()).map(
+      ({ id, title, messages, createdAt, updatedAt, selectedComponents }) => {
+        const lastMessage = messages[messages.length - 1]?.content;
+        const messageCount = messages.length;
+        return {
+          id,
+          title,
+          lastMessage,
+          messageCount,
+          createdAt,
+          updatedAt,
+          componentCount: selectedComponents.length,
+        };
+      }
+    );
+  }, [conversations]);
 };
