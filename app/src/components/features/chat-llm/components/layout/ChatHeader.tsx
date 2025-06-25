@@ -2,19 +2,28 @@ import { RiLoader4Line, RiRobot2Fill } from "react-icons/ri";
 import { SettingsDropdown } from "../chat-input";
 import { getProviderIcon } from "../utils";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { IoClose, IoWarning } from "react-icons/io5";
+import { FaHourglass } from "react-icons/fa";
 import { useLLMProvider } from "../../hooks/use-llm";
 
 interface ChatHeaderProps {
   isQueryLoading: boolean;
   onToggle: () => void;
   error: string | null;
+  onOpenConversationList: () => void;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({
   isQueryLoading,
   onToggle,
   error,
+  onOpenConversationList,
 }) => {
   const { availableProviders } = useLLMProvider();
 
@@ -28,19 +37,19 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             <RiLoader4Line className="w-4 h-4 animate-spin text-muted-foreground" />
           )}
         </div>
-        <div className="flex items-center gap-1">
-          <SettingsDropdown
-            providers={availableProviders}
-            getProviderIcon={getProviderIcon}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggle}
-            className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-          >
+        <div className="flex items-center">
+          <ButtonTooltip tooltip="History" onClick={onOpenConversationList}>
+            <FaHourglass className="w-4 h-4" />
+          </ButtonTooltip>
+          <ButtonTooltip tooltip="Settings" onClick={() => {}}>
+            <SettingsDropdown
+              providers={availableProviders}
+              getProviderIcon={getProviderIcon}
+            />
+          </ButtonTooltip>
+          <ButtonTooltip tooltip="Close" onClick={onToggle}>
             <IoClose className="w-4 h-4" />
-          </Button>
+          </ButtonTooltip>
         </div>
       </div>
 
@@ -54,6 +63,38 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         </div>
       )}
     </div>
+  );
+};
+
+interface ButtonTooltipProps {
+  children: React.ReactNode;
+  tooltip: string;
+  onClick: () => void;
+}
+
+const ButtonTooltip: React.FC<ButtonTooltipProps> = ({
+  children,
+  tooltip,
+  onClick,
+}) => {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={onClick}
+          >
+            {children}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="bg-background text-foreground rounded-2xl p-3 text-xs font-cascadia-code">
+          {tooltip}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 

@@ -2,12 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  useConversation,
-  useConversationActions,
-  useChatUI,
-  useLLMState,
-} from "../hooks";
+import { useConversation, useConversationActions, useLLMState } from "../hooks";
 import { IoAdd } from "react-icons/io5";
 import { RiRobot2Fill } from "react-icons/ri";
 import { useConversationLLM } from "../hooks/use-conversation-llm";
@@ -16,7 +11,7 @@ import { ConversationListDialog } from "./ConversationListDialog";
 import { getProviderIcon } from "./utils";
 import { Messages } from "./messages";
 import { ChatInput } from "./chat-input";
-import { ChatHeader, ConversationHeader, SelectedComponents } from "./layout";
+import { ChatHeader, SelectedComponents } from "./layout";
 
 interface ChatSidebarProps {
   isVisible: boolean;
@@ -32,9 +27,9 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
   const [conversationListOpen, setConversationListOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { createConversation, deleteConversation } = useConversationActions();
+  const { createConversation } = useConversationActions();
   const { activeConversation, conversationSummaries } = useConversation();
-  const { inputValue, setInputValue } = useChatUI();
+  const [inputValue, setInputValue] = useState<string>("");
   const { isQueryLoading, sendMessageToConversation } = useConversationLLM();
   const { isInitialized, error } = useLLMState();
 
@@ -82,18 +77,6 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
     setConversationListOpen(false);
   };
 
-  /**
-   * Handle deleting active conversation
-   */
-  const handleDeleteActiveConversation = () => {
-    if (
-      activeConversation &&
-      confirm("Are you sure you want to delete this conversation?")
-    ) {
-      deleteConversation(activeConversation.id);
-    }
-  };
-
   if (!isVisible) return null;
 
   return (
@@ -107,15 +90,10 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
       >
         <div className="flex-shrink-0">
           <ChatHeader
+            onOpenConversationList={() => setConversationListOpen(true)}
             isQueryLoading={isQueryLoading}
             onToggle={onToggle}
             error={error}
-          />
-
-          <ConversationHeader
-            conversation={activeConversation}
-            onOpenConversationList={() => setConversationListOpen(true)}
-            onDeleteConversation={handleDeleteActiveConversation}
           />
 
           <SelectedComponents />

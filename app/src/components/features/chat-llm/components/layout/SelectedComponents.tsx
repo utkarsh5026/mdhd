@@ -5,6 +5,8 @@ import { useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { IoClose } from "react-icons/io5";
 import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
+import { getComponentColorScheme } from "../utils";
+import { cn } from "@/lib/utils";
 
 const SelectedComponents = () => {
   const activeConversation = useActiveConversation();
@@ -65,25 +67,6 @@ export const ComponentBadge: React.FC<{
   onRemove?: (id: string) => void;
   showRemove?: boolean;
 }> = ({ component, onRemove, showRemove = true }) => {
-  const getComponentColorScheme = (type: string) => {
-    switch (type) {
-      case "code":
-        return "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800";
-      case "table":
-        return "bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800";
-      case "heading":
-        return "bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800";
-      case "list":
-        return "bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800";
-      case "blockquote":
-        return "bg-pink-50 dark:bg-pink-950/30 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-800";
-      case "image":
-        return "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800";
-      default:
-        return "bg-gray-50 dark:bg-gray-950/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800";
-    }
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
@@ -92,10 +75,11 @@ export const ComponentBadge: React.FC<{
       className="group"
     >
       <Badge
-        variant="secondary"
-        className={`text-xs pr-1 cursor-pointer transition-colors border ${getComponentColorScheme(
-          component.type
-        )}`}
+        variant="default"
+        className={cn(
+          "text-xs pr-1 cursor-pointer transition-colors border-none rounded-full",
+          getComponentColorScheme(component.type)
+        )}
       >
         <span className="max-w-32 truncate">{component.title}</span>
         {showRemove && onRemove && (
