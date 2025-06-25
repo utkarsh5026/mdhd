@@ -13,7 +13,7 @@ const LLmMessage: React.FC<LLmMessageProps> = ({
   message,
   getProviderIcon,
 }) => {
-  const { content, selections, provider, model, isStreaming } = message;
+  const { content, selections, provider, model, isStreaming, id } = message;
 
   return (
     <div
@@ -21,6 +21,7 @@ const LLmMessage: React.FC<LLmMessageProps> = ({
         "rounded-2xl px-4 py-3 text-sm w-full max-w-full overflow-hidden",
         "bg-transparent"
       )}
+      id={id}
     >
       <div className="leading-relaxed text-sm text-muted-foreground flex items-start justify-start gap-2 max-w-full">
         <span className="flex items-center justify-center mt-1 flex-shrink-0">

@@ -11,6 +11,7 @@ import {
 import { IoClose, IoWarning } from "react-icons/io5";
 import { FaHourglass } from "react-icons/fa";
 import { useLLMProvider } from "../../hooks/use-llm";
+import { UserMessageDropdown } from "../messages";
 
 interface ChatHeaderProps {
   isQueryLoading: boolean;
@@ -38,6 +39,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           )}
         </div>
         <div className="flex items-center">
+          <ButtonTooltip tooltip="User Messages" onClick={() => {}}>
+            <UserMessageDropdown />
+          </ButtonTooltip>
           <ButtonTooltip tooltip="History" onClick={onOpenConversationList}>
             <FaHourglass className="w-4 h-4" />
           </ButtonTooltip>
