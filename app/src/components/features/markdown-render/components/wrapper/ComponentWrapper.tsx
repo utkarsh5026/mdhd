@@ -9,11 +9,7 @@ import { cn } from "@/lib/utils";
 import { Plus, Sparkles, Check, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import ChatDialog from "../chat-dropdown/ChatDropdown";
-import {
-  useComponent,
-  useConversation,
-  useSelectedComponents,
-} from "@/components/features/chat-llm/hooks";
+import { useSelectedComponents } from "@/components/features/chat-llm/hooks";
 
 interface ComponentWrapperProps {
   componentType: ComponentType;
@@ -38,18 +34,15 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
   const [extractedContent, setExtractedContent] = useState<string>("");
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Use refs for dialog state to survive re-renders
   const isDialogOpenRef = useRef(false);
   const [, forceUpdate] = useState({});
 
-  const { activeConversation } = useConversation();
-  const { addComponentToConversation } = useComponent();
-  const { selectedComponents, addComponent } = useSelectedComponents();
+  const { selectedComponents, addComponent, removeComponent } =
+    useSelectedComponents();
 
-  // Helper to force re-render when dialog state changes
   const setDialogOpen = useCallback((open: boolean) => {
     isDialogOpenRef.current = open;
-    forceUpdate({}); // Force re-render
+    forceUpdate({});
   }, []);
 
   useEffect(() => {
@@ -150,34 +143,44 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
     ]
   );
 
-  const handleAddToChat = useCallback(() => {
-    if (activeConversation?.id) {
-      addComponentToConversation(currentComponent, activeConversation.id);
+  const isInContext = useMemo(
+    () =>
+      selectedComponents?.some(
+        (c) => c.content === extractedContent && c.type === componentType
+      ) ?? false,
+    [selectedComponents, extractedContent, componentType]
+  );
+
+  const handleToggleComponent = useCallback(() => {
+    if (isInContext) {
+      // Remove from context
+      removeComponent(currentComponent);
+      toast.success(`Removed ${componentType} from chat context`, {
+        description: currentComponent.title,
+        duration: 3000,
+      });
+    } else {
+      // Add to context
+      setShowAddedFeedback(true);
+      setTimeout(() => setShowAddedFeedback(false), 2000);
+
+      toast.success(`Added ${componentType} to chat context`, {
+        description: currentComponent.title,
+        duration: 3000,
+      });
+
+      addComponent(currentComponent);
     }
-
-    setShowAddedFeedback(true);
-    setTimeout(() => setShowAddedFeedback(false), 2000);
-
-    toast.success(`Added ${componentType} to chat context`, {
-      description: currentComponent.title,
-      duration: 3000,
-    });
-
-    addComponent(currentComponent);
   }, [
+    removeComponent,
     currentComponent,
-    activeConversation,
-    addComponentToConversation,
     componentType,
     addComponent,
+    isInContext,
   ]);
 
   const handleSendMessage = useCallback(
     async (message: string): Promise<string> => {
-      // if (onAsk) {
-      //   onAsk(currentComponent, message);
-      // }
-
       return new Promise((resolve) => {
         setTimeout(() => {
           const mockResponses = {
@@ -209,14 +212,6 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
     [currentComponent, componentType, metadata?.language]
   );
 
-  const isInContext = useMemo(
-    () =>
-      selectedComponents?.some(
-        (c) => c.content === extractedContent && c.type === componentType
-      ) ?? false,
-    [selectedComponents, extractedContent, componentType]
-  );
-
   const showButtons =
     isHovering || isDialogOpenRef.current || showAddedFeedback;
 
@@ -243,52 +238,146 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
   return (
     <div
       ref={contentRef}
-      className={cn("relative group transition-all duration-200", className)}
+      className={cn(
+        "relative group transition-all duration-300 ease-out rounded-md",
+        // Base state
+        "hover:bg-muted/20",
+        // Context state - more prominent visual feedback
+        isInContext && [
+          " border-l-2 border-primary/40 pl-3 ml-[-0.75rem] rounded-2xl",
+          "before:absolute before:inset-0 before:bg-gradient-to-r before:from-primary/5 before:to-transparent before:rounded-md before:pointer-events-none",
+        ],
+        // Hover state - clear area indication
+        "hover:ring-1 hover:ring-border/50 hover:shadow-sm",
+        // Enhanced transitions
+        "transition-all duration-200",
+        className
+      )}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={handleMouseLeave}
     >
-      {children}
+      {/* Hover area indicator */}
+      <AnimatePresence>
+        {isHovering && !isInContext && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-0 ring-1 ring-primary/20 bg-background/5 rounded-2xl pointer-events-none z-0 border-none p-0"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Content */}
+      <div className="relative z-10">{children}</div>
+
+      <AnimatePresence>
+        {isInContext && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute -left-1 top-1/2 -translate-y-1/2 z-20"
+          >
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-1 h-4 bg-primary/60 rounded-full" />
+              <Sparkles className="h-3 w-3 text-primary/70" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isHovering && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 5 }}
+            transition={{ duration: 0.15 }}
+            className="absolute -top-6 left-0 z-30"
+          >
+            <div className="text-xs text-muted-foreground/80 font-medium bg-background/90 backdrop-blur-sm px-2 py-1 rounded border shadow-sm font-type-mono">
+              {componentType}
+              {metadata?.language && componentType === "code" && (
+                <span className="text-primary/70 ml-1">
+                  ({metadata.language})
+                </span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Interaction buttons */}
       <AnimatePresence>
         {showButtons && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.15 }}
-            className="absolute -top-2 -right-2 flex gap-1 z-20"
+            className="absolute -top-2 -right-2 flex gap-1 z-30"
           >
             {/* Chat Button */}
             <Button
               size="sm"
               variant="ghost"
-              className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
+              className={cn(
+                "h-7 w-7 p-0 rounded-full transition-all duration-200",
+                "bg-background/90 backdrop-blur-sm border shadow-sm",
+                "hover:bg-primary/10 hover:border-primary/30",
+                "opacity-90 hover:opacity-100"
+              )}
               onClick={() => {
                 setDialogOpen(true);
               }}
             >
-              <MessageSquare className="h-3 w-3" />
+              <MessageSquare className="h-3.5 w-3.5" />
             </Button>
 
-            {/* Add to Chat Button */}
+            {/* Add/Remove Toggle Button */}
             <Button
               size="sm"
               variant="ghost"
-              onClick={handleAddToChat}
-              disabled={isInContext}
+              onClick={handleToggleComponent}
               className={cn(
-                "h-6 w-6 p-0 transition-opacity",
-                isInContext ? "opacity-40" : "opacity-60 hover:opacity-100"
+                "h-7 w-7 p-0 rounded-full transition-all duration-200 border-none",
+                "bg-background/90 backdrop-blur-sm border shadow-sm",
+                isInContext
+                  ? "bg-primary/10 border-primary/30 hover:bg-red-50 hover:border-red-300"
+                  : "hover:bg-primary/10 border-none",
+                "opacity-90 hover:opacity-100"
               )}
+              title={
+                isInContext
+                  ? `Remove ${componentType} from chat`
+                  : `Add ${componentType} to chat`
+              }
             >
               <AnimatePresence mode="wait">
                 {showAddedFeedback ? (
-                  <Check className="h-3 w-3" />
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <Check className="h-3.5 w-3.5 text-green-600" />
+                  </motion.div>
                 ) : isInContext ? (
-                  <Sparkles className="h-3 w-3" />
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.15 }}
+                    className="group-hover:text-red-600"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-primary group-hover:hidden" />
+                    <Plus className="h-3.5 w-3.5 rotate-45 text-red-600 hidden group-hover:block" />
+                  </motion.div>
                 ) : (
-                  <Plus className="h-3 w-3" />
+                  <Plus className="h-3.5 w-3.5" />
                 )}
               </AnimatePresence>
             </Button>
@@ -296,18 +385,6 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Context indicator */}
-      {isInContext && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute -top-1 -left-1 z-10"
-        >
-          <div className="w-2 h-2 rounded-full bg-foreground/30" />
-        </motion.div>
-      )}
-
-      {/* Chat Dialog */}
       <ChatDialog
         key={`chat-${componentId}`}
         currentComponent={currentComponent}

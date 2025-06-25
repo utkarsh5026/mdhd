@@ -82,7 +82,6 @@ export const useMessage = () => {
   const stopMessage = useCallback(
     (messageId?: string) => {
       if (messageId) {
-        // Stop specific message
         const streamState = streamingStatesRef.current[messageId];
         if (streamState) {
           streamState.abortController.abort();
@@ -90,7 +89,6 @@ export const useMessage = () => {
           delete streamingStatesRef.current[messageId];
         }
       } else {
-        // Stop all active streams
         Object.entries(streamingStatesRef.current).forEach(([id, state]) => {
           state.abortController.abort();
           setMessageStreaming(state.conversationId, id, false);
