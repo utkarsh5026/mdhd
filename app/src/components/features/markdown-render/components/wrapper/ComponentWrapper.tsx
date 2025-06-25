@@ -10,6 +10,7 @@ import { Plus, Sparkles, Check, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import ChatDialog from "../chat-dropdown/ChatDropdown";
 import { useSelectedComponents } from "@/components/features/chat-llm/hooks";
+import { useCodeDetection } from "../../hooks/use-code-detection";
 
 interface ComponentWrapperProps {
   componentType: ComponentType;
@@ -33,6 +34,8 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
   const [showAddedFeedback, setShowAddedFeedback] = useState(false);
   const [extractedContent, setExtractedContent] = useState<string>("");
   const contentRef = useRef<HTMLDivElement>(null);
+  const { detectCodeInContext } = useCodeDetection(contentRef, 3);
+  const [showOnlyChildren, setShowOnlyChildren] = useState(false);
 
   const isDialogOpenRef = useRef(false);
   const [, forceUpdate] = useState({});
@@ -44,6 +47,14 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
     isDialogOpenRef.current = open;
     forceUpdate({});
   }, []);
+
+  useEffect(() => {
+    if (componentType === "code" && detectCodeInContext()) {
+      setShowOnlyChildren(true);
+    } else {
+      setShowOnlyChildren(false);
+    }
+  }, [componentType, detectCodeInContext]);
 
   useEffect(() => {
     if (!contentRef.current) return;
@@ -234,6 +245,11 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
     },
     [setDialogOpen]
   );
+
+  console.log("showOnlyChildren", showOnlyChildren, componentType);
+  if (showOnlyChildren) {
+    return children;
+  }
 
   return (
     <div

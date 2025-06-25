@@ -40,6 +40,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { downloadAsFile, downloadAsImage } from "@/utils/download";
 import { Badge } from "@/components/ui/badge";
+import { useCodeDetection } from "../../hooks/use-code-detection";
 
 interface CodeRenderProps extends React.ComponentPropsWithoutRef<"code"> {
   inline?: boolean;
@@ -258,42 +259,17 @@ const CodeRender: React.FC<CodeRenderProps> = ({
   const codeRef = useRef<HTMLDivElement>(null);
   const dialogCodeRef = useRef<HTMLDivElement | null>(null);
 
-  const [isInTableCell, setIsInTableCell] = useState(false);
-  const [headingLevel, setHeadingLevel] = useState<number | null>(null);
+  const {
+    isInTableCell,
+    headingLevel,
+    inList,
+    isInParagraph,
+    detectCodeInContext,
+  } = useCodeDetection(codeRef, 3);
 
-  /**
-   * Context Detection Logic
-   *
-   * This effect analyzes the component's DOM position to determine
-   * if it's inside a table cell or heading, which affects rendering style.
-   * We traverse up to 3 parent elements to find context clues.
-   */
   useEffect(() => {
-    if (codeRef.current) {
-      let parent = codeRef.current.parentElement;
-      let cnt = 0;
-
-      while (parent && cnt < 3) {
-        const tagName = parent.tagName.toLowerCase().trim();
-
-        // Check if code is inside a table cell
-        if (tagName === "td") {
-          setIsInTableCell(true);
-          return;
-        }
-
-        // Check if code is inside a heading
-        if (tagName === "h1" || tagName === "h2" || tagName === "h3") {
-          setHeadingLevel(parseInt(tagName.slice(1)));
-          return;
-        }
-
-        parent = parent.parentElement;
-        cnt++;
-      }
-      setIsInTableCell(false);
-    }
-  }, []);
+    detectCodeInContext();
+  }, [detectCodeInContext]);
 
   const codeContent = useMemo(() => {
     return typeof children === "string"
@@ -351,7 +327,8 @@ const CodeRender: React.FC<CodeRenderProps> = ({
     setDownloading(null);
   };
 
-  const showSimpleCode = isInTableCell || (!inline && isCompactCode);
+  const showSimpleCode =
+    isInTableCell || inList || isInParagraph || (!inline && isCompactCode);
 
   if (showSimpleCode) {
     return (
