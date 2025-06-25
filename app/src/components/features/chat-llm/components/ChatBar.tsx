@@ -4,13 +4,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   useChatInput,
-  useConversation,
-  useConversationActions,
   useLLMState,
+  useConversationLLMManager,
+  useMessage,
+  useSelectedComponents,
 } from "../hooks";
 import { IoAdd } from "react-icons/io5";
 import { RiRobot2Fill } from "react-icons/ri";
-import { useConversationLLM } from "../hooks/use-conversation-llm";
 import type { MarkdownSection } from "@/services/section/parsing";
 import { ConversationListDialog } from "./ConversationListDialog";
 import { getProviderIcon } from "./utils";
@@ -31,11 +31,12 @@ interface ChatSidebarProps {
 const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
   const [conversationListOpen, setConversationListOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { sendMessage, isLoading } = useMessage();
+  const { selectedComponents } = useSelectedComponents();
 
   const { inputValue, clearInput } = useChatInput();
-  const { createConversation } = useConversationActions();
-  const { activeConversation, conversationSummaries } = useConversation();
-  const { isQueryLoading, sendMessageToConversation } = useConversationLLM();
+  const { activeConversation, conversationSummaries, createConversation } =
+    useConversationLLMManager();
   const { isInitialized, error } = useLLMState();
 
   useEffect(() => {
@@ -54,18 +55,22 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
    * Handle sending a message
    */
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isQueryLoading || !isInitialized) {
+    if (!inputValue.trim() || isLoading || !isInitialized) {
       return;
     }
 
     try {
       if (!activeConversation) {
-        await sendMessageToConversation(inputValue, undefined, {
+        await sendMessage(inputValue, {
           createNewIfNeeded: true,
           conversationTitle: `Chat: ${inputValue.slice(0, 30)}...`,
+          components: selectedComponents,
         });
       } else {
-        await sendMessageToConversation(inputValue, activeConversation.id);
+        await sendMessage(inputValue, {
+          conversationId: activeConversation.id,
+          components: selectedComponents,
+        });
       }
 
       clearInput();
@@ -96,7 +101,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
         <div className="flex-shrink-0">
           <ChatHeader
             onOpenConversationList={() => setConversationListOpen(true)}
-            isQueryLoading={isQueryLoading}
+            isQueryLoading={isLoading}
             onToggle={onToggle}
             error={error}
           />
@@ -112,7 +117,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
                 <AnimatePresence>
                   <Messages
                     messages={activeConversation.messages}
-                    isQueryLoading={isQueryLoading}
+                    isQueryLoading={isLoading}
                     getProviderIcon={getProviderIcon}
                     messageEndRef={messagesEndRef}
                   />
@@ -145,7 +150,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
         {/* Input Area */}
         <ChatInput
           isInitialized={isInitialized}
-          isQueryLoading={isQueryLoading}
+          isQueryLoading={isLoading}
           getProviderIcon={getProviderIcon}
           handleSendMessage={handleSendMessage}
         />
