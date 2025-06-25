@@ -45,13 +45,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onClick={() => handleSendMessage(inputValue)}
           disabled={!inputValue.trim() || isLoading}
           size="icon"
-          className="h-12 w-12 rounded-2xl hover:scale-105 transition-transform cursor-pointer"
+          className="h-12 w-12 rounded-2xl  transition-transform cursor-pointer hover:scale-110 hover:shadow-lg hover:shadow-primary/50"
         >
           {isLoading ? (
             <motion.div
               animate={{ rotate: 360 }}
               transition={{
-                duration: 1,
+                duration: 2,
                 repeat: Infinity,
                 ease: "linear",
               }}
@@ -62,7 +62,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             <motion.div
               animate={{ scale: 1.1, rotate: 360 }}
               transition={{
-                duration: 2,
+                duration: 5,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}

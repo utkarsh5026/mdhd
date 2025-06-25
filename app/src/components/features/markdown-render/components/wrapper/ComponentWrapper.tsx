@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Plus, Sparkles, Check, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
-import ChatDropdown from "../chat-dropdown/ChatDropdown";
+import ChatDialog from "../chat-dropdown/ChatDropdown";
 import {
   useComponent,
   useConversation,
@@ -36,14 +36,23 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
   className,
 }) => {
   const [isHovering, setIsHovering] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showAddedFeedback, setShowAddedFeedback] = useState(false);
   const [extractedContent, setExtractedContent] = useState<string>("");
   const contentRef = useRef<HTMLDivElement>(null);
 
+  // Use refs for dialog state to survive re-renders
+  const isDialogOpenRef = useRef(false);
+  const [, forceUpdate] = useState({});
+
   const { activeConversation } = useConversation();
   const { addComponentToConversation } = useComponent();
   const selectedComponents = activeConversation?.selectedComponents;
+
+  // Helper to force re-render when dialog state changes
+  const setDialogOpen = useCallback((open: boolean) => {
+    isDialogOpenRef.current = open;
+    forceUpdate({}); // Force re-render
+  }, []);
 
   useEffect(() => {
     if (!contentRef.current) return;
@@ -167,21 +176,9 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
 
   const handleSendMessage = useCallback(
     async (message: string): Promise<string> => {
-      // Add component to context automatically when asking
-      const exists = selectedComponents?.some(
-        (c) =>
-          c.content === currentComponent.content &&
-          c.type === currentComponent.type
-      );
-
-      if (!exists && activeConversation?.id) {
-        addComponentToConversation(currentComponent, activeConversation?.id);
-      }
-
-      // Call the legacy onAsk callback if provided for backwards compatibility
-      if (onAsk) {
-        onAsk(currentComponent, message);
-      }
+      // if (onAsk) {
+      //   onAsk(currentComponent, message);
+      // }
 
       return new Promise((resolve) => {
         setTimeout(() => {
@@ -211,14 +208,7 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
         }, 1000 + Math.random() * 1000); // Simulate network delay
       });
     },
-    [
-      currentComponent,
-      selectedComponents,
-      addComponentToConversation,
-      activeConversation,
-      onAsk,
-      componentType,
-    ]
+    [currentComponent, onAsk, componentType, metadata?.language]
   );
 
   const isInContext = useMemo(
@@ -229,23 +219,35 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
     [selectedComponents, extractedContent, componentType]
   );
 
-  const showButtons = isHovering || isDropdownOpen || showAddedFeedback;
+  const showButtons =
+    isHovering || isDialogOpenRef.current || showAddedFeedback;
+
+  // Prevent dialog from closing due to hover state changes
+  const handleMouseLeave = useCallback(() => {
+    // Only hide buttons if dialog is not open
+    if (!isDialogOpenRef.current) {
+      setIsHovering(false);
+    }
+  }, []);
+
+  const handleDialogOpenChange = useCallback(
+    (open: boolean) => {
+      setDialogOpen(open);
+      if (!open) {
+        setTimeout(() => {
+          setIsHovering(false);
+        }, 100);
+      }
+    },
+    [setDialogOpen]
+  );
 
   return (
     <div
       ref={contentRef}
-      className={cn(
-        "relative group transition-all duration-300 rounded-2xl",
-        isHovering && "bg-transparent ring-1 ring-primary/20",
-        isInContext && "ring-1 ring-green-500/30 bg-green-500/5",
-        className
-      )}
+      className={cn("relative group transition-all duration-200", className)}
       onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => {
-        if (!isDropdownOpen) {
-          setIsHovering(false);
-        }
-      }}
+      onMouseLeave={handleMouseLeave}
     >
       {children}
 
@@ -253,86 +255,45 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
       <AnimatePresence>
         {showButtons && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: -10 }}
-            transition={{
-              duration: 0.2,
-              ease: [0.4, 0, 0.2, 1],
-              type: "spring",
-              stiffness: 400,
-              damping: 25,
-            }}
-            className="absolute -top-3 -right-3 flex gap-2 z-20"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute -top-2 -right-2 flex gap-1 z-20"
           >
-            {/* Enhanced Chat Dropdown */}
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Button
-                size="sm"
-                variant="secondary"
-                className={cn(
-                  "h-7 px-2 py-0 shadow-md bg-background border border-border rounded-full transition-all duration-200",
-                  "hover:bg-primary hover:text-primary-foreground hover:border-primary",
-                  "bg-primary text-primary-foreground border-primary cursor-pointer",
-                  className
-                )}
-                onClick={() => {
-                  setIsDropdownOpen(true);
-                }}
-              >
-                <MessageSquare className="h-3 w-3" />
-              </Button>
-            </motion.div>
+            {/* Chat Button */}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity"
+              onClick={() => {
+                setDialogOpen(true);
+              }}
+            >
+              <MessageSquare className="h-3 w-3" />
+            </Button>
 
             {/* Add to Chat Button */}
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={handleAddToChat}
-                disabled={isInContext}
-                className={cn(
-                  "h-8 w-8 p-0 shadow-lg border border-border rounded-full transition-all duration-200 cursor-pointer group",
-                  isInContext
-                    ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800"
-                    : showAddedFeedback
-                    ? "bg-green-500 text-white border-green-500"
-                    : "bg-background hover:bg-green-600 hover:text-white hover:border-green-600"
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleAddToChat}
+              disabled={isInContext}
+              className={cn(
+                "h-6 w-6 p-0 transition-opacity",
+                isInContext ? "opacity-40" : "opacity-60 hover:opacity-100"
+              )}
+            >
+              <AnimatePresence mode="wait">
+                {showAddedFeedback ? (
+                  <Check className="h-3 w-3" />
+                ) : isInContext ? (
+                  <Sparkles className="h-3 w-3" />
+                ) : (
+                  <Plus className="h-3 w-3" />
                 )}
-              >
-                <AnimatePresence mode="wait">
-                  {showAddedFeedback ? (
-                    <motion.div
-                      key="check"
-                      initial={{ scale: 0, rotate: -90 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      exit={{ scale: 0, rotate: 90 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Check className="h-4 w-4" />
-                    </motion.div>
-                  ) : isInContext ? (
-                    <motion.div
-                      key="sparkles"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                    >
-                      <Sparkles className="h-4 w-4" />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="plus"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                    >
-                      <Plus className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </Button>
-            </motion.div>
+              </AnimatePresence>
+            </Button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -340,28 +301,21 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
       {/* Context indicator */}
       {isInContext && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="absolute -top-2 -left-2 z-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute -top-1 -left-1 z-10"
         >
-          <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-2 py-1 rounded-full text-xs font-medium border border-green-200 dark:border-green-800">
-            <Sparkles className="w-3 h-3" />
-            <span>In Context</span>
-          </div>
+          <div className="w-2 h-2 rounded-full bg-foreground/30" />
         </motion.div>
       )}
 
-      <ChatDropdown
+      {/* Chat Dialog */}
+      <ChatDialog
+        key={`chat-${componentId}`}
         currentComponent={currentComponent}
         onSendMessage={handleSendMessage}
-        open={isDropdownOpen}
-        onOpenChange={(open) => {
-          setIsDropdownOpen(open);
-          // When dropdown closes, also reset hover state
-          if (!open) {
-            setIsHovering(false);
-          }
-        }}
+        open={isDialogOpenRef.current}
+        onOpenChange={handleDialogOpenChange}
       />
     </div>
   );
