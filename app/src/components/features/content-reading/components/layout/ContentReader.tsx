@@ -24,14 +24,14 @@ interface ContentReaderProps {
   currentSection: MarkdownSection;
 }
 
-const ContentReader = ({
+const ContentReader: React.FC<ContentReaderProps> = ({
   goToNext,
   goToPrevious,
   isTransitioning,
   scrollRef,
   handleDoubleClick,
   currentSection,
-}: ContentReaderProps) => {
+}) => {
   const { settings } = useReadingSettings();
   const fontFamily = fontFamilyMap[settings.fontFamily];
   const { askAboutComponent } = useConversationLLM();
