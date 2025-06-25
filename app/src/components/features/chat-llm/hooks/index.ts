@@ -10,3 +10,4 @@ export {
   useActiveConversation,
   useConversationSummaries,
 } from "./use-conversation";
+export { useChatInput, useSelectedComponents } from "./use-chat-input";
