@@ -97,6 +97,8 @@ export const useChatInput = () => {
   const inputValue = useChatInputStore((state) => state.inputValue);
   const setInputValue = useChatInputStore((state) => state.setInputValue);
   const clearInput = useChatInputStore((state) => state.clearInput);
+  const chatBarOpen = useChatInputStore((state) => state.chatBarOpen);
+  const setChatBarOpen = useChatInputStore((state) => state.setChatBarOpen);
 
   const handleInputChange = useCallback(
     (newValue: string) => {
@@ -109,6 +111,8 @@ export const useChatInput = () => {
     inputValue,
     handleInputChange,
     clearInput,
+    chatBarOpen,
+    setChatBarOpen,
   };
 };
 

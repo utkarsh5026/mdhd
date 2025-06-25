@@ -4,9 +4,11 @@ import type { ComponentSelection } from "@/components/features/markdown-render/t
 type State = {
   inputValue: string;
   selectedComponents: ComponentSelection[];
+  chatBarOpen: boolean;
 };
 
 type Actions = {
+  setChatBarOpen: (chatBarOpen: boolean) => void;
   setInputValue: (inputValue: string) => void;
   addComponent: (component: ComponentSelection) => void;
   removeComponent: (component: ComponentSelection) => void;
@@ -17,6 +19,7 @@ type Actions = {
 export const useChatInputStore = create<State & Actions>((set, get) => ({
   inputValue: "",
   selectedComponents: [],
+  chatBarOpen: false,
 
   setInputValue: (inputValue) => set({ inputValue }),
 
@@ -24,10 +27,14 @@ export const useChatInputStore = create<State & Actions>((set, get) => ({
 
   addComponent: (component) => {
     const { selectedComponents } = get();
+
     if (selectedComponents.some((c) => c.id === component.id)) {
       return;
     }
-    set({ selectedComponents: [...selectedComponents, component] });
+    set({
+      selectedComponents: [...selectedComponents, component],
+      chatBarOpen: true,
+    });
   },
 
   removeComponent: (component) =>
@@ -38,4 +45,6 @@ export const useChatInputStore = create<State & Actions>((set, get) => ({
     })),
 
   clearComponents: () => set({ selectedComponents: [] }),
+
+  setChatBarOpen: (chatBarOpen) => set({ chatBarOpen }),
 }));

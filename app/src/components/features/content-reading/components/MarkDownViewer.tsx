@@ -16,6 +16,7 @@ import {
 } from "@/components/features/content-reading/hooks";
 import LLMProvider from "../../chat-llm/context/llm/LLMProvider";
 import ChatSidebar from "../../chat-llm/components/ChatBar";
+import { useChatInput } from "../../chat-llm/hooks/use-chat";
 
 interface MarkdownViewerProps {
   markdown: string;
@@ -31,8 +32,8 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
 }) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [chatSidebarVisible, setChatSidebarVisible] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { chatBarOpen, setChatBarOpen } = useChatInput();
 
   const {
     sections,
@@ -51,7 +52,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
     useControls({
       goToNext,
       goToPrevious,
-      isChatSidebarVisible: chatSidebarVisible,
+      isChatSidebarVisible: chatBarOpen,
     });
 
   /**
@@ -90,7 +91,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
       <div
         className={cn(
           "h-full transition-all duration-300 ease-out relative",
-          chatSidebarVisible ? "ml-[33.333%]" : "ml-0"
+          chatBarOpen ? "ml-[33.333%]" : "ml-0"
         )}
       >
         {/* Content Container */}
@@ -107,7 +108,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
         <div className="absolute top-0 left-0 right-0 z-50">
           <Header
             onChat={() => {
-              setChatSidebarVisible(true);
+              setChatBarOpen(true);
               handleInteraction();
             }}
             onExit={() => {
@@ -168,8 +169,8 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
       </div>
 
       <ChatSidebar
-        isVisible={chatSidebarVisible}
-        onToggle={() => setChatSidebarVisible(!chatSidebarVisible)}
+        isVisible={chatBarOpen}
+        onToggle={() => setChatBarOpen(!chatBarOpen)}
         sections={sections}
         currentSection={currentSection}
       />
