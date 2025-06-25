@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useConversationLLMManager } from "../hooks";
 import { IoTrashOutline, IoAddOutline } from "react-icons/io5";
 import { Conversation } from "../types";
+import { formatTimeAgo } from "@/utils/time";
 
 /**
  * Enhanced Conversation List Component with modern UI/UX
@@ -38,7 +39,7 @@ export const ConversationListDialog: React.FC<{
     onOpenChange(false);
   };
 
-  const conversationArray = Array.from(conversations.values()).sort(
+  const conversationArray = Object.values(conversations).sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
@@ -71,9 +72,10 @@ export const ConversationListDialog: React.FC<{
                 />
               ))}
             </div>
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
-          {conversations.size === 0 && (
+          {Object.keys(conversations).length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <p>No conversations yet</p>
               <p className="text-sm mt-1">Start a new conversation to begin</p>
@@ -121,7 +123,9 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
           )}
           <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
             <span>{conversation.messages.length} messages</span>
-            <span>{formatLastActivity(new Date(conversation.updatedAt))}</span>
+            <span>
+              {formatTimeAgo(new Date(conversation.updatedAt).getTime())}
+            </span>
             {isActive && (
               <Badge
                 variant="default"
@@ -146,15 +150,4 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
       </div>
     </div>
   );
-};
-
-const formatLastActivity = (date: Date) => {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const hours = diff / (1000 * 60 * 60);
-
-  if (hours < 1) return "Just now";
-  if (hours < 24) return `${Math.floor(hours)}h ago`;
-  if (hours < 48) return "Yesterday";
-  return date.toLocaleDateString();
 };
