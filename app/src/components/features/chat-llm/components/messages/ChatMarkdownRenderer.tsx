@@ -27,7 +27,6 @@ const ChatMarkdownRenderer: React.FC<ChatMarkdownRendererProps> = ({
   const { getCurrentThemeStyle } = useCodeThemeStore();
   const codeThemeStyle = getCurrentThemeStyle();
 
-  // FIX: Optimize content processing to reduce re-renders
   const safeContent = React.useMemo(() => {
     if (!isStreaming) return content;
 

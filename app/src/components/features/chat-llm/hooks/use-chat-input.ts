@@ -4,6 +4,7 @@ import { useChatInputStore } from "../store/chat-input-store";
 export const useChatInput = () => {
   const inputValue = useChatInputStore((state) => state.inputValue);
   const setInputValue = useChatInputStore((state) => state.setInputValue);
+  const clearInput = useChatInputStore((state) => state.clearInput);
 
   const handleInputChange = useCallback(
     (newValue: string) => {
@@ -15,6 +16,7 @@ export const useChatInput = () => {
   return {
     inputValue,
     handleInputChange,
+    clearInput,
   };
 };
 

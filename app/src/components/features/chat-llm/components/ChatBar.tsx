@@ -2,7 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
-import { useConversation, useConversationActions, useLLMState } from "../hooks";
+import {
+  useChatInput,
+  useConversation,
+  useConversationActions,
+  useLLMState,
+} from "../hooks";
 import { IoAdd } from "react-icons/io5";
 import { RiRobot2Fill } from "react-icons/ri";
 import { useConversationLLM } from "../hooks/use-conversation-llm";
@@ -27,9 +32,9 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
   const [conversationListOpen, setConversationListOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const { inputValue, clearInput } = useChatInput();
   const { createConversation } = useConversationActions();
   const { activeConversation, conversationSummaries } = useConversation();
-  const [inputValue, setInputValue] = useState<string>("");
   const { isQueryLoading, sendMessageToConversation } = useConversationLLM();
   const { isInitialized, error } = useLLMState();
 
@@ -63,7 +68,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
         await sendMessageToConversation(inputValue, activeConversation.id);
       }
 
-      setInputValue("");
+      clearInput();
     } catch (error) {
       console.error("Failed to send message:", error);
     }
