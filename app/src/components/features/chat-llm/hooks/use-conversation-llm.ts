@@ -1,7 +1,5 @@
 import { useCallback, useState } from "react";
-import {
-  useConversationStore,
-} from "../store/conversation-store";
+import { useConversationStore } from "../store/conversation-store";
 import type { ComponentSelection } from "../../markdown-render/types";
 import useComponent from "./use-component";
 import { useMessageActions, useStreamMessage } from "./use-messages";
@@ -233,7 +231,6 @@ export const useConversationLLM = () => {
         addComponentToConversation(component, targetConversationId);
       });
 
-      // Ask question if provided
       if (question) {
         await sendMessageToConversation(question, targetConversationId, {
           components,

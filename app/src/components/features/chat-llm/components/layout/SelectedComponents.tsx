@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import { useActiveConversation, useComponent } from "../../hooks";
 import { useCallback } from "react";
@@ -28,25 +27,6 @@ const SelectedComponents = () => {
 
   return (
     <div className="p-3 border-b border-border bg-muted/20">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-muted-foreground">
-          Context ({activeConversation?.selectedComponents.length})
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (activeConversation) {
-              activeConversation.selectedComponents.forEach((comp) => {
-                removeComponentFromConversation(comp.id, activeConversation.id);
-              });
-            }
-          }}
-          className="h-6 text-xs text-muted-foreground hover:text-destructive"
-        >
-          Clear All
-        </Button>
-      </div>
       <div className="flex flex-wrap gap-1">
         <AnimatePresence>
           {activeConversation.selectedComponents.map((component) => (
