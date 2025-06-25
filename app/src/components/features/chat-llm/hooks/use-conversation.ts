@@ -19,6 +19,9 @@ export const useConversation = () => {
   const activeConversation = useActiveConversation();
   const conversationSummaries = useConversationSummaries();
 
+  console.debug(conversations, "conversations");
+  console.debug(activeConversation, "activeConversation");
+
   const setActiveConversation = useCallback(
     (conversationId: string) => {
       if (!_validateConversationID(conversationId, conversations)) {
@@ -56,7 +59,7 @@ export const useConversationActions = () => {
   const createConv = useConversationStore((state) => state.createConversation);
   const createConversation = useCallback(
     (title?: string, initialComponent?: ComponentSelection) => {
-      createConv(title, initialComponent);
+      return createConv(title, initialComponent);
     },
     [createConv]
   );
