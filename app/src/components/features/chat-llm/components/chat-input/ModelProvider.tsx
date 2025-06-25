@@ -6,8 +6,11 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { IoChevronDown, IoCheckmark } from "react-icons/io5";
-import type { LLMProviderId } from "../types";
-import { useLLMState, useLLMActions } from "../hooks";
+import type { LLMProviderId } from "@/components/features/chat-llm/types";
+import {
+  useLLMState,
+  useLLMActions,
+} from "@/components/features/chat-llm/hooks";
 
 interface ModelProviderProps {
   modelPopoverOpen: boolean;
