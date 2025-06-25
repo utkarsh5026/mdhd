@@ -35,6 +35,8 @@ export interface Conversation {
   selectedComponents: ComponentSelection[]; // Components in this conversation's context
   currentSectionId?: string; // Which section this conversation started from
   currentSectionTitle?: string;
+  error?: Error;
+  retryCount?: number;
 }
 
 /**
