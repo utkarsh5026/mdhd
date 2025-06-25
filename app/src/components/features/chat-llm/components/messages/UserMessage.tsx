@@ -15,7 +15,7 @@ const UserMessage: React.FC<UserMessageProps> = ({ message }) => {
     <div
       className={cn(
         "rounded-2xl px-4 py-3 text-sm w-full max-w-full overflow-hidden",
-        "bg-background text-primary-foreground backdrop-blur-2xl border-none"
+        "bg-card text-primary-foreground backdrop-blur-2xl border-none"
       )}
     >
       <div className="leading-relaxed text-sm text-muted-foreground flex items-start justify-start gap-2 max-w-full">

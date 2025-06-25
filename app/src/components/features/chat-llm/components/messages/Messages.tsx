@@ -11,7 +11,7 @@ interface MessagesProps {
   messages: ChatMessage[];
   isQueryLoading: boolean;
   getProviderIcon: (providerId: LLMProviderId) => React.ReactNode;
-  messageEndRef: React.RefObject<HTMLDivElement>;
+  messageEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const Messages: React.FC<MessagesProps> = ({
