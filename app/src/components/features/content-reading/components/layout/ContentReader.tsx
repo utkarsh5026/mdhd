@@ -6,13 +6,7 @@ import {
   useReadingSettings,
   fontFamilyMap,
 } from "@/components/features/settings/context/ReadingContext";
-import {
-  useActiveConversation,
-  useComponent,
-  useConversationLLM,
-} from "@/components/features/chat-llm/hooks";
-import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
-import { useCallback, RefObject } from "react";
+import { RefObject } from "react";
 
 interface ContentReaderProps {
   markdown: string;
@@ -34,20 +28,8 @@ const ContentReader: React.FC<ContentReaderProps> = ({
 }) => {
   const { settings } = useReadingSettings();
   const fontFamily = fontFamilyMap[settings.fontFamily];
-  const { askAboutComponent } = useConversationLLM();
 
-  const { addComponentToConversation } = useComponent();
-  const activeConversation = useActiveConversation();
-
-  const handleComponentAddToChat = useCallback(
-    (component: ComponentSelection) => {
-      if (!activeConversation?.id) {
-        return;
-      }
-      addComponentToConversation(component, activeConversation.id);
-    },
-    [addComponentToConversation, activeConversation?.id]
-  );
+  console.log("Redn");
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (eventData) => {
@@ -97,8 +79,6 @@ const ContentReader: React.FC<ContentReaderProps> = ({
                 sectionId={currentSection.id}
                 sectionTitle={currentSection.title}
                 enableInteractions
-                onComponentAsk={askAboutComponent}
-                onComponentAddToChat={handleComponentAddToChat}
               />
             </div>
           </div>

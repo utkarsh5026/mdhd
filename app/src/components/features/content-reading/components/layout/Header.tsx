@@ -170,7 +170,7 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={onChat}
                 icon={MessageCircle}
                 variant="primary"
-                animation={{ rotateZ: 180, rotateY: 180 }}
+                animation={{ rotateZ: 5 }}
                 tooltip="Open Chat"
               />
 
