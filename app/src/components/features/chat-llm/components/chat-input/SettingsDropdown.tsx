@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { IoSettings, IoEye, IoEyeOff, IoSave, IoTrash } from "react-icons/io5";
-import { LLMProviderId, LLMProvider } from "../types";
+import { LLMProviderId, LLMProvider } from "../../types";
 
 interface SettingsDropdownProps {
   providers: LLMProvider[];
