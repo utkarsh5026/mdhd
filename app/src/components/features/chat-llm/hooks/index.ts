@@ -9,3 +9,4 @@ export {
   useStreamMessage,
 } from "./use-conversation";
 export { useChatInput, useSelectedComponents } from "./use-chat";
+export { useMessage } from "./use-message";

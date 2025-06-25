@@ -1,13 +1,17 @@
 import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import { devtools } from "zustand/middleware";
 import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
-import type { Conversation, ConversationSummary } from "../types";
+import type { ChatMessage, Conversation } from "../types";
 
 const generateConversationId = () =>
   `conv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
+const generateMessageId = () =>
+  `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
 type State = {
-  conversations: Map<string, Conversation>;
+  conversations: Record<string, Conversation>;
+  conversationIds: string[];
   activeConversationId: string | null;
   currentSectionId?: string;
   currentSectionTitle?: string;
@@ -19,181 +23,214 @@ type Actions = {
     initialComponent?: ComponentSelection
   ) => string;
   deleteConversation: (conversationId: string) => void;
-  updateConversationTitle: (conversationId: string, title: string) => void;
-  updateConversation: (
+  setActiveConversation: (conversationId: string) => void;
+
+  addMessage: (
     conversationId: string,
-    conversation: Conversation
+    message: Omit<ChatMessage, "id">
+  ) => string;
+  updateMessage: (
+    conversationId: string,
+    messageId: string,
+    content: string
+  ) => void;
+  setMessageStreaming: (
+    conversationId: string,
+    messageId: string,
+    isStreaming: boolean
   ) => void;
 
-  getActiveConversation: () => Conversation | null;
-  getConversation: (conversationId: string) => Conversation | null;
-  getConversationSummaries: () => ConversationSummary[];
+  // Component actions
+  addComponentToConversation: (
+    conversationId: string,
+    component: ComponentSelection
+  ) => void;
+  removeComponentFromConversation: (
+    conversationId: string,
+    componentId: string
+  ) => void;
 };
 
+// ✅ Stable selectors to prevent unnecessary re-renders
 export const useConversationStore = create<State & Actions>()(
-  devtools(
-    persist(
-      (set, get) => ({
-        conversations: new Map(),
-        activeConversationId: null,
-        currentSectionId: undefined,
-        currentSectionTitle: undefined,
+  devtools((set, get) => ({
+    conversations: {},
+    conversationIds: [],
+    activeConversationId: null,
+    currentSectionId: undefined,
+    currentSectionTitle: undefined,
 
-        createConversation: (title, initialComponent) => {
-          const conversationId = generateConversationId();
-          const now = new Date();
+    createConversation: (title, initialComponent) => {
+      const conversationId = generateConversationId();
+      const now = new Date();
 
-          const conversation: Conversation = {
-            id: conversationId,
-            title: title || "New Conversation",
-            createdAt: now,
-            updatedAt: now,
-            messages: [],
-            selectedComponents: initialComponent ? [initialComponent] : [],
-            currentSectionId: get().currentSectionId,
-            currentSectionTitle: get().currentSectionTitle,
-          };
+      const conversation: Conversation = {
+        id: conversationId,
+        title: title || "New Conversation",
+        createdAt: now,
+        updatedAt: now,
+        messages: [],
+        selectedComponents: initialComponent ? [initialComponent] : [],
+        currentSectionId: get().currentSectionId,
+        currentSectionTitle: get().currentSectionTitle,
+      };
 
-          set(
-            (state) => {
-              const newConversations = new Map(state.conversations);
-              newConversations.set(conversationId, conversation);
-
-              return {
-                conversations: newConversations,
-                activeConversationId: conversationId,
-              };
-            },
-            false,
-            "createConversation"
-          );
-
-          return conversationId;
+      set((state) => ({
+        conversations: {
+          ...state.conversations, // ✅ Spread to maintain reference stability
+          [conversationId]: conversation,
         },
+        conversationIds: [conversationId, ...state.conversationIds],
+        activeConversationId: conversationId,
+      }));
 
-        updateConversation: (conversationId, conversation) =>
-          set(
-            (state) => {
-              const newConversations = new Map(state.conversations);
-              newConversations.set(conversationId, conversation);
+      return conversationId;
+    },
 
-              return {
-                conversations: newConversations,
-              };
-            },
-            false,
-            "updateConversation"
-          ),
-        deleteConversation: (conversationId) =>
-          set(
-            (state) => {
-              const newConversations = new Map(state.conversations);
-              newConversations.delete(conversationId);
+    deleteConversation: (conversationId) =>
+      set((state) => {
+        const { [conversationId]: deleted, ...restConversations } =
+          state.conversations;
+        const newConversationIds = state.conversationIds.filter(
+          (id) => id !== conversationId
+        );
 
-              const newActiveId =
-                state.activeConversationId === conversationId
-                  ? newConversations.size > 0
-                    ? Array.from(newConversations.keys())[0]
-                    : null
-                  : state.activeConversationId;
+        const newActiveId =
+          state.activeConversationId === conversationId
+            ? newConversationIds[0] || null
+            : state.activeConversationId;
 
-              return {
-                conversations: newConversations,
-                activeConversationId: newActiveId,
-              };
-            },
-            false,
-            "deleteConversation"
-          ),
-
-        setActiveConversation: (conversationId: string) =>
-          set(
-            { activeConversationId: conversationId },
-            false,
-            "setActiveConversation"
-          ),
-
-        updateConversationTitle: (conversationId, title) =>
-          set(
-            (state) => {
-              const conversation = state.conversations.get(conversationId);
-              if (!conversation) return state;
-
-              const updatedConversation = {
-                ...conversation,
-                title,
-                updatedAt: new Date(),
-              };
-
-              const newConversations = new Map(state.conversations);
-              newConversations.set(conversationId, updatedConversation);
-
-              return { conversations: newConversations };
-            },
-            false,
-            "updateConversationTitle"
-          ),
-
-        getActiveConversation: () => {
-          const state = get();
-          if (!state.activeConversationId) return null;
-          return state.conversations.get(state.activeConversationId) || null;
-        },
-
-        getConversation: (conversationId) => {
-          const state = get();
-          return state.conversations.get(conversationId) || null;
-        },
-
-        getConversationSummaries: () => {
-          const state = get();
-          return Array.from(state.conversations.values()).map(
-            ({
-              id,
-              title,
-              messages,
-              createdAt,
-              updatedAt,
-              selectedComponents,
-            }) => {
-              const lastMessage = messages[messages.length - 1]?.content;
-              const messageCount = messages.length;
-              return {
-                id,
-                title,
-                lastMessage,
-                messageCount,
-                createdAt,
-                updatedAt,
-                componentCount: selectedComponents.length,
-              };
-            }
-          );
-        },
+        return {
+          conversations: restConversations,
+          conversationIds: newConversationIds,
+          activeConversationId: newActiveId,
+        };
       }),
-      {
-        name: "conversation-store",
-        partialize: (state) => ({
-          conversations: Array.from(state.conversations.entries()),
-          activeConversationId: state.activeConversationId,
-          currentSectionId: state.currentSectionId,
-          currentSectionTitle: state.currentSectionTitle,
-        }),
-        merge: (
-          persistedState: PersistedState,
-          currentState: State & Actions
-        ) => {
-          const conversations = new Map(persistedState.conversations || []);
-          return {
-            ...currentState,
-            ...persistedState,
-            conversations,
-          };
-        },
-      }
-    )
-  )
-);
 
-export const useConversations = () =>
-  useConversationStore((state) => state.conversations);
+    setActiveConversation: (conversationId) =>
+      set({ activeConversationId: conversationId }),
+
+    addMessage: (conversationId, message) => {
+      const messageId = `msg_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2, 9)}`;
+
+      set((state) => {
+        const conversation = state.conversations[conversationId];
+        if (!conversation) return state;
+
+        return {
+          conversations: {
+            ...state.conversations,
+            [conversationId]: {
+              ...conversation,
+              messages: [
+                ...conversation.messages,
+                { ...message, id: messageId },
+              ],
+              updatedAt: new Date(),
+            },
+          },
+        };
+      });
+
+      return messageId;
+    },
+
+    updateMessage: (conversationId, messageId, content) =>
+      set((state) => {
+        const conversation = state.conversations[conversationId];
+        if (!conversation) return state;
+
+        const updatedMessages = conversation.messages.map((msg) =>
+          msg.id === messageId ? { ...msg, content } : msg
+        );
+
+        console.log(
+          "updatedMessages",
+          conversationId,
+          messageId,
+          content,
+
+          updatedMessages
+        );
+
+        return {
+          conversations: {
+            ...state.conversations,
+            [conversationId]: {
+              ...conversation,
+              messages: updatedMessages,
+              updatedAt: new Date(),
+            },
+          },
+        };
+      }),
+
+    setMessageStreaming: (conversationId, messageId, isStreaming) =>
+      set((state) => {
+        const conversation = state.conversations[conversationId];
+        if (!conversation) return state;
+
+        const updatedMessages = conversation.messages.map((msg) =>
+          msg.id === messageId ? { ...msg, isStreaming } : msg
+        );
+
+        return {
+          conversations: {
+            ...state.conversations,
+            [conversationId]: {
+              ...conversation,
+              messages: updatedMessages,
+              updatedAt: new Date(),
+            },
+          },
+        };
+      }),
+
+    addComponentToConversation: (conversationId, component) =>
+      set((state) => {
+        const conversation = state.conversations[conversationId];
+        if (!conversation) return state;
+
+        // Check if component already exists
+        const exists = conversation.selectedComponents.some(
+          (c) => c.id === component.id
+        );
+        if (exists) return state;
+
+        return {
+          conversations: {
+            ...state.conversations,
+            [conversationId]: {
+              ...conversation,
+              selectedComponents: [
+                ...conversation.selectedComponents,
+                component,
+              ],
+              updatedAt: new Date(),
+            },
+          },
+        };
+      }),
+
+    removeComponentFromConversation: (conversationId, componentId) =>
+      set((state) => {
+        const conversation = state.conversations[conversationId];
+        if (!conversation) return state;
+
+        return {
+          conversations: {
+            ...state.conversations,
+            [conversationId]: {
+              ...conversation,
+              selectedComponents: conversation.selectedComponents.filter(
+                (c) => c.id !== componentId
+              ),
+              updatedAt: new Date(),
+            },
+          },
+        };
+      }),
+  }))
+);

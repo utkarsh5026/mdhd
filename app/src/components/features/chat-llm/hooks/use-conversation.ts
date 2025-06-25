@@ -1,7 +1,4 @@
-import {
-  useConversations,
-  useConversationStore,
-} from "../store/conversation-store";
+import { useConversationStore } from "../store/conversation-store";
 import { useCallback, useMemo, useState } from "react";
 import type {
   ChatMessage,
@@ -11,13 +8,6 @@ import type {
 } from "../types";
 import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
 import { useLLMState } from "./use-llm";
-
-const _validateConversationID = (
-  conversationId: string,
-  conversations: Map<string, Conversation>
-) => {
-  return conversations.has(conversationId);
-};
 
 const generateMessageId = (): string => {
   return `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -29,16 +19,20 @@ const _generateConversationTitle = (firstMessage: string): string => {
 };
 
 export const useConversation = () => {
-  const conversations = useConversations();
+  const conversations = useConversationStore((state) => state.conversations);
   const activeConversation = useActiveConversation();
   const conversationSummaries = useConversationSummaries();
 
-  console.debug(conversations, "conversations");
-  console.debug(activeConversation, "activeConversation");
+  // console.dir(conversations, {
+  //   depth: null,
+  // });
+  // console.dir(activeConversation, {
+  //   depth: null,
+  // });
 
   const getConversationFromID = useCallback(
     (conversationId: string) => {
-      return conversations.get(conversationId);
+      return conversations[conversationId];
     },
     [conversations]
   );
@@ -52,10 +46,10 @@ export const useConversation = () => {
 };
 
 export const useConversationActions = () => {
-  const conversations = useConversations();
+  const conversations = useConversationStore((state) => state.conversations);
   const { activeConversation } = useActiveConversation();
   const deleteConv = useConversationStore((state) => state.deleteConversation);
-  const updateConv = useConversationStore((state) => state.updateConversation);
+  const updateConv = useConversationStore((state) => state.updateMessage);
   const createConv = useConversationStore((state) => state.createConversation);
 
   const createConversation = useCallback(
@@ -68,7 +62,7 @@ export const useConversationActions = () => {
         const conversationTitle = title;
         const conversationId = createConv(conversationTitle, initialComponent);
 
-        const newConversation = conversations.get(conversationId);
+        const newConversation = conversations[conversationId];
         if (newConversation && onConversationCreated) {
           onConversationCreated(newConversation);
         }
@@ -90,8 +84,8 @@ export const useConversationActions = () => {
   );
 
   const updateConversation = useCallback(
-    (conversationId: string, conversation: Conversation) => {
-      updateConv(conversationId, conversation);
+    (conversationId: string, messageId: string, content: string) => {
+      updateConv(conversationId, messageId, content);
     },
     [updateConv]
   );
@@ -99,16 +93,12 @@ export const useConversationActions = () => {
   const updateConversationTitle = useCallback(
     (conversationId: string, title: string) => {
       try {
-        const conversation = conversations.get(conversationId);
+        const conversation = conversations[conversationId];
         if (!conversation) {
           throw new Error(`Conversation ${conversationId} not found`);
         }
 
-        updateConversation(conversationId, {
-          ...conversation,
-          title,
-          updatedAt: new Date(),
-        });
+        updateConversation(conversationId, conversation.messages[0].id, title);
       } catch (error) {
         const err = new Error(`Failed to update conversation title: ${error}`);
         throw err;
@@ -121,7 +111,11 @@ export const useConversationActions = () => {
     (conversation: Conversation, conversationId?: string) => {
       const targetId = conversationId ?? activeConversation?.id;
       if (!targetId) return;
-      updateConversation(targetId, conversation);
+      updateConversation(
+        targetId,
+        conversation.messages[0].id,
+        conversation.title
+      );
     },
     [activeConversation, updateConversation]
   );
@@ -131,10 +125,9 @@ export const useConversationActions = () => {
       const targetId = conversationId ?? activeConversation?.id;
       if (!targetId) return null;
 
-      const conversation = conversations.get(targetId);
-      if (!conversation) return null;
+      if (!conversations[targetId]) return null;
 
-      return conversation;
+      return conversations[targetId];
     },
     [activeConversation, conversations]
   );
@@ -255,7 +248,7 @@ export const useActiveConversation = () => {
 
   const setActiveConversation = useCallback(
     (conversationId: string) => {
-      if (!_validateConversationID(conversationId, conversations)) {
+      if (!conversations[conversationId]) {
         setError("Invalid conversation ID");
         return;
       }
@@ -269,7 +262,7 @@ export const useActiveConversation = () => {
 
   const activeConversation = useMemo(() => {
     if (!activeConversationId) return null;
-    return conversations.get(activeConversationId) || null;
+    return conversations[activeConversationId] || null;
   }, [activeConversationId, conversations]);
 
   return {
@@ -282,9 +275,10 @@ export const useActiveConversation = () => {
 export const useConversationSummaries = () => {
   const conversations = useConversationStore((state) => state.conversations);
 
-  return useMemo(() => {
-    return Array.from(conversations.values()).map(
+  const summaries = useMemo(() => {
+    return Object.values(conversations).map(
       ({ id, title, messages, createdAt, updatedAt, selectedComponents }) => {
+        console.log("messages", messages, id, title);
         const lastMessage = messages[messages.length - 1]?.content;
         const messageCount = messages.length;
         return {
@@ -299,6 +293,8 @@ export const useConversationSummaries = () => {
       }
     );
   }, [conversations]);
+
+  return summaries;
 };
 
 export const useStreamMessage = () => {
@@ -360,6 +356,7 @@ export const useStreamMessage = () => {
             temperature: options.temperature || 0.7,
           },
           (chunk: string) => {
+            console.log("New content Recieved", chunk);
             fullContent += chunk;
             updateMessageOfConversation(
               assistantMessageId,
