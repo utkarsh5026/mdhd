@@ -25,7 +25,6 @@ interface MarkdownRendererProps {
   lineHeight?: number;
   letterSpacing?: number | string;
   onComponentAsk?: (selection: ComponentSelection, question: string) => void;
-  onComponentAddToChat?: (selection: ComponentSelection) => void;
   enableInteractions?: boolean;
 }
 
@@ -44,7 +43,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
     lineHeight,
     letterSpacing,
     onComponentAsk,
-    onComponentAddToChat,
     enableInteractions = true,
   }) => {
     const containerStyle: React.CSSProperties = useMemo(
@@ -68,7 +66,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
               sectionId={sectionId}
               sectionTitle={sectionTitle}
               onAsk={onComponentAsk}
-              onAddToChat={onComponentAddToChat}
               metadata={{ level: 1 }}
             >
               <HeadingRender level={1} {...props} />
@@ -84,7 +81,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
               sectionId={sectionId}
               sectionTitle={sectionTitle}
               onAsk={onComponentAsk}
-              onAddToChat={onComponentAddToChat}
               metadata={{ level: 2 }}
             >
               <HeadingRender level={2} {...props} />
@@ -100,7 +96,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
               sectionId={sectionId}
               sectionTitle={sectionTitle}
               onAsk={onComponentAsk}
-              onAddToChat={onComponentAddToChat}
               metadata={{ level: 3 }}
             >
               <HeadingRender level={3} {...props} />
@@ -117,7 +112,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
               sectionId={sectionId}
               sectionTitle={sectionTitle}
               onAsk={onComponentAsk}
-              onAddToChat={onComponentAddToChat}
             >
               <ParagraphRender {...props} />
             </ComponentWrapper>
@@ -133,7 +127,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
               sectionId={sectionId}
               sectionTitle={sectionTitle}
               onAsk={onComponentAsk}
-              onAddToChat={onComponentAddToChat}
             >
               <BlockquoteRender {...props} />
             </ComponentWrapper>
@@ -165,7 +158,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
               sectionId={sectionId}
               sectionTitle={sectionTitle}
               onAsk={onComponentAsk}
-              onAddToChat={onComponentAddToChat}
               metadata={{ language }}
               className="my-4"
             >
@@ -184,7 +176,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
               sectionId={sectionId}
               sectionTitle={sectionTitle}
               onAsk={onComponentAsk}
-              onAddToChat={onComponentAddToChat}
             >
               <ListRender type="ul" props={{ ...props }} />
             </ComponentWrapper>
@@ -199,7 +190,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
               sectionId={sectionId}
               sectionTitle={sectionTitle}
               onAsk={onComponentAsk}
-              onAddToChat={onComponentAddToChat}
             >
               <ListRender type="ol" props={{ ...props }} />
             </ComponentWrapper>
@@ -215,7 +205,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
               sectionId={sectionId}
               sectionTitle={sectionTitle}
               onAsk={onComponentAsk}
-              onAddToChat={onComponentAddToChat}
               className="my-4"
             >
               <div className="overflow-x-auto rounded-2xl border border-border">
@@ -263,7 +252,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
               sectionId={sectionId}
               sectionTitle={sectionTitle}
               onAsk={onComponentAsk}
-              onAddToChat={onComponentAddToChat}
               metadata={{ alt: props.alt, href: props.src }}
             >
               <ImageRender
@@ -280,13 +268,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
             />
           ),
       }),
-      [
-        sectionId,
-        sectionTitle,
-        onComponentAsk,
-        onComponentAddToChat,
-        enableInteractions,
-      ]
+      [sectionId, sectionTitle, onComponentAsk, enableInteractions]
     );
 
     return (

@@ -12,6 +12,7 @@ import ChatDialog from "../chat-dropdown/ChatDropdown";
 import {
   useComponent,
   useConversation,
+  useSelectedComponents,
 } from "@/components/features/chat-llm/hooks";
 
 interface ComponentWrapperProps {
@@ -20,7 +21,6 @@ interface ComponentWrapperProps {
   sectionId: string;
   sectionTitle: string;
   onAsk?: (selection: ComponentSelection, question: string) => void;
-  onAddToChat?: (selection: ComponentSelection) => void;
   metadata?: ComponentSelection["metadata"];
   className?: string;
 }
@@ -30,8 +30,6 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
   children,
   sectionId,
   sectionTitle,
-  onAsk,
-  onAddToChat,
   metadata = {},
   className,
 }) => {
@@ -46,7 +44,7 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
 
   const { activeConversation } = useConversation();
   const { addComponentToConversation } = useComponent();
-  const selectedComponents = activeConversation?.selectedComponents;
+  const { selectedComponents, addComponent } = useSelectedComponents();
 
   // Helper to force re-render when dialog state changes
   const setDialogOpen = useCallback((open: boolean) => {
@@ -165,13 +163,13 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
       duration: 3000,
     });
 
-    onAddToChat?.(currentComponent);
+    addComponent(currentComponent);
   }, [
     currentComponent,
     activeConversation,
     addComponentToConversation,
     componentType,
-    onAddToChat,
+    addComponent,
   ]);
 
   const handleSendMessage = useCallback(
@@ -208,7 +206,7 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
         }, 1000 + Math.random() * 1000); // Simulate network delay
       });
     },
-    [currentComponent, onAsk, componentType, metadata?.language]
+    [currentComponent, componentType, metadata?.language]
   );
 
   const isInContext = useMemo(

@@ -5,6 +5,7 @@ import { IoSend } from "react-icons/io5";
 import ModelProvider from "./ModelProvider";
 import { useState } from "react";
 import type { LLMProviderId } from "@/components/features/chat-llm/types";
+import { useChatInput } from "../../hooks";
 
 interface ChatInputProps {
   isInitialized: boolean;
@@ -19,7 +20,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   getProviderIcon,
   handleSendMessage,
 }) => {
-  const [inputValue, setInputValue] = useState("");
+  const { inputValue, handleInputChange } = useChatInput();
   const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
 
   return (
@@ -44,7 +45,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               !isInitialized ? "Initializing..." : "Ask about your document..."
             }
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => handleInputChange(e.target.value)}
             disabled={!isInitialized || isQueryLoading}
             className="text-sm rounded-2xl border-1 border-border bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/30 resize-none"
           />

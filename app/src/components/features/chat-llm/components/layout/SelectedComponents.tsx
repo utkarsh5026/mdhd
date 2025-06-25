@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useActiveConversation, useComponent } from "../../hooks";
-import { useCallback } from "react";
+import { useSelectedComponents } from "@/components/features/chat-llm/hooks";
 import { Badge } from "@/components/ui/badge";
 import { IoClose } from "react-icons/io5";
 import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
@@ -8,32 +7,17 @@ import { getComponentColorScheme } from "../utils";
 import { cn } from "@/lib/utils";
 
 const SelectedComponents = () => {
-  const activeConversation = useActiveConversation();
-  const { removeComponentFromConversation } = useComponent();
-
-  /**
-   * Handle removing component from active conversation
-   */
-  const handleRemoveComponent = useCallback(
-    (componentId: string) => {
-      if (!activeConversation) return;
-
-      removeComponentFromConversation(componentId, activeConversation.id);
-    },
-    [activeConversation, removeComponentFromConversation]
-  );
-
-  if (!activeConversation) return null;
+  const { selectedComponents, removeComponent } = useSelectedComponents();
 
   return (
     <div className="p-3 border-b border-border bg-muted/20">
       <div className="flex flex-wrap gap-1">
         <AnimatePresence>
-          {activeConversation.selectedComponents.map((component) => (
+          {selectedComponents.map((component) => (
             <ComponentBadge
               key={component.id}
               component={component}
-              onRemove={handleRemoveComponent}
+              onRemove={removeComponent}
             />
           ))}
         </AnimatePresence>
@@ -44,7 +28,7 @@ const SelectedComponents = () => {
 
 export const ComponentBadge: React.FC<{
   component: ComponentSelection;
-  onRemove?: (id: string) => void;
+  onRemove?: (component: ComponentSelection) => void;
   showRemove?: boolean;
 }> = ({ component, onRemove, showRemove = true }) => {
   return (
@@ -64,7 +48,7 @@ export const ComponentBadge: React.FC<{
         <span className="max-w-32 truncate">{component.title}</span>
         {showRemove && onRemove && (
           <button
-            onClick={() => onRemove(component.id)}
+            onClick={() => onRemove(component)}
             className="ml-1 opacity-60 group-hover:opacity-100 hover:bg-destructive/20 rounded p-0.5 transition-all"
             title="Remove from context"
           >

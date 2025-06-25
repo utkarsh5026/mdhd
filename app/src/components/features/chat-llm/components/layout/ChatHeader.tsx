@@ -28,7 +28,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   const { availableProviders } = useLLMProvider();
 
   return (
-    <div className="p-4 border-b border-border">
+    <div className="px-4 py-1.5 border-b border-border">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <RiRobot2Fill className="w-5 h-5 text-primary" />
