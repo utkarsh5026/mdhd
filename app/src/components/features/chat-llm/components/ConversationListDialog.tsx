@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useConversation, useConversationActions } from "../hooks";
+import { useConversationLLMManager } from "../hooks";
 import { IoTrashOutline, IoAddOutline } from "react-icons/io5";
 import { Conversation } from "../types";
 
@@ -20,9 +20,13 @@ export const ConversationListDialog: React.FC<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }> = ({ open, onOpenChange }) => {
-  const { conversations, setActiveConversation, activeConversation } =
-    useConversation();
-  const { createConversation, deleteConversation } = useConversationActions();
+  const {
+    activeConversation,
+    conversations,
+    createConversation,
+    deleteConversation,
+    setActiveConversation,
+  } = useConversationLLMManager();
 
   const handleSelectConversation = (conversationId: string) => {
     setActiveConversation(conversationId);

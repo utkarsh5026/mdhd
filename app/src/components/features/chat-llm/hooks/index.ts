@@ -1,6 +1,6 @@
 export { useComponent } from "./use-component";
 export { useLLMActions, useLLMState } from "./use-llm";
-export { useConversationLLM } from "./use-conversation-llm";
+export { useConversationLLMManager } from "./use-conversation-manager";
 export {
   useConversation,
   useConversationActions,

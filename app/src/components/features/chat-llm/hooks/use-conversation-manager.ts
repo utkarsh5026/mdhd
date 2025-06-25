@@ -500,7 +500,7 @@ export const useConversationLLMManager = (
   }, [clearLLMError]);
 
   return {
-    conversation: activeConversation,
+    activeConversation,
     conversations,
     conversationSummaries,
     isLoading,
@@ -513,6 +513,7 @@ export const useConversationLLMManager = (
     selectedProvider,
     selectedModel,
 
+    setActiveConversation,
     createConversation,
     switchToConversation,
     deleteConversation,
@@ -534,7 +535,6 @@ export const useConversationLLMManager = (
 
     getCurrentProvider,
 
-    // Utility methods
     retryLastMessage,
     clearError,
   };
