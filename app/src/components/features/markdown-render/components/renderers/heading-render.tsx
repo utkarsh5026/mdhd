@@ -44,7 +44,7 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({ level, ...props }) => {
   };
 
   const sharedClasses = [
-    "text-primary/75",
+    "text-foreground",
     "text-pretty break-words",
     "group",
     "selection:bg-primary/20",
