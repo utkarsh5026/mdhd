@@ -12,18 +12,21 @@ import { MessageSquarePlus, StopCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
-import { getProviderIcon } from "@/components/features/chat-llm/components/utils";
-import { useChatDialogIntegration } from "./useDialg";
 import {
   getComponentIcon,
   getComponentColorScheme,
   getQuestionsForComponentType,
 } from "./utils";
-import ChatInput from "./ChatInput";
 import ChatMessages from "./chat-messages";
 import WelcomeScreen from "./welcome-screen";
 import SuggestedQuestionsDropdown from "./suggested-questions";
-import { ModelProvider } from "../chat-input";
+import { ChatInput } from "../chat-input";
+import {
+  useMessage,
+  useLLMState,
+  useMessages,
+  useChatInput,
+} from "@/components/features/chat-llm/hooks";
 
 interface ChatDialogProps {
   currentComponent: ComponentSelection;
@@ -47,29 +50,17 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
   open = false,
   onOpenChange,
 }) => {
-  // =================== STATE ===================
-
-  const [inputValue, setInputValue] = useState("");
   const [suggestedDropdownOpen, setSuggestedDropdownOpen] = useState(false);
-  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
 
-  // Refs
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // =================== HOOKS ===================
-
-  const {
-    messages,
-    isTemporary,
-    isLoading,
-    isInitialized,
-    sendTempMessage,
-    transferToPersistent,
-    stopStreaming,
-    resetTempState,
-    canTransfer,
-  } = useChatDialogIntegration(currentComponent);
+  const { sendMessage, isLoading: isMessageLoading } = useMessage();
+  const { isInitialized } = useLLMState();
+  const [conversationId, setConversationId] = useState<string | undefined>(
+    undefined
+  );
+  const { messages } = useMessages(conversationId);
+  const { inputValue, handleInputChange } = useChatInput();
 
   // =================== EFFECTS ===================
 
@@ -85,93 +76,42 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isLoading]);
+  }, [messages, isMessageLoading]);
 
   // Cleanup when dialog closes
   useEffect(() => {
     if (!open) {
-      resetTempState();
-      setInputValue("");
       setSuggestedDropdownOpen(false);
-      setModelDropdownOpen(false);
     }
-  }, [open, resetTempState]);
+  }, [open]);
 
-  // =================== HANDLERS ===================
+  const handleSendMessage = useCallback(async () => {
+    if (!inputValue.trim() || isMessageLoading || !isInitialized) return;
 
-  /**
-   * Handle sending a message
-   */
-  const handleSendMessage = useCallback(
-    async (message: string) => {
-      if (!message.trim() || isLoading || !isInitialized) return;
-
-      try {
-        await sendTempMessage(message);
-        setInputValue("");
-      } catch (error) {
-        console.error("Failed to send message:", error);
-        toast.error("Failed to send message. Please try again.");
-      }
-    },
-    [sendTempMessage, isLoading, isInitialized]
-  );
-
-  /**
-   * Handle transferring conversation to chat bar
-   */
-  const handleAddToChatBar = useCallback(async () => {
     try {
-      const conversationId = await transferToPersistent();
-      if (conversationId) {
-        toast.success("Conversation added to chat bar!", {
-          description: "You can continue the conversation in the main chat.",
-        });
-        // Close dialog after successful transfer
+      const result = await sendMessage(inputValue);
+      if (result === null) {
         onOpenChange?.(false);
+        return;
       }
+
+      setConversationId(result.conversationId);
     } catch (error) {
-      console.error("Failed to add to chat bar:", error);
-      toast.error("Failed to add conversation to chat bar. Please try again.");
+      console.error("Failed to send message:", error);
+      toast.error("Failed to send message. Please try again.");
     }
-  }, [transferToPersistent, onOpenChange]);
+  }, [sendMessage, isMessageLoading, isInitialized, onOpenChange, inputValue]);
 
   /**
    * Handle suggested question selection
    */
-  const handleQuestionClick = useCallback((question: string) => {
-    setInputValue(question);
-    setSuggestedDropdownOpen(false);
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, []);
-
-  /**
-   * Handle keyboard events
-   */
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleSendMessage(inputValue);
-      } else if (e.key === "Escape" && isLoading) {
-        e.preventDefault();
-        stopStreaming();
-      }
+  const handleQuestionClick = useCallback(
+    (question: string) => {
+      handleInputChange(question);
+      setSuggestedDropdownOpen(false);
     },
-    [inputValue, handleSendMessage, isLoading, stopStreaming]
+    [handleInputChange]
   );
-
-  /**
-   * Handle stopping current message
-   */
-  const handleStopMessage = useCallback(() => {
-    stopStreaming();
-    toast.info("Message generation stopped");
-  }, [stopStreaming]);
-
-  // =================== COMPUTED VALUES ===================
 
   const suggestedQuestions = getQuestionsForComponentType(
     currentComponent.type
@@ -209,9 +149,9 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
             {/* Status & Actions */}
             <div className="flex items-center gap-2 flex-shrink-0">
               {/* Loading indicator */}
-              {isLoading && (
+              {isMessageLoading && (
                 <Button
-                  onClick={handleStopMessage}
+                  onClick={() => {}}
                   size="sm"
                   variant="outline"
                   className="gap-2 border-destructive/50 hover:border-destructive text-destructive hover:bg-destructive/10"
@@ -222,7 +162,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
               )}
 
               {/* Temporary indicator */}
-              {isTemporary && hasMessages && (
+              {hasMessages && (
                 <Badge
                   variant="outline"
                   className="text-xs bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
@@ -233,7 +173,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
 
               {/* Add to Chat Bar Button */}
               <AnimatePresence>
-                {canTransfer && (
+                {conversationId && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -241,7 +181,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
                     transition={{ duration: 0.2 }}
                   >
                     <Button
-                      onClick={handleAddToChatBar}
+                      onClick={() => {}}
                       size="sm"
                       className="gap-2 bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl hover:shadow-primary/25 transition-all duration-200"
                     >
@@ -258,7 +198,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
         <div className="flex-shrink-0 px-6 py-3 border-b border-border/50 bg-muted/10">
           <div className="flex items-center justify-between">
             {/* Model Selection */}
-            <div className="flex items-center gap-3">
+            {/* <div className="flex items-center gap-3">
               <span className="text-xs text-muted-foreground font-medium">
                 Model:
               </span>
@@ -267,7 +207,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
                 setModelPopoverOpen={setModelDropdownOpen}
                 getProviderIcon={getProviderIcon}
               />
-            </div>
+            </div> */}
 
             {/* Suggested Questions */}
             <SuggestedQuestionsDropdown
@@ -276,7 +216,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
               questions={suggestedQuestions}
               onQuestionSelect={handleQuestionClick}
               componentType={currentComponent.type}
-              disabled={isLoading}
+              disabled={isMessageLoading}
             />
           </div>
         </div>
@@ -287,7 +227,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
             <div className="flex-1 overflow-hidden">
               <ChatMessages
                 messages={messages}
-                isLoading={isLoading}
+                isLoading={isMessageLoading}
                 messagesEndRef={messagesEndRef}
               />
             </div>
@@ -304,21 +244,9 @@ const ChatDialog: React.FC<ChatDialogProps> = ({
           {/* Input Area */}
           <div className="flex-shrink-0">
             <ChatInput
-              inputRef={inputRef}
-              inputValue={inputValue}
-              setInputValue={setInputValue}
-              handleKeyDown={handleKeyDown}
-              isLoading={isLoading}
+              isInitialized={isInitialized}
+              isQueryLoading={isMessageLoading}
               handleSendMessage={handleSendMessage}
-              hasStartedChat={hasMessages}
-              suggestedQuestions={[]} // Using dropdown instead
-              handleQuestionClick={handleQuestionClick}
-              disabled={!isInitialized}
-              placeholder={
-                !isInitialized
-                  ? "Initializing AI assistant..."
-                  : `Ask me anything about this ${currentComponent.type}...`
-              }
             />
           </div>
         </div>
