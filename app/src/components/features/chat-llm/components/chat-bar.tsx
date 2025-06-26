@@ -151,7 +151,6 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ isVisible, onToggle }) => {
         <ChatInput
           isInitialized={isInitialized}
           isQueryLoading={isLoading}
-          getProviderIcon={getProviderIcon}
           handleSendMessage={handleSendMessage}
         />
       </motion.div>
