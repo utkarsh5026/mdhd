@@ -1,11 +1,11 @@
-import Header from "./Header";
-import NavigationControls from "./NavigationControls";
+import Header from "./header";
+import NavigationControls from "./navigation-controls";
 import {
   MobileProgressIndicator,
   DesktopProgressIndicator,
-} from "./ProgressIndicator";
-import LoadingState from "./LoadingState";
-import ContentReader from "./ContentReader";
+} from "./progress-indicator";
+import LoadingState from "./loading-state";
+import ContentReader from "./content-reader";
 
 export {
   Header,
