@@ -10,9 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Paintbrush, RotateCcw } from "lucide-react";
 import { useReadingSettings } from "../context/ReadingContext";
-import FontFamilySelector from "./FontFamilySelector";
-import ThemeSelector from "./ThemeSelector";
-import CodeThemeSelector from "./CodeThemeSelector";
+import FontFamilySelector from "./font-family-selector";
+import ThemeSelector from "./theme-selector";
+import CodeThemeSelector from "./code-theme-selector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import SectionsSheet from "./table-of-contents/sections-sheet";
-import ReadingSettingsSheet from "@/components/features/settings/components/ReadingSettingsSheet";
+import ReadingSettingsSheet from "@/components/features/settings/components/reading-settings-selector";
 import { ReadingSettingsProvider } from "@/components/features/settings/context/ReadingSettingsProvider";
 import {
   Header,
