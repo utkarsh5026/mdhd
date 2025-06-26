@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { parseMarkdownIntoSections } from "@/services/section/parsing";
-import type { MarkdownSection } from "@/services/section/parsing";
+import { type MarkdownSection, countWords } from "@/services/section/parsing";
 
 interface ReadingState {
   sections: MarkdownSection[];
@@ -12,6 +12,7 @@ interface ReadingState {
   markdownInput: string;
   markdownHash: string;
   startTime: number;
+  totalWordCount: number;
 }
 
 interface ReadingActions {
@@ -47,6 +48,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
       markdownInput: "",
       markdownHash: "",
       startTime: Date.now(),
+      totalWordCount: 0,
 
       /**
        * 📖 Mark section as read
@@ -179,6 +181,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           markdownInput,
           markdownHash: newHash,
           startTime: Date.now(),
+          totalWordCount: countWords(markdownInput),
         });
       },
 

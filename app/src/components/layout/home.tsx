@@ -1,6 +1,5 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { parseMarkdownIntoSections } from "@/services/section/parsing";
 import { MarkdownViewer } from "@/components/features/content-reading";
 import { BookOpen, FileText, Eye } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,18 +12,14 @@ import { useReadingStore } from "@/components/features/content-reading/store/use
 
 const Homepage = () => {
   const markdownInput = useReadingStore((state) => state.markdownInput);
+  const parsedSections = useReadingStore((state) => state.sections);
+  const wordCount = useReadingStore((state) => state.totalWordCount);
   const initializeReading = useReadingStore((state) => state.initializeReading);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [activeTab, setActiveTab] = useState("write");
 
   const { scrollY } = useScroll();
   const backgroundY = useTransform(scrollY, [0, 500], [0, 150]);
-
-  const parsedSections = useMemo(() => {
-    if (!markdownInput.trim()) return [];
-    return parseMarkdownIntoSections(markdownInput);
-  }, [markdownInput]);
 
   const handleStartReading = useCallback(() => {
     if (!markdownInput.trim()) return;
@@ -44,19 +39,6 @@ const Homepage = () => {
     },
     [initializeReading]
   );
-
-  const wordCount = markdownInput
-    .split(/\s+/)
-    .filter((word) => word.length > 0).length;
-
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    if (markdownInput) {
-      setIsTyping(true);
-      timeout = setTimeout(() => setIsTyping(false), 500);
-    }
-    return () => clearTimeout(timeout);
-  }, [markdownInput]);
 
   if (isFullscreen) {
     return (
@@ -111,7 +93,6 @@ const Homepage = () => {
                     <MarkdownEditor
                       markdownInput={markdownInput}
                       setMarkdownInput={initializeReading}
-                      isTyping={isTyping}
                       wordCount={wordCount}
                       parsedSections={parsedSections}
                       handleStartReading={handleStartReading}
