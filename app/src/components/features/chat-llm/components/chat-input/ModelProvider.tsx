@@ -32,7 +32,7 @@ const ModelProvider: React.FC<ModelProviderProps> = ({
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="w-full justify-between h-9 text-xs rounded-2xl border-1 border-border bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary/30"
+          className="w-full rounded-2xl"
           disabled={!isInitialized}
         >
           <div className="flex items-center gap-2">
