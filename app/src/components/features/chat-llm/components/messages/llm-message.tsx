@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { RiLoader4Line } from "react-icons/ri";
-import ChatMarkdownRenderer from "./ChatMarkdownRenderer";
+import ChatMarkdownRenderer from "./message-render";
 import type { ChatMessage, LLMProviderId } from "../../types";
 
 interface LLmMessageProps {

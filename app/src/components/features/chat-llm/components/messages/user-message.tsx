@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 import { IoMdPerson } from "react-icons/io";
-import ChatMarkdownRenderer from "./ChatMarkdownRenderer";
+import ChatMarkdownRenderer from "./message-render";
 import type { ChatMessage } from "../../types";
-import { ComponentBadge } from "../layout/SelectedComponents";
+import { ComponentBadge } from "../layout/selected-components";
 
 interface UserMessageProps {
   message: ChatMessage;

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { RiLoader4Line } from "react-icons/ri";
-import { UserMessage, LLmMessage } from "./";
+import { UserMessage, LLmMessage } from ".";
 import type {
   ChatMessage,
   LLMProviderId,
