@@ -1,7 +1,16 @@
 import { motion } from "framer-motion";
 import { Hash, Sparkles, Target, Zap } from "lucide-react";
+import { useTheme } from "@/components/shared/theme/hooks/use-theme";
+import { generateThemeColors } from "@/utils/colors";
+import { useMemo } from "react";
 
 const HeroMain = () => {
+  const { currentTheme } = useTheme();
+
+  const floatingElementColors = useMemo(() => {
+    return generateThemeColors(currentTheme.primary, 4);
+  }, [currentTheme.primary]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -44,30 +53,42 @@ const HeroMain = () => {
         </motion.p>
       </div>
       <div className="flex items-center justify-center  gap-4 text-sm text-muted-foreground/80">
-        <FloatingElement delay={0}>
+        <FloatingElement delay={0} color={floatingElementColors[0]}>
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/50">
-            <Hash className="w-4 h-4 text-primary" />
+            <Hash
+              className="w-4 h-4"
+              style={{ color: floatingElementColors[0] }}
+            />
             <span>Smart Sections</span>
           </div>
         </FloatingElement>
 
-        <FloatingElement delay={1}>
+        <FloatingElement delay={1} color={floatingElementColors[1]}>
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/50">
-            <Target className="w-4 h-4 text-primary" />
+            <Target
+              className="w-4 h-4"
+              style={{ color: floatingElementColors[1] }}
+            />
             <span>Focus Mode</span>
           </div>
         </FloatingElement>
 
-        <FloatingElement delay={2}>
+        <FloatingElement delay={2} color={floatingElementColors[2]}>
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/50">
-            <Zap className="w-4 h-4 text-primary" />
+            <Zap
+              className="w-4 h-4"
+              style={{ color: floatingElementColors[2] }}
+            />
             <span>Distraction Free</span>
           </div>
         </FloatingElement>
 
-        <FloatingElement delay={3}>
+        <FloatingElement delay={3} color={floatingElementColors[3]}>
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/50">
-            <Sparkles className="w-4 h-4 text-primary" />
+            <Sparkles
+              className="w-4 h-4"
+              style={{ color: floatingElementColors[3] }}
+            />
             <span>AI Assistance</span>
           </div>
         </FloatingElement>
@@ -80,12 +101,14 @@ interface FloatingElementProps {
   children: React.ReactNode;
   delay?: number;
   duration?: number;
+  color?: string;
 }
 
 const FloatingElement: React.FC<FloatingElementProps> = ({
   children,
   delay = 0,
   duration = 6,
+  color,
 }) => (
   <motion.div
     animate={{
@@ -97,6 +120,10 @@ const FloatingElement: React.FC<FloatingElementProps> = ({
       delay,
       repeat: Infinity,
       ease: "easeInOut",
+    }}
+    style={{
+      // Add a subtle glow effect using the generated color
+      filter: color ? `drop-shadow(0 0 8px ${color}20)` : undefined,
     }}
   >
     {children}
