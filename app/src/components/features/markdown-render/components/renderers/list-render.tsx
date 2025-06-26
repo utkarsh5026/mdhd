@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import React from "react";
 
 type ListProps =
@@ -8,32 +9,40 @@ type ListProps =
 /**
  * ListRender Component
  *
- * Renders lists with responsive spacing and typography optimized for mobile devices.
- * Features adaptive margins, padding, and text sizing for improved readability.
+ * Renders lists with enhanced typography and spacing for optimal readability.
+ * Features responsive design, improved visual hierarchy, and better contrast.
+ * Optimized for both mobile and desktop viewing experiences.
  */
 const ListRender: React.FC<ListProps> = ({ type, props }) => {
+  const baseListClasses = [
+    "my-4 xs:my-5 sm:my-6",
+    "ml-5 xs:ml-6 sm:ml-7 lg:ml-8",
+    "space-y-2 xs:space-y-2.5 sm:space-y-3",
+    "text-base xs:text-base sm:text-lg",
+    "leading-relaxed xs:leading-relaxed sm:leading-loose",
+    "text-pretty break-words",
+  ].join(" ");
+
   if (type === "ul") {
     return (
       <ul
         {...props}
-        className="my-3 xs:my-4 sm:my-5 ml-4 xs:ml-5 sm:ml-6 list-disc space-y-1 xs:space-y-1.5 sm:space-y-2 text-sm xs:text-base sm:text-lg"
-      />
-    );
-  } else if (type === "ol") {
-    return (
-      <ol
-        {...props}
-        className="my-3 xs:my-4 sm:my-5 ml-4 xs:ml-5 sm:ml-6 list-decimal space-y-1 xs:space-y-1.5 sm:space-y-2 text-sm xs:text-base sm:text-lg"
-      />
-    );
-  } else {
-    return (
-      <li
-        {...props}
-        className="pl-0.5 xs:pl-1 sm:pl-1 leading-6 xs:leading-7 sm:leading-8 text-foreground/80 break-words text-pretty"
+        className={`${baseListClasses} list-disc marker:text-primary/60 text-foreground/80`}
       />
     );
   }
+
+  if (type === "ol") {
+    return (
+      <ol
+        {...props}
+        className={`${baseListClasses} list-decimal marker:text-primary/60 marker:font-medium text-foreground/80`}
+      />
+    );
+  }
+
+  // List item rendering
+  return <li {...props} className={cn(props.className)} />;
 };
 
 export default ListRender;
