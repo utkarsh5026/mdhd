@@ -1,5 +1,5 @@
 import MDHDHomepage from "@/components/layout/HomePage";
-import LandingPage from "./components/landing/LandingPage";
+import LandingPage from "./components/landing/landing-page";
 import LoadingPage from "./components/utils/init/LoadingAnimation";
 import { useTheme } from "./hooks";
 import "./index.css";
