@@ -1,12 +1,12 @@
-import CodeRender from "./CodeRender";
-import HeadingRender from "./HeadingRender";
-import ImageRender from "./ImageRender";
-import LinkRender from "./LinkRender";
-import ListRender from "./ListRender";
-import ParagraphRender from "./ParagraphRender";
-import TableRender from "./TableRender";
-import HorizontalRuleRender from "./HorizontalRuleRender";
-import BlockquoteRender from "./BlockRender";
+import CodeRender from "./code-render";
+import HeadingRender from "./heading-render";
+import ImageRender from "./image-render";
+import LinkRender from "./link-render";
+import ListRender from "./list-render";
+import ParagraphRender from "./paragraph-render";
+import TableRender from "./table-render";
+import HorizontalRuleRender from "./horizontal-rule-render";
+import BlockquoteRender from "./block-render";
 
 export {
   CodeRender,
