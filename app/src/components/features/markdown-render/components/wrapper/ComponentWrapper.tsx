@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Plus, Sparkles, Check, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
-import ChatDialog from "../chat-dropdown/ChatDropdown";
+import { ChatDialog } from "@/components/features/chat-llm";
 import { useSelectedComponents } from "@/components/features/chat-llm/hooks";
 import { useCodeDetection } from "../../hooks/use-code-detection";
 
@@ -189,39 +189,6 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
     addComponent,
     isInContext,
   ]);
-
-  const handleSendMessage = useCallback(
-    async (message: string): Promise<string> => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const mockResponses = {
-            code: `This is a ${metadata?.language || "code"} snippet. ${
-              message.toLowerCase().includes("explain")
-                ? "Let me break down what this code does step by step..."
-                : "I can help you understand this code better."
-            }`,
-            table: `This table contains structured data. ${
-              message.toLowerCase().includes("explain")
-                ? "Let me analyze the data patterns and relationships..."
-                : "I can help interpret this data for you."
-            }`,
-            heading: `This is a section heading: "${currentComponent.title}". ${
-              message.toLowerCase().includes("summarize")
-                ? "This section covers the main topic and its key concepts..."
-                : "I can provide more context about this section."
-            }`,
-            default: `I can help explain this ${componentType} component. What specific aspect would you like me to clarify?`,
-          };
-
-          const response =
-            mockResponses[componentType as keyof typeof mockResponses] ||
-            mockResponses.default;
-          resolve(response);
-        }, 1000 + Math.random() * 1000); // Simulate network delay
-      });
-    },
-    [currentComponent, componentType, metadata?.language]
-  );
 
   const showButtons =
     isHovering || isDialogOpenRef.current || showAddedFeedback;
@@ -404,7 +371,6 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
       <ChatDialog
         key={`chat-${componentId}`}
         currentComponent={currentComponent}
-        onSendMessage={handleSendMessage}
         open={isDialogOpenRef.current}
         onOpenChange={handleDialogOpenChange}
       />

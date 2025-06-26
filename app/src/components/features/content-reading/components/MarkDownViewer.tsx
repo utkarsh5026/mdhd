@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import SectionsSheet from "./table-of-contents/SectionsSheet";
+import SectionsSheet from "./table-of-contents/sections-sheet";
 import ReadingSettingsSheet from "@/components/features/settings/components/ReadingSettingsSheet";
 import { ReadingSettingsProvider } from "@/components/features/settings/context/ReadingSettingsProvider";
 import {
@@ -15,7 +15,7 @@ import {
   useReading,
 } from "@/components/features/content-reading/hooks";
 import LLMProvider from "../../chat-llm/context/llm/LLMProvider";
-import ChatSidebar from "../../chat-llm/components/ChatBar";
+import ChatSidebar from "../../chat-llm/components/chat-bar";
 import { useChatInput } from "../../chat-llm/hooks/use-chat";
 
 interface MarkdownViewerProps {
