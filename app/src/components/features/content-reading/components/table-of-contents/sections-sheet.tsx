@@ -4,8 +4,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import ListOfContents from "./ListOfContents";
-import ProgressBar from "./ProgressBar";
+import ListOfContents from "./list-of-contents";
+import ProgressBar from "./progress-bar";
 import { MarkdownSection } from "@/services/section/parsing";
 import { useLocalStorage } from "@/hooks";
 
