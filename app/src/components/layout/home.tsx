@@ -9,9 +9,11 @@ import MarkdownEditor from "./markdown-editor";
 import SectionPreview from "./section-preview";
 import ExampleContent from "./example-content";
 import Header from "./header";
+import { useReadingStore } from "@/components/features/content-reading/store/use-reading-store";
 
-const EnhancedMDHDHomepage = () => {
-  const [markdownInput, setMarkdownInput] = useState("");
+const Homepage = () => {
+  const markdownInput = useReadingStore((state) => state.markdownInput);
+  const initializeReading = useReadingStore((state) => state.initializeReading);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [activeTab, setActiveTab] = useState("write");
@@ -34,11 +36,13 @@ const EnhancedMDHDHomepage = () => {
   }, []);
 
   const handleLoadSample = useCallback(
-    (sampleKey: keyof typeof SAMPLE_CONTENTS) => {
-      setMarkdownInput(SAMPLE_CONTENTS[sampleKey]);
+    (sampleKey: string) => {
+      initializeReading(
+        SAMPLE_CONTENTS[sampleKey as keyof typeof SAMPLE_CONTENTS]
+      );
       setActiveTab("write");
     },
-    []
+    [initializeReading]
   );
 
   const wordCount = markdownInput
@@ -106,7 +110,7 @@ const EnhancedMDHDHomepage = () => {
                   <TabsContent value="write" className="space-y-4">
                     <MarkdownEditor
                       markdownInput={markdownInput}
-                      setMarkdownInput={setMarkdownInput}
+                      setMarkdownInput={initializeReading}
                       isTyping={isTyping}
                       wordCount={wordCount}
                       parsedSections={parsedSections}
@@ -249,4 +253,4 @@ Learning through trial and error with rewards and penalties.
 > "In God we trust, all others bring data" - W. Edwards Deming`,
 };
 
-export default EnhancedMDHDHomepage;
+export default Homepage;
