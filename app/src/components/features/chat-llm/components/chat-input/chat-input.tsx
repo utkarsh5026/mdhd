@@ -3,22 +3,20 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { IoArrowUp, IoStop } from "react-icons/io5";
 import { RiSparklingFill } from "react-icons/ri";
-import ModelProvider from "./ModelProvider";
+import ModelProvider from "./model-provider";
 import { useState, useCallback } from "react";
-import type { LLMProviderId } from "@/components/features/chat-llm/types";
 import { useChatInput, useMessage } from "../../hooks";
+import { getProviderIcon } from "../utils";
 
 interface ChatInputProps {
   isInitialized: boolean;
   isQueryLoading: boolean;
-  getProviderIcon: (providerId: LLMProviderId) => React.ReactNode;
   handleSendMessage: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
   isInitialized,
   isQueryLoading,
-  getProviderIcon,
   handleSendMessage,
 }) => {
   const { inputValue, handleInputChange } = useChatInput();
