@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { useSwipeable } from "react-swipeable";
-import CustomMarkdownRenderer from "@/components/features/markdown-render/components/MarkdownRenderer";
+import CustomMarkdownRenderer from "@/components/features/markdown-render/components/markdown-render";
 import type { MarkdownSection } from "@/services/section/parsing";
 import {
   useReadingSettings,

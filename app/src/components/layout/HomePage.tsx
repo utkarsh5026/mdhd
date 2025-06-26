@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { parseMarkdownIntoSections } from "@/services/section/parsing";
-import FullscreenCardView from "../features/content-reading/components/markdown-viewer";
+import { MarkdownViewer } from "@/components/features/content-reading";
 import ThemeSelector from "../shared/theme/components/ThemeSelector";
 import { useTheme } from "@/hooks";
 import MarkdownInput from "./MarkdownInput";
@@ -47,7 +47,7 @@ const MDHDHomepage = () => {
 
   if (isFullscreen) {
     return (
-      <FullscreenCardView
+      <MarkdownViewer
         markdown={markdownInput}
         exitFullScreen={handleExitFullscreen}
       />
