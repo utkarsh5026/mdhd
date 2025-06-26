@@ -1,4 +1,4 @@
-import MDHDHomepage from "@/components/layout/HomePage";
+import Homepage from "@/components/layout/home";
 import LandingPage from "./components/landing/landing-page";
 import LoadingPage from "./components/utils/init/LoadingAnimation";
 import { useTheme } from "./hooks";
@@ -43,7 +43,7 @@ const App = () => {
 
   return (
     <>
-      <MDHDHomepage />
+      <Homepage />
       <Toaster />
     </>
   );
