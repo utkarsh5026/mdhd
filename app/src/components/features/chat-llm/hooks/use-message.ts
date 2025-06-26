@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useState, useEffect, useMemo } from "react";
 import { useLLMState } from "./use-llm";
 import { useConversationStore } from "../store/conversation-store";
 import type { ComponentSelection } from "@/components/features/markdown-render/services/component-service";
@@ -251,6 +251,31 @@ export const useMessage = () => {
     isLoading,
     error,
     activeStreams: Object.keys(streamingStatesRef.current),
+  };
+};
+
+export const useMessages = (conversationId?: string) => {
+  const [correctConversationId, setCorrectConversationId] = useState(false);
+  const conversations = useConversationStore((state) => state.conversations);
+
+  const messages = useMemo(() => {
+    if (!conversationId) {
+      setCorrectConversationId(false);
+      return [];
+    }
+
+    if (!conversations[conversationId]) {
+      setCorrectConversationId(false);
+      return [];
+    }
+
+    setCorrectConversationId(true);
+    return conversations[conversationId].messages;
+  }, [conversations, conversationId]);
+
+  return {
+    messages,
+    correctConversationId,
   };
 };
 

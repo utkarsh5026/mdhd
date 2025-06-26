@@ -5,6 +5,7 @@ type State = {
   inputValue: string;
   selectedComponents: ComponentSelection[];
   chatBarOpen: boolean;
+  chatDialogOpen: boolean;
 };
 
 type Actions = {
@@ -14,12 +15,14 @@ type Actions = {
   removeComponent: (component: ComponentSelection) => void;
   clearInput: () => void;
   clearComponents: () => void;
+  setChatDialogOpen: (chatDialogOpen: boolean) => void;
 };
 
 export const useChatInputStore = create<State & Actions>((set, get) => ({
   inputValue: "",
   selectedComponents: [],
   chatBarOpen: false,
+  chatDialogOpen: false,
 
   setInputValue: (inputValue) => set({ inputValue }),
 
@@ -47,4 +50,6 @@ export const useChatInputStore = create<State & Actions>((set, get) => ({
   clearComponents: () => set({ selectedComponents: [] }),
 
   setChatBarOpen: (chatBarOpen) => set({ chatBarOpen }),
+
+  setChatDialogOpen: (chatDialogOpen) => set({ chatDialogOpen }),
 }));

@@ -132,3 +132,15 @@ export const useSelectedComponents = () => {
     clearComponents,
   };
 };
+
+export const useChatDialog = () => {
+  const chatDialogOpen = useChatInputStore((state) => state.chatDialogOpen);
+  const setChatDialogOpen = useChatInputStore(
+    (state) => state.setChatDialogOpen
+  );
+
+  return {
+    chatDialogOpen,
+    setChatDialogOpen,
+  };
+};
