@@ -111,9 +111,7 @@ export const useConversationStore = create<State & Actions>()(
       set({ activeConversationId: conversationId }),
 
     addMessage: (conversationId, message) => {
-      const messageId = `msg_${Date.now()}_${Math.random()
-        .toString(36)
-        .substring(2, 9)}`;
+      const messageId = generateMessageId();
 
       set((state) => {
         const conversation = state.conversations[conversationId];

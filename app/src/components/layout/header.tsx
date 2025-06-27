@@ -3,7 +3,7 @@ import { Hash } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { FaGithub } from "react-icons/fa";
-import ThemeSelector from "../shared/theme/components/ThemeSelector";
+import ThemeSelector from "../shared/theme/components/theme-selector";
 import { useTheme } from "@/hooks";
 
 const Header = () => {

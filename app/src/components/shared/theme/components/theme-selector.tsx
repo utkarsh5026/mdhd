@@ -19,7 +19,7 @@ import {
 } from "@/theme/themes";
 import { Palette, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import ThemeOption from "./ThemeOption";
+import ThemeOption from "./theme-option";
 
 interface ThemeSelectorProps {
   currentTheme: string;
