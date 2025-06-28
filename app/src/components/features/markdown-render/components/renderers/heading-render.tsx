@@ -16,7 +16,7 @@ interface HeadingRenderProps extends HeadingProps {
 const HeadingRender: React.FC<HeadingRenderProps> = ({ level, ...props }) => {
   const headingStyles = {
     1: [
-      "text-3xl xs:text-4xl sm:text-5xl lg:text-6xl xl:text-7xl",
+      "text-lg xs:text-xl sm:text-2xl lg:text-3xl xl:text-3xl",
       "font-bold",
       "mt-8 xs:mt-10 sm:mt-12 lg:mt-16",
       "mb-4 xs:mb-5 sm:mb-6 lg:mb-8",
@@ -25,7 +25,7 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({ level, ...props }) => {
     ].join(" "),
 
     2: [
-      "text-2xl xs:text-3xl sm:text-4xl lg:text-5xl xl:text-6xl",
+      "text-base xs:text-lg sm:text-xl lg:text-2xl xl:text-2xl",
       "font-semibold",
       "mt-7 xs:mt-8 sm:mt-10 lg:mt-12",
       "mb-3 xs:mb-4 sm:mb-5 lg:mb-6",
@@ -34,7 +34,7 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({ level, ...props }) => {
     ].join(" "),
 
     3: [
-      "text-xl xs:text-2xl sm:text-3xl lg:text-4xl xl:text-5xl",
+      "text-sm xs:text-base sm:text-lg lg:text-xl xl:text-xl",
       "font-medium",
       "mt-6 xs:mt-7 sm:mt-8 lg:mt-10",
       "mb-3 xs:mb-3 sm:mb-4 lg:mb-5",
@@ -44,7 +44,7 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({ level, ...props }) => {
   };
 
   const sharedClasses = [
-    "text-foreground",
+    "text-primary/85 font-bold",
     "text-pretty break-words",
     "group",
     "selection:bg-primary/20",
