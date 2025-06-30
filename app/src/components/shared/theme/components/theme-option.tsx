@@ -1,13 +1,15 @@
 import React from "react";
 import type { ThemeOption as ThemeTypeOption } from "@/theme/themes";
 import { cn } from "@/lib/utils";
-import { FiCheck } from "react-icons/fi";
+import { FiCheck, FiStar } from "react-icons/fi";
+import { useThemeStore } from "@/components/features/theme/store/theme-store";
 
 interface ThemeOptionProps {
   theme: ThemeTypeOption;
   isActive: boolean;
   onSelect: () => void;
   showCategory?: boolean;
+  showBookmark?: boolean;
 }
 
 /**
@@ -18,7 +20,18 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
   isActive,
   onSelect,
   showCategory = false,
+  showBookmark = true,
 }) => {
+  const toggleBookmark = useThemeStore((state) => state.toggleBookmark);
+  const isBookmarked = useThemeStore((state) => state.isBookmarked);
+
+  const bookmarked = isBookmarked(theme);
+
+  const handleBookmarkClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent theme selection when clicking bookmark
+    toggleBookmark(theme);
+  };
+
   return (
     <button
       className={cn(
@@ -31,7 +44,6 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
       onClick={onSelect}
     >
       <div className="flex items-center gap-2.5 sm:gap-3 w-full">
-        {/* Enhanced color preview */}
         <div className="relative shrink-0">
           <div
             className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-none shadow-sm group-hover:shadow-md transition-shadow"
@@ -41,7 +53,6 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
           />
         </div>
 
-        {/* Theme info with better spacing */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm font-medium text-foreground truncate">
@@ -55,7 +66,29 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
           </div>
         </div>
 
-        {/* Active indicator */}
+        {showBookmark && (
+          <button
+            onClick={handleBookmarkClick}
+            className={cn(
+              "flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full transition-all duration-200 shrink-0",
+              "hover:scale-110 hover:bg-secondary/60",
+              bookmarked
+                ? "text-yellow-500 hover:text-yellow-400"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+            aria-label={
+              bookmarked ? "Remove from bookmarks" : "Add to bookmarks"
+            }
+          >
+            <FiStar
+              className={cn(
+                "w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all duration-200",
+                bookmarked ? "fill-current" : ""
+              )}
+            />
+          </button>
+        )}
+
         {isActive && (
           <div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary shrink-0">
             <FiCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary-foreground" />
