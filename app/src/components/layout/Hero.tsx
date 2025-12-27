@@ -1,8 +1,14 @@
 import { motion } from "framer-motion";
-import { Hash, Target, Zap } from "lucide-react";
+import { Hash, Target, Zap, type LucideIcon } from "lucide-react";
 import { useTheme } from "@/components/shared/theme/hooks/use-theme";
 import { generateThemeColors } from "@/utils/colors";
 import { useMemo } from "react";
+
+const features: { icon: LucideIcon; label: string }[] = [
+  { icon: Hash, label: "Smart Sections" },
+  { icon: Target, label: "Focus Mode" },
+  { icon: Zap, label: "Distraction Free" },
+];
 
 const HeroMain = () => {
   const { currentTheme } = useTheme();
@@ -39,36 +45,15 @@ const HeroMain = () => {
           <span className="text-primary font-semibold">smart sections</span>
         </motion.p>
       </div>
-      <div className="flex items-center justify-center  gap-4 text-sm text-muted-foreground/80">
-        <FloatingElement delay={0} color={floatingElementColors[0]}>
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/50">
-            <Hash
-              className="w-4 h-4"
-              style={{ color: floatingElementColors[0] }}
-            />
-            <span>Smart Sections</span>
-          </div>
-        </FloatingElement>
-
-        <FloatingElement delay={1} color={floatingElementColors[1]}>
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/50">
-            <Target
-              className="w-4 h-4"
-              style={{ color: floatingElementColors[1] }}
-            />
-            <span>Focus Mode</span>
-          </div>
-        </FloatingElement>
-
-        <FloatingElement delay={2} color={floatingElementColors[2]}>
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/50">
-            <Zap
-              className="w-4 h-4"
-              style={{ color: floatingElementColors[2] }}
-            />
-            <span>Distraction Free</span>
-          </div>
-        </FloatingElement>
+      <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground/80">
+        {features.map(({ icon: Icon, label }, index) => (
+          <FloatingElement key={label} delay={index} color={floatingElementColors[index]}>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/50">
+              <Icon className="w-4 h-4" style={{ color: floatingElementColors[index] }} />
+              <span>{label}</span>
+            </div>
+          </FloatingElement>
+        ))}
       </div>
     </motion.div>
   );
