@@ -1,7 +1,7 @@
 const AVERAGE_READING_SPEED_WPM = 250;
 
 /**
- * 📝 Cleans up markdown text to make word counting more accurate
+ * 📝 Cleans up Markdown text to make word counting more accurate
  * Strips away all the fancy formatting so we can just count the actual words!
  */
 function removeMarkdownFormatting(text: string): string {
@@ -17,14 +17,14 @@ function removeMarkdownFormatting(text: string): string {
   cleanText = cleanText.replace(/^#{1,6}\s+/gm, "");
 
   // Remove links but keep link text
-  cleanText = cleanText.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+  cleanText = cleanText.replace(/\[([^\]]+)]\([^)]+\)/g, "$1");
 
   // Remove images
-  cleanText = cleanText.replace(/!\[[^\]]*\]\([^)]+\)/g, "");
+  cleanText = cleanText.replace(/!\[[^\]]*]\([^)]+\)/g, "");
 
   // Remove bold/italic formatting
   cleanText = cleanText.replace(/(\*\*|__)(.*?)\1/g, "$2");
-  cleanText = cleanText.replace(/(\*|_)(.*?)\1/g, "$2");
+  cleanText = cleanText.replace(/([*_])(.*?)\1/g, "$2");
 
   // Remove HTML tags
   cleanText = cleanText.replace(/<[^>]*>/g, "");
@@ -34,10 +34,10 @@ function removeMarkdownFormatting(text: string): string {
 
 /**
  * 🔢 Counts the number of words in a text
- * First cleans up any markdown formatting, then splits by spaces to count!
+ * First cleans up any Markdown formatting, then splits by spaces to count!
  */
 export function countWords(text: string): number {
-  if (!text || typeof text !== "string") {
+  if (!text) {
     return 0;
   }
   const cleanText = removeMarkdownFormatting(text);
@@ -56,42 +56,6 @@ export function estimateReadingTime(
   const minutes = Math.max(1, wordCount / readingSpeed);
   return minutes * 60 * 1000;
 }
-
-/**
- * 📊 Calculates how far someone has gotten through reading something
- * Compares time spent with expected reading time to show a percentage!
- */
-export function estimateReadingProgress(
-  wordCount: number,
-  timeSpentMs: number,
-  readingSpeed = AVERAGE_READING_SPEED_WPM
-): number {
-  if (wordCount <= 0 || timeSpentMs <= 0) {
-    return 0;
-  }
-
-  const totalReadingTimeMs = estimateReadingTime(wordCount, readingSpeed);
-  let percentageRead = (timeSpentMs / totalReadingTimeMs) * 100;
-  percentageRead = Math.min(percentageRead, 100);
-  return Math.round(percentageRead);
-}
-
-/**
- * 📚 Estimates how many words someone has read based on time
- * Converts reading time into word count using average reading speed!
- */
-export function estimateWordsRead(
-  timeSpentMs: number,
-  readingSpeed = AVERAGE_READING_SPEED_WPM
-): number {
-  if (timeSpentMs <= 0) {
-    return 0;
-  }
-
-  const minutes = timeSpentMs / (60 * 1000);
-  return Math.floor(minutes * readingSpeed);
-}
-
 export type MarkdownSection = {
   id: string;
   title: string;
@@ -101,9 +65,9 @@ export type MarkdownSection = {
 };
 
 /**
- * 📚 Transforms markdown content into navigable sections!
+ * 📚 Transforms Markdown content into navigable sections!
  *
- * This function takes raw markdown text and intelligently breaks it down into
+ * This function takes raw Markdown text and intelligently breaks it down into
  * structured sections based on headings. It preserves code blocks, handles
  * introduction content, and calculates word counts for each section.
  *
