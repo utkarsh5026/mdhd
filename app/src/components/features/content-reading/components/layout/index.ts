@@ -1,4 +1,4 @@
-import Header from "./header";
+import Header from "./layout-header";
 import NavigationControls from "./navigation-controls";
 import {
   MobileProgressIndicator,

@@ -1,12 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
 const CONTROLS_TIMEOUT = 4000;
-const CHAT_SIDEBAR_WIDTH = 600; // w-96 = 384px
 
 interface UseControlsProps {
   goToNext: () => void;
   goToPrevious: () => void;
-  isChatSidebarVisible?: boolean;
 }
 
 /**
@@ -23,11 +21,7 @@ interface UseControlsProps {
  *       ‾‾‾‾‾‾‾ 🖱️ interaction ‾‾‾‾‾‾
  *
  */
-export const useControls = ({
-  goToNext,
-  goToPrevious,
-  isChatSidebarVisible = false,
-}: UseControlsProps) => {
+export const useControls = ({ goToNext, goToPrevious }: UseControlsProps) => {
   const [isControlsVisible, setIsControlsVisible] = useState(true);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -70,17 +64,12 @@ export const useControls = ({
    */
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      // If chat sidebar is visible and mouse is over it, don't show controls
-      if (isChatSidebarVisible && e.clientX <= CHAT_SIDEBAR_WIDTH) {
-        return;
-      }
-
       // Show controls when mouse is near top or bottom edges
       if (e.clientY <= 80 || e.clientY >= window.innerHeight - 80) {
         handleInteraction();
       }
     },
-    [handleInteraction, isChatSidebarVisible]
+    [handleInteraction]
   );
 
   /**
