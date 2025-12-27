@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Settings, List, LucideIcon, MessageCircle } from "lucide-react";
+import { X, Settings, List, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -11,7 +11,6 @@ interface HeaderProps {
   onExit: () => void;
   onSettings: () => void;
   onMenu: () => void;
-  onChat: () => void;
   isVisible: boolean;
 }
 
@@ -138,7 +137,6 @@ const Header: React.FC<HeaderProps> = ({
   onExit,
   onSettings,
   onMenu,
-  onChat,
   isVisible,
 }) => (
   <AnimatePresence>
@@ -165,15 +163,6 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Action Buttons - Right Side */}
             <div className="flex items-center gap-3 sm:gap-3.5 lg:gap-4">
-              {/* Chat Button */}
-              <AnimatedButton
-                onClick={onChat}
-                icon={MessageCircle}
-                variant="primary"
-                animation={{ rotateZ: 5 }}
-                tooltip="Open Chat"
-              />
-
               {/* Settings Button */}
               <AnimatedButton
                 onClick={onSettings}

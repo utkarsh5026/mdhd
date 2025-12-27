@@ -1,60 +1,65 @@
 import { useCallback, useState } from "react";
 
+/**
+ * Hook to detect the context of a code element in the DOM
+ * Used to render code blocks appropriately based on their context
+ * (e.g., simpler rendering in tables, lists, paragraphs)
+ */
 export const useCodeDetection = (
-  codeRef: React.RefObject<HTMLDivElement | null>,
-  upLevel: number = 3
+  ref: React.RefObject<HTMLElement | null>,
+  maxDepth: number = 3
 ) => {
   const [isInTableCell, setIsInTableCell] = useState(false);
-  const [isInParagraph, setIsInParagraph] = useState(false);
-  const [inList, setInList] = useState(false);
   const [headingLevel, setHeadingLevel] = useState<number | null>(null);
+  const [inList, setInList] = useState(false);
+  const [isInParagraph, setIsInParagraph] = useState(false);
 
   const detectCodeInContext = useCallback(() => {
-    if (codeRef.current) {
-      let parent = codeRef.current.parentElement;
-      let cnt = 0;
+    if (!ref.current) return false;
 
-      while (parent && cnt < upLevel) {
-        const tagName = parent.tagName.toLowerCase().trim();
+    let parent = ref.current.parentElement;
+    let depth = 0;
 
-        // Check if code is inside a table cell
-        if (tagName === "td" || tagName === "th") {
-          setIsInTableCell(true);
-          return true;
-        }
+    while (parent && depth < maxDepth) {
+      const tagName = parent.tagName.toLowerCase();
 
-        if (tagName === "p") {
-          setIsInParagraph(true);
-          return true;
-        }
-
-        if (tagName === "li") {
-          setInList(true);
-          return true;
-        }
-
-        // Check if code is inside a heading
-        if (tagName === "h1" || tagName === "h2" || tagName === "h3") {
-          setHeadingLevel(parseInt(tagName.slice(1)));
-          return true;
-        }
-
-        parent = parent.parentElement;
-        cnt++;
+      // Check for table cell
+      if (tagName === "td" || tagName === "th") {
+        setIsInTableCell(true);
+        return true;
       }
-      setIsInTableCell(false);
-      setIsInParagraph(false);
-      setHeadingLevel(null);
-      return false;
+
+      // Check for heading
+      if (/^h[1-6]$/.test(tagName)) {
+        const level = parseInt(tagName.charAt(1), 10);
+        setHeadingLevel(level);
+        return true;
+      }
+
+      // Check for list
+      if (tagName === "li" || tagName === "ul" || tagName === "ol") {
+        setInList(true);
+        return true;
+      }
+
+      // Check for paragraph
+      if (tagName === "p") {
+        setIsInParagraph(true);
+        return true;
+      }
+
+      parent = parent.parentElement;
+      depth++;
     }
+
     return false;
-  }, [codeRef, upLevel]);
+  }, [ref, maxDepth]);
 
   return {
     isInTableCell,
     headingLevel,
+    inList,
     isInParagraph,
     detectCodeInContext,
-    inList,
   };
 };

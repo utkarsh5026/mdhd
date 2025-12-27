@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Hash, Sparkles, Target, Zap } from "lucide-react";
+import { Hash, Target, Zap } from "lucide-react";
 import { useTheme } from "@/components/shared/theme/hooks/use-theme";
 import { generateThemeColors } from "@/utils/colors";
 import { useMemo } from "react";
@@ -8,7 +8,7 @@ const HeroMain = () => {
   const { currentTheme } = useTheme();
 
   const floatingElementColors = useMemo(() => {
-    return generateThemeColors(currentTheme.primary, 4);
+    return generateThemeColors(currentTheme.primary, 3);
   }, [currentTheme.primary]);
 
   return (
@@ -35,8 +35,7 @@ const HeroMain = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
         >
-          Into intelligent, interactive reading experiences with{" "}
-          <span className="text-primary font-semibold">AI assistance</span> and{" "}
+          Into a focused, distraction-free reading experience with{" "}
           <span className="text-primary font-semibold">smart sections</span>
         </motion.p>
       </div>
@@ -68,16 +67,6 @@ const HeroMain = () => {
               style={{ color: floatingElementColors[2] }}
             />
             <span>Distraction Free</span>
-          </div>
-        </FloatingElement>
-
-        <FloatingElement delay={3} color={floatingElementColors[3]}>
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-sm border border-border/50">
-            <Sparkles
-              className="w-4 h-4"
-              style={{ color: floatingElementColors[3] }}
-            />
-            <span>AI Assistance</span>
           </div>
         </FloatingElement>
       </div>

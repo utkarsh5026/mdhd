@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
 import SectionsSheet from "./table-of-contents/sections-sheet";
 import ReadingSettingsSheet from "@/components/features/settings/components/reading-settings-selector";
 import { ReadingSettingsProvider } from "@/components/features/settings/context/ReadingSettingsProvider";
@@ -14,9 +13,6 @@ import {
   useControls,
   useReading,
 } from "@/components/features/content-reading/hooks";
-import LLMProvider from "../../chat-llm/context/llm/LLMProvider";
-import ChatSidebar from "../../chat-llm/components/chat-bar";
-import { useChatInput } from "../../chat-llm/hooks/use-chat";
 
 interface MarkdownViewerProps {
   markdown: string;
@@ -33,7 +29,6 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { chatBarOpen, setChatBarOpen } = useChatInput();
 
   const {
     sections,
@@ -52,7 +47,6 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
     useControls({
       goToNext,
       goToPrevious,
-      isChatSidebarVisible: chatBarOpen,
     });
 
   /**
@@ -87,13 +81,8 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
 
   return (
     <>
-      {/* Main Reading Area - adjusts when chat is visible */}
-      <div
-        className={cn(
-          "h-full transition-all duration-300 ease-out relative",
-          chatBarOpen ? "ml-[33.333%]" : "ml-0"
-        )}
-      >
+      {/* Main Reading Area */}
+      <div className="h-full relative">
         {/* Content Container */}
         <ContentReader
           markdown={markdown}
@@ -107,10 +96,6 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
 
         <div className="absolute top-0 left-0 right-0 z-50">
           <Header
-            onChat={() => {
-              setChatBarOpen(true);
-              handleInteraction();
-            }}
             onExit={() => {
               exitFullScreen();
             }}
@@ -167,13 +152,6 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
           onOpenChange={setSettingsOpen}
         />
       </div>
-
-      <ChatSidebar
-        isVisible={chatBarOpen}
-        onToggle={() => setChatBarOpen(!chatBarOpen)}
-        sections={sections}
-        currentSection={currentSection}
-      />
     </>
   );
 };
@@ -199,21 +177,11 @@ const MarkdownViewerProvider: React.FC<
   }, [exitFullScreen]);
 
   return (
-    <LLMProvider
-      config={{
-        openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
-        anthropicApiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-        googleApiKey: import.meta.env.VITE_GOOGLE_API_KEY,
-      }}
-      defaultProvider="openai"
-      defaultModel="gpt-4o-mini"
-    >
-      <ReadingSettingsProvider>
-        <div className="fixed inset-0 z-50 bg-background text-foreground overflow-hidden">
-          <MarkdownViewer markdown={markdown} exitFullScreen={exitFullScreen} />
-        </div>
-      </ReadingSettingsProvider>
-    </LLMProvider>
+    <ReadingSettingsProvider>
+      <div className="fixed inset-0 z-50 bg-background text-foreground overflow-hidden">
+        <MarkdownViewer markdown={markdown} exitFullScreen={exitFullScreen} />
+      </div>
+    </ReadingSettingsProvider>
   );
 };
 

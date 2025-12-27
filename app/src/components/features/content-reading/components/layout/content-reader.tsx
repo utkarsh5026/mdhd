@@ -71,14 +71,10 @@ const ContentReader: React.FC<ContentReaderProps> = ({
               key={currentSection.id}
               className="prose prose-lg prose-invert max-w-none"
             >
-              {/* Enhanced Markdown Renderer with Conversation Integration */}
               <CustomMarkdownRenderer
                 markdown={currentSection.content}
                 className="fullscreen-card-content leading-relaxed"
                 fontFamily={fontFamily}
-                sectionId={currentSection.id}
-                sectionTitle={currentSection.title}
-                enableInteractions
               />
             </div>
           </div>

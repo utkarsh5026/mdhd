@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import type { Variants } from "framer-motion";
 
 export type Color =
   | "primary"
@@ -64,7 +65,14 @@ export function useContainerAnimation(delay = 0) {
   }, []);
 
   // Calculate animation states based on visibility
-  const animationStates = {
+  const animationStates: {
+    card: Variants;
+    header: Variants;
+    headerAction: Variants;
+    content: Variants;
+    footer: Variants;
+    insight: (index: number) => Variants;
+  } = {
     card: {
       hidden: { opacity: 0, y: 20 },
       visible: {
@@ -73,7 +81,7 @@ export function useContainerAnimation(delay = 0) {
         transition: {
           duration: 0.5,
           delay: delay,
-          ease: "easeOut",
+          ease: [0.33, 1, 0.68, 1],
         },
       },
     },
@@ -84,11 +92,10 @@ export function useContainerAnimation(delay = 0) {
         transition: {
           duration: 0.4,
           delay: delay + 0.1,
-          ease: "easeOut",
+          ease: [0.33, 1, 0.68, 1],
         },
       },
     },
-    // New animation for header action
     headerAction: {
       hidden: { opacity: 0, x: 10 },
       visible: {
@@ -97,7 +104,7 @@ export function useContainerAnimation(delay = 0) {
         transition: {
           duration: 0.4,
           delay: delay + 0.15,
-          ease: "easeOut",
+          ease: [0.33, 1, 0.68, 1],
         },
       },
     },
@@ -109,7 +116,7 @@ export function useContainerAnimation(delay = 0) {
         transition: {
           duration: 0.5,
           delay: delay + 0.2,
-          ease: "easeOut",
+          ease: [0.33, 1, 0.68, 1],
         },
       },
     },
@@ -121,7 +128,7 @@ export function useContainerAnimation(delay = 0) {
         transition: {
           duration: 0.4,
           delay: delay + 0.3,
-          ease: "easeOut",
+          ease: [0.33, 1, 0.68, 1],
         },
       },
     },
@@ -133,7 +140,7 @@ export function useContainerAnimation(delay = 0) {
         transition: {
           duration: 0.3,
           delay: delay + 0.3 + index * 0.1,
-          ease: "easeOut",
+          ease: [0.33, 1, 0.68, 1],
         },
       },
     }),
