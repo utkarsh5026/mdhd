@@ -13,33 +13,33 @@ const EXAMPLE_CONTENTS = [
     title: "Tutorial Guide",
     desc: "Interactive learning experience",
     icon: Target,
-    iconBg: "from-blue-500 to-cyan-500",
+    iconBg: "bg-blue-500",
   },
   {
     key: "documentation",
     title: "API Documentation",
     desc: "Complete technical reference",
     icon: Code2,
-    iconBg: "from-purple-500 to-pink-500",
+    iconBg: "bg-purple-500",
   },
   {
     key: "guide",
     title: "ML Learning Path",
     desc: "Structured educational content",
     icon: Brain,
-    iconBg: "from-emerald-500 to-teal-500",
+    iconBg: "bg-emerald-500",
   },
 ];
 
 const ExampleContent: React.FC<ExampleContentProps> = ({ onLoadSample }) => (
-  <Card className="bg-gradient-to-br from-card/60 via-card/40 to-background/20 backdrop-blur-2xl border-border/30 rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden">
+  <Card className="bg-card/60 backdrop-blur-2xl border-border/30 rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden">
     <CardHeader className="relative pb-4">
       <div className="absolute inset-0 " />
       <CardTitle className="text-xl font-semibold flex items-center gap-3 relative z-10">
-        <div className="w-8 h-8  bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg rounded-2xl">
+        <div className="w-8 h-8 bg-primary flex items-center justify-center shadow-lg rounded-2xl">
           <BookOpen className="w-4 h-4 text-primary-foreground" />
         </div>
-        <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+        <span className="text-foreground">
           Example Content
         </span>
       </CardTitle>
@@ -64,7 +64,7 @@ const ExampleContent: React.FC<ExampleContentProps> = ({ onLoadSample }) => (
           >
             <div className="flex items-center gap-4 relative z-10">
               <div
-                className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${example.iconBg} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}
+                className={`w-12 h-12 rounded-2xl ${example.iconBg} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}
               >
                 <example.icon className="w-5 h-5 text-white" />
               </div>

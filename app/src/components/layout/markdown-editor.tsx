@@ -28,14 +28,14 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const readingLevel = getReadingLevel(wordCount, themeColors);
 
   return (
-    <Card className="relative overflow-hidden bg-gradient-to-br from-card/60 via-card/40 to-background/20 backdrop-blur-2xl border-border/30 rounded-3xl shadow-2xl shadow-primary/5">
+    <Card className="relative overflow-hidden bg-card/60 backdrop-blur-2xl border-border/30 rounded-3xl shadow-2xl shadow-primary/5">
       <CardHeader className="relative pb-4 z-10">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-semibold flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
+            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-lg">
               <Edit3 className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <span className="text-foreground">
               Markdown Editor
             </span>
           </CardTitle>
@@ -81,7 +81,7 @@ const EmptyState = () => {
           repeat: Infinity,
           repeatType: "reverse",
         }}
-        className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center"
+        className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/20 flex items-center justify-center"
       >
         <Edit3 className="w-8 h-8 text-primary/60" />
       </motion.div>
@@ -137,10 +137,10 @@ const Stats: React.FC<StatsProps> = ({
         {stats.map((stat) => (
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className={`flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r ${stat.color} border border-border/20`}
+            className={`flex items-center gap-3 p-4 rounded-2xl ${stat.color} border border-border/20`}
           >
             <div
-              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-sm`}
+              className={`w-10 h-10 rounded-xl ${stat.color} flex items-center justify-center shadow-sm`}
             >
               <stat.icon className="w-4 h-4 text-primary-foreground" />
             </div>
@@ -154,12 +154,12 @@ const Stats: React.FC<StatsProps> = ({
         ))}
       </div>
 
-      <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-background/60 to-background/40 border border-border/30">
+      <div className="flex items-center justify-between p-4 rounded-2xl bg-background/60 border border-border/30">
         <div className="flex items-center gap-3">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
             style={{
-              background: `linear-gradient(135deg, ${readingLevel.color}, ${readingLevel.color}dd)`,
+              background: readingLevel.color,
             }}
           >
             <readingLevel.icon className="w-4 h-4 text-white" />
@@ -177,7 +177,7 @@ const Stats: React.FC<StatsProps> = ({
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <Button
             onClick={handleStartReading}
-            className="gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80 shadow-lg hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
+            className="gap-2 px-6 py-3 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
           >
             <Play className="w-4 h-4" />
             Start Reading
@@ -233,7 +233,7 @@ const magic = () => {
 Type away and watch your content come to life with intelligent parsing and beautiful formatting!"
         className={cn(
           "w-full h-96 p-6 rounded-3xl border border-border/30 resize-none relative",
-          "bg-gradient-to-br from-background/60 to-background/40 backdrop-blur-xl",
+          "bg-background/60 backdrop-blur-xl",
           "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
           "text-sm leading-relaxed placeholder:text-muted-foreground/50",
           "scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent font-mono",

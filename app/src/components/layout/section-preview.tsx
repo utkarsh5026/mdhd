@@ -11,14 +11,14 @@ interface SectionPreviewProps {
 
 const SectionPreview: React.FC<SectionPreviewProps> = ({ sections }) => {
   return (
-    <Card className="bg-gradient-to-br from-card/60 via-card/40 to-background/20 backdrop-blur-2xl border-border/30 rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden">
+    <Card className="bg-card/60 backdrop-blur-2xl border-border/30 rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden">
       <CardHeader className="relative pb-4">
         <div className="absolute inset-0l" />
         <CardTitle className="text-xl font-semibold flex items-center gap-3 relative z-10">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
+          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-lg">
             <Layers className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <span className="text-foreground">
             Section Preview
           </span>
           {sections.length > 0 && (
@@ -94,14 +94,14 @@ const Section: React.FC<SectionProps> = ({ section, index }) => {
       className="group"
     >
       <motion.div
-        className={`flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r border border-border/20 hover:border-primary/30 transition-all duration-300 cursor-pointer relative overflow-hidden backdrop-blur-sm`}
+        className={`flex items-center gap-4 p-4 rounded-2xl border border-border/20 hover:border-primary/30 transition-all duration-300 cursor-pointer relative overflow-hidden backdrop-blur-sm`}
         whileHover={{
           boxShadow: "0 8px 25px -5px rgba(var(--primary), 0.15)",
         }}
         whileTap={{ scale: 0.98 }}
       >
         <div
-          className={`w-10 h-10 rounded-2xl bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-xl group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110 relative z-10`}
+          className={`w-10 h-10 rounded-2xl bg-primary flex items-center justify-center flex-shrink-0 shadow-xl group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110 relative z-10`}
         >
           <span className="text-sm font-bold text-white">{index + 1}</span>
         </div>
@@ -142,7 +142,7 @@ const NoSectionsAvailable = () => {
       transition={{ duration: 0.5 }}
     >
       <motion.div
-        className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center"
+        className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center"
         animate={{
           rotate: [0, 5, -5, 0],
           scale: [1, 1.05, 1],

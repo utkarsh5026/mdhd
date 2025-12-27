@@ -25,20 +25,8 @@ const HeroMain = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 0.2 }}
         >
-          <span className="bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent relative">
+          <span className="text-foreground relative">
             Transform Markdown
-            <motion.div
-              className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 blur-2xl"
-              animate={{
-                opacity: [0.3, 0.8, 0.3],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
           </span>
         </motion.h1>
         <motion.p

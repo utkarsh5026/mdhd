@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useThemeStore } from "@/components/shared/theme/store/theme-store";
 import { ThemeOption } from "@/theme/themes";
 
@@ -10,15 +10,13 @@ import { ThemeOption } from "@/theme/themes";
  *
  */
 export const useTheme = () => {
-  const { currentTheme, setTheme } = useThemeStore();
+  const currentTheme = useThemeStore((state) => state.currentTheme);
+  const setTheme = useThemeStore((state) => state.setTheme);
 
-  useEffect(() => {
+  const changeDocumentTheme = useCallback(() => {
     const root = document.documentElement;
 
-    // Always enable dark mode
     root.classList.add("dark");
-
-    // Apply theme colors
     root.style.setProperty("--background", currentTheme.background);
     root.style.setProperty("--foreground", currentTheme.foreground);
     root.style.setProperty("--primary", currentTheme.primary);
@@ -47,6 +45,10 @@ export const useTheme = () => {
       currentTheme.popoverForeground
     );
   }, [currentTheme]);
+
+  useEffect(() => {
+    changeDocumentTheme();
+  }, [changeDocumentTheme]);
 
   return {
     currentTheme,
