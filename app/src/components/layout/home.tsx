@@ -50,10 +50,10 @@ const Homepage = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden font-cascadia-code bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Enhanced background with depth */}
+    <div className="min-h-screen relative overflow-hidden font-cascadia-code bg-background">
+      {/* Background */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-background via-primary/3 to-secondary/5"
+        className="absolute inset-0 bg-background"
         style={{ y: backgroundY }}
       />
 

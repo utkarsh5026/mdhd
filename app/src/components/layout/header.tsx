@@ -18,10 +18,10 @@ const Header = () => {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-3"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/60 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
               <Hash className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+            <span className="text-xl font-bold text-foreground">
               MDHD
             </span>
             <Badge variant="secondary" className="text-xs">
