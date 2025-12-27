@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useThemeStore } from "@/components/features/theme/store/theme-store";
+import { useThemeStore } from "@/components/shared/theme/store/theme-store";
 import { ThemeOption } from "@/theme/themes";
 
 /**

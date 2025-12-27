@@ -2,7 +2,7 @@ import React from "react";
 import type { ThemeOption as ThemeTypeOption } from "@/theme/themes";
 import { cn } from "@/lib/utils";
 import { FiCheck, FiStar } from "react-icons/fi";
-import { useThemeStore } from "@/components/features/theme/store/theme-store";
+import { useThemeStore } from "@/components/shared/theme/store/theme-store";
 
 interface ThemeOptionProps {
   theme: ThemeTypeOption;
