@@ -13,6 +13,9 @@ interface ReadingState {
   markdownHash: string;
   startTime: number;
   totalWordCount: number;
+  // Zen mode state
+  isZenMode: boolean;
+  zenControlsVisible: boolean;
 }
 
 interface ReadingActions {
@@ -23,6 +26,11 @@ interface ReadingActions {
   markSectionAsRead: (index: number) => void;
   resetReading: () => void;
   getSection: (index: number) => MarkdownSection | null;
+  // Zen mode actions
+  toggleZenMode: () => void;
+  setZenMode: (isZen: boolean) => void;
+  showZenControls: () => void;
+  hideZenControls: () => void;
 }
 
 /**
@@ -49,6 +57,9 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
       markdownHash: "",
       startTime: Date.now(),
       totalWordCount: 0,
+      // Zen mode initial state
+      isZenMode: false,
+      zenControlsVisible: false,
 
       /**
        * 📖 Mark section as read
@@ -186,6 +197,42 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
       },
 
       /**
+       * 🧘 Toggle Zen Mode
+       *
+       * Switches between zen mode (minimal UI) and normal mode
+       */
+      toggleZenMode: () =>
+        set((state) => ({
+          isZenMode: !state.isZenMode,
+          zenControlsVisible: false,
+        })),
+
+      /**
+       * 🧘 Set Zen Mode
+       *
+       * Explicitly set zen mode on or off
+       */
+      setZenMode: (isZen: boolean) =>
+        set({
+          isZenMode: isZen,
+          zenControlsVisible: false,
+        }),
+
+      /**
+       * 👁️ Show Zen Controls
+       *
+       * Temporarily show controls in zen mode
+       */
+      showZenControls: () => set({ zenControlsVisible: true }),
+
+      /**
+       * 🙈 Hide Zen Controls
+       *
+       * Hide controls in zen mode
+       */
+      hideZenControls: () => set({ zenControlsVisible: false }),
+
+      /**
        * 🔄 Reset reading state
        *
        * ```ascii
@@ -206,6 +253,8 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           markdownInput: "",
           markdownHash: "",
           startTime: Date.now(),
+          isZenMode: false,
+          zenControlsVisible: false,
         }),
     }),
     {
@@ -236,6 +285,17 @@ export const useReadingState = () =>
     isTransitioning: state.isTransitioning,
     isInitialized: state.isInitialized,
   }));
+
+// Individual selectors to avoid infinite re-renders
+export const useIsZenMode = () => useReadingStore((state) => state.isZenMode);
+export const useZenControlsVisible = () => useReadingStore((state) => state.zenControlsVisible);
+export const useZenModeActions = () => {
+  const toggleZenMode = useReadingStore((state) => state.toggleZenMode);
+  const setZenMode = useReadingStore((state) => state.setZenMode);
+  const showZenControls = useReadingStore((state) => state.showZenControls);
+  const hideZenControls = useReadingStore((state) => state.hideZenControls);
+  return { toggleZenMode, setZenMode, showZenControls, hideZenControls };
+};
 
 // Simple hash function for markdown content
 const hashString = (str: string): string => {

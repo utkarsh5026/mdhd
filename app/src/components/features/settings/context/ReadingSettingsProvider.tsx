@@ -12,15 +12,32 @@ interface ReadingSettingsProviderProps {
 export const ReadingSettingsProvider: React.FC<
   ReadingSettingsProviderProps
 > = ({ children }) => {
-  const { settings, setFontFamily, resetSettings } = useReadingSettingsStore();
+  const {
+    settings,
+    setFontFamily,
+    setFontSize,
+    setLineHeight,
+    setContentWidth,
+    resetSettings,
+  } = useReadingSettingsStore();
 
   const value: ReadingSettingsContextType = useMemo(
     () => ({
       settings,
       setFontFamily,
+      setFontSize,
+      setLineHeight,
+      setContentWidth,
       resetSettings,
     }),
-    [settings, setFontFamily, resetSettings]
+    [
+      settings,
+      setFontFamily,
+      setFontSize,
+      setLineHeight,
+      setContentWidth,
+      resetSettings,
+    ]
   );
 
   return (

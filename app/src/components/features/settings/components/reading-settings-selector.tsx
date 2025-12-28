@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Paintbrush, RotateCcw } from "lucide-react";
 import { useReadingSettings } from "../context/ReadingContext";
 import FontFamilySelector from "./font-family-selector";
-import ThemeSelector from "./theme-selector";
+import TypographySelector from "./typography-selector";
 import CodeThemeSelector from "./code-theme-selector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -50,25 +50,25 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
         </SheetHeader>
 
         <ScrollArea className="flex-1 overflow-auto">
-          <Tabs defaultValue="text" className="w-full">
-            <TabsList className="w-full mb-6">
-              <TabsTrigger value="text" className="flex-1">
-                Text
+          <Tabs defaultValue="typography" className="w-full">
+            <TabsList className="w-full mb-6 grid grid-cols-3">
+              <TabsTrigger value="typography">
+                Typography
               </TabsTrigger>
-              <TabsTrigger value="appearance" className="flex-1">
-                Appearance
+              <TabsTrigger value="font">
+                Font
               </TabsTrigger>
-              <TabsTrigger value="code" className="flex-1">
+              <TabsTrigger value="code">
                 Code
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="text" className="space-y-6 px-2">
-              <FontFamilySelector />
+            <TabsContent value="typography" className="space-y-6 px-2">
+              <TypographySelector />
             </TabsContent>
 
-            <TabsContent value="appearance" className="space-y-6 px-2">
-              <ThemeSelector />
+            <TabsContent value="font" className="space-y-6 px-2">
+              <FontFamilySelector />
             </TabsContent>
 
             <TabsContent value="code" className="space-y-6 px-2">

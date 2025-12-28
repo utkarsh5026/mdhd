@@ -1,5 +1,8 @@
 import { createContext, useContext } from "react";
-import type { FontFamily } from "@/components/features/settings/store/reading-settings-store";
+import type {
+  FontFamily,
+  ReadingSettings,
+} from "@/components/features/settings/store/reading-settings-store";
 
 export const fontFamilyMap: Record<FontFamily, string> = {
   "system-ui":
@@ -27,10 +30,11 @@ export const fontFamilyMap: Record<FontFamily, string> = {
 };
 
 export interface ReadingSettingsContextType {
-  settings: {
-    fontFamily: FontFamily;
-  };
+  settings: ReadingSettings;
   setFontFamily: (family: FontFamily) => void;
+  setFontSize: (size: number) => void;
+  setLineHeight: (height: number) => void;
+  setContentWidth: (width: number) => void;
   resetSettings: () => void;
 }
 

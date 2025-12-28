@@ -28,8 +28,7 @@ const ContentReader: React.FC<ContentReaderProps> = ({
 }) => {
   const { settings } = useReadingSettings();
   const fontFamily = fontFamilyMap[settings.fontFamily];
-
-  console.log("Redn");
+  const { fontSize, lineHeight, contentWidth } = settings;
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (eventData) => {
@@ -51,10 +50,11 @@ const ContentReader: React.FC<ContentReaderProps> = ({
     trackTouch: true,
     trackMouse: true,
   });
+
   return (
     <div
       className={cn(
-        "h-full overflow-y-auto bg-card",
+        "h-full overflow-y-auto bg-background",
         isTransitioning ? "opacity-0" : "opacity-100",
         "transition-opacity duration-200"
       )}
@@ -66,14 +66,21 @@ const ContentReader: React.FC<ContentReaderProps> = ({
         className="h-full"
       >
         <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24 h-auto">
-          <div className="max-w-2xl mx-auto rounded-2xl">
+          <div
+            className="mx-auto rounded-2xl"
+            style={{ maxWidth: `${contentWidth}px` }}
+          >
             <div
               key={currentSection.id}
               className="prose prose-lg prose-invert max-w-none"
+              style={{
+                fontSize: `${fontSize}px`,
+                lineHeight: lineHeight,
+              }}
             >
               <CustomMarkdownRenderer
                 markdown={currentSection.content}
-                className="fullscreen-card-content leading-relaxed"
+                className="fullscreen-card-content"
                 fontFamily={fontFamily}
               />
             </div>

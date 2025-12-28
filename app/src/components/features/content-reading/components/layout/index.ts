@@ -6,6 +6,7 @@ import {
 } from "./progress-indicator";
 import LoadingState from "./loading-state";
 import ContentReader from "./content-reader";
+import ZenPositionIndicator from "./zen-position-indicator";
 
 export {
   Header,
@@ -14,4 +15,5 @@ export {
   DesktopProgressIndicator,
   LoadingState,
   ContentReader,
+  ZenPositionIndicator,
 };

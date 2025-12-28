@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Settings, List, LucideIcon } from "lucide-react";
+import { X, Settings, List, Focus, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import { useZenModeActions } from "@/components/features/content-reading/store/use-reading-store";
 
 interface HeaderProps {
   onExit: () => void;
@@ -138,68 +139,80 @@ const Header: React.FC<HeaderProps> = ({
   onSettings,
   onMenu,
   isVisible,
-}) => (
-  <AnimatePresence>
-    {isVisible && (
-      <motion.div
-        initial={{ opacity: 0, y: -50, scale: 0.9 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -50, scale: 0.9 }}
-        transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-        className="relative w-full z-50"
-      >
-        {/* Modern gradient background with sophisticated blur */}
-        <div className="relative">
-          {/* Content container */}
-          <div className="relative flex items-center justify-between p-4 sm:p-5 lg:p-6">
-            {/* Exit Button - Left Side */}
-            <AnimatedButton
-              onClick={onExit}
-              icon={X}
-              variant="danger"
-              animation={{ rotateZ: 90 }}
-              tooltip="Exit Reading Mode"
-            />
+}) => {
+  const { toggleZenMode } = useZenModeActions();
 
-            {/* Action Buttons - Right Side */}
-            <div className="flex items-center gap-3 sm:gap-3.5 lg:gap-4">
-              {/* Settings Button */}
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          initial={{ opacity: 0, y: -50, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -50, scale: 0.9 }}
+          transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+          className="relative w-full z-50"
+        >
+          {/* Modern gradient background with sophisticated blur */}
+          <div className="relative">
+            {/* Content container */}
+            <div className="relative flex items-center justify-between p-4 sm:p-5 lg:p-6">
+              {/* Exit Button - Left Side */}
               <AnimatedButton
-                onClick={onSettings}
-                icon={Settings}
-                animation={{ rotateZ: 180 }}
-                tooltip="Reading Settings"
+                onClick={onExit}
+                icon={X}
+                variant="danger"
+                animation={{ rotateZ: 90 }}
+                tooltip="Exit Reading Mode"
               />
 
-              {/* Modern separator */}
-              <div className="relative">
-                <div className="w-px h-6 sm:h-8 lg:h-10 bg-gradient-to-b from-transparent via-border to-transparent" />
-                <div className="absolute inset-0 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent blur-sm" />
+              {/* Action Buttons - Right Side */}
+              <div className="flex items-center gap-3 sm:gap-3.5 lg:gap-4">
+                {/* Zen Mode Button */}
+                <AnimatedButton
+                  onClick={toggleZenMode}
+                  icon={Focus}
+                  animation={{ rotateZ: 360 }}
+                  tooltip="Zen Mode (Hide UI)"
+                />
+
+                {/* Settings Button */}
+                <AnimatedButton
+                  onClick={onSettings}
+                  icon={Settings}
+                  animation={{ rotateZ: 180 }}
+                  tooltip="Reading Settings"
+                />
+
+                {/* Modern separator */}
+                <div className="relative">
+                  <div className="w-px h-6 sm:h-8 lg:h-10 bg-gradient-to-b from-transparent via-border to-transparent" />
+                  <div className="absolute inset-0 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent blur-sm" />
+                </div>
+
+                {/* Menu Button */}
+                <AnimatedButton
+                  onClick={onMenu}
+                  icon={List}
+                  animation={{ rotateY: 180 }}
+                  tooltip="Table of Contents"
+                />
               </div>
 
-              {/* Menu Button */}
-              <AnimatedButton
-                onClick={onMenu}
-                icon={List}
-                animation={{ rotateY: 180 }}
-                tooltip="Table of Contents"
-              />
-            </div>
-
-            {/* Optional: Mobile breadcrumb indicator */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 sm:hidden">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-cardBg/90 border border-border/50 rounded-full backdrop-blur-md">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                <span className="text-xs text-mutedForeground font-medium">
-                  Reading Mode
-                </span>
+              {/* Optional: Mobile breadcrumb indicator */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 sm:hidden">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-cardBg/90 border border-border/50 rounded-full backdrop-blur-md">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                  <span className="text-xs text-mutedForeground font-medium">
+                    Reading Mode
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-);
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
 
 export default Header;
