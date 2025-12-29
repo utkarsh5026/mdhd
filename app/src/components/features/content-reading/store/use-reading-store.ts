@@ -21,6 +21,8 @@ interface ReadingState {
   zenControlsVisible: boolean;
   // Persistence version
   version: number;
+  // Hydration tracking (not persisted)
+  _hasHydrated: boolean;
 }
 
 interface ReadingActions {
@@ -112,6 +114,8 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
       zenControlsVisible: false,
       // Persistence version
       version: STORAGE_VERSION,
+      // Hydration tracking
+      _hasHydrated: false,
 
       /**
        * 📖 Mark section as read
@@ -307,6 +311,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           startTime: Date.now(),
           isZenMode: false,
           zenControlsVisible: false,
+          _hasHydrated: true, // Keep hydrated state
         }),
 
       /**
@@ -329,6 +334,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           isZenMode: false,
           zenControlsVisible: false,
           version: STORAGE_VERSION,
+          _hasHydrated: true, // Keep hydrated state
         });
       },
       }),
@@ -342,17 +348,22 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           currentIndex: state.currentIndex,
           readSections: state.readSections,
           totalWordCount: state.totalWordCount,
+          isInitialized: state.isInitialized,
           version: state.version,
         }),
         version: STORAGE_VERSION,
         onRehydrateStorage: () => (state, error) => {
           if (error) {
             console.error("Error rehydrating reading session:", error);
-          } else if (state?.markdownInput && !state.isInitialized) {
+          } else if (state) {
             // Re-parse sections from persisted markdown
-            const parsedSections = parseMarkdownIntoSections(state.markdownInput);
-            state.sections = parsedSections;
-            state.isInitialized = true;
+            // (sections are not persisted to save space)
+            if (state.markdownInput && state.sections.length === 0) {
+              const parsedSections = parseMarkdownIntoSections(state.markdownInput);
+              state.sections = parsedSections;
+            }
+            // Mark hydration as complete
+            state._hasHydrated = true;
           }
         },
       }

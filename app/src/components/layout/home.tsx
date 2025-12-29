@@ -8,15 +8,16 @@ import { useReadingStore } from "@/components/features/content-reading/store/use
 const Homepage = () => {
   const markdownInput = useReadingStore((state) => state.markdownInput);
   const isInitialized = useReadingStore((state) => state.isInitialized);
+  const hasHydrated = useReadingStore((state) => state._hasHydrated);
   const initializeReading = useReadingStore((state) => state.initializeReading);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Auto-resume reading after hydration completes
   useEffect(() => {
-    if (isInitialized && markdownInput.trim()) {
+    if (hasHydrated && isInitialized && markdownInput.trim()) {
       setIsFullscreen(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hasHydrated, isInitialized, markdownInput]);
 
   const handleStartReading = useCallback(() => {
     if (!markdownInput.trim()) return;
