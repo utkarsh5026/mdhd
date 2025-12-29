@@ -71,6 +71,7 @@ interface CodeThemeStore {
   getCurrentThemeStyle: () => { [key: string]: React.CSSProperties };
   getCurrentThemeName: () => string;
   getThemesByCategory: () => typeof codeThemes;
+  getThemeBackground: () => string;
 }
 
 export const useCodeThemeStore = create<CodeThemeStore>()(
@@ -127,6 +128,24 @@ export const useCodeThemeStore = create<CodeThemeStore>()(
       },
 
       getThemesByCategory: () => codeThemes,
+
+      getThemeBackground: () => {
+        const themeStyle = get().getCurrentThemeStyle();
+        // Extract background from theme - check common locations
+        const preStyle = themeStyle['pre[class*="language-"]'] as React.CSSProperties | undefined;
+        const codeStyle = themeStyle['code[class*="language-"]'] as React.CSSProperties | undefined;
+
+        // Try to get background from pre or code styles
+        const bg = preStyle?.background || preStyle?.backgroundColor ||
+                   codeStyle?.background || codeStyle?.backgroundColor;
+
+        if (typeof bg === 'string') {
+          return bg;
+        }
+
+        // Fallback to a dark background for contrast
+        return '#1e1e1e';
+      },
     }),
     {
       name: "code-theme-storage",

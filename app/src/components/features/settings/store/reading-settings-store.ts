@@ -43,7 +43,7 @@ interface ReadingSettingsState {
 }
 
 const DEFAULT_SETTINGS: ReadingSettings = {
-  fontFamily: "roboto-slab",
+  fontFamily: "literata",
   customBackground: useThemeStore.getState().currentTheme.background,
   // Typography defaults
   fontSize: 18,
