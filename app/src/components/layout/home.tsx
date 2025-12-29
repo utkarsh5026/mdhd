@@ -1,14 +1,22 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { MarkdownViewer } from "@/components/features/content-reading";
 import MarkdownEditor from "./markdown-editor";
-import HeroMain from "./Hero";
+import HeroMain from "./hero";
 import Header from "./header";
 import { useReadingStore } from "@/components/features/content-reading/store/use-reading-store";
 
 const Homepage = () => {
   const markdownInput = useReadingStore((state) => state.markdownInput);
+  const isInitialized = useReadingStore((state) => state.isInitialized);
   const initializeReading = useReadingStore((state) => state.initializeReading);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (isInitialized && markdownInput.trim()) {
+      setIsFullscreen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleStartReading = useCallback(() => {
     if (!markdownInput.trim()) return;

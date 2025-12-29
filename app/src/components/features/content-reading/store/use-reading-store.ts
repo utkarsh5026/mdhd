@@ -1,7 +1,10 @@
 import { create } from "zustand";
-import { devtools } from "zustand/middleware";
+import { devtools, persist } from "zustand/middleware";
 import { parseMarkdownIntoSections } from "@/services/section/parsing";
 import { type MarkdownSection, countWords } from "@/services/section/parsing";
+
+const STORAGE_VERSION = 1;
+const STORAGE_KEY = "reading-session-storage";
 
 interface ReadingState {
   sections: MarkdownSection[];
@@ -16,6 +19,8 @@ interface ReadingState {
   // Zen mode state
   isZenMode: boolean;
   zenControlsVisible: boolean;
+  // Persistence version
+  version: number;
 }
 
 interface ReadingActions {
@@ -31,7 +36,51 @@ interface ReadingActions {
   setZenMode: (isZen: boolean) => void;
   showZenControls: () => void;
   hideZenControls: () => void;
+  clearPersistedSession: () => void;
 }
+
+/**
+ * 🗄️ Custom Storage Adapter
+ *
+ * Handles Set serialization for localStorage persistence.
+ * Converts Set<number> to Array for JSON serialization.
+ */
+const customStorage = {
+  getItem: (name: string) => {
+    const str = localStorage.getItem(name);
+    if (!str) return null;
+
+    try {
+      const parsed = JSON.parse(str);
+      // Convert readSections array back to Set
+      if (parsed.state?.readSections && Array.isArray(parsed.state.readSections)) {
+        parsed.state.readSections = new Set(parsed.state.readSections);
+      }
+      return parsed;
+    } catch (e) {
+      console.error("Error parsing reading session:", e);
+      return null;
+    }
+  },
+
+  setItem: (name: string, value: any) => {
+    try {
+      const serialized = {
+        ...value,
+        state: {
+          ...value.state,
+          // Convert Set to array for JSON serialization
+          readSections: Array.from(value.state.readSections || []),
+        },
+      };
+      localStorage.setItem(name, JSON.stringify(serialized));
+    } catch (e) {
+      console.error("Error saving reading session:", e);
+    }
+  },
+
+  removeItem: (name: string) => localStorage.removeItem(name),
+};
 
 /**
  * 📚 Reading Store
@@ -47,7 +96,8 @@ interface ReadingActions {
  */
 export const useReadingStore = create<ReadingState & ReadingActions>()(
   devtools(
-    (set, get) => ({
+    persist(
+      (set, get) => ({
       sections: [],
       readSections: new Set<number>(),
       currentIndex: 0,
@@ -60,6 +110,8 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
       // Zen mode initial state
       isZenMode: false,
       zenControlsVisible: false,
+      // Persistence version
+      version: STORAGE_VERSION,
 
       /**
        * 📖 Mark section as read
@@ -256,7 +308,55 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           isZenMode: false,
           zenControlsVisible: false,
         }),
-    }),
+
+      /**
+       * 🗑️ Clear persisted session
+       *
+       * Removes saved session from localStorage and resets state.
+       */
+      clearPersistedSession: () => {
+        localStorage.removeItem(STORAGE_KEY);
+        set({
+          sections: [],
+          readSections: new Set<number>(),
+          currentIndex: 0,
+          isInitialized: false,
+          isTransitioning: false,
+          markdownInput: "",
+          markdownHash: "",
+          startTime: Date.now(),
+          totalWordCount: 0,
+          isZenMode: false,
+          zenControlsVisible: false,
+          version: STORAGE_VERSION,
+        });
+      },
+      }),
+      {
+        name: STORAGE_KEY,
+        storage: customStorage,
+        partialize: (state) => ({
+          // Only persist these fields
+          markdownInput: state.markdownInput,
+          markdownHash: state.markdownHash,
+          currentIndex: state.currentIndex,
+          readSections: state.readSections,
+          totalWordCount: state.totalWordCount,
+          version: state.version,
+        }),
+        version: STORAGE_VERSION,
+        onRehydrateStorage: () => (state, error) => {
+          if (error) {
+            console.error("Error rehydrating reading session:", error);
+          } else if (state?.markdownInput && !state.isInitialized) {
+            // Re-parse sections from persisted markdown
+            const parsedSections = parseMarkdownIntoSections(state.markdownInput);
+            state.sections = parsedSections;
+            state.isInitialized = true;
+          }
+        },
+      }
+    ),
     {
       name: "reading-store", // Name for devtools
     }
