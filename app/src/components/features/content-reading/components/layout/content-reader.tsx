@@ -45,10 +45,11 @@ const ContentReader: React.FC<ContentReaderProps> = ({
       }
       goToPrevious();
     },
-    delta: 10,
-    preventScrollOnSwipe: true,
+    delta: 50,
+    preventScrollOnSwipe: false,
     trackTouch: true,
-    trackMouse: true,
+    trackMouse: false,
+    swipeDuration: 500,
   });
 
   return (
