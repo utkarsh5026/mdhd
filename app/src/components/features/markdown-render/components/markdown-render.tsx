@@ -74,7 +74,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
         ) => {
           if (props?.inline) {
             return (
-              <code className="px-2 py-1 text-primary font-cascadia-code break-words text-sm bg-primary/10 rounded-xl">
+              <code className="px-1.5 py-0.5 text-primary/95 font-cascadia-code break-words text-[0.9em] bg-primary/10 rounded-lg">
                 {props.children}
               </code>
             );
@@ -126,7 +126,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
 
     return (
       <div
-        className={cn("markdown-content font-type-mono", className)}
+        className={cn("markdown-content", className)}
         style={containerStyle}
       >
         <ReactMarkdown components={components} remarkPlugins={[remarkGfm]}>
