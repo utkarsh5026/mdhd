@@ -335,7 +335,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
       <span ref={codeRef}>
         <code
           className={cn(
-            "px-2 py-1 text-primary font-cascadia-code break-words",
+            "px-2 py-1 text-primary font-cascadia-code break-words  bg-card/50 rounded-full shadow-sm",
             getHeadingCodeStyle(headingLevel)
           )}
         >
