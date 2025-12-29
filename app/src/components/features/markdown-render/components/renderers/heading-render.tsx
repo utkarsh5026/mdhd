@@ -44,14 +44,14 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({ level, ...props }) => {
   };
 
   const sharedClasses = [
-    "text-primary/85 font-bold",
+    // Increased contrast from 85% to 98% for headings - they should stand out
+    "text-primary/98",
     "text-pretty break-words",
     "group",
     "selection:bg-primary/20",
     "transition-colors duration-200",
-    "hover:text-primary/85",
+    "hover:text-primary",
     "scroll-mt-20",
-    "font-feature-settings: 'kern' 1, 'liga' 1",
   ].join(" ");
 
   const className = `${headingStyles[level]} ${sharedClasses}`;

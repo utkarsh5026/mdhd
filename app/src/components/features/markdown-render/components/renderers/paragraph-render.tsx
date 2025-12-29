@@ -12,23 +12,23 @@ const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<"p">> = (
 ) => {
   // Enhanced paragraph styling for better readability
   const paragraphClasses = [
-    // Improved text color and contrast for better readability
-    "text-foreground/80",
-    // Enhanced responsive margins for better content separation
-    "my-4 xs:my-5 sm:my-6 lg:my-7",
-    // Optimized line heights for reading comfort across devices
-    "leading-7 xs:leading-8 sm:leading-9 lg:leading-10",
+    // Improved contrast: 80% -> 92% for better readability while maintaining subtle softness
+    "text-foreground/92",
+    // Slightly reduced vertical margins for tighter content grouping
+    "my-3 xs:my-4 sm:my-5 lg:my-6",
+    // Optimized line heights - slightly reduced for denser, more book-like reading
+    "leading-relaxed xs:leading-relaxed sm:leading-7 lg:leading-8",
     // Enhanced text rendering and flow
     "text-pretty break-words",
-    // Improved responsive typography scaling
-    "text-base xs:text-lg sm:text-xl lg:text-xl",
-    // Better horizontal spacing - subtle padding on mobile, none on larger screens
-    "px-0.5 xs:px-0",
+    // Refined font size scaling - cap at text-lg for comfortable reading
+    "text-base xs:text-base sm:text-lg lg:text-lg",
+    // Clean horizontal alignment
+    "px-0",
     // Enhanced paragraph spacing for better visual hierarchy
     "first:mt-0 last:mb-0",
-    // Improved text spacing and kerning
-    "tracking-normal xs:tracking-wide",
-    // Better font weight for enhanced readability
+    // Normal tracking throughout - consistent letter spacing
+    "tracking-normal",
+    // Normal font weight for body text
     "font-normal",
   ].join(" ");
 

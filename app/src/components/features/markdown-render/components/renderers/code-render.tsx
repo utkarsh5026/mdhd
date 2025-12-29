@@ -540,6 +540,21 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({
   props,
   themeStyle,
 }) => {
+  // Extract background color from theme style
+  const getThemeBackground = () => {
+    const preStyle = themeStyle['pre[class*="language-"]'] as React.CSSProperties | undefined;
+    const codeStyle = themeStyle['code[class*="language-"]'] as React.CSSProperties | undefined;
+
+    const bg = preStyle?.background || preStyle?.backgroundColor ||
+               codeStyle?.background || codeStyle?.backgroundColor;
+
+    if (typeof bg === 'string') {
+      return bg;
+    }
+    // Fallback to a dark background for contrast
+    return '#1e1e1e';
+  };
+
   const getPadding = () => {
     if (isDialog) {
       if (window.innerWidth >= 1536) return "3rem";
@@ -570,13 +585,17 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({
   return (
     <div
       ref={ref}
-      className={cn(isDialog && "relative code-capture-container")}
+      className={cn(
+        "rounded-b-2xl",
+        isDialog && "relative code-capture-container rounded-2xl"
+      )}
+      style={{ backgroundColor: getThemeBackground() }}
     >
       <ScrollArea
         className={cn(
           "rounded-b-2xl border-none",
           isDialog &&
-            "max-h-[70vh] lg:max-h-[75vh] xl:max-h-[80vh] code-scroll-area"
+            "max-h-[70vh] lg:max-h-[75vh] xl:max-h-[80vh] code-scroll-area rounded-2xl"
         )}
       >
         <SyntaxHighlighter
