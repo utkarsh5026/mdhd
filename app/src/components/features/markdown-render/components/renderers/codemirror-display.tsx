@@ -50,6 +50,7 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
             height: '100%',
             width: '100%',
             maxWidth: '100%',
+            overflow: 'hidden',
             fontSize: isDialog ? '1rem' : '0.875rem',
             lineHeight: isDialog ? '1.8' : '1.6',
           },
@@ -193,7 +194,7 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
           }
         }}
         className={`code-capture-container ${className}`}
-        style={{ backgroundColor, width: '100%', minWidth: 0 }}
+        style={{ backgroundColor, width: '100%', minWidth: 0, overflow: 'hidden' }}
       />
     );
   }
