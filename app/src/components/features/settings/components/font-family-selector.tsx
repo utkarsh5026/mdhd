@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import { useReadingSettings } from "@/components/features/settings/context/ReadingContext";
 import type { FontFamily } from "@/components/features/settings/store/reading-settings-store";
 import { Check, Type } from "lucide-react";
@@ -144,90 +144,63 @@ const fontOptions: FontOption[] = [
   },
 ];
 
+
 const fontCategories = {
   "sans-serif": fontOptions.filter((font) => font.category === "sans-serif"),
   serif: fontOptions.filter((font) => font.category === "serif"),
 };
 
+
+const FONT_CSS_MAP: Record<FontFamily, React.CSSProperties> = {
+  "cascadia-code": { fontFamily: '"Cascadia Code", monospace' },
+  "system-ui": {
+    fontFamily:
+      'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  },
+  inter: { fontFamily: '"Inter", sans-serif' },
+  georgia: { fontFamily: "Georgia, serif" },
+  merriweather: { fontFamily: '"Merriweather", serif' },
+  "roboto-slab": { fontFamily: '"Roboto Slab", serif' },
+  "source-serif-pro": { fontFamily: '"Source Serif Pro", serif' },
+  "libre-baskerville": { fontFamily: '"Libre Baskerville", serif' },
+  lora: { fontFamily: '"Lora", serif' },
+  "pt-serif": { fontFamily: '"PT Serif", serif' },
+  "open-sans": { fontFamily: '"Open Sans", sans-serif' },
+  "atkinson-hyperlegible": { fontFamily: '"Atkinson Hyperlegible", sans-serif' },
+  "source-sans-pro": { fontFamily: '"Source Sans Pro", sans-serif' },
+  "nunito-sans": { fontFamily: '"Nunito Sans", sans-serif' },
+  "ibm-plex-sans": { fontFamily: '"IBM Plex Sans", sans-serif' },
+  "crimson-text": { fontFamily: '"Crimson Text", serif' },
+  spectral: { fontFamily: '"Spectral", serif' },
+  "eb-garamond": { fontFamily: '"EB Garamond", serif' },
+  bitter: { fontFamily: '"Bitter", serif' },
+  vollkorn: { fontFamily: '"Vollkorn", serif' },
+  literata: { fontFamily: '"Literata", serif' },
+};
+
 const getFontCss = (font: FontFamily): React.CSSProperties => {
-  let fontFamily = "";
-
-  switch (font) {
-    case "system-ui":
-      fontFamily =
-        'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      break;
-    case "inter":
-      fontFamily = '"Inter", sans-serif';
-      break;
-    case "georgia":
-      fontFamily = "Georgia, serif";
-      break;
-    case "merriweather":
-      fontFamily = '"Merriweather", serif';
-      break;
-    case "roboto-slab":
-      fontFamily = '"Roboto Slab", serif';
-      break;
-    case "source-serif-pro":
-      fontFamily = '"Source Serif Pro", serif';
-      break;
-    case "libre-baskerville":
-      fontFamily = '"Libre Baskerville", serif';
-      break;
-    case "lora":
-      fontFamily = '"Lora", serif';
-      break;
-    case "pt-serif":
-      fontFamily = '"PT Serif", serif';
-      break;
-    case "open-sans":
-      fontFamily = '"Open Sans", sans-serif';
-      break;
-    case "atkinson-hyperlegible":
-      fontFamily = '"Atkinson Hyperlegible", sans-serif';
-      break;
-    case "source-sans-pro":
-      fontFamily = '"Source Sans Pro", sans-serif';
-      break;
-    case "nunito-sans":
-      fontFamily = '"Nunito Sans", sans-serif';
-      break;
-    case "ibm-plex-sans":
-      fontFamily = '"IBM Plex Sans", sans-serif';
-      break;
-    case "crimson-text":
-      fontFamily = '"Crimson Text", serif';
-      break;
-    case "spectral":
-      fontFamily = '"Spectral", serif';
-      break;
-    case "eb-garamond":
-      fontFamily = '"EB Garamond", serif';
-      break;
-    case "bitter":
-      fontFamily = '"Bitter", serif';
-      break;
-    case "vollkorn":
-      fontFamily = '"Vollkorn", serif';
-      break;
-    case "literata":
-      fontFamily = '"Literata", serif';
-      break;
-    default:
-      fontFamily = "inherit";
-  }
-
-  return { fontFamily };
+  return FONT_CSS_MAP[font] ?? { fontFamily: "inherit" };
 };
 
 const FontFamilySelector: React.FC = () => {
   const { settings, setFontFamily } = useReadingSettings();
   const { fontFamily } = settings;
 
-  const handleSelectFont = (font: FontFamily) => {
-    setFontFamily(font);
-  };
+  const handleSelectFont = useCallback(
+    (font: FontFamily) => {
+      setFontFamily(font);
+    },
+    [setFontFamily]
+  );
+
+
+  const currentFontLabel = useMemo(
+    () => fontOptions.find((f) => f.value === fontFamily)?.label ?? "System UI",
+    [fontFamily]
+  );
+
+
+  const previewStyle = useMemo(() => getFontCss(fontFamily), [fontFamily]);
 
   return (
     <div className="space-y-3 flex flex-col gap-4 max-h-full">
@@ -236,19 +209,11 @@ const FontFamilySelector: React.FC = () => {
           <Type className="h-4 w-4" />
           <h3 className="font-medium text-sm">Font Family</h3>
         </div>
-        {/* Show current font name */}
-        <span className="text-xs text-muted-foreground">
-          {fontOptions.find((f) => f.value === fontFamily)?.label ??
-            "System UI"}
-        </span>
+        <span className="text-xs text-muted-foreground">{currentFontLabel}</span>
       </div>
 
-      {/* Sample text preview - made sticky */}
       <div className="sticky top-0 z-10 p-6 border rounded-2xl mb-2 bg-background/50 backdrop-blur-3xl shadow-sm shadow-primary/10">
-        <p
-          className="text-sm text-card-foreground"
-          style={getFontCss(fontFamily)}
-        >
+        <p className="text-sm text-card-foreground" style={previewStyle}>
           {sampleText}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
@@ -257,76 +222,63 @@ const FontFamilySelector: React.FC = () => {
       </div>
 
       <ScrollArea className="h-80 scrollbar-hide flex-1">
-        {/* Sans-serif fonts section */}
-        <div className="mb-4">
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 px-1">
-            Sans-serif
-          </h4>
-          <div className="flex flex-col gap-4">
-            {fontCategories["sans-serif"].map((font) => (
-              <FontFamilySelectItem
-                key={font.value}
-                font={font}
-                fontFamily={fontFamily}
-                handleSelectFont={handleSelectFont}
-              />
-            ))}
+        {(["sans-serif", "serif"] as const).map((category, index) => (
+          <div key={category} className={index === 0 ? "mb-4" : undefined}>
+            <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 px-1">
+              {category === "sans-serif" ? "Sans-serif" : "Serif"}
+            </h4>
+            <div className="flex flex-col gap-4">
+              {fontCategories[category].map((font) => (
+                <FontFamilySelectItem
+                  key={font.value}
+                  font={font}
+                  isSelected={fontFamily === font.value}
+                  onSelect={handleSelectFont}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-
-        {/* Serif fonts section */}
-        <div>
-          <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 px-1">
-            Serif
-          </h4>
-          <div className="space-y-2">
-            {fontCategories["serif"].map((font) => (
-              <FontFamilySelectItem
-                key={font.value}
-                font={font}
-                fontFamily={fontFamily}
-                handleSelectFont={handleSelectFont}
-              />
-            ))}
-          </div>
-        </div>
+        ))}
       </ScrollArea>
     </div>
   );
 };
 
-interface FontFamilyProps {
+interface FontFamilyItemProps {
   font: FontOption;
-  fontFamily: FontFamily;
-  handleSelectFont: (font: FontFamily) => void;
+  isSelected: boolean;
+  onSelect: (font: FontFamily) => void;
 }
-const FontFamilySelectItem = ({
-  font,
-  fontFamily,
-  handleSelectFont,
-}: FontFamilyProps) => {
-  const fontStyle = getFontCss(font.value);
-  return (
-    <button
-      key={font.value}
-      className={cn(
-        "w-full text-left p-3 rounded-2xl border transition-all",
-        fontFamily === font.value
-          ? "border-primary bg-primary/5"
-          : "border-border/20 hover:border-border/60 hover:bg-secondary/10 cursor-pointer"
-      )}
-      onClick={() => handleSelectFont(font.value)}
-      style={fontStyle}
-    >
-      <div className="flex justify-between items-center mb-1">
-        <span className="font-medium text-sm">{font.label}</span>
-        {fontFamily === font.value && (
-          <Check className="h-4 w-4 text-primary" />
+
+const FontFamilySelectItem = memo<FontFamilyItemProps>(
+  ({ font, isSelected, onSelect }) => {
+    const fontStyle = FONT_CSS_MAP[font.value];
+
+    const handleClick = useCallback(() => {
+      onSelect(font.value);
+    }, [onSelect, font.value]);
+
+    return (
+      <button
+        className={cn(
+          "w-full text-left p-3 rounded-2xl border transition-all",
+          isSelected
+            ? "border-primary bg-primary/5"
+            : "border-border/20 hover:border-border/60 hover:bg-secondary/10 cursor-pointer"
         )}
-      </div>
-      <p className="text-xs text-muted-foreground mb-2">{font.description}</p>
-    </button>
-  );
-};
+        onClick={handleClick}
+        style={fontStyle}
+      >
+        <div className="flex justify-between items-center mb-1">
+          <span className="font-medium text-sm">{font.label}</span>
+          {isSelected && <Check className="h-4 w-4 text-primary" />}
+        </div>
+        <p className="text-xs text-muted-foreground mb-2">{font.description}</p>
+      </button>
+    );
+  }
+);
+
+FontFamilySelectItem.displayName = "FontFamilySelectItem";
 
 export default FontFamilySelector;
