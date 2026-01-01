@@ -41,6 +41,11 @@ interface ReadingActions {
   clearPersistedSession: () => void;
 }
 
+interface PersistedState {
+  state: Partial<ReadingState>;
+  version?: number;
+}
+
 /**
  * 🗄️ Custom Storage Adapter
  *
@@ -65,7 +70,7 @@ const customStorage = {
     }
   },
 
-  setItem: (name: string, value: any) => {
+  setItem: (name: string, value: PersistedState) => {
     try {
       const serialized = {
         ...value,

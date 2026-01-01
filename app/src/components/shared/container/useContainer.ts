@@ -36,14 +36,15 @@ export function useContainerAnimation(delay = 0) {
 
   // Handle scroll visibility detection
   useEffect(() => {
+    const currentRef = cardRef.current;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsVisible(true);
             // Once visible, no need to keep observing
-            if (cardRef.current) {
-              observer.unobserve(cardRef.current);
+            if (currentRef) {
+              observer.unobserve(currentRef);
             }
           }
         });
@@ -53,13 +54,13 @@ export function useContainerAnimation(delay = 0) {
       }
     );
 
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
+    if (currentRef) {
+      observer.observe(currentRef);
     }
 
     return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
+      if (currentRef) {
+        observer.unobserve(currentRef);
       }
     };
   }, []);
