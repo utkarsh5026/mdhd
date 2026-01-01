@@ -18,6 +18,7 @@ import {
   useIsZenMode,
   useZenControlsVisible,
   useZenModeActions,
+  useIsDialogOpen,
 } from "@/components/features/content-reading/store/use-reading-store";
 import { AnimatePresence } from "framer-motion";
 
@@ -40,6 +41,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
 
   const isZenMode = useIsZenMode();
   const zenControlsVisible = useZenControlsVisible();
+  const isDialogOpen = useIsDialogOpen();
   const { setZenMode, showZenControls, hideZenControls } = useZenModeActions();
 
   const {
@@ -139,8 +141,8 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
     if (index !== currentIndex) changeSection(index);
   };
 
-  // Determine if controls should be visible
-  const shouldShowControls = !isZenMode || zenControlsVisible;
+  // Determine if controls should be visible (hide when dialog is open)
+  const shouldShowControls = !isDialogOpen && (!isZenMode || zenControlsVisible);
 
   const currentSection = getSection(currentIndex);
 

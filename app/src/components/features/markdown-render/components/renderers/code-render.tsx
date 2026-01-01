@@ -41,6 +41,7 @@ import { Button } from "@/components/ui/button";
 import { downloadAsFile, downloadAsImage } from "@/utils/download";
 import { Badge } from "@/components/ui/badge";
 import { useCodeDetection } from "../../hooks/use-code-detection";
+import { useSetDialogOpen } from "@/components/features/content-reading/store/use-reading-store";
 
 interface CodeRenderProps extends React.ComponentPropsWithoutRef<"code"> {
   inline?: boolean;
@@ -251,6 +252,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
   const [isOpen, setIsOpen] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [downloading, setDownloading] = useState<"image" | "file" | null>(null);
+  const setGlobalDialogOpen = useSetDialogOpen();
 
   const match = /language-(\w+)/.exec(className ?? "");
   const language = match ? match[1] : "";
@@ -327,6 +329,17 @@ const CodeRender: React.FC<CodeRenderProps> = ({
     setDownloading(null);
   };
 
+  /**
+   * Handle Dialog Open/Close
+   *
+   * Updates both local and global dialog state to hide navigation controls
+   * when the code preview dialog is open.
+   */
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    setGlobalDialogOpen(open);
+  };
+
   const showSimpleCode =
     isInTableCell || inList || isInParagraph || (!inline && isCompactCode);
 
@@ -401,7 +414,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
               size="sm"
               className="h-8 px-2 cursor-pointer"
               aria-label="Open in dialog"
-              onClick={() => setDialogOpen(true)}
+              onClick={() => handleDialogOpenChange(true)}
             >
               <Maximize2 size={14} />
             </Button>
@@ -438,7 +451,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
       {/* Code Preview Dialog */}
       <CodePreviewDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={handleDialogOpenChange}
         language={language}
         codeContent={codeContent}
         onDownloadAsImage={handleDownloadAsImage}
