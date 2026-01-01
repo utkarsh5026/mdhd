@@ -1,13 +1,13 @@
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { ListOrdered, X } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import ListOfContents from "./list-of-contents";
-import ProgressBar from "./progress-bar";
-import { MarkdownSection } from "@/services/section/parsing";
-import { useLocalStorage } from "@/hooks";
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { ListOrdered, X } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import ListOfContents from './list-of-contents';
+import ProgressBar from './progress-bar';
+import { MarkdownSection } from '@/services/section/parsing';
+import { useLocalStorage } from '@/hooks';
 
 interface SectionsSheetProps {
   currentIndex: number;
@@ -26,12 +26,12 @@ const SectionsSheet: React.FC<SectionsSheetProps> = ({
   sections,
   readSections,
 }) => {
-  const { storedValue: showProgress, setValue: setShowProgress } =
-    useLocalStorage("showCardProgress", true);
+  const { storedValue: showProgress, setValue: setShowProgress } = useLocalStorage(
+    'showCardProgress',
+    true
+  );
 
-  const progressPercentage = sections.length
-    ? (readSections.size / sections.length) * 100
-    : 0;
+  const progressPercentage = sections.length ? (readSections.size / sections.length) * 100 : 0;
 
   const sectionsWithIds = sections.map((section, index) => ({
     id: index,
@@ -51,10 +51,7 @@ const SectionsSheet: React.FC<SectionsSheetProps> = ({
               <SheetTitle className="text-base font-medium flex items-center gap-2">
                 <ListOrdered className="w-4 h-4 text-primary" />
                 <span>Document Sections</span>
-                <Badge
-                  variant="outline"
-                  className="ml-2 text-xs bg-primary/5 border-primary/20"
-                >
+                <Badge variant="outline" className="ml-2 text-xs bg-primary/5 border-primary/20">
                   {sections.length}
                 </Badge>
               </SheetTitle>

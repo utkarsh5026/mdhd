@@ -25,11 +25,7 @@ export const withErrorHandling = <T, Args extends unknown[]>(
     try {
       return await fn(...args);
     } catch (error) {
-      const {
-        errorPrefix = "Error occurred:",
-        onError,
-        logError = true,
-      } = options || {};
+      const { errorPrefix = 'Error occurred:', onError, logError = true } = options || {};
 
       if (logError) {
         console.error(`${errorPrefix}`, {

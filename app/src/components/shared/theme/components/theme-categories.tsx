@@ -1,24 +1,19 @@
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import {
-  themeCategories,
-  themes,
-  ThemeOption as ThemeTypeOption,
-} from "@/theme/themes";
-import { cn } from "@/lib/utils";
-import ThemeOption from "./theme-option";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { themeCategories, themes, ThemeOption as ThemeTypeOption } from '@/theme/themes';
+import { cn } from '@/lib/utils';
+import ThemeOption from './theme-option';
 
-const themesByCategory = themes.reduce((acc, theme) => {
-  if (!acc[theme.category]) {
-    acc[theme.category] = [];
-  }
-  acc[theme.category].push(theme);
-  return acc;
-}, {} as Record<string, ThemeTypeOption[]>);
+const themesByCategory = themes.reduce(
+  (acc, theme) => {
+    if (!acc[theme.category]) {
+      acc[theme.category] = [];
+    }
+    acc[theme.category].push(theme);
+    return acc;
+  },
+  {} as Record<string, ThemeTypeOption[]>
+);
 
 interface ThemeCategoriesProps {
   currentTheme: string;
@@ -68,7 +63,7 @@ const ThemeCategories: React.FC<ThemeCategoriesProps> = ({
             </CollapsibleTrigger>
 
             <CollapsibleContent className="mt-2 sm:mt-3">
-              <div className={cn("pl-2 sm:pl-4")}>
+              <div className={cn('pl-2 sm:pl-4')}>
                 {categoryThemes.map((theme) => (
                   <ThemeOption
                     key={theme.name}

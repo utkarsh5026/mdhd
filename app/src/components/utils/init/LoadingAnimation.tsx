@@ -1,25 +1,22 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Hash, Target, Zap, BookOpen, Focus, Brain } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Hash, Target, Zap, BookOpen, Focus, Brain } from 'lucide-react';
 
 interface LoadingPageProps {
   onComplete: () => void;
   duration?: number;
 }
 
-const LoadingPage: React.FC<LoadingPageProps> = ({
-  onComplete,
-  duration = 2500,
-}) => {
+const LoadingPage: React.FC<LoadingPageProps> = ({ onComplete, duration = 2500 }) => {
   const [phase, setPhase] = useState(0);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const phases = [
-      { duration: 500, label: "Initializing" },
-      { duration: 650, label: "Parsing Structure" },
-      { duration: 700, label: "Creating Sections" },
-      { duration: 650, label: "Optimizing Focus" },
+      { duration: 500, label: 'Initializing' },
+      { duration: 650, label: 'Parsing Structure' },
+      { duration: 700, label: 'Creating Sections' },
+      { duration: 650, label: 'Optimizing Focus' },
     ];
 
     let currentTime = 0;
@@ -65,7 +62,7 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+            transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }}
             className="relative"
           >
             <h1 className="text-6xl md:text-8xl font-black tracking-tight">
@@ -84,7 +81,7 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
               transition={{
                 duration: 4,
                 repeat: Infinity,
-                ease: "easeInOut",
+                ease: 'easeInOut',
               }}
             />
           </motion.div>
@@ -93,7 +90,7 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
           <motion.p
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
+            transition={{ duration: 0.5, delay: 0.4, ease: 'easeOut' }}
             className="text-lg md:text-xl text-muted-foreground mt-4"
           >
             Markdown High Definition
@@ -112,17 +109,17 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
             className="flex items-center gap-3 text-sm text-muted-foreground"
           >
             <LoadingIcon phase={phase} />
             <span>
               {
                 [
-                  "Preparing your reading experience",
-                  "Analyzing document structure",
-                  "Creating focused sections",
-                  "Optimizing for deep learning",
+                  'Preparing your reading experience',
+                  'Analyzing document structure',
+                  'Creating focused sections',
+                  'Optimizing for deep learning',
                 ][phase]
               }
             </span>
@@ -136,7 +133,7 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-primary via-primary/90 to-primary rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             />
 
             {/* Glow effect */}
@@ -144,7 +141,7 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-primary/40 to-transparent rounded-full blur-sm"
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(progress + 8, 100)}%` }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             />
           </div>
 
@@ -152,7 +149,7 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
           <motion.div
             className="mt-2 text-center text-xs text-muted-foreground"
             animate={{ opacity: [0.8, 1, 0.8] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
             {Math.round(progress)}%
           </motion.div>
@@ -162,15 +159,13 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 1.2, ease: "easeOut" }}
+          transition={{ duration: 0.8, delay: 1.2, ease: 'easeOut' }}
           className="max-w-lg text-center"
         >
           <p className="text-sm text-muted-foreground/80 italic">
             "The art of reading is to skip judiciously."
           </p>
-          <p className="text-xs text-muted-foreground/60 mt-1">
-            — Philip Gilbert Hamerton
-          </p>
+          <p className="text-xs text-muted-foreground/60 mt-1">— Philip Gilbert Hamerton</p>
         </motion.div>
       </div>
     </div>
@@ -179,12 +174,12 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
 
 const FloatingElements: React.FC = () => {
   const shapes = [
-    { icon: Hash, delay: 0, position: { top: "10%", left: "15%" } },
-    { icon: Target, delay: 0.8, position: { top: "20%", right: "20%" } },
-    { icon: BookOpen, delay: 1.6, position: { bottom: "25%", left: "10%" } },
-    { icon: Brain, delay: 2.4, position: { bottom: "15%", right: "15%" } },
-    { icon: Focus, delay: 3.2, position: { top: "60%", left: "5%" } },
-    { icon: Zap, delay: 4, position: { top: "70%", right: "8%" } },
+    { icon: Hash, delay: 0, position: { top: '10%', left: '15%' } },
+    { icon: Target, delay: 0.8, position: { top: '20%', right: '20%' } },
+    { icon: BookOpen, delay: 1.6, position: { bottom: '25%', left: '10%' } },
+    { icon: Brain, delay: 2.4, position: { bottom: '15%', right: '15%' } },
+    { icon: Focus, delay: 3.2, position: { top: '60%', left: '5%' } },
+    { icon: Zap, delay: 4, position: { top: '70%', right: '8%' } },
   ];
 
   return (
@@ -204,7 +199,7 @@ const FloatingElements: React.FC = () => {
             duration: 6,
             delay: shape.delay,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         >
           <shape.icon className="w-5 h-5 md:w-6 md:h-6" />
@@ -216,10 +211,10 @@ const FloatingElements: React.FC = () => {
 
 const SectionTransformation: React.FC<{ phase: number }> = ({ phase }) => {
   const textLines = [
-    "# Introduction to Learning",
-    "## Understanding Focus",
-    "### Deep Concentration",
-    "## Practical Applications",
+    '# Introduction to Learning',
+    '## Understanding Focus',
+    '### Deep Concentration',
+    '## Practical Applications',
   ];
 
   return (
@@ -243,9 +238,7 @@ const SectionTransformation: React.FC<{ phase: number }> = ({ phase }) => {
                 transition={{ duration: 1.5, delay: i * 0.1, repeat: Infinity }}
               />
             ))}
-            <div className="text-center text-xs text-muted-foreground mt-4">
-              Overwhelming text
-            </div>
+            <div className="text-center text-xs text-muted-foreground mt-4">Overwhelming text</div>
           </motion.div>
         )}
 
@@ -270,11 +263,7 @@ const SectionTransformation: React.FC<{ phase: number }> = ({ phase }) => {
                   animate={{ scale: [1, 1.2, 1] }}
                   transition={{ duration: 1, delay: i * 0.3, repeat: Infinity }}
                 >
-                  {line.startsWith("###")
-                    ? "###"
-                    : line.startsWith("##")
-                    ? "##"
-                    : "#"}
+                  {line.startsWith('###') ? '###' : line.startsWith('##') ? '##' : '#'}
                 </motion.div>
                 <div className="h-2 bg-primary/30 rounded flex-1" />
               </motion.div>
@@ -299,7 +288,7 @@ const SectionTransformation: React.FC<{ phase: number }> = ({ phase }) => {
                 className="p-3 rounded-lg border-2 border-primary/20 bg-primary/5"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: sectionIndex * 0.3, type: "spring" }}
+                transition={{ delay: sectionIndex * 0.3, type: 'spring' }}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-primary">
@@ -332,21 +321,17 @@ const SectionTransformation: React.FC<{ phase: number }> = ({ phase }) => {
               animate={{
                 scale: [1, 1.1, 1],
                 borderColor: [
-                  "rgba(var(--primary), 0.3)",
-                  "rgba(var(--primary), 0.6)",
-                  "rgba(var(--primary), 0.3)",
+                  'rgba(var(--primary), 0.3)',
+                  'rgba(var(--primary), 0.6)',
+                  'rgba(var(--primary), 0.3)',
                 ],
               }}
               transition={{ duration: 2, repeat: Infinity }}
             >
               <Target className="w-8 h-8 text-primary" />
             </motion.div>
-            <div className="text-sm font-medium text-primary mb-2">
-              Perfect Focus Achieved
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Ready for distraction-free learning
-            </div>
+            <div className="text-sm font-medium text-primary mb-2">Perfect Focus Achieved</div>
+            <div className="text-xs text-muted-foreground">Ready for distraction-free learning</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -363,7 +348,7 @@ const LoadingIcon: React.FC<{ phase: number }> = ({ phase }) => {
       key={phase}
       initial={{ scale: 0, rotate: -180 }}
       animate={{ scale: 1, rotate: 0 }}
-      transition={{ type: "spring", stiffness: 200 }}
+      transition={{ type: 'spring', stiffness: 200 }}
       className="w-4 h-4 text-primary"
     >
       <Icon className="w-full h-full" />

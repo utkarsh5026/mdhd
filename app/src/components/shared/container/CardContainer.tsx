@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 import {
   Card,
   CardHeader,
@@ -6,21 +6,12 @@ import {
   CardDescription,
   CardTitle,
   CardFooter,
-} from "@/components/ui/card";
-import { motion } from "framer-motion";
-import { Zap, Info, ChevronRight } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  useContainerAnimation,
-  useInsightTheme,
-  type Color,
-  type Variant,
-} from "./useContainer";
-import styles from "./container.module.css";
+} from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { Zap, Info, ChevronRight } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useContainerAnimation, useInsightTheme, type Color, type Variant } from './useContainer';
+import styles from './container.module.css';
 
 export type CardContainerInsight = {
   label: string;
@@ -71,22 +62,16 @@ const CardContainer: React.FC<CardContainerProps> = ({
   children,
   insights,
   className,
-  baseColor = "primary",
-  variant = "default",
+  baseColor = 'primary',
+  variant = 'default',
   delay = 0,
   footer,
   headerAction,
   onCardClick,
   compact = false,
 }) => {
-  const {
-    cardRef,
-    isVisible,
-    isHovered,
-    animationStates,
-    handleMouseEnter,
-    handleMouseLeave,
-  } = useContainerAnimation(delay);
+  const { cardRef, isVisible, isHovered, animationStates, handleMouseEnter, handleMouseLeave } =
+    useContainerAnimation(delay);
 
   const { gradient, iconColor } = useInsightTheme(baseColor, variant);
 
@@ -97,7 +82,7 @@ const CardContainer: React.FC<CardContainerProps> = ({
     <motion.div
       ref={cardRef}
       initial="hidden"
-      animate={isVisible ? "visible" : "hidden"}
+      animate={isVisible ? 'visible' : 'hidden'}
       variants={animationStates.card}
       className="h-full w-full font-type-mono"
       onMouseEnter={handleMouseEnter}
@@ -105,12 +90,12 @@ const CardContainer: React.FC<CardContainerProps> = ({
     >
       <Card
         className={cn(
-          "overflow-auto border-primary/10 h-full shadow-sm transition-all duration-300 rounded-2xl",
-          "relative bg-gradient-to-br",
+          'overflow-auto border-primary/10 h-full shadow-sm transition-all duration-300 rounded-2xl',
+          'relative bg-gradient-to-br',
           gradient,
           className,
-          styles["insight-card"],
-          isClickable && "cursor-pointer hover:ring-1 hover:ring-primary/20"
+          styles['insight-card'],
+          isClickable && 'cursor-pointer hover:ring-1 hover:ring-primary/20'
         )}
         onClick={onCardClick}
       >
@@ -119,7 +104,7 @@ const CardContainer: React.FC<CardContainerProps> = ({
             {/* Beautiful subtle pattern overlay */}
             <div
               className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.15)_1px,transparent_0)]"
-              style={{ backgroundSize: "16px 16px" }}
+              style={{ backgroundSize: '16px 16px' }}
             ></div>
 
             <div className="flex items-center justify-between relative z-10">
@@ -128,9 +113,9 @@ const CardContainer: React.FC<CardContainerProps> = ({
                   {Icon && (
                     <div
                       className={cn(
-                        "mr-2 p-1.5 rounded-full bg-background/90 shadow-sm",
+                        'mr-2 p-1.5 rounded-full bg-background/90 shadow-sm',
                         iconColor,
-                        styles["icon-pulse"]
+                        styles['icon-pulse']
                       )}
                     >
                       <Icon className="h-3.5 w-3.5" />
@@ -144,8 +129,8 @@ const CardContainer: React.FC<CardContainerProps> = ({
                         <TooltipTrigger asChild>
                           <motion.div
                             className={cn(
-                              "ml-2 opacity-40 hover:opacity-100 cursor-help transition-opacity",
-                              styles["info-icon"]
+                              'ml-2 opacity-40 hover:opacity-100 cursor-help transition-opacity',
+                              styles['info-icon']
                             )}
                             whileHover={{
                               rotate: [0, -5, 5, -5, 0],
@@ -172,10 +157,7 @@ const CardContainer: React.FC<CardContainerProps> = ({
               {headerAction && (
                 <motion.div
                   variants={animationStates.headerAction}
-                  className={cn(
-                    "ml-auto flex items-center",
-                    styles["header-action"]
-                  )}
+                  className={cn('ml-auto flex items-center', styles['header-action'])}
                 >
                   {headerAction}
                 </motion.div>
@@ -195,9 +177,7 @@ const CardContainer: React.FC<CardContainerProps> = ({
 
             {/* Description rendered below title */}
             {description && (
-              <CardDescription className="text-xs mt-1">
-                {description}
-              </CardDescription>
+              <CardDescription className="text-xs mt-1">{description}</CardDescription>
             )}
 
             {/* Insights badges with improved styling */}
@@ -211,11 +191,11 @@ const CardContainer: React.FC<CardContainerProps> = ({
                       key={insight.label}
                       variants={animationStates.insight(idx)}
                       className={cn(
-                        "text-xs py-1 px-3 rounded-full flex items-center gap-1.5 border border-border/40",
+                        'text-xs py-1 px-3 rounded-full flex items-center gap-1.5 border border-border/40',
                         insight.highlight
-                          ? "bg-primary/10 text-primary-foreground font-medium"
-                          : "bg-secondary/40 text-secondary-foreground",
-                        styles["insight-badge"]
+                          ? 'bg-primary/10 text-primary-foreground font-medium'
+                          : 'bg-secondary/40 text-secondary-foreground',
+                        styles['insight-badge']
                       )}
                     >
                       {insight.highlight && !InsightIcon && (
@@ -224,24 +204,15 @@ const CardContainer: React.FC<CardContainerProps> = ({
                       {InsightIcon && (
                         <InsightIcon
                           className={cn(
-                            "h-3 w-3",
-                            insight.highlight
-                              ? "text-primary"
-                              : "text-muted-foreground"
+                            'h-3 w-3',
+                            insight.highlight ? 'text-primary' : 'text-muted-foreground'
                           )}
                         />
                       )}
-                      <span
-                        className={cn(insight.highlight ? "font-medium" : "")}
-                      >
+                      <span className={cn(insight.highlight ? 'font-medium' : '')}>
                         {insight.label}:
                       </span>
-                      <span
-                        className={cn(
-                          "font-medium",
-                          insight.highlight ? "text-primary" : ""
-                        )}
-                      >
+                      <span className={cn('font-medium', insight.highlight ? 'text-primary' : '')}>
                         {insight.value}
                       </span>
 
@@ -272,11 +243,11 @@ const CardContainer: React.FC<CardContainerProps> = ({
         </motion.div>
 
         <motion.div variants={animationStates.content}>
-          <CardContent className={cn("pt-0 relative", !insights && "pt-2")}>
+          <CardContent className={cn('pt-0 relative', !insights && 'pt-2')}>
             {/* Inner shadow to add depth to the chart area */}
             <div
               className="absolute inset-0 pointer-events-none rounded-xl"
-              style={{ boxShadow: "inset 0 2px 4px rgba(0,0,0,0.05)" }}
+              style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }}
             ></div>
             <div className="relative z-10">{children}</div>
           </CardContent>

@@ -1,6 +1,6 @@
-import { ChevronRight, Search, Hash, FileText, List } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useCallback } from "react";
+import { ChevronRight, Search, Hash, FileText, List } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useCallback } from 'react';
 
 interface ListOfContentsProps {
   sections: { id: number; title: string; level?: number }[];
@@ -18,7 +18,7 @@ const ListOfContents: React.FC<ListOfContentsProps> = ({
   handleSelectCard,
 }) => {
   const normalizeTitle = useCallback((title: string) => {
-    return title.replace(/^\d+(\.\d+)*\s*\.?\s*/, "").trim();
+    return title.replace(/^\d+(\.\d+)*\s*\.?\s*/, '').trim();
   }, []);
 
   const getLevelIcon = useCallback((level: number) => {
@@ -37,80 +37,75 @@ const ListOfContents: React.FC<ListOfContentsProps> = ({
   const getLevelPadding = useCallback((level: number) => {
     switch (level) {
       case 0:
-        return "ml-0";
+        return 'ml-0';
       case 1:
-        return "ml-4";
+        return 'ml-4';
       case 2:
-        return "ml-8";
+        return 'ml-8';
       default:
-        return "ml-0";
+        return 'ml-0';
     }
   }, []);
 
   const getButtonClass = useCallback(
     (isActive: boolean, isRead: boolean, showProgress: boolean) => {
-      const baseClasses = "transition-all duration-300 ease-out";
+      const baseClasses = 'transition-all duration-300 ease-out';
 
       if (isActive) {
         return cn(
           baseClasses,
-          "bg-gradient-to-r from-primary/15 to-primary/5",
-          "text-primary font-medium",
-          "border-l-2 border-primary",
-          "shadow-sm"
+          'bg-gradient-to-r from-primary/15 to-primary/5',
+          'text-primary font-medium',
+          'border-l-2 border-primary',
+          'shadow-sm'
         );
       }
 
       if (isRead && showProgress) {
         return cn(
           baseClasses,
-          "bg-gradient-to-r from-green-500/10 to-green-500/5",
-          "text-foreground/90",
-          "border-l-2 border-green-500/30"
+          'bg-gradient-to-r from-green-500/10 to-green-500/5',
+          'text-foreground/90',
+          'border-l-2 border-green-500/30'
         );
       }
 
       return cn(
         baseClasses,
-        "hover:bg-gradient-to-r hover:from-secondary/20 hover:to-secondary/5",
-        "text-muted-foreground hover:text-foreground",
-        "border-l-2 border-transparent hover:border-secondary/50"
+        'hover:bg-gradient-to-r hover:from-secondary/20 hover:to-secondary/5',
+        'text-muted-foreground hover:text-foreground',
+        'border-l-2 border-transparent hover:border-secondary/50'
       );
     },
     []
   );
 
   const getCircleClass = useCallback(
-    (
-      isActive: boolean,
-      isRead: boolean,
-      showProgress: boolean,
-      level: number
-    ) => {
-      const sizeClass = level === 2 ? "min-w-5 h-5" : "min-w-6 h-6";
+    (isActive: boolean, isRead: boolean, showProgress: boolean, level: number) => {
+      const sizeClass = level === 2 ? 'min-w-5 h-5' : 'min-w-6 h-6';
 
       if (isActive) {
         return cn(
           sizeClass,
-          "bg-gradient-to-br from-primary/30 to-primary/10",
-          "text-primary border-2 border-primary/30",
-          "shadow-sm"
+          'bg-gradient-to-br from-primary/30 to-primary/10',
+          'text-primary border-2 border-primary/30',
+          'shadow-sm'
         );
       }
 
       if (isRead && showProgress) {
         return cn(
           sizeClass,
-          "bg-gradient-to-br from-green-500/20 to-green-500/10",
-          "text-green-600 border-2 border-green-500/30"
+          'bg-gradient-to-br from-green-500/20 to-green-500/10',
+          'text-green-600 border-2 border-green-500/30'
         );
       }
 
       return cn(
         sizeClass,
-        "bg-gradient-to-br from-secondary/20 to-secondary/10",
-        "text-muted-foreground border-2 border-secondary/20",
-        "hover:border-secondary/40 hover:bg-secondary/20"
+        'bg-gradient-to-br from-secondary/20 to-secondary/10',
+        'text-muted-foreground border-2 border-secondary/20',
+        'hover:border-secondary/40 hover:bg-secondary/20'
       );
     },
     []
@@ -141,13 +136,13 @@ const ListOfContents: React.FC<ListOfContentsProps> = ({
   const getTextSize = useCallback((level: number) => {
     switch (level) {
       case 0:
-        return "text-sm font-medium";
+        return 'text-sm font-medium';
       case 1:
-        return "text-sm";
+        return 'text-sm';
       case 2:
-        return "text-xs";
+        return 'text-xs';
       default:
-        return "text-sm";
+        return 'text-sm';
     }
   }, []);
 
@@ -162,14 +157,11 @@ const ListOfContents: React.FC<ListOfContentsProps> = ({
             const level = section.level ?? 0;
 
             return (
-              <div
-                key={section.id}
-                className={cn("relative", getLevelPadding(level))}
-              >
+              <div key={section.id} className={cn('relative', getLevelPadding(level))}>
                 <button
                   className={cn(
-                    "w-full text-left px-3 py-2.5 rounded-2xl",
-                    "flex items-center gap-3 group relative overflow-hidden",
+                    'w-full text-left px-3 py-2.5 rounded-2xl',
+                    'flex items-center gap-3 group relative overflow-hidden',
                     getButtonClass(isActive, isRead, showProgress)
                   )}
                   onClick={() => {
@@ -185,16 +177,11 @@ const ListOfContents: React.FC<ListOfContentsProps> = ({
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div
                       className={cn(
-                        "flex items-center justify-center rounded-full flex-shrink-0 transition-all duration-300",
+                        'flex items-center justify-center rounded-full flex-shrink-0 transition-all duration-300',
                         getCircleClass(isActive, isRead, showProgress, level)
                       )}
                     >
-                      <span
-                        className={cn(
-                          "font-medium",
-                          level === 2 ? "text-xs" : "text-xs"
-                        )}
-                      >
+                      <span className={cn('font-medium', level === 2 ? 'text-xs' : 'text-xs')}>
                         {idx + 1}
                       </span>
                     </div>
@@ -202,8 +189,8 @@ const ListOfContents: React.FC<ListOfContentsProps> = ({
                     {/* Level icon */}
                     <div
                       className={cn(
-                        "opacity-60 transition-opacity duration-300",
-                        isActive && "opacity-100"
+                        'opacity-60 transition-opacity duration-300',
+                        isActive && 'opacity-100'
                       )}
                     >
                       {getLevelIcon(level)}
@@ -214,9 +201,9 @@ const ListOfContents: React.FC<ListOfContentsProps> = ({
                   <div className="flex-1 min-w-0">
                     <span
                       className={cn(
-                        "line-clamp-2 text-left leading-relaxed transition-all duration-300",
+                        'line-clamp-2 text-left leading-relaxed transition-all duration-300',
                         getTextSize(level),
-                        isActive && "font-medium"
+                        isActive && 'font-medium'
                       )}
                     >
                       {displayTitle}
@@ -236,9 +223,7 @@ const ListOfContents: React.FC<ListOfContentsProps> = ({
             <Search className="w-6 h-6 opacity-40" />
           </div>
           <p className="text-sm font-medium mb-1">No sections found</p>
-          <p className="text-xs opacity-70">
-            Try adding some headings to your document
-          </p>
+          <p className="text-xs opacity-70">Try adding some headings to your document</p>
         </div>
       )}
     </div>

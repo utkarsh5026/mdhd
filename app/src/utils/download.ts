@@ -8,40 +8,40 @@ const downloadAsFile = (codeContent: string, language: string) => {
   try {
     const getFileExtension = (lang: string) => {
       const extensions: Record<string, string> = {
-        javascript: "js",
-        typescript: "ts",
-        python: "py",
-        java: "java",
-        cpp: "cpp",
-        c: "c",
-        csharp: "cs",
-        php: "php",
-        ruby: "rb",
-        go: "go",
-        rust: "rs",
-        swift: "swift",
-        kotlin: "kt",
-        dart: "dart",
-        html: "html",
-        css: "css",
-        scss: "scss",
-        shell: "sh",
-        bash: "sh",
-        powershell: "ps1",
-        sql: "sql",
-        json: "json",
-        yaml: "yml",
-        xml: "xml",
-        markdown: "md",
+        javascript: 'js',
+        typescript: 'ts',
+        python: 'py',
+        java: 'java',
+        cpp: 'cpp',
+        c: 'c',
+        csharp: 'cs',
+        php: 'php',
+        ruby: 'rb',
+        go: 'go',
+        rust: 'rs',
+        swift: 'swift',
+        kotlin: 'kt',
+        dart: 'dart',
+        html: 'html',
+        css: 'css',
+        scss: 'scss',
+        shell: 'sh',
+        bash: 'sh',
+        powershell: 'ps1',
+        sql: 'sql',
+        json: 'json',
+        yaml: 'yml',
+        xml: 'xml',
+        markdown: 'md',
       };
-      return extensions[lang] || "txt";
+      return extensions[lang] || 'txt';
     };
 
     const extension = getFileExtension(language);
-    const blob = new Blob([codeContent], { type: "text/plain" });
+    const blob = new Blob([codeContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = `code-snippet-${Date.now()}.${extension}`;
     document.body.appendChild(a);
@@ -49,7 +49,7 @@ const downloadAsFile = (codeContent: string, language: string) => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch (err) {
-    console.error("Failed to download file:", err);
+    console.error('Failed to download file:', err);
   }
 };
 
@@ -62,18 +62,16 @@ const downloadAsFile = (codeContent: string, language: string) => {
 const downloadAsImage = async (element: HTMLElement, language: string) => {
   try {
     // Dynamic import to avoid bundling html2canvas unless needed
-    const html2canvas = (await import("html2canvas")).default;
+    const html2canvas = (await import('html2canvas')).default;
 
     if (!element) return;
 
     // Find the scrollable container and the pre element inside
-    const scrollArea = element.querySelector(
-      "[data-radix-scroll-area-viewport]"
-    ) as HTMLElement;
-    const preElement = element.querySelector("pre") as HTMLElement;
+    const scrollArea = element.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+    const preElement = element.querySelector('pre') as HTMLElement;
 
     if (!scrollArea || !preElement) {
-      console.error("Could not find scroll area or pre element");
+      console.error('Could not find scroll area or pre element');
       return;
     }
 
@@ -94,15 +92,15 @@ const downloadAsImage = async (element: HTMLElement, language: string) => {
 
     // Temporarily modify styles to show full content
     // Remove height constraints and scrolling
-    scrollArea.style.maxHeight = "none";
-    scrollArea.style.overflow = "visible";
-    scrollArea.style.overflowX = "visible";
-    scrollArea.style.overflowY = "visible";
+    scrollArea.style.maxHeight = 'none';
+    scrollArea.style.overflow = 'visible';
+    scrollArea.style.overflowX = 'visible';
+    scrollArea.style.overflowY = 'visible';
 
     // Ensure pre element shows full width
-    preElement.style.maxWidth = "none";
-    preElement.style.width = "max-content";
-    preElement.style.whiteSpace = "pre";
+    preElement.style.maxWidth = 'none';
+    preElement.style.width = 'max-content';
+    preElement.style.whiteSpace = 'pre';
 
     // Wait for layout to settle
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -114,7 +112,7 @@ const downloadAsImage = async (element: HTMLElement, language: string) => {
 
     // Configure canvas options for full content capture
     const canvas = await html2canvas(element, {
-      backgroundColor: "#1a1a1a", // Dark background
+      backgroundColor: '#1a1a1a', // Dark background
       scale: 2, // Higher resolution for crisp images
       logging: false,
       useCORS: true,
@@ -135,17 +133,17 @@ const downloadAsImage = async (element: HTMLElement, language: string) => {
     canvas.toBlob((blob) => {
       if (blob) {
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = url;
-        a.download = `code-${language || "snippet"}-${Date.now()}.png`;
+        a.download = `code-${language || 'snippet'}-${Date.now()}.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
-    }, "image/png");
+    }, 'image/png');
   } catch (err) {
-    console.error("Failed to download image:", err);
+    console.error('Failed to download image:', err);
   }
 };
 

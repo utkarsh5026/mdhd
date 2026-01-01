@@ -1,6 +1,6 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface ZenPositionIndicatorProps {
   currentIndex: number;
@@ -25,7 +25,7 @@ const ZenPositionIndicator: React.FC<ZenPositionIndicatorProps> = ({
   return (
     <div
       className={cn(
-        "fixed right-3 top-1/2 -translate-y-1/2 h-32 flex items-center justify-center z-40",
+        'fixed right-3 top-1/2 -translate-y-1/2 h-32 flex items-center justify-center z-40',
         className
       )}
     >
@@ -39,7 +39,7 @@ const ZenPositionIndicator: React.FC<ZenPositionIndicatorProps> = ({
             top: `${progressPercent}%`,
           }}
           transition={{
-            type: "spring",
+            type: 'spring',
             stiffness: 300,
             damping: 30,
           }}

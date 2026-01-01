@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 const CONTROLS_TIMEOUT = 4000;
 
@@ -93,34 +93,31 @@ export const useControls = ({ goToNext, goToPrevious }: UseControlsProps) => {
    */
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
 
       switch (e.key) {
-        case "ArrowLeft":
-        case "ArrowUp":
+        case 'ArrowLeft':
+        case 'ArrowUp':
           goToPrevious();
           handleInteraction();
           break;
-        case "ArrowRight":
-        case "ArrowDown":
-        case " ":
+        case 'ArrowRight':
+        case 'ArrowDown':
+        case ' ':
           e.preventDefault();
           goToNext();
           handleInteraction();
           break;
-        case "Escape":
+        case 'Escape':
           setIsControlsVisible(false);
           break;
       }
     };
 
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
   }, [goToNext, goToPrevious, handleInteraction]);
 
   /**
@@ -143,10 +140,10 @@ export const useControls = ({ goToNext, goToPrevious }: UseControlsProps) => {
    * Flow: Mount -> 👂 Listen -> Unmount -> 🗑️ Cleanup
    */
   useEffect(() => {
-    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener('mousemove', handleMouseMove);
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener('mousemove', handleMouseMove);
     };
   }, [handleMouseMove]);
 

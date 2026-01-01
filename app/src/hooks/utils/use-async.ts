@@ -1,29 +1,29 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 
-type AsyncStatus = "idle" | "pending" | "success" | "error";
+type AsyncStatus = 'idle' | 'pending' | 'success' | 'error';
 
 export const useAsync = <T>(
   asyncFunction: (...args: unknown[]) => Promise<T>,
   immediate = true
 ) => {
-  const [status, setStatus] = useState<AsyncStatus>("idle");
+  const [status, setStatus] = useState<AsyncStatus>('idle');
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
   const execute = useCallback(
     async (...params: unknown[]) => {
-      setStatus("pending");
+      setStatus('pending');
       setData(null);
       setError(null);
 
       try {
         const response = await asyncFunction(...params);
         setData(response);
-        setStatus("success");
+        setStatus('success');
         return response;
       } catch (error) {
         setError(error as Error);
-        setStatus("error");
+        setStatus('error');
         throw error;
       }
     },
@@ -41,8 +41,8 @@ export const useAsync = <T>(
     status,
     data,
     error,
-    isLoading: status === "pending",
-    isSuccess: status === "success",
-    isError: status === "error",
+    isLoading: status === 'pending',
+    isSuccess: status === 'success',
+    isError: status === 'error',
   };
 };

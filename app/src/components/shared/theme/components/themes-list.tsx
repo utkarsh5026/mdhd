@@ -1,8 +1,8 @@
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { ThemeOption as ThemeTypeOption } from "@/theme/themes";
-import ThemeOption from "./theme-option";
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { ThemeOption as ThemeTypeOption } from '@/theme/themes';
+import ThemeOption from './theme-option';
 
 interface ThemesListProps {
   currentTheme: string;
@@ -32,7 +32,7 @@ const ThemesList: React.FC<ThemesListProps> = ({
 
       {/* All Themes List */}
       <div className="max-h-72 sm:max-h-80 overflow-y-auto p-4">
-        <div className={cn("space-y-2")}>
+        <div className={cn('space-y-2')}>
           {filteredThemes.map((theme) => (
             <ThemeOption
               key={theme.name}
@@ -48,9 +48,7 @@ const ThemesList: React.FC<ThemesListProps> = ({
           <div className="text-center py-8 sm:py-12 text-muted-foreground">
             <Search className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 sm:mb-3 opacity-50" />
             <p className="text-xs sm:text-sm font-medium">No themes found</p>
-            <p className="text-xs mt-1">
-              Try searching with different keywords
-            </p>
+            <p className="text-xs mt-1">Try searching with different keywords</p>
           </div>
         )}
       </div>

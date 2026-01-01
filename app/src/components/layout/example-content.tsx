@@ -1,7 +1,7 @@
-import { BookOpen, Code2, Target } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { motion } from "framer-motion";
-import { Brain } from "lucide-react";
+import { BookOpen, Code2, Target } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { motion } from 'framer-motion';
+import { Brain } from 'lucide-react';
 
 interface ExampleContentProps {
   onLoadSample: (key: string) => void;
@@ -9,25 +9,25 @@ interface ExampleContentProps {
 
 const EXAMPLE_CONTENTS = [
   {
-    key: "tutorial",
-    title: "Tutorial Guide",
-    desc: "Interactive learning experience",
+    key: 'tutorial',
+    title: 'Tutorial Guide',
+    desc: 'Interactive learning experience',
     icon: Target,
-    iconBg: "bg-blue-500",
+    iconBg: 'bg-blue-500',
   },
   {
-    key: "documentation",
-    title: "API Documentation",
-    desc: "Complete technical reference",
+    key: 'documentation',
+    title: 'API Documentation',
+    desc: 'Complete technical reference',
     icon: Code2,
-    iconBg: "bg-purple-500",
+    iconBg: 'bg-purple-500',
   },
   {
-    key: "guide",
-    title: "ML Learning Path",
-    desc: "Structured educational content",
+    key: 'guide',
+    title: 'ML Learning Path',
+    desc: 'Structured educational content',
     icon: Brain,
-    iconBg: "bg-emerald-500",
+    iconBg: 'bg-emerald-500',
   },
 ];
 
@@ -39,9 +39,7 @@ const ExampleContent: React.FC<ExampleContentProps> = ({ onLoadSample }) => (
         <div className="w-8 h-8 bg-primary flex items-center justify-center shadow-lg rounded-2xl">
           <BookOpen className="w-4 h-4 text-primary-foreground" />
         </div>
-        <span className="text-foreground">
-          Example Content
-        </span>
+        <span className="text-foreground">Example Content</span>
       </CardTitle>
     </CardHeader>
     <CardContent className="space-y-3 pt-2">
@@ -58,7 +56,7 @@ const ExampleContent: React.FC<ExampleContentProps> = ({ onLoadSample }) => (
             className={`w-full p-5 border border-border/20 hover:border-primary/30 transition-all duration-300 text-left cursor-pointer rounded-2xl relative overflow-hidden backdrop-blur-sm`}
             whileHover={{
               scale: 1.02,
-              boxShadow: "0 10px 30px -5px rgba(var(--primary), 0.2)",
+              boxShadow: '0 10px 30px -5px rgba(var(--primary), 0.2)',
             }}
             whileTap={{ scale: 0.98 }}
           >

@@ -1,2 +1,2 @@
-import getIconForTech from "./iconMap";
+import getIconForTech from './iconMap';
 export default getIconForTech;

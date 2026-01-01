@@ -1,12 +1,12 @@
 export type ComponentType =
-  | "code"
-  | "table"
-  | "blockquote"
-  | "list"
-  | "paragraph"
-  | "heading"
-  | "image"
-  | "section";
+  | 'code'
+  | 'table'
+  | 'blockquote'
+  | 'list'
+  | 'paragraph'
+  | 'heading'
+  | 'image'
+  | 'section';
 
 export interface ComponentSelection {
   id: string;

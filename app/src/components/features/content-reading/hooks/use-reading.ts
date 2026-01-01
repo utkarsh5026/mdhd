@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef } from "react";
-import { parseMarkdownIntoSections } from "@/services/section/parsing";
-import type { MarkdownSection } from "@/services/section/parsing";
+import { useState, useCallback, useRef } from 'react';
+import { parseMarkdownIntoSections } from '@/services/section/parsing';
+import type { MarkdownSection } from '@/services/section/parsing';
 
 interface UseReadingReturn {
   sections: MarkdownSection[];

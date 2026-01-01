@@ -1,4 +1,5 @@
-import { Progress } from "../ui/progress";
+import { Progress } from '../ui/progress';
+import React from "react";
 
 interface ProgressBarWithLabelProps {
   progressPercentage: number;
@@ -12,9 +13,7 @@ interface ProgressBarWithLabelProps {
  *
  * @returns {React.ReactElement} The ProgressBarWithLabel component.
  */
-const ProgressBarWithLabel: React.FC<ProgressBarWithLabelProps> = ({
-  progressPercentage,
-}) => {
+const ProgressBarWithLabel: React.FC<ProgressBarWithLabelProps> = ({ progressPercentage }: ProgressBarWithLabelProps): React.ReactElement => {
   return (
     <div className="relative">
       <div className="h-2.5 w-full bg-secondary/20 rounded-full overflow-hidden">

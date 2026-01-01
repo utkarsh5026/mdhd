@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import { Play, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useReadingStore } from "@/components/features/content-reading/store/use-reading-store";
-import type { ClipboardEvent } from "react";
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { Play, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useReadingStore } from '@/components/features/content-reading/store/use-reading-store';
+import type { ClipboardEvent } from 'react';
 
 interface MarkdownEditorProps {
   markdownInput: string;
@@ -25,7 +25,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
   const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
-    const pastedText = e.clipboardData.getData("text");
+    const pastedText = e.clipboardData.getData('text');
     setMarkdownInput(pastedText);
   };
 
@@ -44,12 +44,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           onChange={(e) => !hasContent && setMarkdownInput(e.target.value)}
           placeholder="Paste your markdown here..."
           className={cn(
-            "w-full h-80 p-5 rounded-3xl border border-border/50 resize-none",
-            "bg-card/50 backdrop-blur-sm",
-            "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50",
-            "text-sm leading-relaxed placeholder:text-muted-foreground/60",
-            "transition-all duration-200",
-            hasContent && "cursor-default"
+            'w-full h-80 p-5 rounded-3xl border border-border/50 resize-none',
+            'bg-card/50 backdrop-blur-sm',
+            'focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50',
+            'text-sm leading-relaxed placeholder:text-muted-foreground/60',
+            'transition-all duration-200',
+            hasContent && 'cursor-default'
           )}
         />
       </div>

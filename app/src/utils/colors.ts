@@ -5,7 +5,7 @@
  */
 export function hexToHSL(hex: string): [number, number, number] {
   // Remove the # if present
-  hex = hex.replace(/^#/, "");
+  hex = hex.replace(/^#/, '');
 
   // Parse the hex values
   const r = parseInt(hex.substring(0, 2), 16) / 255;
@@ -57,8 +57,8 @@ export function hslToHex(h: number, s: number, l: number): string {
   l /= 100;
 
   // Handle edge case for lightness
-  if (l === 0) return "#000000";
-  if (l === 1) return "#ffffff";
+  if (l === 0) return '#000000';
+  if (l === 1) return '#ffffff';
 
   const c = (1 - Math.abs(2 * l - 1)) * s; // Chroma
   const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
@@ -85,7 +85,7 @@ export function hslToHex(h: number, s: number, l: number): string {
   // Convert to 0-255 range and then to hex
   const toHex = (c: number) => {
     const hex = Math.round((c + m) * 255).toString(16);
-    return hex.length === 1 ? "0" + hex : hex;
+    return hex.length === 1 ? '0' + hex : hex;
   };
 
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -98,10 +98,7 @@ export function hslToHex(h: number, s: number, l: number): string {
  * @param count - Number of colors to generate
  * @returns Array of hex color strings
  */
-export function generateThemeColors(
-  primaryColor: string,
-  count: number
-): string[] {
+export function generateThemeColors(primaryColor: string, count: number): string[] {
   // If count is 1, just return the primary color
   if (count <= 1) return [primaryColor];
 
@@ -117,10 +114,7 @@ export function generateThemeColors(
       const offset = (30 * (i % 2 === 0 ? i : -i)) / count;
       const newHue = (hue + offset + 360) % 360;
       const newSat = Math.min(saturation + 5, 100);
-      const newLight = Math.max(
-        Math.min(lightness + ((i % 3) - 1) * 10, 85),
-        25
-      );
+      const newLight = Math.max(Math.min(lightness + ((i % 3) - 1) * 10, 85), 25);
       return [newHue, newSat, newLight];
     },
 
@@ -138,10 +132,7 @@ export function generateThemeColors(
     (i: number) => {
       const newHue = hue;
       const newSat = Math.max(saturation - 10 * (i % 3), 35);
-      const newLight = Math.max(
-        Math.min(lightness + 15 * ((i % 3) - 1), 80),
-        30
-      );
+      const newLight = Math.max(Math.min(lightness + 15 * ((i % 3) - 1), 80), 30);
       return [newHue, newSat, newLight];
     },
   ];

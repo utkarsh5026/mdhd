@@ -1,10 +1,10 @@
-import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
-import { parseMarkdownIntoSections } from "@/services/section/parsing";
-import { type MarkdownSection, countWords } from "@/services/section/parsing";
+import { create } from 'zustand';
+import { devtools, persist } from 'zustand/middleware';
+import { parseMarkdownIntoSections } from '@/services/section/parsing';
+import { type MarkdownSection, countWords } from '@/services/section/parsing';
 
 const STORAGE_VERSION = 1;
-const STORAGE_KEY = "reading-session-storage";
+const STORAGE_KEY = 'reading-session-storage';
 
 interface ReadingState {
   sections: MarkdownSection[];
@@ -69,7 +69,7 @@ const customStorage = {
       }
       return parsed;
     } catch (e) {
-      console.error("Error parsing reading session:", e);
+      console.error('Error parsing reading session:', e);
       return null;
     }
   },
@@ -86,7 +86,7 @@ const customStorage = {
       };
       localStorage.setItem(name, JSON.stringify(serialized));
     } catch (e) {
-      console.error("Error saving reading session:", e);
+      console.error('Error saving reading session:', e);
     }
   },
 
@@ -109,254 +109,251 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
   devtools(
     persist(
       (set, get) => ({
-      sections: [],
-      readSections: new Set<number>(),
-      currentIndex: 0,
-      isTransitioning: false,
-      isInitialized: false,
-      markdownInput: "",
-      markdownHash: "",
-      startTime: Date.now(),
-      totalWordCount: 0,
-      // Zen mode initial state
-      isZenMode: false,
-      zenControlsVisible: false,
-      // Dialog overlay initial state
-      isDialogOpen: false,
-      // Persistence version
-      version: STORAGE_VERSION,
-      // Hydration tracking
-      _hasHydrated: false,
+        sections: [],
+        readSections: new Set<number>(),
+        currentIndex: 0,
+        isTransitioning: false,
+        isInitialized: false,
+        markdownInput: '',
+        markdownHash: '',
+        startTime: Date.now(),
+        totalWordCount: 0,
+        // Zen mode initial state
+        isZenMode: false,
+        zenControlsVisible: false,
+        // Dialog overlay initial state
+        isDialogOpen: false,
+        // Persistence version
+        version: STORAGE_VERSION,
+        // Hydration tracking
+        _hasHydrated: false,
 
-      /**
-       * 📖 Mark section as read
-       *
-       * ```ascii
-       *    📚 Progress
-       *    ┌─────────┐
-       *    │ Section │ ✅ Mark complete
-       *    │ Status  │
-       *    └─────────┘
-       * ```
-       */
-      markSectionAsRead: (index: number) =>
-        set((state) => ({
-          readSections: new Set(state.readSections).add(index),
-        })),
+        /**
+         * 📖 Mark section as read
+         *
+         * ```ascii
+         *    📚 Progress
+         *    ┌─────────┐
+         *    │ Section │ ✅ Mark complete
+         *    │ Status  │
+         *    └─────────┘
+         * ```
+         */
+        markSectionAsRead: (index: number) =>
+          set((state) => ({
+            readSections: new Set(state.readSections).add(index),
+          })),
 
-      /**
-       * 🔄 Change current section
-       *
-       * ```ascii
-       *    🔀 Navigation
-       *    ┌─────────┐
-       *    │ Current │ ➡️ New section
-       *    │ Section │ 🕒 Fade transition
-       *    └─────────┘
-       * ```
-       */
-      changeSection: (newIndex: number) => {
-        const state = get();
-        if (newIndex < 0 || newIndex >= state.sections.length) return;
+        /**
+         * 🔄 Change current section
+         *
+         * ```ascii
+         *    🔀 Navigation
+         *    ┌─────────┐
+         *    │ Current │ ➡️ New section
+         *    │ Section │ 🕒 Fade transition
+         *    └─────────┘
+         * ```
+         */
+        changeSection: (newIndex: number) => {
+          const state = get();
+          if (newIndex < 0 || newIndex >= state.sections.length) return;
 
-        set({ isTransitioning: true });
+          set({ isTransitioning: true });
 
-        setTimeout(() => {
-          set((currentState) => ({
-            currentIndex: newIndex,
-            isTransitioning: false,
-            readSections: new Set(currentState.readSections).add(newIndex),
+          setTimeout(() => {
+            set((currentState) => ({
+              currentIndex: newIndex,
+              isTransitioning: false,
+              readSections: new Set(currentState.readSections).add(newIndex),
+              startTime: Date.now(),
+            }));
+          }, 200);
+        },
+
+        /**
+         * 🔍 Get section by index
+         *
+         * ```ascii
+         *    📑 Sections
+         *    ┌─────────┐
+         *    │ Index   │ ➡️ Section data
+         *    │ Lookup  │
+         *    └─────────┘
+         * ```
+         */
+        getSection: (index: number) => {
+          const { sections } = get();
+          if (index < 0 || index >= sections.length) return null;
+          return sections[index];
+        },
+
+        /**
+         * ⏭️ Go to next section
+         *
+         * ```ascii
+         *    ➡️ Forward
+         *    ┌─────────┐
+         *    │ Current │ ➡️ Next
+         *    │ Section │
+         *    └─────────┘
+         * ```
+         */
+        goToNext: () => {
+          const { currentIndex, sections, changeSection } = get();
+          if (currentIndex < sections.length - 1) {
+            changeSection(currentIndex + 1);
+          }
+        },
+
+        /**
+         * ⏮️ Go to previous section
+         *
+         * ```ascii
+         *    ⬅️ Back
+         *    ┌─────────┐
+         *    │ Current │ ⬅️ Previous
+         *    │ Section │
+         *    └─────────┘
+         * ```
+         */
+        goToPrevious: () => {
+          const { currentIndex, changeSection } = get();
+          if (currentIndex > 0) {
+            changeSection(currentIndex - 1);
+          }
+        },
+
+        /**
+         * 🎬 Initialize reading session
+         *
+         * ```ascii
+         *    🚀 Start
+         *    ┌─────────┐
+         *    │ Setup   │ ➡️ Ready to read
+         *    │ State   │ 🔄 Hash check
+         *    └─────────┘
+         * ```
+         */
+        initializeReading: (markdownInput: string) => {
+          if (!markdownInput.trim()) return;
+
+          const newHash = hashString(markdownInput);
+          const currentState = get();
+
+          // Return early if content hasn't changed
+          if (currentState.markdownHash === newHash && currentState.isInitialized) {
+            return;
+          }
+
+          const parsedSections = parseMarkdownIntoSections(markdownInput);
+
+          set({
+            sections: parsedSections,
+            readSections: new Set([0]),
+            currentIndex: 0,
+            isInitialized: true,
+            markdownInput,
+            markdownHash: newHash,
             startTime: Date.now(),
-          }));
-        }, 200);
-      },
+            totalWordCount: countWords(markdownInput),
+          });
+        },
 
-      /**
-       * 🔍 Get section by index
-       *
-       * ```ascii
-       *    📑 Sections
-       *    ┌─────────┐
-       *    │ Index   │ ➡️ Section data
-       *    │ Lookup  │
-       *    └─────────┘
-       * ```
-       */
-      getSection: (index: number) => {
-        const { sections } = get();
-        if (index < 0 || index >= sections.length) return null;
-        return sections[index];
-      },
+        /**
+         * 🧘 Toggle Zen Mode
+         *
+         * Switches between zen mode (minimal UI) and normal mode
+         */
+        toggleZenMode: () =>
+          set((state) => ({
+            isZenMode: !state.isZenMode,
+            zenControlsVisible: false,
+          })),
 
-      /**
-       * ⏭️ Go to next section
-       *
-       * ```ascii
-       *    ➡️ Forward
-       *    ┌─────────┐
-       *    │ Current │ ➡️ Next
-       *    │ Section │
-       *    └─────────┘
-       * ```
-       */
-      goToNext: () => {
-        const { currentIndex, sections, changeSection } = get();
-        if (currentIndex < sections.length - 1) {
-          changeSection(currentIndex + 1);
-        }
-      },
+        /**
+         * 🧘 Set Zen Mode
+         *
+         * Explicitly set zen mode on or off
+         */
+        setZenMode: (isZen: boolean) =>
+          set({
+            isZenMode: isZen,
+            zenControlsVisible: false,
+          }),
 
-      /**
-       * ⏮️ Go to previous section
-       *
-       * ```ascii
-       *    ⬅️ Back
-       *    ┌─────────┐
-       *    │ Current │ ⬅️ Previous
-       *    │ Section │
-       *    └─────────┘
-       * ```
-       */
-      goToPrevious: () => {
-        const { currentIndex, changeSection } = get();
-        if (currentIndex > 0) {
-          changeSection(currentIndex - 1);
-        }
-      },
+        /**
+         * 👁️ Show Zen Controls
+         *
+         * Temporarily show controls in zen mode
+         */
+        showZenControls: () => set({ zenControlsVisible: true }),
 
-      /**
-       * 🎬 Initialize reading session
-       *
-       * ```ascii
-       *    🚀 Start
-       *    ┌─────────┐
-       *    │ Setup   │ ➡️ Ready to read
-       *    │ State   │ 🔄 Hash check
-       *    └─────────┘
-       * ```
-       */
-      initializeReading: (markdownInput: string) => {
-        if (!markdownInput.trim()) return;
+        /**
+         * 🙈 Hide Zen Controls
+         *
+         * Hide controls in zen mode
+         */
+        hideZenControls: () => set({ zenControlsVisible: false }),
 
-        const newHash = hashString(markdownInput);
-        const currentState = get();
+        /**
+         * 🎭 Set Dialog Open State
+         *
+         * Track when overlay dialogs are open to hide navigation controls
+         */
+        setDialogOpen: (isOpen: boolean) => set({ isDialogOpen: isOpen }),
 
-        // Return early if content hasn't changed
-        if (
-          currentState.markdownHash === newHash &&
-          currentState.isInitialized
-        ) {
-          return;
-        }
+        /**
+         * 🔄 Reset reading state
+         *
+         * ```ascii
+         *    🗑️ Reset
+         *    ┌─────────┐
+         *    │ Clear   │ ➡️ Fresh start
+         *    │ State   │
+         *    └─────────┘
+         * ```
+         */
+        resetReading: () =>
+          set({
+            sections: [],
+            readSections: new Set<number>(),
+            currentIndex: 0,
+            isInitialized: false,
+            isTransitioning: false,
+            markdownInput: '',
+            markdownHash: '',
+            startTime: Date.now(),
+            isZenMode: false,
+            zenControlsVisible: false,
+            isDialogOpen: false,
+            _hasHydrated: true, // Keep hydrated state
+          }),
 
-        const parsedSections = parseMarkdownIntoSections(markdownInput);
-
-        set({
-          sections: parsedSections,
-          readSections: new Set([0]),
-          currentIndex: 0,
-          isInitialized: true,
-          markdownInput,
-          markdownHash: newHash,
-          startTime: Date.now(),
-          totalWordCount: countWords(markdownInput),
-        });
-      },
-
-      /**
-       * 🧘 Toggle Zen Mode
-       *
-       * Switches between zen mode (minimal UI) and normal mode
-       */
-      toggleZenMode: () =>
-        set((state) => ({
-          isZenMode: !state.isZenMode,
-          zenControlsVisible: false,
-        })),
-
-      /**
-       * 🧘 Set Zen Mode
-       *
-       * Explicitly set zen mode on or off
-       */
-      setZenMode: (isZen: boolean) =>
-        set({
-          isZenMode: isZen,
-          zenControlsVisible: false,
-        }),
-
-      /**
-       * 👁️ Show Zen Controls
-       *
-       * Temporarily show controls in zen mode
-       */
-      showZenControls: () => set({ zenControlsVisible: true }),
-
-      /**
-       * 🙈 Hide Zen Controls
-       *
-       * Hide controls in zen mode
-       */
-      hideZenControls: () => set({ zenControlsVisible: false }),
-
-      /**
-       * 🎭 Set Dialog Open State
-       *
-       * Track when overlay dialogs are open to hide navigation controls
-       */
-      setDialogOpen: (isOpen: boolean) => set({ isDialogOpen: isOpen }),
-
-      /**
-       * 🔄 Reset reading state
-       *
-       * ```ascii
-       *    🗑️ Reset
-       *    ┌─────────┐
-       *    │ Clear   │ ➡️ Fresh start
-       *    │ State   │
-       *    └─────────┘
-       * ```
-       */
-      resetReading: () =>
-        set({
-          sections: [],
-          readSections: new Set<number>(),
-          currentIndex: 0,
-          isInitialized: false,
-          isTransitioning: false,
-          markdownInput: "",
-          markdownHash: "",
-          startTime: Date.now(),
-          isZenMode: false,
-          zenControlsVisible: false,
-          isDialogOpen: false,
-          _hasHydrated: true, // Keep hydrated state
-        }),
-
-      /**
-       * 🗑️ Clear persisted session
-       *
-       * Removes saved session from localStorage and resets state.
-       */
-      clearPersistedSession: () => {
-        localStorage.removeItem(STORAGE_KEY);
-        set({
-          sections: [],
-          readSections: new Set<number>(),
-          currentIndex: 0,
-          isInitialized: false,
-          isTransitioning: false,
-          markdownInput: "",
-          markdownHash: "",
-          startTime: Date.now(),
-          totalWordCount: 0,
-          isZenMode: false,
-          zenControlsVisible: false,
-          isDialogOpen: false,
-          version: STORAGE_VERSION,
-          _hasHydrated: true, // Keep hydrated state
-        });
-      },
+        /**
+         * 🗑️ Clear persisted session
+         *
+         * Removes saved session from localStorage and resets state.
+         */
+        clearPersistedSession: () => {
+          localStorage.removeItem(STORAGE_KEY);
+          set({
+            sections: [],
+            readSections: new Set<number>(),
+            currentIndex: 0,
+            isInitialized: false,
+            isTransitioning: false,
+            markdownInput: '',
+            markdownHash: '',
+            startTime: Date.now(),
+            totalWordCount: 0,
+            isZenMode: false,
+            zenControlsVisible: false,
+            isDialogOpen: false,
+            version: STORAGE_VERSION,
+            _hasHydrated: true, // Keep hydrated state
+          });
+        },
       }),
       {
         name: STORAGE_KEY,
@@ -374,7 +371,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
         version: STORAGE_VERSION,
         onRehydrateStorage: () => (state, error) => {
           if (error) {
-            console.error("Error rehydrating reading session:", error);
+            console.error('Error rehydrating reading session:', error);
           } else if (state) {
             // Re-parse sections from persisted markdown
             // (sections are not persisted to save space)
@@ -389,13 +386,12 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
       }
     ),
     {
-      name: "reading-store", // Name for devtools
+      name: 'reading-store', // Name for devtools
     }
   )
 );
 
-export const useReadingSections = () =>
-  useReadingStore((state) => state.sections);
+export const useReadingSections = () => useReadingStore((state) => state.sections);
 
 export const useReadingProgress = () =>
   useReadingStore((state) => ({

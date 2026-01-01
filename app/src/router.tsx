@@ -1,6 +1,6 @@
-import { createBrowserRouter } from "react-router-dom";
-import App from "./App";
-import ErrorBoundary from "@/components/utils/error/ErrorBoundary";
+import { createBrowserRouter } from 'react-router-dom';
+import App from './App';
+import ErrorBoundary from '@/components/utils/error/ErrorBoundary';
 
 /**
  * Application Router Configuration
@@ -13,7 +13,7 @@ import ErrorBoundary from "@/components/utils/error/ErrorBoundary";
  */
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: '/',
     element: <App />,
     errorElement: <ErrorBoundary />,
   },

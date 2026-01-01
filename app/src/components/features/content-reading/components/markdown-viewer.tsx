@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import SectionsSheet from "./table-of-contents/sections-sheet";
-import ReadingSettingsSheet from "@/components/features/settings/components/reading-settings-selector";
-import { ReadingSettingsProvider } from "@/components/features/settings/context/ReadingSettingsProvider";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import SectionsSheet from './table-of-contents/sections-sheet';
+import ReadingSettingsSheet from '@/components/features/settings/components/reading-settings-selector';
+import { ReadingSettingsProvider } from '@/components/features/settings/context/ReadingSettingsProvider';
 import {
   Header,
   NavigationControls,
@@ -9,18 +9,15 @@ import {
   LoadingState,
   ContentReader,
   ZenPositionIndicator,
-} from "./layout";
-import {
-  useControls,
-  useReading,
-} from "@/components/features/content-reading/hooks";
+} from './layout';
+import { useControls, useReading } from '@/components/features/content-reading/hooks';
 import {
   useIsZenMode,
   useZenControlsVisible,
   useZenModeActions,
   useIsDialogOpen,
-} from "@/components/features/content-reading/store/use-reading-store";
-import { AnimatePresence } from "framer-motion";
+} from '@/components/features/content-reading/store/use-reading-store';
+import { AnimatePresence } from 'framer-motion';
 
 interface MarkdownViewerProps {
   markdown: string;
@@ -30,10 +27,7 @@ interface MarkdownViewerProviderProps extends MarkdownViewerProps {
   exitFullScreen: () => void;
 }
 
-const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
-  exitFullScreen,
-  markdown,
-}) => {
+const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen, markdown }) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -57,11 +51,10 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
     resetReading,
   } = useReading(markdown);
 
-  const { isControlsVisible, handleInteraction, handleDoubleClick } =
-    useControls({
-      goToNext,
-      goToPrevious,
-    });
+  const { isControlsVisible, handleInteraction, handleDoubleClick } = useControls({
+    goToNext,
+    goToPrevious,
+  });
 
   /**
    * Initialize reading when sections are loaded
@@ -125,13 +118,13 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
    */
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isZenMode) {
+      if (e.key === 'Escape' && isZenMode) {
         setZenMode(false);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isZenMode, setZenMode]);
 
   /**
@@ -169,10 +162,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
   return (
     <>
       {/* Main Reading Area */}
-      <div
-        className="h-full relative bg-background text-foreground"
-        onClick={handleContentClick}
-      >
+      <div className="h-full relative bg-background text-foreground" onClick={handleContentClick}>
         {/* Content Container */}
         <ContentReader
           markdown={markdown}
@@ -239,12 +229,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
         )}
 
         {/* Zen Mode Position Indicator - only shown in zen mode */}
-        {isZenMode && (
-          <ZenPositionIndicator
-            currentIndex={currentIndex}
-            total={sections.length}
-          />
-        )}
+        {isZenMode && <ZenPositionIndicator currentIndex={currentIndex} total={sections.length} />}
 
         {/* Sections Sheet */}
         <SectionsSheet
@@ -257,10 +242,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({
         />
 
         {/* Reading Settings Sheet */}
-        <ReadingSettingsSheet
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-        />
+        <ReadingSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
       </div>
     </>
   );
@@ -273,16 +255,16 @@ const MarkdownViewerProvider: React.FC<
   }
 > = ({ markdown, exitFullScreen }) => {
   useEffect(() => {
-    window.history.pushState({ fullscreen: true }, "");
+    window.history.pushState({ fullscreen: true }, '');
 
     const handlePopState = () => {
       exitFullScreen();
     };
 
-    window.addEventListener("popstate", handlePopState);
+    window.addEventListener('popstate', handlePopState);
 
     return () => {
-      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, [exitFullScreen]);
 

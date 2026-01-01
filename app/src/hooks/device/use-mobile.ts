@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 interface UseMobileOptions {
   phoneBreakpoint?: number;
@@ -31,7 +31,7 @@ const useMobile = (options: UseMobileOptions = {}) => {
     tabletBreakpoint = 1024,
     debounceDelay = 150,
     detectTouch = true,
-    initialDevice = "desktop",
+    initialDevice = 'desktop',
   } = options;
 
   /**
@@ -42,9 +42,9 @@ const useMobile = (options: UseMobileOptions = {}) => {
    */
   const initialState = useMemo(
     () => ({
-      isMobile: initialDevice !== "desktop",
-      isPhone: initialDevice === "phone",
-      isTablet: initialDevice === "tablet",
+      isMobile: initialDevice !== 'desktop',
+      isPhone: initialDevice === 'phone',
+      isTablet: initialDevice === 'tablet',
       deviceType: initialDevice,
       hasTouch: false,
       width: null as number | null,
@@ -64,7 +64,7 @@ const useMobile = (options: UseMobileOptions = {}) => {
    * pointer types, and even special edge cases. 🔎
    */
   const detectDevice = useCallback(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return initialState;
     }
 
@@ -73,40 +73,31 @@ const useMobile = (options: UseMobileOptions = {}) => {
     const height = window.innerHeight;
     dimensionsRef.current = { width, height };
 
-    const touchCapable = Boolean(
-      "ontouchstart" in window || navigator.maxTouchPoints > 0
-    );
+    const touchCapable = Boolean('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-    const hasCoarsePointer =
-      window.matchMedia?.("(pointer: coarse)").matches ?? false;
-    const hasFinePointer =
-      window.matchMedia?.("(pointer: fine)").matches ?? false;
-    const prefersMobile = window.matchMedia?.("(hover: none)").matches ?? false;
+    const hasCoarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+    const hasFinePointer = window.matchMedia?.('(pointer: fine)').matches ?? false;
+    const prefersMobile = window.matchMedia?.('(hover: none)').matches ?? false;
 
-    let detectedDeviceType = "desktop";
+    let detectedDeviceType = 'desktop';
     let isPhoneDetected = false;
     let isTabletDetected = false;
 
     if (width < phoneBreakpoint) {
-      detectedDeviceType = "phone";
+      detectedDeviceType = 'phone';
       isPhoneDetected = true;
     } else if (width < tabletBreakpoint) {
       if (detectTouch && (touchCapable || prefersMobile)) {
         if (!hasFinePointer || hasCoarsePointer || height > width) {
-          detectedDeviceType = "tablet";
+          detectedDeviceType = 'tablet';
           isTabletDetected = true;
         }
       }
     }
 
     // 1. Large tablets (iPad Pro, etc.)
-    if (
-      width >= tabletBreakpoint &&
-      touchCapable &&
-      hasCoarsePointer &&
-      !hasFinePointer
-    ) {
-      detectedDeviceType = "tablet";
+    if (width >= tabletBreakpoint && touchCapable && hasCoarsePointer && !hasFinePointer) {
+      detectedDeviceType = 'tablet';
       isTabletDetected = true;
     }
 
@@ -118,19 +109,14 @@ const useMobile = (options: UseMobileOptions = {}) => {
       touchCapable &&
       hasCoarsePointer
     ) {
-      detectedDeviceType = "phone";
+      detectedDeviceType = 'phone';
       isPhoneDetected = true;
       isTabletDetected = false;
     }
 
     // 3. Mobile browsers in "desktop mode" often still have mobile signals
-    if (
-      width >= tabletBreakpoint &&
-      prefersMobile &&
-      !hasFinePointer &&
-      hasCoarsePointer
-    ) {
-      detectedDeviceType = "tablet";
+    if (width >= tabletBreakpoint && prefersMobile && !hasFinePointer && hasCoarsePointer) {
+      detectedDeviceType = 'tablet';
       isTabletDetected = true;
     }
 
@@ -155,7 +141,7 @@ const useMobile = (options: UseMobileOptions = {}) => {
    * Smart enough to avoid unnecessary updates with debouncing magic! ✨
    */
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
     setDeviceInfo(detectDevice());
 
@@ -183,10 +169,10 @@ const useMobile = (options: UseMobileOptions = {}) => {
       }, debounceDelay);
     };
 
-    window.addEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
 
     if (detectTouch) {
-      window.addEventListener("orientationchange", handleResize);
+      window.addEventListener('orientationchange', handleResize);
 
       // Some mobile browsers need a slight delay to report correct dimensions
       // after orientation changes
@@ -196,8 +182,8 @@ const useMobile = (options: UseMobileOptions = {}) => {
     }
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
 
       if (resizeTimerRef.current) {
         clearTimeout(resizeTimerRef.current);

@@ -1,1 +1,1 @@
-export { default as MarkdownRender } from "./components/markdown-render";
+export { default as MarkdownRender } from './components/markdown-render';

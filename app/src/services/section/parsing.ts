@@ -8,26 +8,26 @@ function removeMarkdownFormatting(text: string): string {
   let cleanText = text;
 
   // Remove code blocks
-  cleanText = cleanText.replace(/```[\s\S]*?```/g, "");
+  cleanText = cleanText.replace(/```[\s\S]*?```/g, '');
 
   // Remove inline code
-  cleanText = cleanText.replace(/`[^`]*`/g, "");
+  cleanText = cleanText.replace(/`[^`]*`/g, '');
 
   // Remove headings
-  cleanText = cleanText.replace(/^#{1,6}\s+/gm, "");
+  cleanText = cleanText.replace(/^#{1,6}\s+/gm, '');
 
   // Remove links but keep link text
-  cleanText = cleanText.replace(/\[([^\]]+)]\([^)]+\)/g, "$1");
+  cleanText = cleanText.replace(/\[([^\]]+)]\([^)]+\)/g, '$1');
 
   // Remove images
-  cleanText = cleanText.replace(/!\[[^\]]*]\([^)]+\)/g, "");
+  cleanText = cleanText.replace(/!\[[^\]]*]\([^)]+\)/g, '');
 
   // Remove bold/italic formatting
-  cleanText = cleanText.replace(/(\*\*|__)(.*?)\1/g, "$2");
-  cleanText = cleanText.replace(/([*_])(.*?)\1/g, "$2");
+  cleanText = cleanText.replace(/(\*\*|__)(.*?)\1/g, '$2');
+  cleanText = cleanText.replace(/([*_])(.*?)\1/g, '$2');
 
   // Remove HTML tags
-  cleanText = cleanText.replace(/<[^>]*>/g, "");
+  cleanText = cleanText.replace(/<[^>]*>/g, '');
 
   return cleanText;
 }
@@ -73,15 +73,13 @@ export type MarkdownSection = {
  *
  * 🧩 Perfect for creating a table of contents or a sectioned reading experience!
  */
-export const parseMarkdownIntoSections = (
-  markdown: string
-): MarkdownSection[] => {
-  const lines = markdown.split("\n");
+export const parseMarkdownIntoSections = (markdown: string): MarkdownSection[] => {
+  const lines = markdown.split('\n');
   const sections: MarkdownSection[] = [];
 
   let currentSection: MarkdownSection | null = null;
   let inCodeBlock = false;
-  let introContent = "";
+  let introContent = '';
 
   /**
    * 🏷️ Creates a special introduction section!
@@ -91,13 +89,13 @@ export const parseMarkdownIntoSections = (
   const pushIntroContent = () => {
     if (introContent.trim()) {
       sections.push({
-        id: "introduction",
-        title: "Introduction",
+        id: 'introduction',
+        title: 'Introduction',
         content: introContent,
         level: 0,
         wordCount: countWords(introContent),
       });
-      introContent = "";
+      introContent = '';
     }
   };
 
@@ -107,13 +105,13 @@ export const parseMarkdownIntoSections = (
    * Sets up a section with proper ID, title, and initial content.
    */
   const initializeSection = (title: string, level: 0 | 1 | 2) => {
-    const pounds = "#".repeat(level);
+    const pounds = '#'.repeat(level);
     return {
       id: slugify(title),
       title,
-      content: pounds + " " + title + "\n",
+      content: pounds + ' ' + title + '\n',
       level,
-      wordCount: countWords(pounds + " " + title + "\n"),
+      wordCount: countWords(pounds + ' ' + title + '\n'),
     };
   };
 
@@ -131,18 +129,18 @@ export const parseMarkdownIntoSections = (
   for (const markdownLine of lines) {
     const line = markdownLine.trimEnd();
 
-    if (line.trim().startsWith("```")) {
+    if (line.trim().startsWith('```')) {
       inCodeBlock = !inCodeBlock;
       if (currentSection !== null) {
-        (currentSection as MarkdownSection).content += line + "\n";
-      } else introContent += line + "\n";
+        (currentSection as MarkdownSection).content += line + '\n';
+      } else introContent += line + '\n';
       continue;
     }
 
     if (inCodeBlock) {
       if (currentSection !== null) {
-        (currentSection as MarkdownSection).content += line + "\n";
-      } else introContent += line + "\n";
+        (currentSection as MarkdownSection).content += line + '\n';
+      } else introContent += line + '\n';
       continue;
     }
 
@@ -165,11 +163,11 @@ export const parseMarkdownIntoSections = (
       }
 
       case currentSection !== null: {
-        (currentSection as MarkdownSection).content += line + "\n";
+        (currentSection as MarkdownSection).content += line + '\n';
         break;
       }
       default: {
-        introContent += line + "\n";
+        introContent += line + '\n';
       }
     }
   }
@@ -177,8 +175,8 @@ export const parseMarkdownIntoSections = (
   if (currentSection) sections.push(currentSection);
   else if (introContent.trim())
     sections.push({
-      id: "introduction",
-      title: "Introduction",
+      id: 'introduction',
+      title: 'Introduction',
       content: introContent,
       level: 0,
       wordCount: countWords(introContent),
@@ -199,9 +197,9 @@ export const parseMarkdownIntoSections = (
 export const slugify = (text: string): string => {
   return text
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/--+/g, "-")
-    .replace(/^-+/, "")
-    .replace(/-+$/, "");
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/--+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 };

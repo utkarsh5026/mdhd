@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from "react";
-import { MarkdownViewer } from "@/components/features/content-reading";
-import MarkdownEditor from "./markdown-editor";
-import HeroMain from "./hero-section";
-import Header from "./header";
-import { useReadingStore } from "@/components/features/content-reading/store/use-reading-store";
+import { useState, useCallback, useEffect } from 'react';
+import { MarkdownViewer } from '@/components/features/content-reading';
+import MarkdownEditor from './markdown-editor';
+import HeroMain from './hero-section';
+import Header from './header';
+import { useReadingStore } from '@/components/features/content-reading/store/use-reading-store';
 
 const Homepage = () => {
   const markdownInput = useReadingStore((state) => state.markdownInput);
@@ -29,12 +29,7 @@ const Homepage = () => {
   }, []);
 
   if (isFullscreen) {
-    return (
-      <MarkdownViewer
-        markdown={markdownInput}
-        exitFullScreen={handleExitFullscreen}
-      />
-    );
+    return <MarkdownViewer markdown={markdownInput} exitFullScreen={handleExitFullscreen} />;
   }
 
   return (

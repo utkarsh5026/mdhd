@@ -1,6 +1,6 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { generateArrayWithUniqueIds } from "@/utils/array";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { generateArrayWithUniqueIds } from '@/utils/array';
 
 const particles = generateArrayWithUniqueIds(12);
 const contentSkeleton = generateArrayWithUniqueIds(3);
@@ -26,7 +26,7 @@ const LoadingState: React.FC = () => {
             transition={{
               duration: Math.random() * 10 + 10,
               repeat: Infinity,
-              ease: "linear",
+              ease: 'linear',
               delay: Math.random() * 5,
             }}
           />
@@ -40,21 +40,21 @@ const LoadingState: React.FC = () => {
           className="relative"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
         >
           <div className="relative w-20 h-20">
             {/* Outer ring */}
             <motion.div
               className="absolute inset-0 border-4 border-primary/30 rounded-full"
               animate={{ rotate: 360 }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
             />
 
             {/* Inner ring */}
             <motion.div
               className="absolute inset-2 border-4 border-primary/60 rounded-full border-t-primary"
               animate={{ rotate: -360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
             />
 
             {/* Center dot */}
@@ -64,7 +64,7 @@ const LoadingState: React.FC = () => {
               transition={{
                 duration: 1.5,
                 repeat: Infinity,
-                ease: "easeInOut",
+                ease: 'easeInOut',
               }}
             />
           </div>
@@ -84,7 +84,7 @@ const LoadingState: React.FC = () => {
           <motion.p
             className="text-muted-foreground text-lg"
             animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           >
             Parsing sections and optimizing content...
           </motion.p>
@@ -109,7 +109,7 @@ const LoadingState: React.FC = () => {
                 duration: 1.2,
                 repeat: Infinity,
                 delay: index * 0.3,
-                ease: "easeInOut",
+                ease: 'easeInOut',
               }}
             />
           ))}
@@ -136,9 +136,9 @@ const LoadingState: React.FC = () => {
                 transition={{
                   duration: 1.5,
                   repeat: Infinity,
-                  ease: "easeInOut",
+                  ease: 'easeInOut',
                 }}
-                style={{ width: "75%" }}
+                style={{ width: '75%' }}
               />
             </div>
 
@@ -152,7 +152,7 @@ const LoadingState: React.FC = () => {
                     duration: 1.8,
                     repeat: Infinity,
                     delay: i * 0.2,
-                    ease: "easeInOut",
+                    ease: 'easeInOut',
                   }}
                   style={{ width: `${85 + Math.random() * 15}%` }}
                 />
@@ -163,7 +163,7 @@ const LoadingState: React.FC = () => {
                     duration: 2,
                     repeat: Infinity,
                     delay: i * 0.3 + 0.5,
-                    ease: "easeInOut",
+                    ease: 'easeInOut',
                   }}
                   style={{ width: `${70 + Math.random() * 20}%` }}
                 />
@@ -181,10 +181,9 @@ const LoadingState: React.FC = () => {
         >
           <motion.span
             animate={{ opacity: [0.7, 1, 0.7] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
-            💡 Tip: Use arrow keys or swipe gestures to navigate between
-            sections
+            💡 Tip: Use arrow keys or swipe gestures to navigate between sections
           </motion.span>
         </motion.div>
       </div>
