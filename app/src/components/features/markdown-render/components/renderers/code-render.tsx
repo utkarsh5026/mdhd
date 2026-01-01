@@ -94,6 +94,14 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
   props,
   themeStyle,
 }) => {
+  // Extract background color from theme style for the outer container
+  const getThemeBackground = () => {
+    const preStyle = themeStyle['pre[class*="language-"]'] as React.CSSProperties | undefined;
+    const codeStyle = themeStyle['code[class*="language-"]'] as React.CSSProperties | undefined;
+    const bg = preStyle?.background || preStyle?.backgroundColor ||
+               codeStyle?.background || codeStyle?.backgroundColor;
+    return typeof bg === 'string' ? bg : '#1e1e1e';
+  };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[98vw] w-[98vw] sm:max-w-[95vw] sm:w-[95vw] xl:max-w-[90vw] xl:w-[90vw] 2xl:max-w-[85vw] 2xl:w-[85vw] h-[95vh] sm:h-[90vh] p-0 font-cascadia-code rounded-2xl sm:rounded-3xl border-none shadow-2xl shadow-black/20 overflow-y-auto">
@@ -137,7 +145,7 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
             </div>
 
             {/* Enhanced Action Buttons - More compact on mobile */}
-            <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0 mr-10 sm:mr-12">
               <div className="flex items-center gap-0.5 sm:gap-2 p-1 bg-card/50 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm">
                 {/* Theme Selector - Hidden on very small screens */}
                 <div className="hidden xs:block">
@@ -209,18 +217,23 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
         </DialogHeader>
 
         <div className="flex-1 p-3 sm:p-4 lg:p-6 relative overflow-hidden">
-          <ScrollArea className="relative max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-140px)] lg:max-h-[calc(90vh-180px)] rounded-xl sm:rounded-2xl border border-border/30 z-20 overflow-hidden">
-            <CodeDisplay
-              isDialog
-              ref={dialogCodeRef}
-              themeStyle={themeStyle}
-              language={language}
-              codeContent={codeContent}
-              props={{ ...props }}
-            />
-            <ScrollBar orientation="horizontal" className="bg-muted/50" />
-            <ScrollBar orientation="vertical" className="bg-muted/50" />
-          </ScrollArea>
+          <div
+            className="rounded-xl sm:rounded-2xl overflow-hidden h-full"
+            style={{ backgroundColor: getThemeBackground() }}
+          >
+            <ScrollArea className="h-full max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-140px)] lg:max-h-[calc(90vh-180px)]">
+              <CodeDisplay
+                isDialog
+                ref={dialogCodeRef}
+                themeStyle={themeStyle}
+                language={language}
+                codeContent={codeContent}
+                props={{ ...props }}
+              />
+              <ScrollBar orientation="horizontal" className="bg-muted/50" />
+              <ScrollBar orientation="vertical" className="bg-muted/50" />
+            </ScrollArea>
+          </div>
         </div>
       </DialogContent>
 
@@ -595,22 +608,10 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({
     return window.innerWidth < 640 ? 1.5 : 1.6;
   };
 
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "rounded-b-2xl",
-        isDialog && "relative code-capture-container rounded-2xl"
-      )}
-      style={{ backgroundColor: getThemeBackground() }}
-    >
-      <ScrollArea
-        className={cn(
-          "rounded-b-2xl border-none",
-          isDialog &&
-            "max-h-[70vh] lg:max-h-[75vh] xl:max-h-[80vh] code-scroll-area rounded-2xl"
-        )}
-      >
+  // For dialog mode, just render SyntaxHighlighter (scrolling handled by outer wrapper)
+  if (isDialog) {
+    return (
+      <div ref={ref} className="relative code-capture-container">
         <SyntaxHighlighter
           language={language ?? "text"}
           customStyle={{
@@ -622,7 +623,66 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({
             width: "max-content",
             backgroundColor: "transparent",
             border: "none",
-            // These properties help with image capture
+            maxWidth: "none",
+            whiteSpace: "pre",
+            wordWrap: "normal",
+            overflow: "visible",
+          }}
+          useInlineStyles={true}
+          codeTagProps={{
+            style: {
+              backgroundColor: "transparent",
+              fontFamily: "Source Code Pro, monospace",
+              whiteSpace: "pre",
+              fontSize: "inherit",
+              overflow: "visible",
+              maxWidth: "none",
+            },
+          }}
+          {...props}
+          style={{
+            ...themeStyle,
+            'code[class*="language-"]': {
+              ...themeStyle['code[class*="language-"]'],
+              backgroundColor: "transparent",
+              background: "transparent",
+              overflow: "visible",
+              maxWidth: "none",
+            },
+            'pre[class*="language-"]': {
+              ...themeStyle['pre[class*="language-"]'],
+              backgroundColor: "transparent",
+              background: "transparent",
+              overflow: "visible",
+              maxWidth: "none",
+            },
+          }}
+        >
+          {String(codeContent)}
+        </SyntaxHighlighter>
+      </div>
+    );
+  }
+
+  // For non-dialog mode (inline code blocks)
+  return (
+    <div
+      ref={ref}
+      className="rounded-b-2xl"
+      style={{ backgroundColor: getThemeBackground() }}
+    >
+      <ScrollArea className="rounded-b-2xl border-none">
+        <SyntaxHighlighter
+          language={language ?? "text"}
+          customStyle={{
+            margin: 0,
+            padding: getPadding(),
+            fontSize: getFontSize(),
+            lineHeight: getLineHeight(),
+            minWidth: "100%",
+            width: "max-content",
+            backgroundColor: "transparent",
+            border: "none",
             maxWidth: "none",
             whiteSpace: "pre",
             wordWrap: "normal",
