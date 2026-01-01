@@ -14,6 +14,7 @@ import FontFamilySelector from "./font-family-selector";
 import TypographySelector from "./typography-selector";
 import CodeThemeSelector from "./code-theme-selector";
 import CodeDisplaySelector from "./code-display-selector";
+import AppThemeSelector from "./app-theme-selector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -52,7 +53,10 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
 
         <ScrollArea className="flex-1 overflow-auto">
           <Tabs defaultValue="typography" className="w-full">
-            <TabsList className="w-full mb-6 grid grid-cols-3">
+            <TabsList className="w-full mb-6 grid grid-cols-4">
+              <TabsTrigger value="theme">
+                Theme
+              </TabsTrigger>
               <TabsTrigger value="typography">
                 Typography
               </TabsTrigger>
@@ -63,6 +67,10 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
                 Code
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="theme" className="space-y-6 px-2">
+              <AppThemeSelector />
+            </TabsContent>
 
             <TabsContent value="typography" className="space-y-6 px-2">
               <TypographySelector />
