@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Paintbrush, RotateCcw } from "lucide-react";
 import { useReadingSettings } from "../context/ReadingContext";
 import FontFamilySelector from "./font-family-selector";
-import TypographySelector from "./typography-selector";
 import CodeThemeSelector from "./code-theme-selector";
 import CodeDisplaySelector from "./code-display-selector";
 import AppThemeSelector from "./app-theme-selector";
@@ -52,13 +51,10 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
         </SheetHeader>
 
         <ScrollArea className="flex-1 overflow-auto">
-          <Tabs defaultValue="typography" className="w-full">
-            <TabsList className="w-full mb-6 grid grid-cols-4">
+          <Tabs defaultValue="theme" className="w-full">
+            <TabsList className="w-full mb-6 grid grid-cols-3">
               <TabsTrigger value="theme">
                 Theme
-              </TabsTrigger>
-              <TabsTrigger value="typography">
-                Typography
               </TabsTrigger>
               <TabsTrigger value="font">
                 Font
@@ -70,10 +66,6 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
 
             <TabsContent value="theme" className="space-y-6 px-2">
               <AppThemeSelector />
-            </TabsContent>
-
-            <TabsContent value="typography" className="space-y-6 px-2">
-              <TypographySelector />
             </TabsContent>
 
             <TabsContent value="font" className="space-y-6 px-2">
