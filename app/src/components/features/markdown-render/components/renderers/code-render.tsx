@@ -36,6 +36,7 @@ import {
   useCodeThemeStore,
   type ThemeKey,
 } from "@/components/features/settings/store/code-theme";
+import { useCodeDisplaySettingsStore } from "@/components/features/settings/store/code-display-settings";
 import { Button } from "@/components/ui/button";
 import { downloadAsFile, downloadAsImage } from "@/utils/download";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +61,9 @@ interface CodePreviewDialogProps {
   copied: boolean;
   dialogCodeRef: React.RefObject<HTMLDivElement | null>;
   themeKey: ThemeKey;
+  showLineNumbers: boolean;
+  enableCodeFolding: boolean;
+  enableWordWrap: boolean;
 }
 
 const getHeadingCodeStyle = (headingLevel: number | null) => {
@@ -92,6 +96,9 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
   copied,
   dialogCodeRef,
   themeKey,
+  showLineNumbers,
+  enableCodeFolding,
+  enableWordWrap,
 }) => {
   const backgroundColor = getThemeBackground(themeKey);
 
@@ -221,6 +228,9 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
                 language={language}
                 themeKey={themeKey}
                 isDialog
+                showLineNumbers={showLineNumbers}
+                enableCodeFolding={enableCodeFolding}
+                enableWordWrap={enableWordWrap}
                 className="rounded-xl sm:rounded-2xl"
               />
               <ScrollBar orientation="horizontal" className="bg-muted/50" />
@@ -263,6 +273,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
   const match = /language-(\w+)/.exec(className ?? "");
   const language = match ? match[1] : "";
   const { selectedTheme } = useCodeThemeStore();
+  const { settings: displaySettings } = useCodeDisplaySettingsStore();
 
   const codeRef = useRef<HTMLDivElement>(null);
   const dialogCodeRef = useRef<HTMLDivElement | null>(null);
@@ -455,6 +466,9 @@ const CodeRender: React.FC<CodeRenderProps> = ({
               code={codeContent}
               language={language}
               themeKey={selectedTheme}
+              showLineNumbers={displaySettings.showLineNumbers}
+              enableCodeFolding={displaySettings.enableCodeFolding}
+              enableWordWrap={displaySettings.enableWordWrap}
               className="rounded-b-2xl"
             />
           </div>
@@ -474,6 +488,9 @@ const CodeRender: React.FC<CodeRenderProps> = ({
         copied={copied}
         dialogCodeRef={dialogCodeRef}
         themeKey={selectedTheme}
+        showLineNumbers={displaySettings.showLineNumbers}
+        enableCodeFolding={displaySettings.enableCodeFolding}
+        enableWordWrap={displaySettings.enableWordWrap}
       />
     </Collapsible>
   );

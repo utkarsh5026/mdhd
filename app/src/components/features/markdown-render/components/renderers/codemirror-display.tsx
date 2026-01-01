@@ -16,13 +16,28 @@ interface CodeMirrorDisplayProps {
   themeKey: ThemeKey;
   isDialog?: boolean;
   className?: string;
+  showLineNumbers?: boolean;
+  enableCodeFolding?: boolean;
+  enableWordWrap?: boolean;
 }
 
 const languageCompartment = new Compartment();
 const themeCompartment = new Compartment();
 
 const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
-  ({ code, language, themeKey, isDialog = false, className = "" }, ref) => {
+  (
+    {
+      code,
+      language,
+      themeKey,
+      isDialog = false,
+      className = "",
+      showLineNumbers = true,
+      enableCodeFolding = true,
+      enableWordWrap = false,
+    },
+    ref
+  ) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const editorRef = useRef<EditorView | null>(null);
     const prevThemeKey = useRef<ThemeKey | null>(null);
@@ -71,23 +86,36 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
       [isDialog]
     );
 
-    const extensions = useMemo(
-      () => [
+    const extensions = useMemo(() => {
+      const exts = [
         EditorState.readOnly.of(true),
         EditorView.editable.of(false),
-        lineNumbers(),
-        foldGutter({
-          openText: "⌄",
-          closedText: "›",
-        }),
         indentOnInput(),
         keymap.of([...defaultKeymap, ...foldKeymap]),
         baseTheme,
         themeCompartment.of(getCodeMirrorTheme(themeKey)),
         languageCompartment.of([]),
-      ],
-      [baseTheme, themeKey]
-    );
+      ];
+
+      if (showLineNumbers) {
+        exts.push(lineNumbers());
+      }
+
+      if (enableCodeFolding) {
+        exts.push(
+          foldGutter({
+            openText: "⌄",
+            closedText: "›",
+          })
+        );
+      }
+
+      if (enableWordWrap) {
+        exts.push(EditorView.lineWrapping);
+      }
+
+      return exts;
+    }, [baseTheme, themeKey, showLineNumbers, enableCodeFolding, enableWordWrap]);
 
     // Initialize editor
     useEffect(() => {
