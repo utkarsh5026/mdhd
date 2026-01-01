@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
-import { Hash, Layers, BookmarkCheck, Clock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { Hash, Layers, BookmarkCheck, Clock } from 'lucide-react';
 
-import type { MarkdownSection } from "@/services/section/parsing";
+import type { MarkdownSection } from '@/services/section/parsing';
 
 interface SectionPreviewProps {
   sections: MarkdownSection[];
@@ -18,9 +18,7 @@ const SectionPreview: React.FC<SectionPreviewProps> = ({ sections }) => {
           <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-lg">
             <Layers className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="text-foreground">
-            Section Preview
-          </span>
+          <span className="text-foreground">Section Preview</span>
           {sections.length > 0 && (
             <div className="ml-auto flex items-center gap-2">
               <Badge variant="secondary" className="gap-2 rounded-full">
@@ -42,23 +40,13 @@ const SectionPreview: React.FC<SectionPreviewProps> = ({ sections }) => {
                 <div className="flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-primary/40" />
                   <span>
-                    Total:{" "}
-                    {sections.reduce(
-                      (acc, section) => acc + section.wordCount,
-                      0
-                    )}{" "}
-                    words
+                    Total: {sections.reduce((acc, section) => acc + section.wordCount, 0)} words
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span>
                     Est. reading time: ~
-                    {Math.ceil(
-                      sections.reduce(
-                        (acc, section) => acc + section.wordCount,
-                        0
-                      ) / 200
-                    )}{" "}
+                    {Math.ceil(sections.reduce((acc, section) => acc + section.wordCount, 0) / 200)}{' '}
                     min
                   </span>
                   <div className="w-1 h-1 rounded-full bg-primary/40" />
@@ -87,7 +75,7 @@ const Section: React.FC<SectionProps> = ({ section, index }) => {
       animate={{ opacity: 1, x: 0, scale: 1 }}
       transition={{
         delay: index * 0.08,
-        type: "spring",
+        type: 'spring',
         stiffness: 100,
         damping: 15,
       }}
@@ -96,7 +84,7 @@ const Section: React.FC<SectionProps> = ({ section, index }) => {
       <motion.div
         className={`flex items-center gap-4 p-4 rounded-2xl border border-border/20 hover:border-primary/30 transition-all duration-300 cursor-pointer relative overflow-hidden backdrop-blur-sm`}
         whileHover={{
-          boxShadow: "0 8px 25px -5px rgba(var(--primary), 0.15)",
+          boxShadow: '0 8px 25px -5px rgba(var(--primary), 0.15)',
         }}
         whileTap={{ scale: 0.98 }}
       >
@@ -150,29 +138,25 @@ const NoSectionsAvailable = () => {
         transition={{
           duration: 3,
           repeat: Infinity,
-          repeatType: "reverse",
+          repeatType: 'reverse',
         }}
       >
         <Hash className="w-8 h-8 text-primary/60" />
       </motion.div>
-      <h3 className="font-semibold text-foreground mb-2">
-        No sections detected
-      </h3>
+      <h3 className="font-semibold text-foreground mb-2">No sections detected</h3>
       <p className="text-sm mb-4">Add headings to create structured sections</p>
       <div className="flex flex-wrap justify-center gap-2 text-xs">
-        {["# Heading 1", "## Heading 2", "### Heading 3"].map(
-          (example, index) => (
-            <motion.span
-              key={example}
-              className="px-3 py-1 bg-primary/10 text-primary rounded-full border border-primary/20"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5 + index * 0.1 }}
-            >
-              {example}
-            </motion.span>
-          )
-        )}
+        {['# Heading 1', '## Heading 2', '### Heading 3'].map((example, index) => (
+          <motion.span
+            key={example}
+            className="px-3 py-1 bg-primary/10 text-primary rounded-full border border-primary/20"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5 + index * 0.1 }}
+          >
+            {example}
+          </motion.span>
+        ))}
       </div>
     </motion.div>
   );

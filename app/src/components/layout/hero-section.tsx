@@ -1,13 +1,13 @@
-import { motion } from "framer-motion";
-import { Hash, Target, Zap, type LucideIcon } from "lucide-react";
-import { useTheme } from "@/components/shared/theme/hooks/use-theme";
-import { generateThemeColors } from "@/utils/colors";
-import { useMemo } from "react";
+import { motion } from 'framer-motion';
+import { Hash, Target, Zap, type LucideIcon } from 'lucide-react';
+import { useTheme } from '@/components/shared/theme/hooks/use-theme';
+import { generateThemeColors } from '@/utils/colors';
+import { useMemo } from 'react';
 
 const features: { icon: LucideIcon; label: string }[] = [
-  { icon: Hash, label: "Smart Sections" },
-  { icon: Target, label: "Focus Mode" },
-  { icon: Zap, label: "Distraction Free" },
+  { icon: Hash, label: 'Smart Sections' },
+  { icon: Target, label: 'Focus Mode' },
+  { icon: Zap, label: 'Distraction Free' },
 ];
 
 const HeroMain = () => {
@@ -31,9 +31,7 @@ const HeroMain = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 0.2 }}
         >
-          <span className="text-foreground relative">
-            Transform Markdown
-          </span>
+          <span className="text-foreground relative">Transform Markdown</span>
         </motion.h1>
         <motion.p
           className="text-xl md:text-2xl text-muted-foreground mt-6 max-w-3xl mx-auto"
@@ -41,7 +39,7 @@ const HeroMain = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
         >
-          Into a focused, distraction-free reading experience with{" "}
+          Into a focused, distraction-free reading experience with{' '}
           <span className="text-primary font-semibold">smart sections</span>
         </motion.p>
       </div>
@@ -81,7 +79,7 @@ const FloatingElement: React.FC<FloatingElementProps> = ({
       duration,
       delay,
       repeat: Infinity,
-      ease: "easeInOut",
+      ease: 'easeInOut',
     }}
     style={{
       // Add a subtle glow effect using the generated color

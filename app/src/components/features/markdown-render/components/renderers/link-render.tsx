@@ -1,6 +1,6 @@
-import React, { ComponentPropsWithoutRef } from "react";
+import React, { ComponentPropsWithoutRef } from 'react';
 
-interface LinkRenderProps extends ComponentPropsWithoutRef<"a"> {
+interface LinkRenderProps extends ComponentPropsWithoutRef<'a'> {
   children: React.ReactNode;
 }
 
@@ -39,9 +39,9 @@ const LinkRender: React.FC<LinkRenderProps> = ({ children, ...props }) => {
     <a
       {...props}
       className="text-primary hover:underline"
-      target={props.href?.startsWith("http") ? "_blank" : undefined}
-      rel={props.href?.startsWith("http") ? "noopener noreferrer" : undefined}
-      aria-label={children ? undefined : props.title ?? "Link"}
+      target={props.href?.startsWith('http') ? '_blank' : undefined}
+      rel={props.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+      aria-label={children ? undefined : (props.title ?? 'Link')}
     >
       {children}
     </a>

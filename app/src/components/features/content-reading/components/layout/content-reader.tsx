@@ -1,12 +1,12 @@
-import { cn } from "@/lib/utils";
-import { useSwipeable } from "react-swipeable";
-import CustomMarkdownRenderer from "@/components/features/markdown-render/components/markdown-render";
-import type { MarkdownSection } from "@/services/section/parsing";
+import { cn } from '@/lib/utils';
+import { useSwipeable } from 'react-swipeable';
+import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
+import type { MarkdownSection } from '@/services/section/parsing';
 import {
   useReadingSettings,
   fontFamilyMap,
-} from "@/components/features/settings/context/ReadingContext";
-import { RefObject } from "react";
+} from '@/components/features/settings/context/ReadingContext';
+import { RefObject } from 'react';
 
 interface ContentReaderProps {
   markdown: string;
@@ -33,14 +33,14 @@ const ContentReader: React.FC<ContentReaderProps> = ({
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (eventData) => {
       if (eventData.event.target instanceof Element) {
-        const target = eventData.event.target.closest(".no-swipe");
+        const target = eventData.event.target.closest('.no-swipe');
         if (target) return;
       }
       goToNext();
     },
     onSwipedRight: (eventData) => {
       if (eventData.event.target instanceof Element) {
-        const target = eventData.event.target.closest(".no-swipe");
+        const target = eventData.event.target.closest('.no-swipe');
         if (target) return;
       }
       goToPrevious();
@@ -55,22 +55,15 @@ const ContentReader: React.FC<ContentReaderProps> = ({
   return (
     <div
       className={cn(
-        "h-full overflow-y-auto bg-background",
-        isTransitioning ? "opacity-0" : "opacity-100",
-        "transition-opacity duration-200"
+        'h-full overflow-y-auto bg-background',
+        isTransitioning ? 'opacity-0' : 'opacity-100',
+        'transition-opacity duration-200'
       )}
       ref={scrollRef}
     >
-      <div
-        {...swipeHandlers}
-        onDoubleClick={handleDoubleClick}
-        className="h-full"
-      >
+      <div {...swipeHandlers} onDoubleClick={handleDoubleClick} className="h-full">
         <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24 h-auto">
-          <div
-            className="mx-auto rounded-2xl"
-            style={{ maxWidth: `${contentWidth}px` }}
-          >
+          <div className="mx-auto rounded-2xl" style={{ maxWidth: `${contentWidth}px` }}>
             <div
               key={currentSection.id}
               className="prose prose-lg prose-invert max-w-none"

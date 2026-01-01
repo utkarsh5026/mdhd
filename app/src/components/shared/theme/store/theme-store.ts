@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { ThemeOption, themes } from "@/theme/themes";
+import { create } from 'zustand';
+import { ThemeOption, themes } from '@/theme/themes';
 
 const defaultTheme = themes[1];
 
@@ -12,7 +12,7 @@ interface ThemeState {
 }
 
 const getInitialTheme = (): ThemeOption => {
-  const savedTheme = localStorage.getItem("theme");
+  const savedTheme = localStorage.getItem('theme');
   if (!savedTheme) {
     return defaultTheme;
   }
@@ -20,13 +20,13 @@ const getInitialTheme = (): ThemeOption => {
   try {
     return JSON.parse(savedTheme);
   } catch (e) {
-    console.error("Error parsing theme from localStorage:", e);
+    console.error('Error parsing theme from localStorage:', e);
     return defaultTheme;
   }
 };
 
 const getInitialBookmarkedThemes = (): ThemeOption[] => {
-  const savedBookmarks = localStorage.getItem("bookmarked-themes");
+  const savedBookmarks = localStorage.getItem('bookmarked-themes');
   if (!savedBookmarks) {
     return [];
   }
@@ -34,7 +34,7 @@ const getInitialBookmarkedThemes = (): ThemeOption[] => {
   try {
     return JSON.parse(savedBookmarks);
   } catch (e) {
-    console.error("Error parsing bookmarked themes from localStorage:", e);
+    console.error('Error parsing bookmarked themes from localStorage:', e);
     return [];
   }
 };
@@ -50,7 +50,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   bookmarkedThemes: getInitialBookmarkedThemes(),
 
   setTheme: (theme: ThemeOption) => {
-    localStorage.setItem("theme", JSON.stringify(theme));
+    localStorage.setItem('theme', JSON.stringify(theme));
     set({ currentTheme: theme });
   },
 
@@ -64,25 +64,18 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 
     if (isCurrentlyBookmarked) {
       // Remove from bookmarks
-      newBookmarkedThemes = bookmarkedThemes.filter(
-        (bookmarked) => bookmarked.name !== theme.name
-      );
+      newBookmarkedThemes = bookmarkedThemes.filter((bookmarked) => bookmarked.name !== theme.name);
     } else {
       // Add to bookmarks
       newBookmarkedThemes = [...bookmarkedThemes, theme];
     }
 
-    localStorage.setItem(
-      "bookmarked-themes",
-      JSON.stringify(newBookmarkedThemes)
-    );
+    localStorage.setItem('bookmarked-themes', JSON.stringify(newBookmarkedThemes));
     set({ bookmarkedThemes: newBookmarkedThemes });
   },
 
   isBookmarked: (theme: ThemeOption) => {
     const { bookmarkedThemes } = get();
-    return bookmarkedThemes.some(
-      (bookmarked) => bookmarked.name === theme.name
-    );
+    return bookmarkedThemes.some((bookmarked) => bookmarked.name === theme.name);
   },
 }));

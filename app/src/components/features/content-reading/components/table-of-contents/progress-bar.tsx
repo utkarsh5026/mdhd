@@ -1,6 +1,6 @@
-import React from "react";
-import ProgressBarWithLabel from "@/components/utils/ProgressBarWithLabel";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import ProgressBarWithLabel from '@/components/utils/ProgressBarWithLabel';
+import { cn } from '@/lib/utils';
 
 interface ProgressBarProps {
   progressPercentage: number;
@@ -16,9 +16,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   currentIndex,
 }) => {
   const getSectionBarClass = (isRead: boolean, isCurrent: boolean) => {
-    if (isRead) return "bg-primary/70";
-    if (isCurrent) return "bg-primary/30";
-    return "bg-secondary/30";
+    if (isRead) return 'bg-primary/70';
+    if (isCurrent) return 'bg-primary/30';
+    return 'bg-secondary/30';
   };
 
   const readSectionsCount = readSectionsIndexes.size;
@@ -29,11 +29,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
       <div className="flex justify-between items-center text-xs text-muted-foreground py-1">
         <div className="flex items-center gap-1.5">
-          <span className="font-medium text-primary/80">
-            {readSectionsCount}
-          </span>{" "}
-          of <span className="font-medium">{sections.length}</span> sections
-          read
+          <span className="font-medium text-primary/80">{readSectionsCount}</span> of{' '}
+          <span className="font-medium">{sections.length}</span> sections read
         </div>
 
         <div className="text-xs">
@@ -63,15 +60,10 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           <div
             key={section.id}
             className={cn(
-              "h-1 flex-grow transition-all duration-300",
-              getSectionBarClass(
-                readSectionsIndexes.has(section.id),
-                idx === currentIndex
-              )
+              'h-1 flex-grow transition-all duration-300',
+              getSectionBarClass(readSectionsIndexes.has(section.id), idx === currentIndex)
             )}
-            title={`${section.title} (${
-              readSectionsIndexes.has(section.id) ? "Read" : "Unread"
-            })`}
+            title={`${section.title} (${readSectionsIndexes.has(section.id) ? 'Read' : 'Unread'})`}
           />
         ))}
       </div>

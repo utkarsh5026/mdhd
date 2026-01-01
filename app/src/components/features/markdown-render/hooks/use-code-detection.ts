@@ -1,14 +1,11 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, RefObject } from 'react';
 
 /**
  * Hook to detect the context of a code element in the DOM
  * Used to render code blocks appropriately based on their context
  * (e.g., simpler rendering in tables, lists, paragraphs)
  */
-export const useCodeDetection = (
-  ref: React.RefObject<HTMLElement | null>,
-  maxDepth: number = 3
-) => {
+export const useCodeDetection = (ref: RefObject<HTMLElement | null>, maxDepth: number = 3) => {
   const [isInTableCell, setIsInTableCell] = useState(false);
   const [headingLevel, setHeadingLevel] = useState<number | null>(null);
   const [inList, setInList] = useState(false);
@@ -24,7 +21,7 @@ export const useCodeDetection = (
       const tagName = parent.tagName.toLowerCase();
 
       // Check for table cell
-      if (tagName === "td" || tagName === "th") {
+      if (tagName === 'td' || tagName === 'th') {
         setIsInTableCell(true);
         return true;
       }
@@ -37,13 +34,13 @@ export const useCodeDetection = (
       }
 
       // Check for list
-      if (tagName === "li" || tagName === "ul" || tagName === "ol") {
+      if (tagName === 'li' || tagName === 'ul' || tagName === 'ol') {
         setInList(true);
         return true;
       }
 
       // Check for paragraph
-      if (tagName === "p") {
+      if (tagName === 'p') {
         setIsInParagraph(true);
         return true;
       }

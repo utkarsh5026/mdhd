@@ -1,6 +1,6 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface NavigationControlsProps {
   currentIndex: number;
@@ -15,7 +15,7 @@ interface NavigationButtonProps {
   disabled: boolean;
   icon: LucideIcon;
   rotateY: number;
-  iconDirection: "left" | "right";
+  iconDirection: 'left' | 'right';
 }
 
 const NavigationButton: React.FC<NavigationButtonProps> = ({
@@ -29,13 +29,13 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
     onClick={onClick}
     disabled={disabled}
     className={cn(
-      "relative group touch-manipulation",
-      "p-3 sm:p-3.5 lg:p-4 rounded-full",
-      "transition-all duration-500 ease-out",
-      "border-2 backdrop-blur-md shadow-lg",
+      'relative group touch-manipulation',
+      'p-3 sm:p-3.5 lg:p-4 rounded-full',
+      'transition-all duration-500 ease-out',
+      'border-2 backdrop-blur-md shadow-lg',
       disabled
-        ? "bg-secondary/20 border-border/30 text-mutedForeground/50 cursor-not-allowed"
-        : "bg-cardBg/80 border-border/50 text-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:shadow-xl hover:shadow-primary/20"
+        ? 'bg-secondary/20 border-border/30 text-mutedForeground/50 cursor-not-allowed'
+        : 'bg-cardBg/80 border-border/50 text-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:shadow-xl hover:shadow-primary/20'
     )}
     whileHover={
       !disabled
@@ -48,16 +48,16 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
     }
     whileTap={!disabled ? { scale: 0.9 } : {}}
     style={{
-      transformStyle: "preserve-3d",
+      transformStyle: 'preserve-3d',
     }}
   >
     {/* Inner gradient layer */}
     <div
       className={cn(
-        "absolute inset-1 rounded-full transition-all duration-500",
+        'absolute inset-1 rounded-full transition-all duration-500',
         disabled
-          ? "bg-transparent"
-          : "bg-gradient-to-br from-foreground/5 to-transparent group-hover:from-primary/10 group-hover:to-primary/5"
+          ? 'bg-transparent'
+          : 'bg-gradient-to-br from-foreground/5 to-transparent group-hover:from-primary/10 group-hover:to-primary/5'
       )}
     />
 
@@ -67,29 +67,22 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({
       whileHover={
         !disabled
           ? {
-              x: iconDirection === "left" ? -3 : 3,
+              x: iconDirection === 'left' ? -3 : 3,
               scale: 1.1,
             }
           : {}
       }
       transition={{
-        type: "spring",
+        type: 'spring',
         stiffness: 400,
         damping: 17,
       }}
     >
-      <Icon
-        className={cn(
-          "transition-all duration-300",
-          "h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6"
-        )}
-      />
+      <Icon className={cn('transition-all duration-300', 'h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6')} />
     </motion.div>
 
     {/* Disabled overlay */}
-    {disabled && (
-      <div className="absolute inset-0 bg-secondary/10 rounded-full" />
-    )}
+    {disabled && <div className="absolute inset-0 bg-secondary/10 rounded-full" />}
 
     {/* Premium hover glow */}
     {!disabled && (
@@ -161,18 +154,17 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 sm:hidden">
               <div className="flex gap-2">
                 {Array.from({ length: Math.min(total, 5) }).map((_, index) => {
-                  const actualIndex =
-                    total <= 5 ? index : Math.floor((index / 4) * (total - 1));
+                  const actualIndex = total <= 5 ? index : Math.floor((index / 4) * (total - 1));
                   const isActive = actualIndex === currentIndex;
 
                   return (
                     <motion.div
                       key={index}
                       className={cn(
-                        "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                        'w-1.5 h-1.5 rounded-full transition-all duration-300',
                         isActive
-                          ? "bg-primary scale-125 shadow-lg shadow-primary/50"
-                          : "bg-border/50"
+                          ? 'bg-primary scale-125 shadow-lg shadow-primary/50'
+                          : 'bg-border/50'
                       )}
                       animate={isActive ? { scale: [1.25, 1.4, 1.25] } : {}}
                       transition={{ duration: 2, repeat: Infinity }}

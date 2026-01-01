@@ -1,1 +1,1 @@
-export { default as MarkdownViewer } from "./components/markdown-viewer";
+export { default as MarkdownViewer } from './components/markdown-viewer';

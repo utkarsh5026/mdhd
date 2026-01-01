@@ -1,28 +1,28 @@
-import { create } from "zustand";
-import { useThemeStore } from "@/components/shared/theme/store/theme-store";
+import { create } from 'zustand';
+import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 
 export type FontFamily =
-  | "system-ui"
-  | "inter"
-  | "georgia"
-  | "merriweather"
-  | "roboto-slab"
-  | "source-serif-pro"
-  | "libre-baskerville"
-  | "lora"
-  | "pt-serif"
-  | "open-sans"
-  | "cascadia-code"
-  | "atkinson-hyperlegible"
-  | "source-sans-pro"
-  | "nunito-sans"
-  | "ibm-plex-sans"
-  | "crimson-text"
-  | "spectral"
-  | "eb-garamond"
-  | "bitter"
-  | "vollkorn"
-  | "literata";
+  | 'system-ui'
+  | 'inter'
+  | 'georgia'
+  | 'merriweather'
+  | 'roboto-slab'
+  | 'source-serif-pro'
+  | 'libre-baskerville'
+  | 'lora'
+  | 'pt-serif'
+  | 'open-sans'
+  | 'cascadia-code'
+  | 'atkinson-hyperlegible'
+  | 'source-sans-pro'
+  | 'nunito-sans'
+  | 'ibm-plex-sans'
+  | 'crimson-text'
+  | 'spectral'
+  | 'eb-garamond'
+  | 'bitter'
+  | 'vollkorn'
+  | 'literata';
 
 export interface ReadingSettings {
   fontFamily: FontFamily;
@@ -43,7 +43,7 @@ interface ReadingSettingsState {
 }
 
 const DEFAULT_SETTINGS: ReadingSettings = {
-  fontFamily: "literata",
+  fontFamily: 'literata',
   customBackground: useThemeStore.getState().currentTheme.background,
   // Typography defaults
   fontSize: 18,
@@ -53,9 +53,9 @@ const DEFAULT_SETTINGS: ReadingSettings = {
 
 // Load settings from localStorage or use defaults
 const loadInitialSettings = (): ReadingSettings => {
-  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  if (typeof window === 'undefined') return DEFAULT_SETTINGS;
 
-  const savedSettings = localStorage.getItem("reading-settings");
+  const savedSettings = localStorage.getItem('reading-settings');
   if (!savedSettings) return DEFAULT_SETTINGS;
 
   try {
@@ -63,13 +63,13 @@ const loadInitialSettings = (): ReadingSettings => {
     // Merge with defaults to ensure all required fields are present
     return { ...DEFAULT_SETTINGS, ...parsed };
   } catch (e) {
-    console.error("Error parsing saved reading settings:", e);
+    console.error('Error parsing saved reading settings:', e);
     return DEFAULT_SETTINGS;
   }
 };
 
 const saveSettings = (settings: ReadingSettings) => {
-  localStorage.setItem("reading-settings", JSON.stringify(settings));
+  localStorage.setItem('reading-settings', JSON.stringify(settings));
 };
 
 export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
@@ -105,7 +105,7 @@ export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
 
   resetSettings: () =>
     set(() => {
-      localStorage.removeItem("reading-settings");
+      localStorage.removeItem('reading-settings');
       return { settings: DEFAULT_SETTINGS };
     }),
 }));

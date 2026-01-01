@@ -1,4 +1,4 @@
-.PHONY: install dev build preview lint clean help
+.PHONY: install dev build preview lint format format-check clean help
 
 # Colors
 CYAN := \033[36m
@@ -25,7 +25,9 @@ help:
 	@echo ""
 	@echo "  $(BOLD)$(YELLOW)Quality$(RESET)"
 	@echo "  $(DIM)─────────────────────────────────────$(RESET)"
-	@echo "  $(GREEN)make lint$(RESET)      Run ESLint"
+	@echo "  $(GREEN)make lint$(RESET)         Run ESLint"
+	@echo "  $(GREEN)make format$(RESET)       Format code with Prettier"
+	@echo "  $(GREEN)make format-check$(RESET) Check code formatting"
 	@echo ""
 	@echo "  $(BOLD)$(YELLOW)Maintenance$(RESET)"
 	@echo "  $(DIM)─────────────────────────────────────$(RESET)"
@@ -51,6 +53,14 @@ preview:
 lint:
 	@echo "$(CYAN)Running ESLint...$(RESET)"
 	cd app && npm run lint
+
+format:
+	@echo "$(CYAN)Formatting code with Prettier...$(RESET)"
+	cd app && npm run format
+
+format-check:
+	@echo "$(CYAN)Checking code formatting...$(RESET)"
+	cd app && npm run format:check
 
 clean:
 	@echo "$(CYAN)Cleaning up...$(RESET)"

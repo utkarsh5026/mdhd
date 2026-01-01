@@ -1,10 +1,10 @@
-import { motion } from "framer-motion";
-import { Hash } from "lucide-react";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import { FaGithub } from "react-icons/fa";
-import ThemeSelector from "../shared/theme/components/theme-selector";
-import { useTheme } from "@/hooks";
+import { motion } from 'framer-motion';
+import { Hash } from 'lucide-react';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { FaGithub } from 'react-icons/fa';
+import ThemeSelector from '../shared/theme/components/theme-selector';
+import { useTheme } from '@/hooks';
 
 const Header = () => {
   const { currentTheme, setTheme } = useTheme();
@@ -21,9 +21,7 @@ const Header = () => {
             <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
               <Hash className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">
-              MDHD
-            </span>
+            <span className="text-xl font-bold text-foreground">MDHD</span>
             <Badge variant="secondary" className="text-xs">
               Beta
             </Badge>
@@ -34,17 +32,12 @@ const Header = () => {
               variant="ghost"
               size="sm"
               className="gap-2 hover:bg-transparent rounded-full hover:text-primary hover:border-primary cursor-pointer hover:scale-105 transition-all duration-300"
-              onClick={() =>
-                window.open("https://github.com/utkarsh5026/mdhd", "_blank")
-              }
+              onClick={() => window.open('https://github.com/utkarsh5026/mdhd', '_blank')}
             >
               <FaGithub className="w-4 h-4" />
               <span className="hidden md:inline">GitHub</span>
             </Button>
-            <ThemeSelector
-              currentTheme={currentTheme.name}
-              onThemeChange={setTheme}
-            />
+            <ThemeSelector currentTheme={currentTheme.name} onThemeChange={setTheme} />
           </div>
         </div>
       </div>

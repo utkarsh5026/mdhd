@@ -1,9 +1,9 @@
-import React from "react";
-import { useRouteError, isRouteErrorResponse, Link } from "react-router-dom";
-import { Home, RefreshCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { useTheme } from "@/components/shared/theme/hooks/use-theme";
+import React from 'react';
+import { useRouteError, isRouteErrorResponse, Link } from 'react-router-dom';
+import { Home, RefreshCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { useTheme } from '@/components/shared/theme/hooks/use-theme';
 
 /**
  * ErrorBoundary Component
@@ -21,28 +21,27 @@ const ErrorBoundary: React.FC = () => {
   const error = useRouteError();
   const { currentTheme } = useTheme();
 
-  let errorMessage = "An unexpected error occurred";
-  let errorDetails = "";
+  let errorMessage = 'An unexpected error occurred';
+  let errorDetails = '';
 
   if (isRouteErrorResponse(error)) {
     // Handle route errors (404, etc)
     errorMessage = `${error.status} - ${error.statusText}`;
-    errorDetails =
-      error.data?.message ?? "The page you're looking for couldn't be found.";
+    errorDetails = error.data?.message ?? "The page you're looking for couldn't be found.";
   } else if (error instanceof Error) {
     // Handle JavaScript errors
     errorMessage = error.message;
-    errorDetails = error.stack?.split("\n")[0] ?? "";
-  } else if (typeof error === "string") {
+    errorDetails = error.stack?.split('\n')[0] ?? '';
+  } else if (typeof error === 'string') {
     // Handle string errors
     errorMessage = error;
   }
 
   // Check if it's a chunk loading error
   const isChunkError =
-    errorMessage.includes("Failed to fetch dynamically imported module") ||
-    errorMessage.includes("Loading chunk") ||
-    errorMessage.includes("Importing a module script failed");
+    errorMessage.includes('Failed to fetch dynamically imported module') ||
+    errorMessage.includes('Loading chunk') ||
+    errorMessage.includes('Importing a module script failed');
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background font-cascadia-code">
@@ -72,7 +71,7 @@ const ErrorBoundary: React.FC = () => {
 
           <p className="text-sm md:text-base text-muted-foreground mb-3">
             {isChunkError
-              ? "We had trouble loading some application resources. This often happens due to network issues or a new version being deployed."
+              ? 'We had trouble loading some application resources. This often happens due to network issues or a new version being deployed.'
               : errorMessage}
           </p>
 

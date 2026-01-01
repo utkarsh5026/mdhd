@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface CodeDisplaySettings {
   showLineNumbers: boolean;
@@ -49,7 +49,7 @@ export const useCodeDisplaySettingsStore = create<CodeDisplaySettingsStore>()(
       },
     }),
     {
-      name: "code-display-settings",
+      name: 'code-display-settings',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ settings: state.settings }),
     }

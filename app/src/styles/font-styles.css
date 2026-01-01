@@ -24,8 +24,8 @@
 
 /* Reading Content Styles */
 .fullscreen-reading-content {
-    /* Will inherit the font-family, size, line-height, and letter-spacing from inline styles */
-    color: var(--foreground);
+  /* Will inherit the font-family, size, line-height, and letter-spacing from inline styles */
+  color: var(--foreground);
 }
 
 /* Apply font styles to markdown renderer */
@@ -38,43 +38,43 @@
 .fullscreen-reading-content .markdown-content p,
 .fullscreen-reading-content .markdown-content li,
 .fullscreen-reading-content .markdown-content blockquote {
-    font-family: inherit;
+  font-family: inherit;
 }
 
 /* Enhanced styles for improved readability */
 .fullscreen-reading-content .markdown-content {
-    /* Base styles */
-    max-width: 70ch;
-    margin: 0 auto;
+  /* Base styles */
+  max-width: 70ch;
+  margin: 0 auto;
 }
 
 .fullscreen-reading-content .markdown-content h1 {
-    font-size: 2em;
-    margin-top: 1.5em;
-    margin-bottom: 0.8em;
+  font-size: 2em;
+  margin-top: 1.5em;
+  margin-bottom: 0.8em;
 }
 
 .fullscreen-reading-content .markdown-content h2 {
-    font-size: 1.75em;
-    margin-top: 1.4em;
-    margin-bottom: 0.7em;
+  font-size: 1.75em;
+  margin-top: 1.4em;
+  margin-bottom: 0.7em;
 }
 
 .fullscreen-reading-content .markdown-content h3 {
-    font-size: 1.5em;
-    margin-top: 1.3em;
-    margin-bottom: 0.6em;
+  font-size: 1.5em;
+  margin-top: 1.3em;
+  margin-bottom: 0.6em;
 }
 
 .fullscreen-reading-content .markdown-content p {
-    margin-bottom: 1.2em;
+  margin-bottom: 1.2em;
 }
 
 .fullscreen-reading-content .markdown-content blockquote {
-    margin-left: 0;
-    border-left-width: 3px;
+  margin-left: 0;
+  border-left-width: 3px;
 }
 
 .fullscreen-reading-content .markdown-content code {
-    font-size: 0.9em;
+  font-size: 0.9em;
 }

@@ -1,20 +1,20 @@
-import { useState, useEffect, useRef } from "react";
-import type { Variants } from "framer-motion";
+import { useState, useEffect, useRef } from 'react';
+import type { Variants } from 'framer-motion';
 
 export type Color =
-  | "primary"
-  | "blue"
-  | "green"
-  | "purple"
-  | "amber"
-  | "red"
-  | "gray"
-  | "teal"
-  | "pink"
-  | "indigo"
-  | "yellow"
-  | "orange";
-export type Variant = "default" | "emphasis" | "subtle";
+  | 'primary'
+  | 'blue'
+  | 'green'
+  | 'purple'
+  | 'amber'
+  | 'red'
+  | 'gray'
+  | 'teal'
+  | 'pink'
+  | 'indigo'
+  | 'yellow'
+  | 'orange';
+export type Variant = 'default' | 'emphasis' | 'subtle';
 
 /**
  * Custom hook for managing animation states and interactions for InsightCard components
@@ -171,7 +171,7 @@ export function useContainerAnimation(delay = 0) {
     if (activeInsight === index) {
       return {
         y: -3,
-        boxShadow: "0 6px 12px rgba(0, 0, 0, 0.1)",
+        boxShadow: '0 6px 12px rgba(0, 0, 0, 0.1)',
         transition: { duration: 0.2 },
       };
     }
@@ -199,96 +199,93 @@ export function useContainerAnimation(delay = 0) {
  * @param variant Theme variant (default, emphasis, subtle)
  * @returns Object with color styles for the card
  */
-export const useInsightTheme = (
-  baseColor: Color = "primary",
-  variant: Variant = "default"
-) => {
+export const useInsightTheme = (baseColor: Color = 'primary', variant: Variant = 'default') => {
   // Define color mappings based on variant
   const colorMap: Record<string, Record<string, string>> = {
     primary: {
-      default: "from-primary/5 to-primary/10",
-      emphasis: "from-primary/10 to-primary/20",
-      subtle: "from-primary/2 to-primary/5",
+      default: 'from-primary/5 to-primary/10',
+      emphasis: 'from-primary/10 to-primary/20',
+      subtle: 'from-primary/2 to-primary/5',
     },
     blue: {
-      default: "from-blue-500/5 to-blue-500/10",
-      emphasis: "from-blue-500/10 to-blue-500/20",
-      subtle: "from-blue-500/2 to-blue-500/5",
+      default: 'from-blue-500/5 to-blue-500/10',
+      emphasis: 'from-blue-500/10 to-blue-500/20',
+      subtle: 'from-blue-500/2 to-blue-500/5',
     },
     green: {
-      default: "from-green-500/5 to-green-500/10",
-      emphasis: "from-green-500/10 to-green-500/20",
-      subtle: "from-green-500/2 to-green-500/5",
+      default: 'from-green-500/5 to-green-500/10',
+      emphasis: 'from-green-500/10 to-green-500/20',
+      subtle: 'from-green-500/2 to-green-500/5',
     },
     purple: {
-      default: "from-violet-500/5 to-violet-500/10",
-      emphasis: "from-violet-500/10 to-violet-500/20",
-      subtle: "from-violet-500/2 to-violet-500/5",
+      default: 'from-violet-500/5 to-violet-500/10',
+      emphasis: 'from-violet-500/10 to-violet-500/20',
+      subtle: 'from-violet-500/2 to-violet-500/5',
     },
     amber: {
-      default: "from-amber-500/5 to-amber-500/10",
-      emphasis: "from-amber-500/10 to-amber-500/20",
-      subtle: "from-amber-500/2 to-amber-500/5",
+      default: 'from-amber-500/5 to-amber-500/10',
+      emphasis: 'from-amber-500/10 to-amber-500/20',
+      subtle: 'from-amber-500/2 to-amber-500/5',
     },
     red: {
-      default: "from-red-500/5 to-red-500/10",
-      emphasis: "from-red-500/10 to-red-500/20",
-      subtle: "from-red-500/2 to-red-500/5",
+      default: 'from-red-500/5 to-red-500/10',
+      emphasis: 'from-red-500/10 to-red-500/20',
+      subtle: 'from-red-500/2 to-red-500/5',
     },
     // New colors
     gray: {
-      default: "from-gray-500/5 to-gray-500/10",
-      emphasis: "from-gray-500/10 to-gray-500/20",
-      subtle: "from-gray-500/2 to-gray-500/5",
+      default: 'from-gray-500/5 to-gray-500/10',
+      emphasis: 'from-gray-500/10 to-gray-500/20',
+      subtle: 'from-gray-500/2 to-gray-500/5',
     },
     teal: {
-      default: "from-teal-500/5 to-teal-500/10",
-      emphasis: "from-teal-500/10 to-teal-500/20",
-      subtle: "from-teal-500/2 to-teal-500/5",
+      default: 'from-teal-500/5 to-teal-500/10',
+      emphasis: 'from-teal-500/10 to-teal-500/20',
+      subtle: 'from-teal-500/2 to-teal-500/5',
     },
     pink: {
-      default: "from-pink-500/5 to-pink-500/10",
-      emphasis: "from-pink-500/10 to-pink-500/20",
-      subtle: "from-pink-500/2 to-pink-500/5",
+      default: 'from-pink-500/5 to-pink-500/10',
+      emphasis: 'from-pink-500/10 to-pink-500/20',
+      subtle: 'from-pink-500/2 to-pink-500/5',
     },
     indigo: {
-      default: "from-indigo-500/5 to-indigo-500/10",
-      emphasis: "from-indigo-500/10 to-indigo-500/20",
-      subtle: "from-indigo-500/2 to-indigo-500/5",
+      default: 'from-indigo-500/5 to-indigo-500/10',
+      emphasis: 'from-indigo-500/10 to-indigo-500/20',
+      subtle: 'from-indigo-500/2 to-indigo-500/5',
     },
     yellow: {
-      default: "from-yellow-500/5 to-yellow-500/10",
-      emphasis: "from-yellow-500/10 to-yellow-500/20",
-      subtle: "from-yellow-500/2 to-yellow-500/5",
+      default: 'from-yellow-500/5 to-yellow-500/10',
+      emphasis: 'from-yellow-500/10 to-yellow-500/20',
+      subtle: 'from-yellow-500/2 to-yellow-500/5',
     },
     orange: {
-      default: "from-orange-500/5 to-orange-500/10",
-      emphasis: "from-orange-500/10 to-orange-500/20",
-      subtle: "from-orange-500/2 to-orange-500/5",
+      default: 'from-orange-500/5 to-orange-500/10',
+      emphasis: 'from-orange-500/10 to-orange-500/20',
+      subtle: 'from-orange-500/2 to-orange-500/5',
     },
   };
 
   // Get appropriate text color based on base color
   const iconColorMap: Record<string, string> = {
-    primary: "text-primary",
-    blue: "text-blue-500",
-    green: "text-green-500",
-    purple: "text-violet-500",
-    amber: "text-amber-500",
-    red: "text-red-500",
+    primary: 'text-primary',
+    blue: 'text-blue-500',
+    green: 'text-green-500',
+    purple: 'text-violet-500',
+    amber: 'text-amber-500',
+    red: 'text-red-500',
     // New colors
-    gray: "text-gray-500",
-    teal: "text-teal-500",
-    pink: "text-pink-500",
-    indigo: "text-indigo-500",
-    yellow: "text-yellow-500",
-    orange: "text-orange-500",
+    gray: 'text-gray-500',
+    teal: 'text-teal-500',
+    pink: 'text-pink-500',
+    indigo: 'text-indigo-500',
+    yellow: 'text-yellow-500',
+    orange: 'text-orange-500',
   };
 
   // Return theme object with gradient and icon color
   return {
     gradient: colorMap[baseColor]?.[variant] || colorMap.primary.default,
-    iconColor: iconColorMap[baseColor] || "text-primary",
+    iconColor: iconColorMap[baseColor] || 'text-primary',
   };
 };
 

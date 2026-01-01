@@ -28,12 +28,12 @@ import {
   SiMysql,
   SiPostgresql,
   SiCmake,
-} from "react-icons/si";
-import { FiFolder, FiFileText } from "react-icons/fi";
-import { FaJava, FaCode, FaDocker, FaFile } from "react-icons/fa";
-import { IconType } from "react-icons";
-import { TbBrandCSharp, TbBrandPowershell } from "react-icons/tb";
-import { CiDatabase } from "react-icons/ci";
+} from 'react-icons/si';
+import { FiFolder, FiFileText } from 'react-icons/fi';
+import { FaJava, FaCode, FaDocker, FaFile } from 'react-icons/fa';
+import { IconType } from 'react-icons';
+import { TbBrandCSharp, TbBrandPowershell } from 'react-icons/tb';
+import { CiDatabase } from 'react-icons/ci';
 
 export const iconMap: Record<string, IconType> = {
   // Core Programming Languages
@@ -45,9 +45,9 @@ export const iconMap: Record<string, IconType> = {
   py: SiPython,
   java: FaJava,
   c: SiC,
-  "c++": SiCplusplus,
+  'c++': SiCplusplus,
   cpp: SiCplusplus,
-  "c#": TbBrandCSharp,
+  'c#': TbBrandCSharp,
   csharp: TbBrandCSharp,
   php: SiPhp,
   ruby: SiRuby,
@@ -132,7 +132,7 @@ export const iconMap: Record<string, IconType> = {
 export const getIconForTech = (name?: string): IconType => {
   if (!name) return FiFolder;
 
-  const normalizedName = name.split(" ").join("_").toLowerCase().trim();
+  const normalizedName = name.split(' ').join('_').toLowerCase().trim();
   return iconMap[normalizedName] || FaCode;
 };
 
