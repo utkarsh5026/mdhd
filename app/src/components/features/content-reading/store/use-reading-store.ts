@@ -19,6 +19,8 @@ interface ReadingState {
   // Zen mode state
   isZenMode: boolean;
   zenControlsVisible: boolean;
+  // Dialog overlay state (to hide controls when dialogs are open)
+  isDialogOpen: boolean;
   // Persistence version
   version: number;
   // Hydration tracking (not persisted)
@@ -38,6 +40,8 @@ interface ReadingActions {
   setZenMode: (isZen: boolean) => void;
   showZenControls: () => void;
   hideZenControls: () => void;
+  // Dialog overlay actions
+  setDialogOpen: (isOpen: boolean) => void;
   clearPersistedSession: () => void;
 }
 
@@ -117,6 +121,8 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
       // Zen mode initial state
       isZenMode: false,
       zenControlsVisible: false,
+      // Dialog overlay initial state
+      isDialogOpen: false,
       // Persistence version
       version: STORAGE_VERSION,
       // Hydration tracking
@@ -294,6 +300,13 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
       hideZenControls: () => set({ zenControlsVisible: false }),
 
       /**
+       * 🎭 Set Dialog Open State
+       *
+       * Track when overlay dialogs are open to hide navigation controls
+       */
+      setDialogOpen: (isOpen: boolean) => set({ isDialogOpen: isOpen }),
+
+      /**
        * 🔄 Reset reading state
        *
        * ```ascii
@@ -316,6 +329,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           startTime: Date.now(),
           isZenMode: false,
           zenControlsVisible: false,
+          isDialogOpen: false,
           _hasHydrated: true, // Keep hydrated state
         }),
 
@@ -338,6 +352,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           totalWordCount: 0,
           isZenMode: false,
           zenControlsVisible: false,
+          isDialogOpen: false,
           version: STORAGE_VERSION,
           _hasHydrated: true, // Keep hydrated state
         });
@@ -412,6 +427,10 @@ export const useZenModeActions = () => {
   const hideZenControls = useReadingStore((state) => state.hideZenControls);
   return { toggleZenMode, setZenMode, showZenControls, hideZenControls };
 };
+
+// Dialog overlay selectors
+export const useIsDialogOpen = () => useReadingStore((state) => state.isDialogOpen);
+export const useSetDialogOpen = () => useReadingStore((state) => state.setDialogOpen);
 
 // Simple hash function for markdown content
 const hashString = (str: string): string => {
