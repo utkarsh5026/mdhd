@@ -1,10 +1,10 @@
-import React from "react";
-import { Settings2, Hash, Braces, WrapText } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
-import { useCodeDisplaySettingsStore } from "@/components/features/settings/store/code-display-settings";
-import { useCodeThemeStore } from "@/components/features/settings/store/code-theme";
-import CodeMirrorDisplay from "@/components/features/markdown-render/components/renderers/codemirror-display";
+import React from 'react';
+import { Settings2, Hash, Braces, WrapText } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
+import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
+import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
+import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
 
 const sampleCode = `function greet(name: string) {
   const message = \`Hello, \${name}!\`;
@@ -33,18 +33,18 @@ const SettingToggle: React.FC<SettingToggleProps> = ({
   return (
     <div
       className={cn(
-        "flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer group",
+        'flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer group',
         checked
-          ? "border-primary/30 bg-primary/5"
-          : "border-border/30 bg-card/30 hover:border-border/50 hover:bg-card/50"
+          ? 'border-primary/30 bg-primary/5'
+          : 'border-border/30 bg-card/30 hover:border-border/50 hover:bg-card/50'
       )}
       onClick={() => onCheckedChange(!checked)}
     >
       <div className="flex items-center gap-3">
         <div
           className={cn(
-            "p-2 rounded-full transition-colors duration-200",
-            checked ? "bg-primary/20 text-primary" : "bg-muted/50 text-muted-foreground"
+            'p-2 rounded-full transition-colors duration-200',
+            checked ? 'bg-primary/20 text-primary' : 'bg-muted/50 text-muted-foreground'
           )}
         >
           {icon}
@@ -69,7 +69,7 @@ const CodeDisplaySelector: React.FC = () => {
   const { selectedTheme } = useCodeThemeStore();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-border/20">
         <div className="flex items-center space-x-3">
@@ -78,9 +78,7 @@ const CodeDisplaySelector: React.FC = () => {
           </div>
           <div>
             <h3 className="font-semibold text-base">Code Display Options</h3>
-            <p className="text-sm text-muted-foreground">
-              Customize how code blocks appear
-            </p>
+            <p className="text-sm text-muted-foreground">Customize how code blocks appear</p>
           </div>
         </div>
       </div>
@@ -113,24 +111,20 @@ const CodeDisplaySelector: React.FC = () => {
       </div>
 
       {/* Live Preview */}
-      <div className="space-y-3">
+      <div className="space-y-3 w-0 min-w-full overflow-hidden">
         <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Live Preview
         </div>
-        <div className="border border-border/30 rounded-2xl overflow-hidden">
-          <div className="relative max-h-[180px] overflow-hidden">
-            <CodeMirrorDisplay
+        <div className="border-8 border-border/30 rounded-2xl overflow-hidden w-full">
+          <CodeMirrorDisplay
               code={sampleCode}
               language="typescript"
               themeKey={selectedTheme}
               showLineNumbers={settings.showLineNumbers}
               enableCodeFolding={settings.enableCodeFolding}
               enableWordWrap={settings.enableWordWrap}
-              className="text-[11px]"
-            />
-            {/* Fade overlay at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-card/90 to-transparent pointer-events-none" />
-          </div>
+              className="overflow-hidden"
+          />
         </div>
       </div>
     </div>
