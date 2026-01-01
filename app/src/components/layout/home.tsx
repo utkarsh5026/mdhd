@@ -1,14 +1,23 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { MarkdownViewer } from "@/components/features/content-reading";
 import MarkdownEditor from "./markdown-editor";
-import HeroMain from "./Hero";
+import HeroMain from "./hero-section";
 import Header from "./header";
 import { useReadingStore } from "@/components/features/content-reading/store/use-reading-store";
 
 const Homepage = () => {
   const markdownInput = useReadingStore((state) => state.markdownInput);
+  const isInitialized = useReadingStore((state) => state.isInitialized);
+  const hasHydrated = useReadingStore((state) => state._hasHydrated);
   const initializeReading = useReadingStore((state) => state.initializeReading);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Auto-resume reading after hydration completes
+  useEffect(() => {
+    if (hasHydrated && isInitialized && markdownInput.trim()) {
+      setIsFullscreen(true);
+    }
+  }, [hasHydrated, isInitialized, markdownInput]);
 
   const handleStartReading = useCallback(() => {
     if (!markdownInput.trim()) return;

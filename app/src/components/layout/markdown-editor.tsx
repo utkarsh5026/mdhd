@@ -16,11 +16,11 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   setMarkdownInput,
   handleStartReading,
 }) => {
-  const resetReading = useReadingStore((state) => state.resetReading);
+  const clearPersistedSession = useReadingStore((state) => state.clearPersistedSession);
   const hasContent = markdownInput.trim().length > 0;
 
   const handleClear = () => {
-    resetReading();
+    clearPersistedSession();
   };
 
   const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
