@@ -1,12 +1,12 @@
-import React, { useState, useMemo, useCallback, memo } from "react";
-import { useThemeStore } from "@/components/shared/theme/store/theme-store";
-import { type ThemeOption, themes } from "@/theme/themes";
-import { Palette, ChevronDown, ChevronUp, Check } from "lucide-react";
-import { FiStar } from "react-icons/fi";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { motion, AnimatePresence } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import React, { useState, useMemo, useCallback, memo } from 'react';
+import { useThemeStore } from '@/components/shared/theme/store/theme-store';
+import { type ThemeOption, themes } from '@/theme/themes';
+import { Palette, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { FiStar } from 'react-icons/fi';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface ThemePreviewProps {
   theme: ThemeOption;
@@ -28,11 +28,11 @@ const ThemePreview = memo<ThemePreviewProps>(
     return (
       <button
         className={cn(
-          "flex items-center w-full rounded-2xl py-2.5 px-3 text-left transition-all duration-200",
-          "hover:scale-[1.01] group font-cascadia-code",
+          'flex items-center w-full rounded-2xl py-2.5 px-3 text-left transition-all duration-200',
+          'hover:scale-[1.01] group font-cascadia-code',
           isSelected
-            ? "bg-primary/10 border border-primary/30 shadow-sm"
-            : "hover:bg-secondary/40 hover:shadow-sm border border-transparent"
+            ? 'bg-primary/10 border border-primary/30 shadow-sm'
+            : 'hover:bg-secondary/40 hover:shadow-sm border border-transparent'
         )}
         onClick={onClick}
       >
@@ -45,31 +45,26 @@ const ThemePreview = memo<ThemePreviewProps>(
             />
           </div>
 
-
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium text-foreground truncate block">
-              {theme.name}
-            </span>
+            <span className="text-sm font-medium text-foreground truncate block">{theme.name}</span>
           </div>
 
           {/* Bookmark button */}
           <button
             onClick={onBookmarkClick}
             className={cn(
-              "flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 shrink-0",
-              "hover:scale-110 hover:bg-secondary/60",
+              'flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 shrink-0',
+              'hover:scale-110 hover:bg-secondary/60',
               isBookmarked
-                ? "text-yellow-500 hover:text-yellow-400"
-                : "text-muted-foreground hover:text-foreground"
+                ? 'text-yellow-500 hover:text-yellow-400'
+                : 'text-muted-foreground hover:text-foreground'
             )}
-            aria-label={
-              isBookmarked ? "Remove from bookmarks" : "Add to bookmarks"
-            }
+            aria-label={isBookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}
           >
             <FiStar
               className={cn(
-                "w-4 h-4 transition-all duration-200",
-                isBookmarked ? "fill-current" : ""
+                'w-4 h-4 transition-all duration-200',
+                isBookmarked ? 'fill-current' : ''
               )}
             />
           </button>
@@ -86,7 +81,7 @@ const ThemePreview = memo<ThemePreviewProps>(
   }
 );
 
-ThemePreview.displayName = "ThemePreview";
+ThemePreview.displayName = 'ThemePreview';
 
 interface ThemeCategoryProps {
   categoryName: string;
@@ -99,48 +94,36 @@ interface ThemeCategoryProps {
 
 // Memoize category metadata outside component to avoid recreation
 const CATEGORY_ICONS: Record<string, string> = {
-  "Modern Dark": "🌙",
-  "Modern Light": "☀️",
-  Developer: "💻",
-  Minimal: "✨",
-  Focus: "🎯",
-  "High Contrast": "👁️",
-  "Nature & Warm": "🌿",
-  "Soft & Pastel": "🎨",
-  Creative: "🌈",
+  'Modern Dark': '🌙',
+  'Modern Light': '☀️',
+  Developer: '💻',
+  Minimal: '✨',
+  Focus: '🎯',
+  'High Contrast': '👁️',
+  'Nature & Warm': '🌿',
+  'Soft & Pastel': '🎨',
+  Creative: '🌈',
 };
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  "Modern Dark": "Sleek dark themes from popular apps",
-  "Modern Light": "Clean and bright for daytime reading",
-  Developer: "Inspired by popular code editors",
-  Minimal: "Simple and distraction-free",
-  Focus: "Designed for deep reading sessions",
-  "High Contrast": "Enhanced visibility and accessibility",
-  "Nature & Warm": "Earthy tones and warm colors",
-  "Soft & Pastel": "Gentle and easy on the eyes",
-  Creative: "Bold and expressive color palettes",
+  'Modern Dark': 'Sleek dark themes from popular apps',
+  'Modern Light': 'Clean and bright for daytime reading',
+  Developer: 'Inspired by popular code editors',
+  Minimal: 'Simple and distraction-free',
+  Focus: 'Designed for deep reading sessions',
+  'High Contrast': 'Enhanced visibility and accessibility',
+  'Nature & Warm': 'Earthy tones and warm colors',
+  'Soft & Pastel': 'Gentle and easy on the eyes',
+  Creative: 'Bold and expressive color palettes',
 };
 
 const ThemeCategory = memo<ThemeCategoryProps>(
-  ({
-    categoryName,
-    categoryThemes,
-    currentTheme,
-    setTheme,
-    isBookmarked,
-    toggleBookmark,
-  }) => {
-    const hasActiveTheme = categoryThemes.some(
-      (t) => t.name === currentTheme.name
-    );
+  ({ categoryName, categoryThemes, currentTheme, setTheme, isBookmarked, toggleBookmark }) => {
+    const hasActiveTheme = categoryThemes.some((t) => t.name === currentTheme.name);
     const [expanded, setExpanded] = useState(hasActiveTheme);
 
     const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
-    const handleThemeClick = useCallback(
-      (theme: ThemeOption) => setTheme(theme),
-      [setTheme]
-    );
+    const handleThemeClick = useCallback((theme: ThemeOption) => setTheme(theme), [setTheme]);
 
     const handleBookmarkClick = useCallback(
       (e: React.MouseEvent, theme: ThemeOption) => {
@@ -157,13 +140,11 @@ const ThemeCategory = memo<ThemeCategoryProps>(
           onClick={toggleExpanded}
         >
           <div className="flex items-center gap-3">
-            <span className="text-lg">
-              {CATEGORY_ICONS[categoryName] ?? "🎨"}
-            </span>
+            <span className="text-lg">{CATEGORY_ICONS[categoryName] ?? '🎨'}</span>
             <div className="text-left">
               <div className="font-semibold text-sm">{categoryName}</div>
               <div className="text-xs text-muted-foreground">
-                {CATEGORY_DESCRIPTIONS[categoryName] ?? ""}
+                {CATEGORY_DESCRIPTIONS[categoryName] ?? ''}
               </div>
             </div>
           </div>
@@ -183,9 +164,9 @@ const ThemeCategory = memo<ThemeCategoryProps>(
           {expanded && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
+              animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
               className="overflow-hidden"
             >
               <div className="p-3 space-y-1">
@@ -208,11 +189,10 @@ const ThemeCategory = memo<ThemeCategoryProps>(
   }
 );
 
-ThemeCategory.displayName = "ThemeCategory";
+ThemeCategory.displayName = 'ThemeCategory';
 
 const AppThemeSelector: React.FC = () => {
-  const { currentTheme, setTheme, isBookmarked, toggleBookmark } =
-    useThemeStore();
+  const { currentTheme, setTheme, isBookmarked, toggleBookmark } = useThemeStore();
 
   const themesByCategory = useMemo(() => {
     const grouped: Record<string, ThemeOption[]> = {};
@@ -227,20 +207,18 @@ const AppThemeSelector: React.FC = () => {
 
   // Define category order
   const categoryOrder = [
-    "Modern Dark",
-    "Modern Light",
-    "Developer",
-    "Minimal",
-    "Focus",
-    "High Contrast",
-    "Nature & Warm",
-    "Soft & Pastel",
-    "Creative",
+    'Modern Dark',
+    'Modern Light',
+    'Developer',
+    'Minimal',
+    'Focus',
+    'High Contrast',
+    'Nature & Warm',
+    'Soft & Pastel',
+    'Creative',
   ];
 
-  const sortedCategories = categoryOrder.filter(
-    (cat) => themesByCategory[cat]
-  );
+  const sortedCategories = categoryOrder.filter((cat) => themesByCategory[cat]);
 
   return (
     <div className="space-y-6">
@@ -251,19 +229,12 @@ const AppThemeSelector: React.FC = () => {
           </div>
           <div>
             <h3 className="font-semibold text-base">App Theme</h3>
-            <p className="text-sm text-muted-foreground">
-              Choose your reading environment
-            </p>
+            <p className="text-sm text-muted-foreground">Choose your reading environment</p>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground mb-1">
-            Currently Active
-          </div>
-          <Badge
-            variant="outline"
-            className="text-xs px-3 py-1 bg-primary/10 border-primary/20"
-          >
+          <div className="text-xs text-muted-foreground mb-1">Currently Active</div>
+          <Badge variant="outline" className="text-xs px-3 py-1 bg-primary/10 border-primary/20">
             {currentTheme.name}
           </Badge>
         </div>
@@ -288,9 +259,7 @@ const AppThemeSelector: React.FC = () => {
       <div className="pt-4 border-t border-border/20">
         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl">
           <Palette className="w-4 h-4 shrink-0" />
-          <span>
-            Theme changes apply instantly. Star your favorites for quick access.
-          </span>
+          <span>Theme changes apply instantly. Star your favorites for quick access.</span>
         </div>
       </div>
     </div>

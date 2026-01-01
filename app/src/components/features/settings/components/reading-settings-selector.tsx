@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -6,19 +6,17 @@ import {
   SheetTitle,
   SheetDescription,
   SheetFooter,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Paintbrush, RotateCcw, Loader2 } from "lucide-react";
-import { useReadingSettings } from "../context/ReadingContext";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Paintbrush, RotateCcw, Loader2 } from 'lucide-react';
+import { useReadingSettings } from '../context/ReadingContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-
-const AppThemeSelector = lazy(() => import("./app-theme-selector"));
-const FontFamilySelector = lazy(() => import("./font-family-selector"));
-const CodeThemeSelector = lazy(() => import("./code-theme-selector"));
-const CodeDisplaySelector = lazy(() => import("./code-display-selector"));
-
+const AppThemeSelector = lazy(() => import('./app-theme-selector'));
+const FontFamilySelector = lazy(() => import('./font-family-selector'));
+const CodeThemeSelector = lazy(() => import('./code-theme-selector'));
+const CodeDisplaySelector = lazy(() => import('./code-display-selector'));
 
 const TabLoader = () => (
   <div className="flex items-center justify-center py-12">
@@ -33,21 +31,21 @@ interface ReadingSettingsSheetProps {
 
 const tabs = [
   {
-    value: "theme",
-    label: "Theme",
-    className: "space-y-6 px-2",
+    value: 'theme',
+    label: 'Theme',
+    className: 'space-y-6 px-2',
     content: <AppThemeSelector />,
   },
   {
-    value: "font",
-    label: "Font",
-    className: "space-y-6 px-2",
+    value: 'font',
+    label: 'Font',
+    className: 'space-y-6 px-2',
     content: <FontFamilySelector />,
   },
   {
-    value: "code",
-    label: "Code",
-    className: "space-y-8 px-2",
+    value: 'code',
+    label: 'Code',
+    className: 'space-y-8 px-2 overflow-hidden min-w-0',
     content: (
       <>
         <CodeDisplaySelector />
@@ -59,10 +57,7 @@ const tabs = [
   },
 ] as const;
 
-const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
-  open,
-  onOpenChange,
-}) => {
+const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpenChange }) => {
   const { resetSettings } = useReadingSettings();
 
   const handleReset = () => {
@@ -73,7 +68,7 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-2xl font-cascadia-code px-4 flex flex-col h-full max-h-full"
+        className="w-full sm:max-w-2xl font-cascadia-code px-4 flex flex-col h-full max-h-full overflow-hidden"
       >
         <SheetHeader className="mb-6">
           <div className="flex items-center justify-between">
@@ -82,13 +77,11 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
               Reading Settings
             </SheetTitle>
           </div>
-          <SheetDescription>
-            Customize your reading experience 🤗
-          </SheetDescription>
+          <SheetDescription>Customize your reading experience 🤗</SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 overflow-auto">
-          <Tabs defaultValue="theme" className="w-full">
+        <ScrollArea className="flex-1 overflow-auto min-w-0 w-full max-w-full p-8">
+          <Tabs defaultValue="theme" className="w-full min-w-0 overflow-hidden">
             <TabsList className={`w-full mb-6 grid grid-cols-${tabs.length}`}>
               {tabs.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value}>

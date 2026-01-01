@@ -1,15 +1,12 @@
-import React, { useState, memo, useCallback, useMemo } from "react";
-import {
-  useCodeThemeStore,
-  type ThemeKey,
-} from "@/components/features/settings/store/code-theme";
-import { useCodeDisplaySettingsStore } from "@/components/features/settings/store/code-display-settings";
-import { Code, ChevronDown, ChevronUp, Palette } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { motion, AnimatePresence } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import CodeMirrorDisplay from "@/components/features/markdown-render/components/renderers/codemirror-display";
+import React, { useState, memo, useCallback, useMemo } from 'react';
+import { useCodeThemeStore, type ThemeKey } from '@/components/features/settings/store/code-theme';
+import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
+import { Code, ChevronDown, ChevronUp, Palette } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
 
 const sampleCode = `def fibonacci(n):
     if n <= 1:
@@ -39,10 +36,10 @@ const CodePreview = memo<CodePreviewProps>(
     return (
       <div
         className={cn(
-          "border rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer group",
+          'border rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer group',
           isSelected
-            ? "border-primary/50 bg-primary/5 shadow-md"
-            : "border-border/30 hover:border-border/60 bg-card/30"
+            ? 'border-primary/50 bg-primary/5 shadow-md'
+            : 'border-border/30 hover:border-border/60 bg-card/30'
         )}
         onClick={onClick}
       >
@@ -75,7 +72,7 @@ const CodePreview = memo<CodePreviewProps>(
   }
 );
 
-CodePreview.displayName = "CodePreview";
+CodePreview.displayName = 'CodePreview';
 
 interface CodeThemeCategoryProps {
   categoryName: string;
@@ -87,15 +84,14 @@ interface CodeThemeCategoryProps {
   enableWordWrap: boolean;
 }
 
-
 const CODE_CATEGORY_ICONS: Record<string, string> = {
-  "Dark Themes": "🌙",
-  "Light Themes": "☀️",
+  'Dark Themes': '🌙',
+  'Light Themes': '☀️',
 };
 
 const CODE_CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  "Dark Themes": "Perfect for night coding sessions",
-  "Light Themes": "Clean and bright for daytime work",
+  'Dark Themes': 'Perfect for night coding sessions',
+  'Light Themes': 'Clean and bright for daytime work',
 };
 
 const CodeThemeCategory = memo<CodeThemeCategoryProps>(
@@ -108,16 +104,11 @@ const CodeThemeCategory = memo<CodeThemeCategoryProps>(
     enableCodeFolding,
     enableWordWrap,
   }) => {
-    const [expanded, setExpanded] = useState(
-      Object.keys(themes).includes(currentTheme)
-    );
+    const [expanded, setExpanded] = useState(Object.keys(themes).includes(currentTheme));
 
     const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
 
-    const handleThemeClick = useCallback(
-      (themeKey: ThemeKey) => setTheme(themeKey),
-      [setTheme]
-    );
+    const handleThemeClick = useCallback((themeKey: ThemeKey) => setTheme(themeKey), [setTheme]);
 
     const themeEntries = useMemo(() => Object.entries(themes), [themes]);
 
@@ -128,13 +119,11 @@ const CodeThemeCategory = memo<CodeThemeCategoryProps>(
           onClick={toggleExpanded}
         >
           <div className="flex items-center gap-3">
-            <span className="text-lg">
-              {CODE_CATEGORY_ICONS[categoryName] ?? "🎨"}
-            </span>
+            <span className="text-lg">{CODE_CATEGORY_ICONS[categoryName] ?? '🎨'}</span>
             <div className="text-left">
               <div className="font-semibold text-sm">{categoryName}</div>
               <div className="text-xs text-muted-foreground">
-                {CODE_CATEGORY_DESCRIPTIONS[categoryName] ?? ""}
+                {CODE_CATEGORY_DESCRIPTIONS[categoryName] ?? ''}
               </div>
             </div>
           </div>
@@ -154,9 +143,9 @@ const CodeThemeCategory = memo<CodeThemeCategoryProps>(
           {expanded && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
+              animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
               className="overflow-hidden"
             >
               <div className="p-4 grid gap-4 md:grid-cols-1 lg:grid-cols-2">
@@ -181,11 +170,10 @@ const CodeThemeCategory = memo<CodeThemeCategoryProps>(
   }
 );
 
-CodeThemeCategory.displayName = "CodeThemeCategory";
+CodeThemeCategory.displayName = 'CodeThemeCategory';
 
 const CodeThemeSelector: React.FC = () => {
-  const { selectedTheme, setTheme, getCurrentThemeName, getThemesByCategory } =
-    useCodeThemeStore();
+  const { selectedTheme, setTheme, getCurrentThemeName, getThemesByCategory } = useCodeThemeStore();
   const { settings: displaySettings } = useCodeDisplaySettingsStore();
 
   const themeCategories = getThemesByCategory();
@@ -205,13 +193,8 @@ const CodeThemeSelector: React.FC = () => {
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground mb-1">
-            Currently Active
-          </div>
-          <Badge
-            variant="outline"
-            className="text-xs px-3 py-1 bg-primary/10 border-primary/20"
-          >
+          <div className="text-xs text-muted-foreground mb-1">Currently Active</div>
+          <Badge variant="outline" className="text-xs px-3 py-1 bg-primary/10 border-primary/20">
             {getCurrentThemeName()}
           </Badge>
         </div>
@@ -238,8 +221,8 @@ const CodeThemeSelector: React.FC = () => {
         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl">
           <Palette className="w-4 h-4 shrink-0" />
           <span>
-            Theme changes apply instantly to all code blocks in your document.
-            Switch between JS/PY/TS previews to see syntax highlighting.
+            Theme changes apply instantly to all code blocks in your document. Switch between
+            JS/PY/TS previews to see syntax highlighting.
           </span>
         </div>
       </div>
