@@ -3,6 +3,7 @@ import {
   useCodeThemeStore,
   type ThemeKey,
 } from "@/components/features/settings/store/code-theme";
+import { useCodeDisplaySettingsStore } from "@/components/features/settings/store/code-display-settings";
 import { Code, ChevronDown, ChevronUp, Palette } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,6 +21,9 @@ interface CodePreviewProps {
   themeKey: string;
   isSelected: boolean;
   onClick: () => void;
+  showLineNumbers: boolean;
+  enableCodeFolding: boolean;
+  enableWordWrap: boolean;
 }
 
 const CodePreview: React.FC<CodePreviewProps> = ({
@@ -27,6 +31,9 @@ const CodePreview: React.FC<CodePreviewProps> = ({
   themeKey,
   isSelected,
   onClick,
+  showLineNumbers,
+  enableCodeFolding,
+  enableWordWrap,
 }) => {
   return (
     <div
@@ -55,6 +62,9 @@ const CodePreview: React.FC<CodePreviewProps> = ({
           code={sampleCode}
           language="python"
           themeKey={themeKey as ThemeKey}
+          showLineNumbers={showLineNumbers}
+          enableCodeFolding={enableCodeFolding}
+          enableWordWrap={enableWordWrap}
           className="text-[11px]"
         />
 
@@ -70,6 +80,9 @@ interface CodeThemeCategoryProps {
   themes: Record<string, { name: string }>;
   currentTheme: ThemeKey;
   setTheme: (theme: ThemeKey) => void;
+  showLineNumbers: boolean;
+  enableCodeFolding: boolean;
+  enableWordWrap: boolean;
 }
 
 const CodeThemeCategory: React.FC<CodeThemeCategoryProps> = ({
@@ -77,6 +90,9 @@ const CodeThemeCategory: React.FC<CodeThemeCategoryProps> = ({
   themes,
   currentTheme,
   setTheme,
+  showLineNumbers,
+  enableCodeFolding,
+  enableWordWrap,
 }) => {
   const [expanded, setExpanded] = useState(
     Object.keys(themes).includes(currentTheme)
@@ -152,6 +168,9 @@ const CodeThemeCategory: React.FC<CodeThemeCategoryProps> = ({
                   themeKey={themeKey}
                   isSelected={currentTheme === themeKey}
                   onClick={() => setTheme(themeKey as ThemeKey)}
+                  showLineNumbers={showLineNumbers}
+                  enableCodeFolding={enableCodeFolding}
+                  enableWordWrap={enableWordWrap}
                 />
               ))}
             </div>
@@ -165,6 +184,7 @@ const CodeThemeCategory: React.FC<CodeThemeCategoryProps> = ({
 const CodeThemeSelector: React.FC = () => {
   const { selectedTheme, setTheme, getCurrentThemeName, getThemesByCategory } =
     useCodeThemeStore();
+  const { settings: displaySettings } = useCodeDisplaySettingsStore();
 
   const themeCategories = getThemesByCategory();
 
@@ -204,6 +224,9 @@ const CodeThemeSelector: React.FC = () => {
               themes={themes}
               currentTheme={selectedTheme}
               setTheme={setTheme}
+              showLineNumbers={displaySettings.showLineNumbers}
+              enableCodeFolding={displaySettings.enableCodeFolding}
+              enableWordWrap={displaySettings.enableWordWrap}
             />
           ))}
         </div>

@@ -13,6 +13,7 @@ import { useReadingSettings } from "../context/ReadingContext";
 import FontFamilySelector from "./font-family-selector";
 import TypographySelector from "./typography-selector";
 import CodeThemeSelector from "./code-theme-selector";
+import CodeDisplaySelector from "./code-display-selector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -71,8 +72,11 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({
               <FontFamilySelector />
             </TabsContent>
 
-            <TabsContent value="code" className="space-y-6 px-2">
-              <CodeThemeSelector />
+            <TabsContent value="code" className="space-y-8 px-2">
+              <CodeDisplaySelector />
+              <div className="border-t border-border/20 pt-6">
+                <CodeThemeSelector />
+              </div>
             </TabsContent>
           </Tabs>
         </ScrollArea>
