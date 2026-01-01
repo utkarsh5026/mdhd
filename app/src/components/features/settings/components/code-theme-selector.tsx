@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import CodeMirrorDisplay from "@/components/features/markdown-render/components/renderers/codemirror-display";
 
 const sampleCode = `def fibonacci(n):
     if n <= 1:
@@ -16,13 +16,15 @@ const sampleCode = `def fibonacci(n):
     return fibonacci(n-1) + fibonacci(n-2)`;
 
 interface CodePreviewProps {
-  theme: { name: string; style: { [key: string]: React.CSSProperties } };
+  theme: { name: string };
+  themeKey: string;
   isSelected: boolean;
   onClick: () => void;
 }
 
 const CodePreview: React.FC<CodePreviewProps> = ({
   theme,
+  themeKey,
   isSelected,
   onClick,
 }) => {
@@ -48,33 +50,13 @@ const CodePreview: React.FC<CodePreviewProps> = ({
       </div>
 
       {/* Code Preview */}
-      <div className="relative">
-        <SyntaxHighlighter
+      <div className="relative max-h-[120px] overflow-hidden">
+        <CodeMirrorDisplay
+          code={sampleCode}
           language="python"
-          style={theme.style}
-          customStyle={{
-            margin: 0,
-            padding: "16px",
-            fontSize: "11px",
-            lineHeight: 1.4,
-            backgroundColor: "transparent",
-            background: "transparent",
-            border: "none",
-            minHeight: "80px",
-            maxHeight: "120px",
-            overflow: "hidden",
-            fontFamily: "JetBrains Mono, Consolas, monospace",
-          }}
-          codeTagProps={{
-            style: {
-              backgroundColor: "transparent",
-              fontFamily: "inherit",
-              fontSize: "inherit",
-            },
-          }}
-        >
-          {sampleCode}
-        </SyntaxHighlighter>
+          themeKey={themeKey as ThemeKey}
+          className="text-[11px]"
+        />
 
         {/* Fade overlay at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-card/80 to-transparent pointer-events-none" />
@@ -85,10 +67,7 @@ const CodePreview: React.FC<CodePreviewProps> = ({
 
 interface CodeThemeCategoryProps {
   categoryName: string;
-  themes: Record<
-    string,
-    { name: string; style: { [key: string]: React.CSSProperties } }
-  >;
+  themes: Record<string, { name: string }>;
   currentTheme: ThemeKey;
   setTheme: (theme: ThemeKey) => void;
 }
@@ -170,6 +149,7 @@ const CodeThemeCategory: React.FC<CodeThemeCategoryProps> = ({
                 <CodePreview
                   key={themeKey}
                   theme={theme}
+                  themeKey={themeKey}
                   isSelected={currentTheme === themeKey}
                   onClick={() => setTheme(themeKey as ThemeKey)}
                 />

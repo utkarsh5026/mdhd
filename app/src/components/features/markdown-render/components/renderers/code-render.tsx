@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   Copy,
   ChevronDown,
@@ -42,6 +41,8 @@ import { downloadAsFile, downloadAsImage } from "@/utils/download";
 import { Badge } from "@/components/ui/badge";
 import { useCodeDetection } from "../../hooks/use-code-detection";
 import { useSetDialogOpen } from "@/components/features/content-reading/store/use-reading-store";
+import CodeMirrorDisplay from "./codemirror-display";
+import { getThemeBackground } from "@/components/features/settings/store/codemirror-themes";
 
 interface CodeRenderProps extends React.ComponentPropsWithoutRef<"code"> {
   inline?: boolean;
@@ -58,8 +59,7 @@ interface CodePreviewDialogProps {
   onCopy: () => void;
   copied: boolean;
   dialogCodeRef: React.RefObject<HTMLDivElement | null>;
-  themeStyle: Record<string, React.CSSProperties>;
-  props?: React.ComponentPropsWithoutRef<typeof SyntaxHighlighter>;
+  themeKey: ThemeKey;
 }
 
 const getHeadingCodeStyle = (headingLevel: number | null) => {
@@ -91,17 +91,10 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
   onCopy,
   copied,
   dialogCodeRef,
-  props,
-  themeStyle,
+  themeKey,
 }) => {
-  // Extract background color from theme style for the outer container
-  const getThemeBackground = () => {
-    const preStyle = themeStyle['pre[class*="language-"]'] as React.CSSProperties | undefined;
-    const codeStyle = themeStyle['code[class*="language-"]'] as React.CSSProperties | undefined;
-    const bg = preStyle?.background || preStyle?.backgroundColor ||
-               codeStyle?.background || codeStyle?.backgroundColor;
-    return typeof bg === 'string' ? bg : '#1e1e1e';
-  };
+  const backgroundColor = getThemeBackground(themeKey);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[98vw] w-[98vw] sm:max-w-[95vw] sm:w-[95vw] xl:max-w-[90vw] xl:w-[90vw] 2xl:max-w-[85vw] 2xl:w-[85vw] h-[95vh] sm:h-[90vh] p-0 font-cascadia-code rounded-2xl sm:rounded-3xl border-none shadow-2xl shadow-black/20 overflow-y-auto">
@@ -219,16 +212,16 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
         <div className="flex-1 p-3 sm:p-4 lg:p-6 relative overflow-hidden">
           <div
             className="rounded-xl sm:rounded-2xl overflow-hidden h-full"
-            style={{ backgroundColor: getThemeBackground() }}
+            style={{ backgroundColor }}
           >
             <ScrollArea className="h-full max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-140px)] lg:max-h-[calc(90vh-180px)]">
-              <CodeDisplay
-                isDialog
+              <CodeMirrorDisplay
                 ref={dialogCodeRef}
-                themeStyle={themeStyle}
+                code={codeContent}
                 language={language}
-                codeContent={codeContent}
-                props={{ ...props }}
+                themeKey={themeKey}
+                isDialog
+                className="rounded-xl sm:rounded-2xl"
               />
               <ScrollBar orientation="horizontal" className="bg-muted/50" />
               <ScrollBar orientation="vertical" className="bg-muted/50" />
@@ -246,7 +239,7 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
  * Enhanced CodeRender Component with Dialog View
  *
  * This component provides a comprehensive code rendering solution with:
- * - Syntax highlighting using Prism
+ * - Syntax highlighting using CodeMirror 6
  * - Theme customization with real-time preview
  * - Copy functionality with visual feedback
  * - Collapsible code blocks for space efficiency
@@ -254,12 +247,12 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
  * - Download capabilities (as image or code file)
  * - Responsive design for mobile and desktop
  * - Smart detection of inline vs block code
+ * - Line numbers and code folding
  */
 const CodeRender: React.FC<CodeRenderProps> = ({
   inline,
   className,
   children,
-  ...props
 }) => {
   const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
@@ -269,7 +262,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
 
   const match = /language-(\w+)/.exec(className ?? "");
   const language = match ? match[1] : "";
-  const { getCurrentThemeStyle } = useCodeThemeStore();
+  const { selectedTheme } = useCodeThemeStore();
 
   const codeRef = useRef<HTMLDivElement>(null);
   const dialogCodeRef = useRef<HTMLDivElement | null>(null);
@@ -371,6 +364,8 @@ const CodeRender: React.FC<CodeRenderProps> = ({
     );
   }
 
+  const backgroundColor = getThemeBackground(selectedTheme);
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div
@@ -452,12 +447,17 @@ const CodeRender: React.FC<CodeRenderProps> = ({
 
         {/* Collapsible Code Content */}
         <CollapsibleContent className="data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
-          <CodeDisplay
-            language={language}
-            codeContent={codeContent}
-            themeStyle={getCurrentThemeStyle()}
-            props={{ ...props }}
-          />
+          <div
+            className="rounded-b-2xl overflow-hidden"
+            style={{ backgroundColor }}
+          >
+            <CodeMirrorDisplay
+              code={codeContent}
+              language={language}
+              themeKey={selectedTheme}
+              className="rounded-b-2xl"
+            />
+          </div>
         </CollapsibleContent>
       </div>
 
@@ -473,8 +473,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({
         onCopy={copyToClipboard}
         copied={copied}
         dialogCodeRef={dialogCodeRef}
-        props={props}
-        themeStyle={getCurrentThemeStyle()}
+        themeKey={selectedTheme}
       />
     </Collapsible>
   );
@@ -546,183 +545,6 @@ const ThemeSelector = ({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-};
-
-interface CodeDisplayProps {
-  isDialog?: boolean;
-  ref?: React.RefObject<HTMLDivElement | null>;
-  language: string;
-  codeContent: string;
-  props?: React.ComponentPropsWithoutRef<typeof SyntaxHighlighter>;
-  themeStyle: Record<string, React.CSSProperties>;
-}
-
-const CodeDisplay: React.FC<CodeDisplayProps> = ({
-  isDialog = false,
-  ref,
-  language,
-  codeContent,
-  props,
-  themeStyle,
-}) => {
-  // Extract background color from theme style
-  const getThemeBackground = () => {
-    const preStyle = themeStyle['pre[class*="language-"]'] as React.CSSProperties | undefined;
-    const codeStyle = themeStyle['code[class*="language-"]'] as React.CSSProperties | undefined;
-
-    const bg = preStyle?.background || preStyle?.backgroundColor ||
-               codeStyle?.background || codeStyle?.backgroundColor;
-
-    if (typeof bg === 'string') {
-      return bg;
-    }
-    // Fallback to a dark background for contrast
-    return '#1e1e1e';
-  };
-
-  const getPadding = () => {
-    if (isDialog) {
-      if (window.innerWidth >= 1536) return "3rem";
-      if (window.innerWidth >= 1280) return "2.5rem";
-      if (window.innerWidth >= 1024) return "2rem";
-      return "1.5rem";
-    }
-    return window.innerWidth < 640 ? "0.75rem" : "1rem";
-  };
-
-  const getFontSize = () => {
-    if (isDialog) {
-      if (window.innerWidth >= 1536) return "1.1rem";
-      if (window.innerWidth >= 1280) return "1.05rem";
-      if (window.innerWidth >= 1024) return "1rem";
-      return "0.95rem";
-    }
-    return window.innerWidth < 640 ? "0.8rem" : "0.875rem";
-  };
-
-  const getLineHeight = () => {
-    if (isDialog) {
-      return window.innerWidth >= 1024 ? 1.8 : 1.7;
-    }
-    return window.innerWidth < 640 ? 1.5 : 1.6;
-  };
-
-  // For dialog mode, just render SyntaxHighlighter (scrolling handled by outer wrapper)
-  if (isDialog) {
-    return (
-      <div ref={ref} className="relative code-capture-container">
-        <SyntaxHighlighter
-          language={language ?? "text"}
-          customStyle={{
-            margin: 0,
-            padding: getPadding(),
-            fontSize: getFontSize(),
-            lineHeight: getLineHeight(),
-            minWidth: "100%",
-            width: "max-content",
-            backgroundColor: "transparent",
-            border: "none",
-            maxWidth: "none",
-            whiteSpace: "pre",
-            wordWrap: "normal",
-            overflow: "visible",
-          }}
-          useInlineStyles={true}
-          codeTagProps={{
-            style: {
-              backgroundColor: "transparent",
-              fontFamily: "Source Code Pro, monospace",
-              whiteSpace: "pre",
-              fontSize: "inherit",
-              overflow: "visible",
-              maxWidth: "none",
-            },
-          }}
-          {...props}
-          style={{
-            ...themeStyle,
-            'code[class*="language-"]': {
-              ...themeStyle['code[class*="language-"]'],
-              backgroundColor: "transparent",
-              background: "transparent",
-              overflow: "visible",
-              maxWidth: "none",
-            },
-            'pre[class*="language-"]': {
-              ...themeStyle['pre[class*="language-"]'],
-              backgroundColor: "transparent",
-              background: "transparent",
-              overflow: "visible",
-              maxWidth: "none",
-            },
-          }}
-        >
-          {String(codeContent)}
-        </SyntaxHighlighter>
-      </div>
-    );
-  }
-
-  // For non-dialog mode (inline code blocks)
-  return (
-    <div
-      ref={ref}
-      className="rounded-b-2xl"
-      style={{ backgroundColor: getThemeBackground() }}
-    >
-      <ScrollArea className="rounded-b-2xl border-none">
-        <SyntaxHighlighter
-          language={language ?? "text"}
-          customStyle={{
-            margin: 0,
-            padding: getPadding(),
-            fontSize: getFontSize(),
-            lineHeight: getLineHeight(),
-            minWidth: "100%",
-            width: "max-content",
-            backgroundColor: "transparent",
-            border: "none",
-            maxWidth: "none",
-            whiteSpace: "pre",
-            wordWrap: "normal",
-            overflow: "visible",
-          }}
-          useInlineStyles={true}
-          codeTagProps={{
-            style: {
-              backgroundColor: "transparent",
-              fontFamily: "Source Code Pro, monospace",
-              whiteSpace: "pre",
-              fontSize: "inherit",
-              overflow: "visible",
-              maxWidth: "none",
-            },
-          }}
-          {...props}
-          style={{
-            ...themeStyle,
-            'code[class*="language-"]': {
-              ...themeStyle['code[class*="language-"]'],
-              backgroundColor: "transparent",
-              background: "transparent",
-              overflow: "visible",
-              maxWidth: "none",
-            },
-            'pre[class*="language-"]': {
-              ...themeStyle['pre[class*="language-"]'],
-              backgroundColor: "transparent",
-              background: "transparent",
-              overflow: "visible",
-              maxWidth: "none",
-            },
-          }}
-        >
-          {String(codeContent)}
-        </SyntaxHighlighter>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
-    </div>
   );
 };
 

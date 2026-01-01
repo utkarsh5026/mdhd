@@ -1,63 +1,19 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import {
-  oneDark,
-  vscDarkPlus,
-  atomDark,
-  coldarkDark,
-  dracula,
-  nightOwl,
-  synthwave84,
-  duotoneDark,
-  materialDark,
-  nord,
-  prism,
-  darcula,
-  cb,
-  ghcolors,
-  shadesOfPurple,
-  tomorrow,
-  oneLight,
-  duotoneLight,
-  materialLight,
-  coy,
-  base16AteliersulphurpoolLight,
-  vs,
-  coldarkCold,
-} from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { getThemeBackground as getCodeMirrorThemeBackground } from "./codemirror-themes";
 
 export const codeThemes = {
   "Dark Themes": {
-    oneDark: { name: "One Dark", style: oneDark },
-    vscDarkPlus: { name: "VS Code Dark+", style: vscDarkPlus },
-    atomDark: { name: "Atom Dark", style: atomDark },
-    coldarkDark: { name: "Coldark Dark", style: coldarkDark },
-    dracula: { name: "Dracula", style: dracula },
-    nightOwl: { name: "Night Owl", style: nightOwl },
-    synthwave84: { name: "Synthwave '84", style: synthwave84 },
-    duotoneDark: { name: "Duotone Dark", style: duotoneDark },
-    materialDark: { name: "Material Dark", style: materialDark },
-    nord: { name: "Nord", style: nord },
-    darcula: { name: "Darcula", style: darcula },
-    shadesOfPurple: { name: "Shades of Purple", style: shadesOfPurple },
-    tomorrow: { name: "Tomorrow Night", style: tomorrow },
+    vscDarkPlus: { name: "VS Code Dark+" },
+    oneDark: { name: "One Dark" },
+    atomDark: { name: "Atom Dark" },
+    dracula: { name: "Dracula" },
   },
   "Light Themes": {
-    oneLight: { name: "One Light", style: oneLight },
-    duotoneLight: { name: "Duotone Light", style: duotoneLight },
-    materialLight: { name: "Material Light", style: materialLight },
-    coy: { name: "Coy", style: coy },
-    base16AteliersulphurpoolLight: {
-      name: "Atelier Sulphurpool Light",
-      style: base16AteliersulphurpoolLight,
-    },
-    vs: { name: "Visual Studio", style: vs },
-    coldarkCold: { name: "Coldark Cold", style: coldarkCold },
-    prism: { name: "Prism Default", style: prism },
-  },
-  "Unique Themes": {
-    cb: { name: "CB", style: cb },
-    ghcolors: { name: "GitHub Colors", style: ghcolors },
+    vs: { name: "Visual Studio" },
+    oneLight: { name: "One Light" },
+    ghcolors: { name: "GitHub" },
+    prism: { name: "Prism" },
   },
 } as const;
 
@@ -68,7 +24,6 @@ export type ThemeKey = {
 interface CodeThemeStore {
   selectedTheme: ThemeKey;
   setTheme: (theme: ThemeKey) => void;
-  getCurrentThemeStyle: () => { [key: string]: React.CSSProperties };
   getCurrentThemeName: () => string;
   getThemesByCategory: () => typeof codeThemes;
   getThemeBackground: () => string;
@@ -77,32 +32,10 @@ interface CodeThemeStore {
 export const useCodeThemeStore = create<CodeThemeStore>()(
   persist(
     (set, get) => ({
-      selectedTheme: "oneDark" as ThemeKey,
+      selectedTheme: "vscDarkPlus" as ThemeKey,
 
       setTheme: (theme: ThemeKey) => {
         set({ selectedTheme: theme });
-      },
-
-      getCurrentThemeStyle: () => {
-        const { selectedTheme } = get();
-
-        if (selectedTheme in codeThemes["Dark Themes"]) {
-          return codeThemes["Dark Themes"][
-            selectedTheme as keyof (typeof codeThemes)["Dark Themes"]
-          ].style;
-        }
-        if (selectedTheme in codeThemes["Light Themes"]) {
-          return codeThemes["Light Themes"][
-            selectedTheme as keyof (typeof codeThemes)["Light Themes"]
-          ].style;
-        }
-        if (selectedTheme in codeThemes["Unique Themes"]) {
-          return codeThemes["Unique Themes"][
-            selectedTheme as keyof (typeof codeThemes)["Unique Themes"]
-          ].style;
-        }
-
-        return oneDark;
       },
 
       getCurrentThemeName: () => {
@@ -118,33 +51,15 @@ export const useCodeThemeStore = create<CodeThemeStore>()(
             selectedTheme as keyof (typeof codeThemes)["Light Themes"]
           ].name;
         }
-        if (selectedTheme in codeThemes["Unique Themes"]) {
-          return codeThemes["Unique Themes"][
-            selectedTheme as keyof (typeof codeThemes)["Unique Themes"]
-          ].name;
-        }
 
-        return "One Dark";
+        return "VS Code Dark+";
       },
 
       getThemesByCategory: () => codeThemes,
 
       getThemeBackground: () => {
-        const themeStyle = get().getCurrentThemeStyle();
-        // Extract background from theme - check common locations
-        const preStyle = themeStyle['pre[class*="language-"]'] as React.CSSProperties | undefined;
-        const codeStyle = themeStyle['code[class*="language-"]'] as React.CSSProperties | undefined;
-
-        // Try to get background from pre or code styles
-        const bg = preStyle?.background || preStyle?.backgroundColor ||
-                   codeStyle?.background || codeStyle?.backgroundColor;
-
-        if (typeof bg === 'string') {
-          return bg;
-        }
-
-        // Fallback to a dark background for contrast
-        return '#1e1e1e';
+        const { selectedTheme } = get();
+        return getCodeMirrorThemeBackground(selectedTheme);
       },
     }),
     {
