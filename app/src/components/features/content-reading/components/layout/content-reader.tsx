@@ -5,7 +5,7 @@ import type { MarkdownSection } from '@/services/section/parsing';
 import {
   useReadingSettings,
   fontFamilyMap,
-} from '@/components/features/settings/context/ReadingContext';
+} from '@/components/features/settings/store/reading-settings-store';
 import { RefObject } from 'react';
 
 interface ContentReaderProps {

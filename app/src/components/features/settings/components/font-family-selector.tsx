@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { useReadingSettings } from '@/components/features/settings/context/ReadingContext';
+import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
 import type { FontFamily } from '@/components/features/settings/store/reading-settings-store';
 import { Check, Type } from 'lucide-react';
 import { cn } from '@/lib/utils';

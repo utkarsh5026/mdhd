@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Paintbrush, RotateCcw, Loader2 } from 'lucide-react';
-import { useReadingSettings } from '../context/ReadingContext';
+import { useReadingSettings } from '../store/reading-settings-store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 
 export type FontFamily =
@@ -24,10 +25,33 @@ export type FontFamily =
   | 'vollkorn'
   | 'literata';
 
+export const fontFamilyMap: Record<FontFamily, string> = {
+  'system-ui': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  inter: '"Inter", sans-serif',
+  georgia: 'Georgia, serif',
+  merriweather: '"Merriweather", serif',
+  'roboto-slab': '"Roboto Slab", serif',
+  'source-serif-pro': '"Source Serif Pro", serif',
+  'libre-baskerville': '"Libre Baskerville", serif',
+  lora: '"Lora", serif',
+  'pt-serif': '"PT Serif", serif',
+  'open-sans': '"Open Sans", sans-serif',
+  'cascadia-code': '"Cascadia Code", monospace',
+  'atkinson-hyperlegible': '"Atkinson Hyperlegible", sans-serif',
+  'source-sans-pro': '"Source Sans Pro", sans-serif',
+  'nunito-sans': '"Nunito Sans", sans-serif',
+  'ibm-plex-sans': '"IBM Plex Sans", sans-serif',
+  'crimson-text': '"Crimson Text", serif',
+  spectral: '"Spectral", serif',
+  'eb-garamond': '"EB Garamond", serif',
+  bitter: '"Bitter", serif',
+  vollkorn: '"Vollkorn", serif',
+  literata: '"Literata", serif',
+};
+
 export interface ReadingSettings {
   fontFamily: FontFamily;
   customBackground: string | null;
-  // Typography settings
   fontSize: number; // 14-28px
   lineHeight: number; // 1.4-2.2
   contentWidth: number; // 500-900px
@@ -109,3 +133,20 @@ export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
       return { settings: DEFAULT_SETTINGS };
     }),
 }));
+
+/**
+ * Hook to access reading settings with optimized re-renders.
+ * Uses shallow comparison to prevent unnecessary re-renders.
+ */
+export const useReadingSettings = () => {
+  return useReadingSettingsStore(
+    useShallow((state) => ({
+      settings: state.settings,
+      setFontFamily: state.setFontFamily,
+      setFontSize: state.setFontSize,
+      setLineHeight: state.setLineHeight,
+      setContentWidth: state.setContentWidth,
+      resetSettings: state.resetSettings,
+    }))
+  );
+};

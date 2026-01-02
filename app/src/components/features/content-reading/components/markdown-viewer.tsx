@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import SectionsSheet from './table-of-contents/sections-sheet';
 import ReadingSettingsSheet from '@/components/features/settings/components/reading-settings-selector';
-import { ReadingSettingsProvider } from '@/components/features/settings/context/ReadingSettingsProvider';
 import {
   Header,
   NavigationControls,
@@ -269,11 +268,9 @@ const MarkdownViewerProvider: React.FC<
   }, [exitFullScreen]);
 
   return (
-    <ReadingSettingsProvider>
-      <div className="fixed inset-0 z-50 bg-background text-foreground overflow-hidden">
-        <MarkdownViewer markdown={markdown} exitFullScreen={exitFullScreen} />
-      </div>
-    </ReadingSettingsProvider>
+    <div className="fixed inset-0 z-50 bg-background text-foreground overflow-hidden">
+      <MarkdownViewer markdown={markdown} exitFullScreen={exitFullScreen} />
+    </div>
   );
 };
 
