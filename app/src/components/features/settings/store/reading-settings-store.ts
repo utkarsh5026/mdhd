@@ -1,53 +1,7 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
-
-export type FontFamily =
-  | 'system-ui'
-  | 'inter'
-  | 'georgia'
-  | 'merriweather'
-  | 'roboto-slab'
-  | 'source-serif-pro'
-  | 'libre-baskerville'
-  | 'lora'
-  | 'pt-serif'
-  | 'open-sans'
-  | 'cascadia-code'
-  | 'atkinson-hyperlegible'
-  | 'source-sans-pro'
-  | 'nunito-sans'
-  | 'ibm-plex-sans'
-  | 'crimson-text'
-  | 'spectral'
-  | 'eb-garamond'
-  | 'bitter'
-  | 'vollkorn'
-  | 'literata';
-
-export const fontFamilyMap: Record<FontFamily, string> = {
-  'system-ui': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  inter: '"Inter", sans-serif',
-  georgia: 'Georgia, serif',
-  merriweather: '"Merriweather", serif',
-  'roboto-slab': '"Roboto Slab", serif',
-  'source-serif-pro': '"Source Serif Pro", serif',
-  'libre-baskerville': '"Libre Baskerville", serif',
-  lora: '"Lora", serif',
-  'pt-serif': '"PT Serif", serif',
-  'open-sans': '"Open Sans", sans-serif',
-  'cascadia-code': '"Cascadia Code", monospace',
-  'atkinson-hyperlegible': '"Atkinson Hyperlegible", sans-serif',
-  'source-sans-pro': '"Source Sans Pro", sans-serif',
-  'nunito-sans': '"Nunito Sans", sans-serif',
-  'ibm-plex-sans': '"IBM Plex Sans", sans-serif',
-  'crimson-text': '"Crimson Text", serif',
-  spectral: '"Spectral", serif',
-  'eb-garamond': '"EB Garamond", serif',
-  bitter: '"Bitter", serif',
-  vollkorn: '"Vollkorn", serif',
-  literata: '"Literata", serif',
-};
+import type { FontFamily } from '@/lib/font';
 
 export interface ReadingSettings {
   fontFamily: FontFamily;
