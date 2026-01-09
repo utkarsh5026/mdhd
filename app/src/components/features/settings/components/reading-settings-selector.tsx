@@ -13,6 +13,7 @@ import { useReadingSettings } from '../store/reading-settings-store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+const ReadingModeSelector = lazy(() => import('./reading-mode-selector'));
 const AppThemeSelector = lazy(() => import('./app-theme-selector'));
 const FontFamilySelector = lazy(() => import('./font-family-selector'));
 const CodeThemeSelector = lazy(() => import('./code-theme-selector'));
@@ -30,6 +31,12 @@ interface ReadingSettingsSheetProps {
 }
 
 const tabs = [
+  {
+    value: 'reading',
+    label: 'Reading',
+    className: 'space-y-6 px-2',
+    content: <ReadingModeSelector />,
+  },
   {
     value: 'theme',
     label: 'Theme',
@@ -80,9 +87,9 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpe
           <SheetDescription>Customize your reading experience 🤗</SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 overflow-auto min-w-0 w-full max-w-full p-8">
-          <Tabs defaultValue="theme" className="w-full min-w-0 overflow-hidden">
-            <TabsList className={`w-full mb-6 grid grid-cols-${tabs.length}`}>
+        <ScrollArea className="flex-1 overflow-auto min-w-0 w-full max-w-full p-2">
+          <Tabs defaultValue="reading" className="w-full min-w-0 overflow-hidden">
+            <TabsList className={`w-full mb-6 flex space-x-2 overflow-x-auto`}>
               {tabs.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value}>
                   {tab.label}
