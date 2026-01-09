@@ -5,6 +5,7 @@ const CONTROLS_TIMEOUT = 4000;
 interface UseControlsProps {
   goToNext: () => void;
   goToPrevious: () => void;
+  readingMode?: 'card' | 'scroll';
 }
 
 /**
@@ -21,7 +22,7 @@ interface UseControlsProps {
  *       ‾‾‾‾‾‾‾ 🖱️ interaction ‾‾‾‾‾‾
  *
  */
-export const useControls = ({ goToNext, goToPrevious }: UseControlsProps) => {
+export const useControls = ({ goToNext, goToPrevious, readingMode = 'card' }: UseControlsProps) => {
   const [isControlsVisible, setIsControlsVisible] = useState(true);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -85,10 +86,14 @@ export const useControls = ({ goToNext, goToPrevious }: UseControlsProps) => {
   /**
    * ⌨️ Keyboard navigation effect
    *
-   * Controls:
-   * ⬅️ ⬆️ : Previous
-   * ➡️ ⬇️ : Next
-   * ␣ : Next
+   * Card mode controls:
+   * ⬅️ ⬆️ : Previous section
+   * ➡️ ⬇️ : Next section
+   * ␣ : Next section
+   * Esc: Hide controls
+   *
+   * Scroll mode:
+   * Let browser handle natural scrolling
    * Esc: Hide controls
    */
   useEffect(() => {
@@ -100,15 +105,23 @@ export const useControls = ({ goToNext, goToPrevious }: UseControlsProps) => {
       switch (e.key) {
         case 'ArrowLeft':
         case 'ArrowUp':
-          goToPrevious();
-          handleInteraction();
+          // Only navigate sections in card mode
+          if (readingMode === 'card') {
+            goToPrevious();
+            handleInteraction();
+          }
+          // In scroll mode, let browser handle natural scrolling
           break;
         case 'ArrowRight':
         case 'ArrowDown':
         case ' ':
-          e.preventDefault();
-          goToNext();
-          handleInteraction();
+          // Only navigate sections in card mode
+          if (readingMode === 'card') {
+            e.preventDefault();
+            goToNext();
+            handleInteraction();
+          }
+          // In scroll mode, let browser handle natural scrolling
           break;
         case 'Escape':
           setIsControlsVisible(false);
@@ -118,7 +131,7 @@ export const useControls = ({ goToNext, goToPrevious }: UseControlsProps) => {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [goToNext, goToPrevious, handleInteraction]);
+  }, [goToNext, goToPrevious, handleInteraction, readingMode]);
 
   /**
    * ⚡ Initialize controls timeout

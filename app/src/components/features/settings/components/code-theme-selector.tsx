@@ -1,12 +1,12 @@
-import React, { useState, memo, useCallback, useMemo } from 'react';
+import React, { memo } from 'react';
 import { useCodeThemeStore, type ThemeKey } from '@/components/features/settings/store/code-theme';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
-import { Code, ChevronDown, ChevronUp, Palette } from 'lucide-react';
+import { Code } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
+import { SettingsHeader, ExpandableCategory } from './settings-commons';
 
 const sampleCode = `def fibonacci(n):
     if n <= 1:
@@ -74,16 +74,7 @@ const CodePreview = memo<CodePreviewProps>(
 
 CodePreview.displayName = 'CodePreview';
 
-interface CodeThemeCategoryProps {
-  categoryName: string;
-  themes: Record<string, { name: string }>;
-  currentTheme: ThemeKey;
-  setTheme: (theme: ThemeKey) => void;
-  showLineNumbers: boolean;
-  enableCodeFolding: boolean;
-  enableWordWrap: boolean;
-}
-
+// Category metadata for code themes
 const CODE_CATEGORY_ICONS: Record<string, string> = {
   'Dark Themes': '🌙',
   'Light Themes': '☀️',
@@ -94,84 +85,6 @@ const CODE_CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Light Themes': 'Clean and bright for daytime work',
 };
 
-const CodeThemeCategory = memo<CodeThemeCategoryProps>(
-  ({
-    categoryName,
-    themes,
-    currentTheme,
-    setTheme,
-    showLineNumbers,
-    enableCodeFolding,
-    enableWordWrap,
-  }) => {
-    const [expanded, setExpanded] = useState(Object.keys(themes).includes(currentTheme));
-
-    const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
-
-    const handleThemeClick = useCallback((themeKey: ThemeKey) => setTheme(themeKey), [setTheme]);
-
-    const themeEntries = useMemo(() => Object.entries(themes), [themes]);
-
-    return (
-      <div className="mb-6 border border-border/30 rounded-2xl overflow-hidden bg-card/50 backdrop-blur-sm">
-        <button
-          className="w-full flex items-center justify-between px-4 py-3 hover:bg-primary/5 transition-all duration-200 border-b border-border/20"
-          onClick={toggleExpanded}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-lg">{CODE_CATEGORY_ICONS[categoryName] ?? '🎨'}</span>
-            <div className="text-left">
-              <div className="font-semibold text-sm">{categoryName}</div>
-              <div className="text-xs text-muted-foreground">
-                {CODE_CATEGORY_DESCRIPTIONS[categoryName] ?? ''}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs px-2 py-1 bg-primary/10">
-              {themeEntries.length}
-            </Badge>
-            {expanded ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            )}
-          </div>
-        </button>
-
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="overflow-hidden"
-            >
-              <div className="p-4 grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-                {themeEntries.map(([themeKey, theme]) => (
-                  <CodePreview
-                    key={themeKey}
-                    theme={theme}
-                    themeKey={themeKey}
-                    isSelected={currentTheme === themeKey}
-                    onClick={() => handleThemeClick(themeKey as ThemeKey)}
-                    showLineNumbers={showLineNumbers}
-                    enableCodeFolding={enableCodeFolding}
-                    enableWordWrap={enableWordWrap}
-                  />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  }
-);
-
-CodeThemeCategory.displayName = 'CodeThemeCategory';
-
 const CodeThemeSelector: React.FC = () => {
   const { selectedTheme, setTheme, getCurrentThemeName, getThemesByCategory } = useCodeThemeStore();
   const { settings: displaySettings } = useCodeDisplaySettingsStore();
@@ -180,52 +93,53 @@ const CodeThemeSelector: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between pb-4 border-b border-border/20">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-primary/10 rounded-xl">
-            <Code className="h-4 w-4 text-primary" />
+      <SettingsHeader
+        icon={<Code className="h-4 w-4 text-primary" />}
+        title="Code Syntax Theme"
+        description="Choose how code blocks are highlighted and styled"
+        rightContent={
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground mb-1">Currently Active</div>
+            <Badge variant="outline" className="text-xs px-3 py-1 bg-primary/10 border-none">
+              {getCurrentThemeName()}
+            </Badge>
           </div>
-          <div>
-            <h3 className="font-semibold text-base">Code Syntax Theme</h3>
-            <p className="text-sm text-muted-foreground">
-              Choose how code blocks are highlighted and styled
-            </p>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-xs text-muted-foreground mb-1">Currently Active</div>
-          <Badge variant="outline" className="text-xs px-3 py-1 bg-primary/10 border-primary/20">
-            {getCurrentThemeName()}
-          </Badge>
-        </div>
-      </div>
+        }
+      />
 
       <ScrollArea className="max-h-125 pr-2">
         <div className="space-y-4">
-          {Object.entries(themeCategories).map(([categoryName, themes]) => (
-            <CodeThemeCategory
-              key={categoryName}
-              categoryName={categoryName}
-              themes={themes}
-              currentTheme={selectedTheme}
-              setTheme={setTheme}
-              showLineNumbers={displaySettings.showLineNumbers}
-              enableCodeFolding={displaySettings.enableCodeFolding}
-              enableWordWrap={displaySettings.enableWordWrap}
-            />
-          ))}
+          {Object.entries(themeCategories).map(([categoryName, themes]) => {
+            const themeEntries = Object.entries(themes);
+            const hasActiveTheme = Object.keys(themes).includes(selectedTheme);
+
+            return (
+              <ExpandableCategory
+                key={categoryName}
+                icon={CODE_CATEGORY_ICONS[categoryName] ?? '🎨'}
+                title={categoryName}
+                description={CODE_CATEGORY_DESCRIPTIONS[categoryName] ?? ''}
+                itemCount={themeEntries.length}
+                defaultExpanded={hasActiveTheme}
+                contentClassName="p-1 grid gap-4 md:grid-cols-1 lg:grid-cols-2"
+              >
+                {themeEntries.map(([themeKey, theme]) => (
+                  <CodePreview
+                    key={themeKey}
+                    theme={theme}
+                    themeKey={themeKey}
+                    isSelected={selectedTheme === themeKey}
+                    onClick={() => setTheme(themeKey as ThemeKey)}
+                    showLineNumbers={displaySettings.showLineNumbers}
+                    enableCodeFolding={displaySettings.enableCodeFolding}
+                    enableWordWrap={displaySettings.enableWordWrap}
+                  />
+                ))}
+              </ExpandableCategory>
+            );
+          })}
         </div>
       </ScrollArea>
-
-      <div className="pt-4 border-t border-border/20">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 rounded-xl">
-          <Palette className="w-4 h-4 shrink-0" />
-          <span>
-            Theme changes apply instantly to all code blocks in your document. Switch between
-            JS/PY/TS previews to see syntax highlighting.
-          </span>
-        </div>
-      </div>
     </div>
   );
 };

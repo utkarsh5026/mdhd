@@ -7,6 +7,7 @@ import {
   DesktopProgressIndicator,
   LoadingState,
   ContentReader,
+  ScrollContentReader,
   ZenPositionIndicator,
 } from './layout';
 import { useControls, useReading } from '@/components/features/content-reading/hooks';
@@ -15,6 +16,9 @@ import {
   useZenControlsVisible,
   useZenModeActions,
   useIsDialogOpen,
+  useReadingMode,
+  useReadingModeActions,
+  useScrollProgress,
 } from '@/components/features/content-reading/store/use-reading-store';
 import { AnimatePresence } from 'framer-motion';
 
@@ -36,6 +40,9 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
   const zenControlsVisible = useZenControlsVisible();
   const isDialogOpen = useIsDialogOpen();
   const { setZenMode, showZenControls, hideZenControls } = useZenModeActions();
+  const readingMode = useReadingMode();
+  const scrollProgress = useScrollProgress();
+  const { setScrollProgress } = useReadingModeActions();
 
   const {
     sections,
@@ -48,11 +55,13 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
     getSection,
     initializeReading,
     resetReading,
+    markSectionAsRead,
   } = useReading(markdown);
 
   const { isControlsVisible, handleInteraction, handleDoubleClick } = useControls({
     goToNext,
     goToPrevious,
+    readingMode,
   });
 
   /**
@@ -66,11 +75,13 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
   }, [initializeReading, resetReading]);
 
   /**
-   * Scroll to top when changing sections
+   * Scroll to top when changing sections (only in card mode)
    */
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [currentIndex]);
+    if (readingMode === 'card' && scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [currentIndex, readingMode]);
 
   /**
    * Handle zen mode tap - show controls temporarily
@@ -127,11 +138,44 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
   }, [isZenMode, setZenMode]);
 
   /**
-   * Jump to specific section
+   * Jump to specific section (works in both card and scroll mode)
    */
-  const handleSelectCard = (index: number) => {
-    if (index !== currentIndex) changeSection(index);
-  };
+  const handleSelectCard = useCallback(
+    (index: number) => {
+      if (readingMode === 'scroll') {
+        // In scroll mode, scroll to the section element
+        const sectionElement = document.getElementById(`section-${sections[index]?.id}`);
+        if (sectionElement) {
+          sectionElement.scrollIntoView({ behavior: 'instant', block: 'start' });
+        }
+        markSectionAsRead(index);
+      } else {
+        // In card mode, change to that section
+        if (index !== currentIndex) changeSection(index);
+      }
+    },
+    [readingMode, sections, currentIndex, changeSection, markSectionAsRead]
+  );
+
+  /**
+   * Handle scroll progress update from ScrollContentReader
+   */
+  const handleScrollProgress = useCallback(
+    (progress: number) => {
+      setScrollProgress(progress);
+    },
+    [setScrollProgress]
+  );
+
+  /**
+   * Handle section visibility for marking sections as read in scroll mode
+   */
+  const handleSectionVisible = useCallback(
+    (index: number) => {
+      markSectionAsRead(index);
+    },
+    [markSectionAsRead]
+  );
 
   // Determine if controls should be visible (hide when dialog is open)
   const shouldShowControls = !isDialogOpen && (!isZenMode || zenControlsVisible);
@@ -162,16 +206,26 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
     <>
       {/* Main Reading Area */}
       <div className="h-full relative bg-background text-foreground" onClick={handleContentClick}>
-        {/* Content Container */}
-        <ContentReader
-          markdown={markdown}
-          goToNext={goToNext}
-          goToPrevious={goToPrevious}
-          isTransitioning={isTransitioning}
-          scrollRef={scrollRef}
-          handleDoubleClick={handleContentDoubleClick}
-          currentSection={currentSection}
-        />
+        {/* Content Container - Card Mode or Scroll Mode */}
+        {readingMode === 'card' ? (
+          <ContentReader
+            markdown={markdown}
+            goToNext={goToNext}
+            goToPrevious={goToPrevious}
+            isTransitioning={isTransitioning}
+            scrollRef={scrollRef}
+            handleDoubleClick={handleContentDoubleClick}
+            currentSection={currentSection}
+          />
+        ) : (
+          <ScrollContentReader
+            sections={sections}
+            scrollRef={scrollRef}
+            handleDoubleClick={handleContentDoubleClick}
+            onScrollProgress={handleScrollProgress}
+            onSectionVisible={handleSectionVisible}
+          />
+        )}
 
         {/* Header - hidden in zen mode unless controls visible */}
         <AnimatePresence>
@@ -195,9 +249,9 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
           )}
         </AnimatePresence>
 
-        {/* Navigation Controls - hidden in zen mode unless controls visible */}
+        {/* Navigation Controls - hidden in zen mode and scroll mode */}
         <AnimatePresence>
-          {shouldShowControls && (
+          {shouldShowControls && readingMode === 'card' && (
             <div className="absolute bottom-0 left-0 right-0 z-50">
               <NavigationControls
                 currentIndex={currentIndex}
@@ -224,6 +278,8 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
             onSelectSection={(index) => handleSelectCard(index)}
             sections={sections}
             readSections={readSections}
+            readingMode={readingMode}
+            scrollProgress={scrollProgress}
           />
         )}
 

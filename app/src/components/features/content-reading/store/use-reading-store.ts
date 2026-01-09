@@ -21,6 +21,9 @@ interface ReadingState {
   zenControlsVisible: boolean;
   // Dialog overlay state (to hide controls when dialogs are open)
   isDialogOpen: boolean;
+  // Reading mode: card (section-by-section) or scroll (continuous)
+  readingMode: 'card' | 'scroll';
+  scrollProgress: number;
   // Persistence version
   version: number;
   // Hydration tracking (not persisted)
@@ -43,6 +46,9 @@ interface ReadingActions {
   // Dialog overlay actions
   setDialogOpen: (isOpen: boolean) => void;
   clearPersistedSession: () => void;
+  // Reading mode actions
+  toggleReadingMode: () => void;
+  setScrollProgress: (progress: number) => void;
 }
 
 interface PersistedState {
@@ -123,38 +129,19 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
         zenControlsVisible: false,
         // Dialog overlay initial state
         isDialogOpen: false,
+        // Reading mode initial state
+        readingMode: 'card',
+        scrollProgress: 0,
         // Persistence version
         version: STORAGE_VERSION,
         // Hydration tracking
         _hasHydrated: false,
 
-        /**
-         * 📖 Mark section as read
-         *
-         * ```ascii
-         *    📚 Progress
-         *    ┌─────────┐
-         *    │ Section │ ✅ Mark complete
-         *    │ Status  │
-         *    └─────────┘
-         * ```
-         */
         markSectionAsRead: (index: number) =>
           set((state) => ({
             readSections: new Set(state.readSections).add(index),
           })),
 
-        /**
-         * 🔄 Change current section
-         *
-         * ```ascii
-         *    🔀 Navigation
-         *    ┌─────────┐
-         *    │ Current │ ➡️ New section
-         *    │ Section │ 🕒 Fade transition
-         *    └─────────┘
-         * ```
-         */
         changeSection: (newIndex: number) => {
           const state = get();
           if (newIndex < 0 || newIndex >= state.sections.length) return;
@@ -171,34 +158,12 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           }, 200);
         },
 
-        /**
-         * 🔍 Get section by index
-         *
-         * ```ascii
-         *    📑 Sections
-         *    ┌─────────┐
-         *    │ Index   │ ➡️ Section data
-         *    │ Lookup  │
-         *    └─────────┘
-         * ```
-         */
         getSection: (index: number) => {
           const { sections } = get();
           if (index < 0 || index >= sections.length) return null;
           return sections[index];
         },
 
-        /**
-         * ⏭️ Go to next section
-         *
-         * ```ascii
-         *    ➡️ Forward
-         *    ┌─────────┐
-         *    │ Current │ ➡️ Next
-         *    │ Section │
-         *    └─────────┘
-         * ```
-         */
         goToNext: () => {
           const { currentIndex, sections, changeSection } = get();
           if (currentIndex < sections.length - 1) {
@@ -206,17 +171,6 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           }
         },
 
-        /**
-         * ⏮️ Go to previous section
-         *
-         * ```ascii
-         *    ⬅️ Back
-         *    ┌─────────┐
-         *    │ Current │ ⬅️ Previous
-         *    │ Section │
-         *    └─────────┘
-         * ```
-         */
         goToPrevious: () => {
           const { currentIndex, changeSection } = get();
           if (currentIndex > 0) {
@@ -224,24 +178,12 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           }
         },
 
-        /**
-         * 🎬 Initialize reading session
-         *
-         * ```ascii
-         *    🚀 Start
-         *    ┌─────────┐
-         *    │ Setup   │ ➡️ Ready to read
-         *    │ State   │ 🔄 Hash check
-         *    └─────────┘
-         * ```
-         */
         initializeReading: (markdownInput: string) => {
           if (!markdownInput.trim()) return;
 
           const newHash = hashString(markdownInput);
           const currentState = get();
 
-          // Return early if content hasn't changed
           if (currentState.markdownHash === newHash && currentState.isInitialized) {
             return;
           }
@@ -260,60 +202,32 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           });
         },
 
-        /**
-         * 🧘 Toggle Zen Mode
-         *
-         * Switches between zen mode (minimal UI) and normal mode
-         */
         toggleZenMode: () =>
           set((state) => ({
             isZenMode: !state.isZenMode,
             zenControlsVisible: false,
           })),
 
-        /**
-         * 🧘 Set Zen Mode
-         *
-         * Explicitly set zen mode on or off
-         */
         setZenMode: (isZen: boolean) =>
           set({
             isZenMode: isZen,
             zenControlsVisible: false,
           }),
 
-        /**
-         * 👁️ Show Zen Controls
-         *
-         * Temporarily show controls in zen mode
-         */
         showZenControls: () => set({ zenControlsVisible: true }),
 
-        /**
-         * 🙈 Hide Zen Controls
-         *
-         * Hide controls in zen mode
-         */
         hideZenControls: () => set({ zenControlsVisible: false }),
 
-        /**
-         * 🎭 Set Dialog Open State
-         *
-         * Track when overlay dialogs are open to hide navigation controls
-         */
         setDialogOpen: (isOpen: boolean) => set({ isDialogOpen: isOpen }),
 
-        /**
-         * 🔄 Reset reading state
-         *
-         * ```ascii
-         *    🗑️ Reset
-         *    ┌─────────┐
-         *    │ Clear   │ ➡️ Fresh start
-         *    │ State   │
-         *    └─────────┘
-         * ```
-         */
+        toggleReadingMode: () =>
+          set((state) => ({
+            readingMode: state.readingMode === 'card' ? 'scroll' : 'card',
+            scrollProgress: 0,
+          })),
+
+        setScrollProgress: (progress: number) => set({ scrollProgress: progress }),
+
         resetReading: () =>
           set({
             sections: [],
@@ -327,14 +241,11 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
             isZenMode: false,
             zenControlsVisible: false,
             isDialogOpen: false,
+            readingMode: 'card',
+            scrollProgress: 0,
             _hasHydrated: true, // Keep hydrated state
           }),
 
-        /**
-         * 🗑️ Clear persisted session
-         *
-         * Removes saved session from localStorage and resets state.
-         */
         clearPersistedSession: () => {
           localStorage.removeItem(STORAGE_KEY);
           set({
@@ -350,6 +261,8 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
             isZenMode: false,
             zenControlsVisible: false,
             isDialogOpen: false,
+            readingMode: 'card',
+            scrollProgress: 0,
             version: STORAGE_VERSION,
             _hasHydrated: true, // Keep hydrated state
           });
@@ -366,6 +279,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           readSections: state.readSections,
           totalWordCount: state.totalWordCount,
           isInitialized: state.isInitialized,
+          readingMode: state.readingMode,
           version: state.version,
         }),
         version: STORAGE_VERSION,
@@ -427,6 +341,15 @@ export const useZenModeActions = () => {
 // Dialog overlay selectors
 export const useIsDialogOpen = () => useReadingStore((state) => state.isDialogOpen);
 export const useSetDialogOpen = () => useReadingStore((state) => state.setDialogOpen);
+
+// Reading mode selectors
+export const useReadingMode = () => useReadingStore((state) => state.readingMode);
+export const useScrollProgress = () => useReadingStore((state) => state.scrollProgress);
+export const useReadingModeActions = () => {
+  const toggleReadingMode = useReadingStore((state) => state.toggleReadingMode);
+  const setScrollProgress = useReadingStore((state) => state.setScrollProgress);
+  return { toggleReadingMode, setScrollProgress };
+};
 
 // Simple hash function for markdown content
 const hashString = (str: string): string => {
