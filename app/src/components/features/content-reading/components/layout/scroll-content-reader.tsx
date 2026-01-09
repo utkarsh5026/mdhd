@@ -109,7 +109,7 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
               ref={(el) => setSectionRef(index, el)}
               data-section-index={index}
               id={`section-${section.id}`}
-              className={cn('scroll-section', index > 0 && 'mt-12 pt-12 border-t border-border/30')}
+              className={cn('scroll-section', index > 0 && 'pt-4 border-t border-border/30')}
             >
               <div
                 className="prose prose-lg prose-invert max-w-none"
