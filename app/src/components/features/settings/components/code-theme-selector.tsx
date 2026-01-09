@@ -107,7 +107,7 @@ const CodeThemeSelector: React.FC = () => {
         }
       />
 
-      <ScrollArea className="max-h-125 pr-2">
+      <ScrollArea className="max-h-full pr-2">
         <div className="space-y-4">
           {Object.entries(themeCategories).map(([categoryName, themes]) => {
             const themeEntries = Object.entries(themes);

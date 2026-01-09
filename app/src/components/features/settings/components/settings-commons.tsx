@@ -40,7 +40,7 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
         <div className="p-2 bg-primary/10 rounded-2xl">{icon}</div>
         <div>
           <h3 className="font-semibold text-base">{title}</h3>
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="hidden lg:block text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
       {rightContent}
@@ -224,7 +224,7 @@ export const ExpandableCategory = memo<ExpandableCategoryProps>(
             <span className="text-lg">{icon}</span>
             <div className="text-left">
               <div className="font-semibold text-sm">{title}</div>
-              <div className="text-xs text-muted-foreground">{description}</div>
+              <div className="hidden lg:block text-xs text-muted-foreground">{description}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">

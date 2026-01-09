@@ -106,7 +106,7 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = memo(({ open, 
           <Tabs
             value={activeTab}
             onValueChange={(value) => setActiveTab(value as TabValue)}
-            className="w-full min-w-0 overflow-hidden"
+            className="w-full min-w-0"
           >
             <TabsList className={`w-full mb-6 flex space-x-2 overflow-x-auto`}>
               {tabs.map((tab) => (
