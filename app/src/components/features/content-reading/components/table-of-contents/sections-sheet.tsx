@@ -1,4 +1,4 @@
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { useMemo, useCallback, useEffect, memo } from 'react';
 import { ListOrdered, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import ListOfContents from './list-of-contents';
 import ProgressBar from './progress-bar';
 import { MarkdownSection } from '@/services/section/parsing';
 import { useLocalStorage } from '@/hooks';
+import { cn } from '@/lib/utils';
 
 interface SectionsSheetProps {
   currentIndex: number;
@@ -17,6 +18,42 @@ interface SectionsSheetProps {
   sections: MarkdownSection[];
   readSections: Set<number>;
 }
+
+interface SheetHeaderContentProps {
+  count: number;
+  setMenuOpen: (open: boolean) => void;
+  showProgress: boolean;
+  setShowProgress: (value: boolean) => void;
+}
+const SheetHeaderContent: React.FC<SheetHeaderContentProps> = memo(
+  ({ count, setMenuOpen, showProgress, setShowProgress }) => (
+    <div className="bg-card border-b border-border p-4 sticky top-0 z-20">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-base font-medium flex items-center gap-2">
+          <ListOrdered className="w-4 h-4 text-primary" />
+          <span>Document Sections</span>
+          <Badge variant="outline" className="ml-2 text-xs bg-primary/5 border-primary/20">
+            {count}
+          </Badge>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMenuOpen(false)}
+          className="h-8 w-8 rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="flex items-center justify-between">
+        <label className="text-xs flex items-center gap-1.5 text-muted-foreground">
+          Show reading progress
+        </label>
+        <Switch checked={showProgress} onCheckedChange={setShowProgress} />
+      </div>
+    </div>
+  )
+);
 
 const SectionsSheet: React.FC<SectionsSheetProps> = ({
   currentIndex,
@@ -31,86 +68,92 @@ const SectionsSheet: React.FC<SectionsSheetProps> = ({
     true
   );
 
-  const progressPercentage = sections.length ? (readSections.size / sections.length) * 100 : 0;
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
 
-  const sectionsWithIds = sections.map((section, index) => ({
-    id: index,
-    title: section.title,
-    level: section.level,
-  }));
+  const progressPercentage = useMemo(
+    () => (sections.length ? (readSections.size / sections.length) * 100 : 0),
+    [sections.length, readSections.size]
+  );
+
+  const sectionsWithIds = useMemo(
+    () =>
+      sections.map((section, index) => ({
+        id: index,
+        title: section.title,
+        level: section.level,
+      })),
+    [sections]
+  );
+
+  const onSelect = useCallback(
+    (index: number) => {
+      handleSelectCard(index);
+      setMenuOpen(false);
+    },
+    [handleSelectCard, setMenuOpen]
+  );
 
   return (
-    <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-      <SheetContent
-        side="right"
-        className="font-type-mono p-0 border-l border-primary/10 overflow-hidden w-full sm:max-w-md"
+    <>
+      <div
+        className={cn(
+          'fixed inset-0 bg-black/80 z-40 transition-opacity duration-300 ease-in-out',
+          menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        )}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      />
+
+      <div
+        className={cn(
+          'fixed top-0 right-0 z-50 h-full w-full sm:max-w-md bg-background shadow-xl border-l border-border',
+          'transform transition-transform duration-300 ease-out will-change-transform',
+          menuOpen ? 'translate-x-0' : 'translate-x-full'
+        )}
       >
-        <div className="flex flex-col h-full">
-          <div className="sticky top-0 z-10 bg-card border-b border-border p-4">
-            <div className="flex items-center justify-between mb-3">
-              <SheetTitle className="text-base font-medium flex items-center gap-2">
-                <ListOrdered className="w-4 h-4 text-primary" />
-                <span>Document Sections</span>
-                <Badge variant="outline" className="ml-2 text-xs bg-primary/5 border-primary/20">
-                  {sections.length}
-                </Badge>
-              </SheetTitle>
+        <div className="flex flex-col h-full font-type-mono">
+          <SheetHeaderContent
+            count={sections.length}
+            setMenuOpen={setMenuOpen}
+            showProgress={showProgress}
+            setShowProgress={setShowProgress}
+          />
 
-              {/* Close button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMenuOpen(false)}
-                className="h-8 w-8 rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Close</span>
-              </Button>
-            </div>
-
-            {/* Progress tracking toggle */}
-            <div className="flex items-center justify-between mb-3">
-              <label
-                htmlFor="show-card-progress"
-                className="text-xs flex items-center gap-1.5 text-muted-foreground"
-              >
-                Show reading progress
-              </label>
-              <Switch
-                id="show-card-progress"
-                checked={showProgress}
-                onCheckedChange={setShowProgress}
-              />
-            </div>
-
-            {/* Progress bar and details */}
-            {showProgress && sections.length > 0 && (
+          {showProgress && sections.length > 0 && (
+            <div className="px-4 pb-2 bg-card border-b border-border/50">
               <ProgressBar
                 progressPercentage={progressPercentage}
                 readSectionsIndexes={readSections}
                 sections={sectionsWithIds}
                 currentIndex={currentIndex}
               />
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Scrollable Content */}
-          <ScrollArea className="flex-1 h-[calc(100vh-11rem)]">
-            <ListOfContents
-              sections={sectionsWithIds}
-              currentIndex={currentIndex}
-              readSections={readSections}
-              showProgress={showProgress}
-              handleSelectCard={(index) => {
-                handleSelectCard(index);
-                setMenuOpen(false);
-              }}
-            />
-          </ScrollArea>
+          <div className="flex-1 overflow-hidden relative">
+            <ScrollArea className="h-full">
+              <ListOfContents
+                sections={sectionsWithIds}
+                currentIndex={currentIndex}
+                readSections={readSections}
+                showProgress={showProgress}
+                handleSelectCard={onSelect}
+              />
+            </ScrollArea>
+          </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </>
   );
 };
 
-export default SectionsSheet;
+export default memo(SectionsSheet);
