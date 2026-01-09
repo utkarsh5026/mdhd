@@ -117,8 +117,8 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
                   >
                     {language || 'plaintext'}
                   </Badge>
-                  <span className="hidden xs:inline">•</span>
-                  <span className="hidden xs:inline truncate">
+                  <span className="hidden sm:inline">•</span>
+                  <span className="hidden sm:inline truncate">
                     {codeContent.split('\n').length} lines
                   </span>
                 </div>
@@ -128,8 +128,8 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
             {/* Enhanced Action Buttons - More compact on mobile */}
             <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0 mr-10 sm:mr-12">
               <div className="flex items-center gap-0.5 sm:gap-2 p-1 bg-card/50 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm">
-                {/* Theme Selector - Hidden on very small screens */}
-                <div className="hidden xs:block">
+                {/* Theme Selector - Hidden on mobile */}
+                <div className="hidden sm:block">
                   <ThemeSelector />
                 </div>
 

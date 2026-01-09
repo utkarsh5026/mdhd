@@ -13,13 +13,13 @@ const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = (props) =
     // Improved contrast: 80% -> 92% for better readability while maintaining subtle softness
     'text-foreground/92',
     // Slightly reduced vertical margins for tighter content grouping
-    'my-3 xs:my-4 sm:my-5 lg:my-6',
+    'my-3 sm:my-5 lg:my-6',
     // Optimized line heights - slightly reduced for denser, more book-like reading
-    'leading-relaxed xs:leading-relaxed sm:leading-7 lg:leading-8',
+    'leading-relaxed sm:leading-7 lg:leading-8',
     // Enhanced text rendering and flow
     'text-pretty break-words',
     // Refined font size scaling - cap at text-lg for comfortable reading
-    'text-base xs:text-base sm:text-lg lg:text-lg',
+    'text-base sm:text-lg',
     // Clean horizontal alignment
     'px-0',
     // Enhanced paragraph spacing for better visual hierarchy
