@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useRef, useState, useEffect } from 'react';
 import { useCodeThemeStore, type ThemeKey } from '@/components/features/settings/store/code-theme';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
 import { Code } from 'lucide-react';
@@ -33,37 +33,68 @@ const CodePreview = memo<CodePreviewProps>(
     enableCodeFolding,
     enableWordWrap,
   }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [hasBeenVisible, setHasBeenVisible] = useState(false);
+
+    useEffect(() => {
+      const currentRef = containerRef.current;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setHasBeenVisible(true);
+            }
+          });
+        },
+        {
+          rootMargin: '50px', // Start loading slightly before coming into view
+          threshold: 0.1,
+        }
+      );
+
+      if (currentRef) {
+        observer.observe(currentRef);
+      }
+
+      return () => {
+        if (currentRef) {
+          observer.unobserve(currentRef);
+        }
+      };
+    }, []);
+
     return (
       <div
+        ref={containerRef}
         className={cn(
-          'border rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer group',
-          isSelected
-            ? 'border-primary/50 bg-primary/5 shadow-md'
-            : 'border-border/30 hover:border-border/60 bg-card/30'
+          'border rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer group p-2',
+          isSelected ? 'border-primary/50 bg-primary/5 shadow-md' : 'border-none rounded-2xl'
         )}
         onClick={onClick}
       >
         {/* Theme Header */}
         <div className="px-4 py-3 border-b border-border/20 bg-card/50">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div>
-                <div className="font-medium text-sm">{theme.name}</div>
-              </div>
-            </div>
+            <div className="flex items-center gap-3 text-sm">{theme.name}</div>
           </div>
         </div>
 
         <div className="relative max-h-30 overflow-hidden [&_.cm-scroller]:overflow-hidden!">
-          <CodeMirrorDisplay
-            code={sampleCode}
-            language="python"
-            themeKey={themeKey as ThemeKey}
-            showLineNumbers={showLineNumbers}
-            enableCodeFolding={enableCodeFolding}
-            enableWordWrap={enableWordWrap}
-            className="text-[11px]"
-          />
+          {hasBeenVisible ? (
+            <CodeMirrorDisplay
+              code={sampleCode}
+              language="python"
+              themeKey={themeKey as ThemeKey}
+              showLineNumbers={showLineNumbers}
+              enableCodeFolding={enableCodeFolding}
+              enableWordWrap={enableWordWrap}
+              className="text-[11px]"
+            />
+          ) : (
+            <div className="h-24 flex items-center justify-center bg-muted/20 animate-pulse">
+              <span className="text-xs text-muted-foreground">Loading preview...</span>
+            </div>
+          )}
 
           <div className="absolute bottom-0 left-0 right-0 h-4 bg-linear-to-t from-card/80 to-transparent pointer-events-none" />
         </div>
