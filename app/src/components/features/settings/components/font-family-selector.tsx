@@ -4,6 +4,7 @@ import type { FontFamily } from '@/components/features/settings/store/reading-se
 import { Check, Type } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SettingsHeader } from './settings-header';
 
 interface FontOption {
   value: FontFamily;
@@ -199,13 +200,13 @@ const FontFamilySelector: React.FC = () => {
 
   return (
     <div className="space-y-3 flex flex-col gap-4 max-h-full">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Type className="h-4 w-4" />
-          <h3 className="font-medium text-sm">Font Family</h3>
-        </div>
-        <span className="text-xs text-muted-foreground">{currentFontLabel}</span>
-      </div>
+      <SettingsHeader
+        icon={<Type className="h-4 w-4 text-primary" />}
+        title="Font Family"
+        description="Select your preferred reading font"
+        rightContent={<span className="text-xs text-muted-foreground">{currentFontLabel}</span>}
+        className="pb-0 border-b-0"
+      />
 
       <div className="sticky top-0 z-10 p-6 border rounded-2xl mb-2 bg-background/50 backdrop-blur-3xl shadow-sm shadow-primary/10">
         <p className="text-sm text-card-foreground" style={previewStyle}>

@@ -8,6 +8,7 @@ import {
   useReadingMode,
   useReadingModeActions,
 } from '@/components/features/content-reading/store/use-reading-store';
+import { SettingsHeader } from './settings-header';
 
 interface SettingToggleProps {
   icon: React.ReactNode;
@@ -136,20 +137,12 @@ const ReadingModeSelector: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-border/20">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-primary/10 rounded-xl">
-            <BookOpen className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-base">Reading Mode</h3>
-            <p className="text-sm text-muted-foreground">Control how you read content</p>
-          </div>
-        </div>
-      </div>
+      <SettingsHeader
+        icon={<BookOpen className="h-4 w-4 text-primary" />}
+        title="Reading Mode"
+        description="Control how you read content"
+      />
 
-      {/* Zen Mode Toggle */}
       <div className="space-y-3">
         <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Focus Mode

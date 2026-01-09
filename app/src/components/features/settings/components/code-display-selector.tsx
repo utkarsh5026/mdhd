@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
 import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
 import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
+import { SettingsHeader } from './settings-header';
 
 const sampleCode = `function greet(name: string) {
   const message = \`Hello, \${name}!\`;
@@ -70,18 +71,11 @@ const CodeDisplaySelector: React.FC = () => {
 
   return (
     <div className="space-y-6 min-w-0 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-border/20">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-primary/10 rounded-xl">
-            <Settings2 className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-base">Code Display Options</h3>
-            <p className="text-sm text-muted-foreground">Customize how code blocks appear</p>
-          </div>
-        </div>
-      </div>
+      <SettingsHeader
+        icon={<Settings2 className="h-4 w-4 text-primary" />}
+        title="Code Display Options"
+        description="Customize how code blocks appear"
+      />
 
       {/* Settings Toggles */}
       <div className="space-y-3">

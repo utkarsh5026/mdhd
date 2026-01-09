@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { SettingsHeader } from './settings-header';
 
 interface ThemePreviewProps {
   theme: ThemeOption;
@@ -222,23 +223,19 @@ const AppThemeSelector: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between pb-4 border-b border-border/20">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-primary/10 rounded-xl">
-            <Palette className="h-4 w-4 text-primary" />
+      <SettingsHeader
+        icon={<Palette className="h-4 w-4 text-primary" />}
+        title="App Theme"
+        description="Choose your reading environment"
+        rightContent={
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground mb-1">Currently Active</div>
+            <Badge variant="outline" className="text-xs px-3 py-1 bg-primary/10 border-primary/20">
+              {currentTheme.name}
+            </Badge>
           </div>
-          <div>
-            <h3 className="font-semibold text-base">App Theme</h3>
-            <p className="text-sm text-muted-foreground">Choose your reading environment</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-xs text-muted-foreground mb-1">Currently Active</div>
-          <Badge variant="outline" className="text-xs px-3 py-1 bg-primary/10 border-primary/20">
-            {currentTheme.name}
-          </Badge>
-        </div>
-      </div>
+        }
+      />
 
       <ScrollArea className="max-h-125 pr-2">
         <div className="space-y-2">
