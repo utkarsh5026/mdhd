@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { ThemeOption, themes } from '@/theme/themes';
 
-const defaultTheme = themes[1];
+const defaultTheme = themes.find((t) => t.name === 'Night Reader') ?? themes[0];
 
 interface ThemeState {
   currentTheme: ThemeOption;
