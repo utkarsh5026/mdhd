@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useState, memo } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -28,41 +28,64 @@ interface ReadingSettingsSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const tabs = [
+type TabValue = 'reading' | 'theme' | 'font' | 'code';
+
+interface TabConfig {
+  value: TabValue;
+  label: string;
+  className: string;
+}
+
+const tabs: TabConfig[] = [
   {
     value: 'reading',
     label: 'Reading',
     className: 'space-y-6 px-2',
-    content: <ReadingModeSelector />,
   },
   {
     value: 'theme',
     label: 'Theme',
     className: 'space-y-6 px-2',
-    content: <AppThemeSelector />,
   },
   {
     value: 'font',
     label: 'Font',
     className: 'space-y-6 px-2',
-    content: <FontFamilySelector />,
   },
   {
     value: 'code',
     label: 'Code',
     className: 'space-y-8 px-2 overflow-hidden min-w-0',
-    content: (
-      <>
-        <CodeDisplaySelector />
-        <div className="border-t border-border/20 pt-6">
-          <CodeThemeSelector />
-        </div>
-      </>
-    ),
   },
-] as const;
+];
 
-const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpenChange }) => {
+const TabContentRenderer = memo(({ activeTab }: { activeTab: TabValue }) => {
+  switch (activeTab) {
+    case 'reading':
+      return <ReadingModeSelector />;
+    case 'theme':
+      return <AppThemeSelector />;
+    case 'font':
+      return <FontFamilySelector />;
+    case 'code':
+      return (
+        <>
+          <CodeDisplaySelector />
+          <div className="border-t border-border/20 pt-6">
+            <CodeThemeSelector />
+          </div>
+        </>
+      );
+    default:
+      return null;
+  }
+});
+
+TabContentRenderer.displayName = 'TabContentRenderer';
+
+const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = memo(({ open, onOpenChange }) => {
+  const [activeTab, setActiveTab] = useState<TabValue>('reading');
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -80,7 +103,11 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpe
         </SheetHeader>
 
         <ScrollArea className="flex-1 overflow-auto min-w-0 w-full max-w-full p-2">
-          <Tabs defaultValue="reading" className="w-full min-w-0 overflow-hidden">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as TabValue)}
+            className="w-full min-w-0 overflow-hidden"
+          >
             <TabsList className={`w-full mb-6 flex space-x-2 overflow-x-auto`}>
               {tabs.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value}>
@@ -91,7 +118,9 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpe
 
             {tabs.map((tab) => (
               <TabsContent key={tab.value} value={tab.value} className={tab.className}>
-                <Suspense fallback={<TabLoader />}>{tab.content}</Suspense>
+                <Suspense fallback={<TabLoader />}>
+                  <TabContentRenderer activeTab={activeTab} />
+                </Suspense>
               </TabsContent>
             ))}
           </Tabs>
@@ -101,6 +130,8 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpe
       </SheetContent>
     </Sheet>
   );
-};
+});
+
+ReadingSettingsSheet.displayName = 'ReadingSettingsSheet';
 
 export default ReadingSettingsSheet;
