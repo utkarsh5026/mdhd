@@ -2,10 +2,8 @@ import { cn } from '@/lib/utils';
 import { useSwipeable } from 'react-swipeable';
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
 import type { MarkdownSection } from '@/services/section/parsing';
-import {
-  useReadingSettings,
-  fontFamilyMap,
-} from '@/components/features/settings/store/reading-settings-store';
+import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
+import { fontFamilyMap } from '@/lib/font';
 import { RefObject } from 'react';
 
 interface ContentReaderProps {
