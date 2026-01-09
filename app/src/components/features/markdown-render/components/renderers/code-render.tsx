@@ -1,17 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import {
-  Copy,
-  ChevronDown,
-  ChevronRight,
-  Palette,
-  Check,
-  Maximize2,
-  Image,
-  FileText,
-} from 'lucide-react';
+import { Copy, Palette, Check, Image, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import getIconForTech from '@/components/shared/icons/';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -234,23 +224,8 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
   );
 };
 
-/**
- * Enhanced CodeRender Component with Dialog View
- *
- * This component provides a comprehensive code rendering solution with:
- * - Syntax highlighting using CodeMirror 6
- * - Theme customization with real-time preview
- * - Copy functionality with visual feedback
- * - Collapsible code blocks for space efficiency
- * - Full-screen dialog view for better code inspection
- * - Download capabilities (as image or code file)
- * - Responsive design for mobile and desktop
- * - Smart detection of inline vs block code
- * - Line numbers and code folding
- */
 const CodeRender: React.FC<CodeRenderProps> = ({ inline, className, children }) => {
   const [copied, setCopied] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [downloading, setDownloading] = useState<'image' | 'file' | null>(null);
   const setGlobalDialogOpen = useSetDialogOpen();
@@ -355,90 +330,48 @@ const CodeRender: React.FC<CodeRenderProps> = ({ inline, className, children }) 
   const backgroundColor = getThemeBackground(selectedTheme);
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+    <>
       <div
         ref={codeRef}
         className="my-8 relative font-fira-code no-swipe shadow-background/50 rounded-2xl border-none"
       >
-        {/* Code Block Header */}
-        <div className="bg-card text-muted-foreground px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold border-b border-border flex justify-between items-center rounded-t-2xl">
-          {/* Language indicator with icon */}
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
-            <span className="flex-shrink-0">
-              {(() => {
-                const IconComponent = getIconForTech(language || 'code');
-                return <IconComponent className="w-4 h-4" />;
-              })()}
-            </span>
-          </div>
-
-          {/* Header Actions */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Copy Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={copyToClipboard}
-              className="h-8 px-2 transition-all duration-300 cursor-pointer"
-              aria-label={copied ? 'Copied!' : 'Copy code'}
-            >
-              <div className="relative">
-                <Copy
-                  size={14}
-                  className={cn(
-                    'transition-all duration-300',
-                    copied ? 'opacity-0 scale-0 rotate-90' : 'opacity-100 scale-100 rotate-0'
-                  )}
-                />
-                <Check
-                  size={14}
-                  className={cn(
-                    'absolute inset-0 transition-all duration-300 text-green-400',
-                    copied ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-0 -rotate-90'
-                  )}
-                />
-              </div>
-            </Button>
-
-            {/* Expand to Dialog Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 cursor-pointer"
-              aria-label="Open in dialog"
-              onClick={() => handleDialogOpenChange(true)}
-            >
-              <Maximize2 size={14} />
-            </Button>
-
-            {/* Collapse Toggle */}
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 cursor-pointer"
-                aria-label={isOpen ? 'Collapse code' : 'Expand code'}
-              >
-                {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-        </div>
-
-        {/* Collapsible Code Content */}
-        <CollapsibleContent className="data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
-          <div className="rounded-b-2xl overflow-hidden" style={{ backgroundColor }}>
-            <CodeMirrorDisplay
-              code={codeContent}
-              language={language}
-              themeKey={selectedTheme}
-              showLineNumbers={displaySettings.showLineNumbers}
-              enableCodeFolding={displaySettings.enableCodeFolding}
-              enableWordWrap={displaySettings.enableWordWrap}
-              className="rounded-b-2xl"
+        {/* Copy Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={copyToClipboard}
+          className="absolute top-2 right-2 z-10 gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-xl cursor-pointer h-8 px-3"
+        >
+          <div className="relative">
+            <Copy
+              className={cn(
+                'w-4 h-4 transition-all duration-300 text-muted-foreground',
+                copied ? 'opacity-0 scale-0 rotate-90' : 'opacity-100 scale-100 rotate-0'
+              )}
+            />
+            <Check
+              className={cn(
+                'absolute inset-0 w-4 h-4 transition-all duration-300',
+                copied
+                  ? 'opacity-100 scale-100 rotate-0 text-green-600'
+                  : 'opacity-0 scale-0 -rotate-90'
+              )}
             />
           </div>
-        </CollapsibleContent>
+        </Button>
+
+        {/* Code Content */}
+        <div className="rounded-2xl overflow-hidden p-2" style={{ backgroundColor }}>
+          <CodeMirrorDisplay
+            code={codeContent}
+            language={language}
+            themeKey={selectedTheme}
+            showLineNumbers={displaySettings.showLineNumbers}
+            enableCodeFolding={displaySettings.enableCodeFolding}
+            enableWordWrap={displaySettings.enableWordWrap}
+            className="rounded-2xl"
+          />
+        </div>
       </div>
 
       {/* Code Preview Dialog */}
@@ -458,7 +391,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({ inline, className, children }) 
         enableCodeFolding={displaySettings.enableCodeFolding}
         enableWordWrap={displaySettings.enableWordWrap}
       />
-    </Collapsible>
+    </>
   );
 };
 
