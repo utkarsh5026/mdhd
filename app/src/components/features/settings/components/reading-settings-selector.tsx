@@ -7,9 +7,7 @@ import {
   SheetDescription,
   SheetFooter,
 } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Paintbrush, RotateCcw, Loader2 } from 'lucide-react';
-import { useReadingSettings } from '../store/reading-settings-store';
+import { Paintbrush, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -65,12 +63,6 @@ const tabs = [
 ] as const;
 
 const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpenChange }) => {
-  const { resetSettings } = useReadingSettings();
-
-  const handleReset = () => {
-    resetSettings();
-  };
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -105,16 +97,7 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpe
           </Tabs>
         </ScrollArea>
 
-        <SheetFooter className="mt-6">
-          <Button
-            onClick={handleReset}
-            variant="default"
-            className="w-full flex items-center rounded-2xl bg-primary/60 text-accent-foreground"
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Reset to Defaults
-          </Button>
-        </SheetFooter>
+        <SheetFooter className="mt-6"></SheetFooter>
       </SheetContent>
     </Sheet>
   );
