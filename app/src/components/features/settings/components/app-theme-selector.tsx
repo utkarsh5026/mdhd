@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { SettingsHeader } from './settings-header';
+import { SettingsHeader } from './settings-commons';
 
 interface ThemePreviewProps {
   theme: ThemeOption;

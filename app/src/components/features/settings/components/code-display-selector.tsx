@@ -3,8 +3,7 @@ import { Settings2, Hash, Braces, WrapText, LucideIcon } from 'lucide-react';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
 import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
 import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
-import { SettingsHeader } from './settings-header';
-import { SettingToggle } from './setting-toggle';
+import { SettingsHeader, SettingToggle } from './settings-commons';
 
 const sampleCode = `function greet(name: string) {
   const message = \`Hello, \${name}!\`;

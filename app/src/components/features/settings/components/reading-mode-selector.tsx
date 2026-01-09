@@ -1,64 +1,12 @@
 import React from 'react';
-import { BookOpen, Focus, Layers, ScrollText, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { BookOpen, Focus, Layers, ScrollText } from 'lucide-react';
 import {
   useIsZenMode,
   useZenModeActions,
   useReadingMode,
   useReadingModeActions,
 } from '@/components/features/content-reading/store/use-reading-store';
-import { SettingsHeader } from './settings-header';
-import { SettingToggle } from './setting-toggle';
-
-interface ReadingModeOptionProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  isSelected: boolean;
-  onClick: () => void;
-}
-
-const ReadingModeOption: React.FC<ReadingModeOptionProps> = ({
-  icon,
-  title,
-  description,
-  isSelected,
-  onClick,
-}) => {
-  return (
-    <button
-      className={cn(
-        'w-full text-left p-4 rounded-2xl border transition-all duration-200',
-        isSelected
-          ? 'border-primary/30 bg-primary/5'
-          : 'border-border/30 bg-card/30 hover:border-border/50 hover:bg-card/50'
-      )}
-      onClick={onClick}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            'p-2 rounded-full transition-colors duration-200 shrink-0',
-            isSelected ? 'bg-primary/20 text-primary' : 'bg-muted/50 text-muted-foreground'
-          )}
-        >
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-sm">{title}</span>
-            {isSelected && (
-              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary shrink-0">
-                <Check className="w-3 h-3 text-primary-foreground" />
-              </div>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">{description}</p>
-        </div>
-      </div>
-    </button>
-  );
-};
+import { SettingsHeader, SettingToggle, SelectableOption } from './settings-commons';
 
 const READING_MODE_OPTIONS = [
   {
@@ -115,7 +63,7 @@ const ReadingModeSelector: React.FC = () => {
         </div>
         <div className="space-y-2">
           {READING_MODE_OPTIONS.map(({ mode, icon: Icon, title, description }) => (
-            <ReadingModeOption
+            <SelectableOption
               key={mode}
               icon={<Icon className="h-4 w-4" />}
               title={title}
