@@ -242,16 +242,9 @@ export const ExpandableCategory = memo<ExpandableCategoryProps>(
           </div>
         </button>
 
-        <div
-          className="grid transition-[grid-template-rows] duration-300 ease-in-out"
-          style={{
-            gridTemplateRows: expanded ? '1fr' : '0fr',
-          }}
-        >
-          <div className="overflow-hidden">
-            <div className={cn('p-3', contentClassName)}>{children}</div>
-          </div>
-        </div>
+        {expanded && (
+          <div className={cn('p-3', contentClassName)}>{children}</div>
+        )}
       </div>
     );
   }
