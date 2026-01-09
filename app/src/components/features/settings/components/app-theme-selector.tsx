@@ -1,13 +1,12 @@
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 import { type ThemeOption, themes } from '@/theme/themes';
-import { Palette, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { Palette, Check } from 'lucide-react';
 import { FiStar } from 'react-icons/fi';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { SettingsHeader } from './settings-commons';
+import { SettingsHeader, ExpandableCategory } from './settings-commons';
 
 interface ThemePreviewProps {
   theme: ThemeOption;
@@ -84,16 +83,7 @@ const ThemePreview = memo<ThemePreviewProps>(
 
 ThemePreview.displayName = 'ThemePreview';
 
-interface ThemeCategoryProps {
-  categoryName: string;
-  categoryThemes: ThemeOption[];
-  currentTheme: ThemeOption;
-  setTheme: (theme: ThemeOption) => void;
-  isBookmarked: (theme: ThemeOption) => boolean;
-  toggleBookmark: (theme: ThemeOption) => void;
-}
-
-// Memoize category metadata outside component to avoid recreation
+// Category metadata for app themes
 const CATEGORY_ICONS: Record<string, string> = {
   'Modern Dark': '🌙',
   'Modern Light': '☀️',
@@ -117,80 +107,6 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Soft & Pastel': 'Gentle and easy on the eyes',
   Creative: 'Bold and expressive color palettes',
 };
-
-const ThemeCategory = memo<ThemeCategoryProps>(
-  ({ categoryName, categoryThemes, currentTheme, setTheme, isBookmarked, toggleBookmark }) => {
-    const hasActiveTheme = categoryThemes.some((t) => t.name === currentTheme.name);
-    const [expanded, setExpanded] = useState(hasActiveTheme);
-
-    const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
-    const handleThemeClick = useCallback((theme: ThemeOption) => setTheme(theme), [setTheme]);
-
-    const handleBookmarkClick = useCallback(
-      (e: React.MouseEvent, theme: ThemeOption) => {
-        e.stopPropagation();
-        toggleBookmark(theme);
-      },
-      [toggleBookmark]
-    );
-
-    return (
-      <div className="mb-4 border border-border/30 rounded-2xl overflow-hidden bg-card/50 backdrop-blur-sm">
-        <button
-          className="w-full flex items-center justify-between px-4 py-3 hover:bg-primary/5 transition-all duration-200 border-b border-border/20"
-          onClick={toggleExpanded}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-lg">{CATEGORY_ICONS[categoryName] ?? '🎨'}</span>
-            <div className="text-left">
-              <div className="font-semibold text-sm">{categoryName}</div>
-              <div className="text-xs text-muted-foreground">
-                {CATEGORY_DESCRIPTIONS[categoryName] ?? ''}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs px-2 py-1 bg-primary/10">
-              {categoryThemes.length}
-            </Badge>
-            {expanded ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            )}
-          </div>
-        </button>
-
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="overflow-hidden"
-            >
-              <div className="p-3 space-y-1">
-                {categoryThemes.map((theme) => (
-                  <ThemePreview
-                    key={theme.name}
-                    theme={theme}
-                    isSelected={currentTheme.name === theme.name}
-                    isBookmarked={isBookmarked(theme)}
-                    onClick={() => handleThemeClick(theme)}
-                    onBookmarkClick={(e) => handleBookmarkClick(e, theme)}
-                  />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  }
-);
-
-ThemeCategory.displayName = 'ThemeCategory';
 
 const AppThemeSelector: React.FC = () => {
   const { currentTheme, setTheme, isBookmarked, toggleBookmark } = useThemeStore();
@@ -239,17 +155,36 @@ const AppThemeSelector: React.FC = () => {
 
       <ScrollArea className="max-h-125 pr-2">
         <div className="space-y-2">
-          {sortedCategories.map((categoryName) => (
-            <ThemeCategory
-              key={categoryName}
-              categoryName={categoryName}
-              categoryThemes={themesByCategory[categoryName]}
-              currentTheme={currentTheme}
-              setTheme={setTheme}
-              isBookmarked={isBookmarked}
-              toggleBookmark={toggleBookmark}
-            />
-          ))}
+          {sortedCategories.map((categoryName) => {
+            const categoryThemes = themesByCategory[categoryName];
+            const hasActiveTheme = categoryThemes.some((t) => t.name === currentTheme.name);
+
+            return (
+              <ExpandableCategory
+                key={categoryName}
+                icon={CATEGORY_ICONS[categoryName] ?? '🎨'}
+                title={categoryName}
+                description={CATEGORY_DESCRIPTIONS[categoryName] ?? ''}
+                itemCount={categoryThemes.length}
+                defaultExpanded={hasActiveTheme}
+                contentClassName="space-y-1"
+              >
+                {categoryThemes.map((theme) => (
+                  <ThemePreview
+                    key={theme.name}
+                    theme={theme}
+                    isSelected={currentTheme.name === theme.name}
+                    isBookmarked={isBookmarked(theme)}
+                    onClick={() => setTheme(theme)}
+                    onBookmarkClick={(e) => {
+                      e.stopPropagation();
+                      toggleBookmark(theme);
+                    }}
+                  />
+                ))}
+              </ExpandableCategory>
+            );
+          })}
         </div>
       </ScrollArea>
 

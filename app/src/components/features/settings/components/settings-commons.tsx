@@ -1,7 +1,8 @@
-import React from 'react';
-import { Check } from 'lucide-react';
+import React, { useState, useCallback, memo } from 'react';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * Common settings UI components used across the settings feature.
@@ -150,9 +151,7 @@ export const SelectableOption: React.FC<SelectableOptionProps> = ({
           <div
             className={cn(
               'p-2 rounded-full transition-colors duration-200 shrink-0',
-              isSelected
-                ? 'bg-primary/20 text-primary'
-                : 'bg-muted/50 text-muted-foreground'
+              isSelected ? 'bg-primary/20 text-primary' : 'bg-muted/50 text-muted-foreground'
             )}
           >
             {icon}
@@ -174,3 +173,88 @@ export const SelectableOption: React.FC<SelectableOptionProps> = ({
     </button>
   );
 };
+
+// ============================================================================
+// ExpandableCategory Component
+// ============================================================================
+
+interface ExpandableCategoryProps {
+  icon: string;
+  title: string;
+  description: string;
+  itemCount: number;
+  defaultExpanded?: boolean;
+  children: React.ReactNode;
+  className?: string;
+  contentClassName?: string;
+}
+
+/**
+ * An expandable/collapsible category section for grouping related items.
+ * Used for theme categories, code theme categories, and similar grouped selections.
+ * Features animated expand/collapse with icon, title, description, and item count badge.
+ */
+export const ExpandableCategory = memo<ExpandableCategoryProps>(
+  ({
+    icon,
+    title,
+    description,
+    itemCount,
+    defaultExpanded = false,
+    children,
+    className,
+    contentClassName,
+  }) => {
+    const [expanded, setExpanded] = useState(defaultExpanded);
+
+    const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
+
+    return (
+      <div
+        className={cn(
+          'border border-border/30 rounded-2xl overflow-hidden bg-card/50 backdrop-blur-sm',
+          className
+        )}
+      >
+        <button
+          className="w-full flex items-center justify-between px-4 py-3 hover:bg-primary/5 transition-all duration-200 border-b border-border/20"
+          onClick={toggleExpanded}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-lg">{icon}</span>
+            <div className="text-left">
+              <div className="font-semibold text-sm">{title}</div>
+              <div className="text-xs text-muted-foreground">{description}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              className="text-xs px-2 py-1 bg-primary/10 rounded-full shadow-lg"
+            >
+              {itemCount}
+            </Badge>
+            {expanded ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
+        </button>
+
+        <div
+          className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+          style={{
+            gridTemplateRows: expanded ? '1fr' : '0fr',
+          }}
+        >
+          <div className="overflow-hidden">
+            <div className={cn('p-3', contentClassName)}>{children}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+
+ExpandableCategory.displayName = 'ExpandableCategory';
