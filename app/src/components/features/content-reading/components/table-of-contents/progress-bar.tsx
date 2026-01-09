@@ -32,16 +32,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           <span className="font-medium text-primary/80">{readSectionsCount}</span> of{' '}
           <span className="font-medium">{sections.length}</span> sections read
         </div>
-
-        <div className="text-xs">
-          {sections.length - readSectionsCount > 0 ? (
-            <span title="Estimated based on average reading speed">
-              ~{Math.ceil((sections.length - readSectionsCount) * 1.5)} min left
-            </span>
-          ) : (
-            <span className="text-primary/80 font-medium">Complete!</span>
-          )}
-        </div>
       </div>
 
       <div className="flex justify-between items-center pt-1">
