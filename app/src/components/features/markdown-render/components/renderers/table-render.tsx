@@ -19,11 +19,11 @@ const TableRender: React.FC<TableRenderProps> = ({ type, props }) => {
   switch (type) {
     case 'table':
       return (
-        <div className="my-4 xs:my-5 sm:my-6 overflow-x-auto p-1 xs:p-1.5 sm:p-2 rounded-md xs:rounded-lg sm:rounded-xl no-swipe">
-          <div className="min-w-full overflow-hidden rounded-lg xs:rounded-xl sm:rounded-2xl shadow-sm">
+        <div className="my-4 sm:my-6 overflow-x-auto p-1 sm:p-2 rounded-md sm:rounded-xl no-swipe">
+          <div className="min-w-full overflow-hidden rounded-lg sm:rounded-2xl shadow-sm">
             <table
               {...(props as React.ComponentPropsWithoutRef<'table'>)}
-              className="min-w-full divide-y divide-[#303030] border-separate border-spacing-0 text-xs xs:text-sm sm:text-base"
+              className="min-w-full divide-y divide-[#303030] border-separate border-spacing-0 text-xs sm:text-base"
             />
           </div>
         </div>
@@ -50,14 +50,14 @@ const TableRender: React.FC<TableRenderProps> = ({ type, props }) => {
       return (
         <th
           {...(props as React.ComponentPropsWithoutRef<'th'>)}
-          className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 text-left text-xs xs:text-sm font-medium text-foreground/80 uppercase tracking-wide xs:tracking-wider break-words"
+          className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium text-foreground/80 uppercase tracking-wide sm:tracking-wider break-words"
         />
       );
     case 'td':
       return (
         <td
           {...(props as React.ComponentPropsWithoutRef<'td'>)}
-          className="px-2 xs:px-3 sm:px-4 py-2 xs:py-2.5 sm:py-3 text-xs xs:text-sm sm:text-base text-foreground/80 break-words leading-5 xs:leading-6 sm:leading-7"
+          className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-base text-foreground/80 break-words leading-5 sm:leading-7"
         />
       );
     default:
