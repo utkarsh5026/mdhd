@@ -1,7 +1,8 @@
-import React, { useMemo, memo } from 'react';
+import React, { useMemo, memo, useCallback } from 'react';
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 import { type ThemeOption, themes } from '@/theme/themes';
 import { Palette, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { FiStar } from 'react-icons/fi';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -108,8 +109,18 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   Creative: 'Bold and expressive color palettes',
 };
 
-const AppThemeSelector: React.FC = () => {
+interface AppThemeSelectorProps {
+  onRequestCloseSheet?: () => void;
+}
+
+const AppThemeSelector: React.FC<AppThemeSelectorProps> = ({ onRequestCloseSheet }) => {
   const { currentTheme, setTheme, isBookmarked, toggleBookmark } = useThemeStore();
+  const setPendingFloatingPickerOpen = useThemeStore((state) => state.setPendingFloatingPickerOpen);
+
+  const handleLaunchPicker = useCallback(() => {
+    setPendingFloatingPickerOpen(true);
+    onRequestCloseSheet?.();
+  }, [setPendingFloatingPickerOpen, onRequestCloseSheet]);
 
   const themesByCategory = useMemo(() => {
     const grouped: Record<string, ThemeOption[]> = {};
@@ -138,7 +149,7 @@ const AppThemeSelector: React.FC = () => {
   const sortedCategories = categoryOrder.filter((cat) => themesByCategory[cat]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <SettingsHeader
         icon={<Palette className="h-4 w-4 text-primary" />}
         title="App Theme"
@@ -152,6 +163,14 @@ const AppThemeSelector: React.FC = () => {
           </div>
         }
       />
+
+      <Button
+        className="w-full justify-center gap-2 rounded-2xl border-none opacity-70 hover:opacity-100 shadow-sm hover:shadow-md"
+        onClick={handleLaunchPicker}
+      >
+        🎨
+        Launch Theme Picker
+      </Button>
 
       <ScrollArea className="max-h-full pr-2">
         <div className="space-y-2">

@@ -6,7 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/fast-tabs';
 import { type ThemeOption as ThemeTypeOption, themes } from '@/theme/themes';
 import { Palette } from 'lucide-react';
 import ThemeCategories from './theme-categories';

@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -11,13 +12,16 @@ interface ThemesListProps {
   setSearchQuery: (query: string) => void;
   filteredThemes: ThemeTypeOption[];
 }
-const ThemesList: React.FC<ThemesListProps> = ({
+const ThemesList: React.FC<ThemesListProps> = memo(({
   currentTheme,
   onThemeChange,
   searchQuery,
   setSearchQuery,
   filteredThemes,
 }) => {
+  const handleThemeSelect = useCallback((theme: ThemeTypeOption) => {
+    onThemeChange(theme);
+  }, [onThemeChange]);
   return (
     <div className="space-y-3 sm:space-y-4">
       <div className="relative">
@@ -38,7 +42,7 @@ const ThemesList: React.FC<ThemesListProps> = ({
               key={theme.name}
               theme={theme}
               isActive={theme.name === currentTheme}
-              onSelect={() => onThemeChange(theme)}
+              onSelect={() => handleThemeSelect(theme)}
               showCategory={true}
             />
           ))}
@@ -54,6 +58,8 @@ const ThemesList: React.FC<ThemesListProps> = ({
       </div>
     </div>
   );
-};
+});
+
+ThemesList.displayName = 'ThemesList';
 
 export default ThemesList;

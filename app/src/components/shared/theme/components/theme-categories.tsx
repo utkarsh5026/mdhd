@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { themeCategories, themes, ThemeOption as ThemeTypeOption } from '@/theme/themes';
@@ -22,12 +23,15 @@ interface ThemeCategoriesProps {
   toggleCategory: (categoryName: string) => void;
 }
 
-const ThemeCategories: React.FC<ThemeCategoriesProps> = ({
+const ThemeCategories: React.FC<ThemeCategoriesProps> = memo(({
   currentTheme,
   onThemeChange,
   openCategories,
   toggleCategory,
 }) => {
+  const handleThemeSelect = useCallback((theme: ThemeTypeOption) => {
+    onThemeChange(theme);
+  }, [onThemeChange]);
   return (
     <div className="space-y-3 sm:space-y-4">
       {themeCategories.map((category) => {
@@ -41,7 +45,7 @@ const ThemeCategories: React.FC<ThemeCategoriesProps> = ({
             onOpenChange={() => toggleCategory(category.name)}
           >
             <CollapsibleTrigger asChild>
-              <button className="flex items-center gap-2 sm:gap-3 w-full px-2 sm:px-3 py-2.5 sm:py-3 rounded-xl hover:bg-secondary/50 transition-all duration-200 group font-cascadia-code">
+              <button className="flex items-center gap-2 sm:gap-3 w-full px-2 sm:px-3 py-2.5 sm:py-3 rounded-xl hover:bg-secondary/50 transition-colors duration-150 group font-cascadia-code">
                 <span className="text-base sm:text-lg">{category.icon}</span>
                 <div className="flex-1 text-left min-w-0">
                   <span className="text-xs sm:text-sm font-medium text-foreground block truncate">
@@ -69,7 +73,7 @@ const ThemeCategories: React.FC<ThemeCategoriesProps> = ({
                     key={theme.name}
                     theme={theme}
                     isActive={theme.name === currentTheme}
-                    onSelect={() => onThemeChange(theme)}
+                    onSelect={() => handleThemeSelect(theme)}
                     showCategory={false}
                   />
                 ))}
@@ -80,6 +84,8 @@ const ThemeCategories: React.FC<ThemeCategoriesProps> = ({
       })}
     </div>
   );
-};
+});
+
+ThemeCategories.displayName = 'ThemeCategories';
 
 export default ThemeCategories;

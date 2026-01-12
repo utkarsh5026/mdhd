@@ -6,9 +6,14 @@ const defaultTheme = themes.find((t) => t.name === 'Night Reader') ?? themes[0];
 interface ThemeState {
   currentTheme: ThemeOption;
   bookmarkedThemes: ThemeOption[];
+  isFloatingPickerOpen: boolean;
+  pendingFloatingPickerOpen: boolean;
   setTheme: (theme: ThemeOption) => void;
   toggleBookmark: (theme: ThemeOption) => void;
   isBookmarked: (theme: ThemeOption) => boolean;
+  openFloatingPicker: () => void;
+  closeFloatingPicker: () => void;
+  setPendingFloatingPickerOpen: (pending: boolean) => void;
 }
 
 const getInitialTheme = (): ThemeOption => {
@@ -48,6 +53,8 @@ const getInitialBookmarkedThemes = (): ThemeOption[] => {
 export const useThemeStore = create<ThemeState>((set, get) => ({
   currentTheme: getInitialTheme(),
   bookmarkedThemes: getInitialBookmarkedThemes(),
+  isFloatingPickerOpen: false,
+  pendingFloatingPickerOpen: false,
 
   setTheme: (theme: ThemeOption) => {
     localStorage.setItem('theme', JSON.stringify(theme));
@@ -56,26 +63,26 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 
   toggleBookmark: (theme: ThemeOption) => {
     const { bookmarkedThemes } = get();
-    const isCurrentlyBookmarked = bookmarkedThemes.some(
-      (bookmarked) => bookmarked.name === theme.name
-    );
+    const isBookmarked = bookmarkedThemes.some((b) => b.name === theme.name);
 
-    let newBookmarkedThemes: ThemeOption[];
+    let bookmarked: ThemeOption[];
 
-    if (isCurrentlyBookmarked) {
-      // Remove from bookmarks
-      newBookmarkedThemes = bookmarkedThemes.filter((bookmarked) => bookmarked.name !== theme.name);
+    if (isBookmarked) {
+      bookmarked = bookmarkedThemes.filter((b) => b.name !== theme.name);
     } else {
-      // Add to bookmarks
-      newBookmarkedThemes = [...bookmarkedThemes, theme];
+      bookmarked = [...bookmarkedThemes, theme];
     }
 
-    localStorage.setItem('bookmarked-themes', JSON.stringify(newBookmarkedThemes));
-    set({ bookmarkedThemes: newBookmarkedThemes });
+    localStorage.setItem('bookmarked-themes', JSON.stringify(bookmarked));
+    set({ bookmarkedThemes: bookmarked });
   },
 
   isBookmarked: (theme: ThemeOption) => {
     const { bookmarkedThemes } = get();
-    return bookmarkedThemes.some((bookmarked) => bookmarked.name === theme.name);
+    return bookmarkedThemes.some((b) => b.name === theme.name);
   },
+
+  openFloatingPicker: () => set({ isFloatingPickerOpen: true, pendingFloatingPickerOpen: false }),
+  closeFloatingPicker: () => set({ isFloatingPickerOpen: false }),
+  setPendingFloatingPickerOpen: (pending: boolean) => set({ pendingFloatingPickerOpen: pending }),
 }));

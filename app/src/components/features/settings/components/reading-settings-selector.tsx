@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, memo, useEffect, startTransition } from 'react';
+import React, { lazy, Suspense, useState, memo, useEffect, startTransition, useCallback } from 'react';
 import { Paintbrush, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -34,7 +34,13 @@ interface ReadingSettingsSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const TabContent = memo(({ value, activeTab }: { value: TabValue; activeTab: TabValue }) => {
+interface TabContentProps {
+  value: TabValue;
+  activeTab: TabValue;
+  onRequestCloseSheet: () => void;
+}
+
+const TabContent = memo(({ value, activeTab, onRequestCloseSheet }: TabContentProps) => {
   const isHidden = value !== activeTab;
 
   return (
@@ -47,7 +53,7 @@ const TabContent = memo(({ value, activeTab }: { value: TabValue; activeTab: Tab
     >
       <Suspense fallback={<TabLoader />}>
         {value === 'reading' && <ReadingModeSelector />}
-        {value === 'theme' && <AppThemeSelector />}
+        {value === 'theme' && <AppThemeSelector onRequestCloseSheet={onRequestCloseSheet} />}
         {value === 'font' && <FontFamilySelector />}
         {value === 'code' && (
           <>
@@ -81,6 +87,10 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpe
       setActiveTab(value);
     });
   };
+
+  const handleRequestCloseSheet = useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
 
   return (
     <>
@@ -136,7 +146,12 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpe
           <div className="flex-1 overflow-y-auto px-6 py-6">
             {open &&
               TABS.map((tab) => (
-                <TabContent key={tab.value} value={tab.value} activeTab={activeTab} />
+                <TabContent
+                  key={tab.value}
+                  value={tab.value}
+                  activeTab={activeTab}
+                  onRequestCloseSheet={handleRequestCloseSheet}
+                />
               ))}
           </div>
         </div>

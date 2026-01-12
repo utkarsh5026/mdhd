@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import SectionsSheet from './table-of-contents/sections-sheet';
 import ReadingSettingsSheet from '@/components/features/settings/components/reading-settings-selector';
+import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
+import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 import {
   Header,
   NavigationControls,
@@ -35,6 +37,9 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
   const [menuOpen, setMenuOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const zenControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const pendingFloatingPickerOpen = useThemeStore((state) => state.pendingFloatingPickerOpen);
+  const openFloatingPicker = useThemeStore((state) => state.openFloatingPicker);
 
   const isZenMode = useIsZenMode();
   const zenControlsVisible = useZenControlsVisible();
@@ -136,6 +141,18 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isZenMode, setZenMode]);
+
+  /**
+   * Open floating theme picker after settings sheet closes
+   */
+  useEffect(() => {
+    if (!settingsOpen && pendingFloatingPickerOpen) {
+      const timer = setTimeout(() => {
+        openFloatingPicker();
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [settingsOpen, pendingFloatingPickerOpen, openFloatingPicker]);
 
   /**
    * Jump to specific section (works in both card and scroll mode)
@@ -298,6 +315,9 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
 
         {/* Reading Settings Sheet */}
         <ReadingSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+
+        {/* Floating Theme Picker - mounted outside the sheet for mobile */}
+        <FloatingThemePicker />
       </div>
     </>
   );
