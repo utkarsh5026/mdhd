@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useThemeStore } from '../store/theme-store';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/fast-tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/fast-tabs';
 import { X, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,12 +9,15 @@ import ThemesList from './themes-list';
 import BookmarkedThemes from './bookmarked-themes';
 import { type ThemeOption, themes } from '@/theme/themes';
 
+type TabValue = 'categories' | 'bookmarked' | 'all';
+
 const FloatingThemePicker: React.FC = () => {
   const isOpen = useThemeStore((state) => state.isFloatingPickerOpen);
   const closeFloatingPicker = useThemeStore((state) => state.closeFloatingPicker);
   const currentTheme = useThemeStore((state) => state.currentTheme);
   const setTheme = useThemeStore((state) => state.setTheme);
 
+  const [activeTab, setActiveTab] = useState<TabValue>('categories');
   const [searchQuery, setSearchQuery] = useState('');
   const [openCategories, setOpenCategories] = useState<Set<string>>(
     () => new Set([currentTheme.category])
@@ -49,13 +52,17 @@ const FloatingThemePicker: React.FC = () => {
     [setTheme]
   );
 
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value as TabValue);
+  }, []);
+
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Semi-transparent backdrop - allows seeing content behind */}
+      {/* Semi-transparent backdrop */}
       <div
-        className="fixed inset-0 bg-black/30 z-[60] transition-opacity"
+        className="fixed inset-0 bg-black/30 z-[60]"
         onClick={closeFloatingPicker}
       />
 
@@ -65,7 +72,7 @@ const FloatingThemePicker: React.FC = () => {
           'fixed bottom-0 left-0 right-0 z-[61]',
           'bg-card border-t border-border rounded-t-3xl shadow-2xl',
           'h-[70vh] overflow-hidden flex flex-col',
-          'animate-in slide-in-from-bottom duration-300',
+          'animate-in slide-in-from-bottom duration-200',
           'font-cascadia-code'
         )}
       >
@@ -95,9 +102,9 @@ const FloatingThemePicker: React.FC = () => {
           </Button>
         </div>
 
-        {/* Tabs - reuse existing components */}
+        {/* Tabs with lazy rendering - only render active tab */}
         <div className="overflow-y-auto flex-1 p-4">
-          <Tabs defaultValue="categories" className="w-full">
+          <Tabs defaultValue="categories" value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="w-full mb-4 h-10 rounded-xl bg-muted/50">
               <TabsTrigger value="categories" className="text-sm flex-1">
                 Categories
@@ -110,28 +117,31 @@ const FloatingThemePicker: React.FC = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="categories" className="max-h-80 overflow-y-auto">
-              <ThemeCategories
-                currentTheme={currentTheme.name}
-                onThemeChange={handleThemeChange}
-                openCategories={openCategories}
-                toggleCategory={toggleCategory}
-              />
-            </TabsContent>
+            {/* Lazy render - only mount the active tab content */}
+            <div className="max-h-80 overflow-y-auto">
+              {activeTab === 'categories' && (
+                <ThemeCategories
+                  currentTheme={currentTheme.name}
+                  onThemeChange={handleThemeChange}
+                  openCategories={openCategories}
+                  toggleCategory={toggleCategory}
+                />
+              )}
 
-            <TabsContent value="bookmarked" className="max-h-80 overflow-y-auto">
-              <BookmarkedThemes onThemeChange={handleThemeChange} />
-            </TabsContent>
+              {activeTab === 'bookmarked' && (
+                <BookmarkedThemes onThemeChange={handleThemeChange} />
+              )}
 
-            <TabsContent value="all">
-              <ThemesList
-                currentTheme={currentTheme.name}
-                onThemeChange={handleThemeChange}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                filteredThemes={filteredThemes}
-              />
-            </TabsContent>
+              {activeTab === 'all' && (
+                <ThemesList
+                  currentTheme={currentTheme.name}
+                  onThemeChange={handleThemeChange}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  filteredThemes={filteredThemes}
+                />
+              )}
+            </div>
           </Tabs>
         </div>
       </div>

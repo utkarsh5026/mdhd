@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { ThemeOption as ThemeTypeOption } from '@/theme/themes';
 import { Star } from 'lucide-react';
@@ -8,9 +9,13 @@ interface BookmarkedThemesProps {
   onThemeChange: (theme: ThemeTypeOption) => void;
 }
 
-const BookmarkedThemes: React.FC<BookmarkedThemesProps> = ({ onThemeChange }) => {
+const BookmarkedThemes: React.FC<BookmarkedThemesProps> = memo(({ onThemeChange }) => {
   const bookmarkedThemes = useThemeStore((state) => state.bookmarkedThemes);
   const currentTheme = useThemeStore((state) => state.currentTheme);
+
+  const handleThemeSelect = useCallback((theme: ThemeTypeOption) => {
+    onThemeChange(theme);
+  }, [onThemeChange]);
 
   return (
     <div className={cn('space-y-2')}>
@@ -20,7 +25,7 @@ const BookmarkedThemes: React.FC<BookmarkedThemesProps> = ({ onThemeChange }) =>
             key={theme.name}
             theme={theme}
             isActive={theme.name === currentTheme.name}
-            onSelect={() => onThemeChange(theme)}
+            onSelect={() => handleThemeSelect(theme)}
             showCategory={true}
           />
         ))
@@ -33,6 +38,8 @@ const BookmarkedThemes: React.FC<BookmarkedThemesProps> = ({ onThemeChange }) =>
       )}
     </div>
   );
-};
+});
+
+BookmarkedThemes.displayName = 'BookmarkedThemes';
 
 export default BookmarkedThemes;

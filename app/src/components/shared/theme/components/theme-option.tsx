@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import type { ThemeOption as ThemeTypeOption } from '@/theme/themes';
 import { cn } from '@/lib/utils';
 import { FiCheck, FiStar } from 'react-icons/fi';
@@ -15,7 +15,7 @@ interface ThemeOptionProps {
 /**
  * 🎨 Modern theme option with improved spacing and visual design
  */
-const ThemeOption: React.FC<ThemeOptionProps> = ({
+const ThemeOption: React.FC<ThemeOptionProps> = memo(({
   theme,
   isActive,
   onSelect,
@@ -23,20 +23,27 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
   showBookmark = true,
 }) => {
   const toggleBookmark = useThemeStore((state) => state.toggleBookmark);
-  const isBookmarked = useThemeStore((state) => state.isBookmarked);
+  const bookmarkedThemes = useThemeStore((state) => state.bookmarkedThemes);
 
-  const bookmarked = isBookmarked(theme);
+  const bookmarked = useMemo(
+    () => bookmarkedThemes.some((b) => b.name === theme.name),
+    [bookmarkedThemes, theme.name]
+  );
 
-  const handleBookmarkClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent theme selection when clicking bookmark
+  const handleBookmarkClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
     toggleBookmark(theme);
-  };
+  }, [toggleBookmark, theme]);
+
+  const gradientStyle = useMemo(() => ({
+    background: `linear-gradient(135deg, ${theme.background} 0%, ${theme.primary} 100%)`,
+  }), [theme.background, theme.primary]);
 
   return (
     <button
       className={cn(
-        'flex items-center w-full rounded-2xl py-2.5 sm:py-3 px-3 sm:px-4 text-left transition-all duration-200',
-        'hover:scale-[1.01] group font-cascadia-code',
+        'flex items-center w-full rounded-2xl py-2.5 sm:py-3 px-3 sm:px-4 text-left',
+        'transition-colors duration-150 group font-cascadia-code',
         isActive
           ? 'bg-primary/10 border border-primary/30 shadow-sm'
           : 'hover:bg-secondary/40 hover:shadow-sm'
@@ -46,10 +53,8 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
       <div className="flex items-center gap-2.5 sm:gap-3 w-full">
         <div className="relative shrink-0">
           <div
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-none shadow-sm group-hover:shadow-md transition-shadow"
-            style={{
-              background: `linear-gradient(135deg, ${theme.background} 0%, ${theme.primary} 100%)`,
-            }}
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-none shadow-sm"
+            style={gradientStyle}
           />
         </div>
 
@@ -70,8 +75,8 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
           <button
             onClick={handleBookmarkClick}
             className={cn(
-              'flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full transition-all duration-200 shrink-0',
-              'hover:scale-110 hover:bg-secondary/60',
+              'flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full transition-colors duration-150 shrink-0',
+              'hover:bg-secondary/60',
               bookmarked
                 ? 'text-yellow-500 hover:text-yellow-400'
                 : 'text-muted-foreground hover:text-foreground'
@@ -80,7 +85,7 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
           >
             <FiStar
               className={cn(
-                'w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all duration-200',
+                'w-3.5 h-3.5 sm:w-4 sm:h-4',
                 bookmarked ? 'fill-current' : ''
               )}
             />
@@ -95,6 +100,8 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
       </div>
     </button>
   );
-};
+});
+
+ThemeOption.displayName = 'ThemeOption';
 
 export default ThemeOption;
