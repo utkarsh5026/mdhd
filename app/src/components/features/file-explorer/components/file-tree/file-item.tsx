@@ -29,7 +29,7 @@ export const FileItem: React.FC<FileItemProps> = ({
       onContextMenu={onContextMenu}
     >
       <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-      <span className="text-sm truncate flex-1">{node.name}</span>
+      <span className="text-sm truncate flex-1 text-muted-foreground">{node.name}</span>
     </div>
   );
 };

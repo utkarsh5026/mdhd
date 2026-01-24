@@ -41,7 +41,7 @@ export const DirectoryItem: React.FC<DirectoryItemProps> = ({
       ) : (
         <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
       )}
-      <span className="text-sm truncate flex-1 font-medium">{node.name}</span>
+      <span className="text-sm truncate flex-1 text-muted-foreground">{node.name}</span>
     </div>
   );
 };
