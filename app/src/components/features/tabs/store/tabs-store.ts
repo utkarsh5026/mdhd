@@ -74,6 +74,10 @@ interface TabsActions {
   // Find tab by file
   findTabByFileId: (fileId: string) => Tab | undefined;
 
+  // Close tabs by file/path (for delete operations)
+  closeTabByFileId: (fileId: string) => void;
+  closeTabsByPathPrefix: (pathPrefix: string) => void;
+
   // Persistence
   clearPersistedTabs: () => void;
 }
@@ -395,6 +399,24 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           return get().tabs.find((t) => t.sourceFileId === fileId);
         },
 
+        closeTabByFileId: (fileId: string) => {
+          const state = get();
+          const tab = state.tabs.find((t) => t.sourceFileId === fileId);
+          if (tab) {
+            state.closeTab(tab.id);
+          }
+        },
+
+        closeTabsByPathPrefix: (pathPrefix: string) => {
+          const state = get();
+          const tabsToClose = state.tabs.filter(
+            (t) => t.sourcePath && (t.sourcePath === pathPrefix || t.sourcePath.startsWith(pathPrefix + '/'))
+          );
+          for (const tab of tabsToClose) {
+            state.closeTab(tab.id);
+          }
+        },
+
         clearPersistedTabs: () => {
           localStorage.removeItem(STORAGE_KEY);
           set({
@@ -454,6 +476,8 @@ export const useTabsActions = () =>
       getTabById: state.getTabById,
       setShowEmptyState: state.setShowEmptyState,
       findTabByFileId: state.findTabByFileId,
+      closeTabByFileId: state.closeTabByFileId,
+      closeTabsByPathPrefix: state.closeTabsByPathPrefix,
       clearPersistedTabs: state.clearPersistedTabs,
     }))
   );

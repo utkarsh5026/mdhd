@@ -10,6 +10,7 @@ import {
   type StoredFile,
   type UploadProgress,
 } from '@/services/indexeddb';
+import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
 
 interface FileStoreState {
   // Data
@@ -274,6 +275,9 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
 
           await fileStorageDB.deleteFile(id);
 
+          // Close any tab associated with this file
+          useTabsStore.getState().closeTabByFileId(id);
+
           // Clear selection if deleted file was selected
           if (selectedFile?.id === id) {
             set({ selectedFile: null });
@@ -297,6 +301,9 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
           const { selectedFile, expandedDirectories } = get();
 
           await fileStorageDB.deleteDirectoryRecursive(path);
+
+          // Close all tabs for files in this directory
+          useTabsStore.getState().closeTabsByPathPrefix(path);
 
           // Clear selection if deleted file was in this directory
           if (selectedFile?.path.startsWith(path)) {
