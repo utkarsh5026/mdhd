@@ -10,7 +10,7 @@ interface TreeNodeProps {
   expandedPaths: Set<string>;
   onFileClick: (file: StoredFile) => void;
   onDirectoryToggle: (path: string) => void;
-  onDelete: (node: FileTreeNode) => void;
+  onContextMenu: (node: FileTreeNode, position: { x: number; y: number }) => void;
 }
 
 export const TreeNode: React.FC<TreeNodeProps> = ({
@@ -20,10 +20,15 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
   expandedPaths,
   onFileClick,
   onDirectoryToggle,
-  onDelete,
+  onContextMenu,
 }) => {
   const isExpanded = expandedPaths.has(node.path);
   const isSelected = selectedPath === node.path;
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onContextMenu(node, { x: e.clientX, y: e.clientY });
+  };
 
   if (node.type === 'file') {
     return (
@@ -43,7 +48,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
             updatedAt: Date.now(),
           })
         }
-        onDelete={() => onDelete(node)}
+        onContextMenu={handleContextMenu}
       />
     );
   }
@@ -55,7 +60,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
         depth={depth}
         isExpanded={isExpanded}
         onToggle={() => onDirectoryToggle(node.path)}
-        onDelete={() => onDelete(node)}
+        onContextMenu={handleContextMenu}
       />
       {isExpanded && node.children && (
         <div>
@@ -68,7 +73,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
               expandedPaths={expandedPaths}
               onFileClick={onFileClick}
               onDirectoryToggle={onDirectoryToggle}
-              onDelete={onDelete}
+              onContextMenu={onContextMenu}
             />
           ))}
         </div>
