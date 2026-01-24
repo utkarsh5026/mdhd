@@ -17,7 +17,8 @@ import {
   useIsFileLoading,
 } from '../store/file-store';
 import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface FileExplorerSidebarProps {
   className?: string;
@@ -47,6 +48,7 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
     deleteDirectory,
   } = useFileStoreActions();
 
+  const [isOpen, setIsOpen] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [nodeToDelete, setNodeToDelete] = useState<FileTreeNode | null>(null);
 
@@ -102,6 +104,21 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
     );
   }
 
+  if (!isOpen) {
+    return (
+      <div className={cn('flex flex-col items-center bg-background py-2', className, 'w-10')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setIsOpen(true)}
+        >
+          <PanelLeftOpen className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <>
       <DropZone onDrop={handleDropZone} className={cn('flex flex-col bg-background', className)}>
@@ -120,6 +137,14 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
                 onUpload={handleDirectoryUpload}
                 disabled={isUploading}
               />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setIsOpen(false)}
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>
