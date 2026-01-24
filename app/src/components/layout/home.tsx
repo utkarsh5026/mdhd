@@ -1,45 +1,50 @@
-import { useState, useCallback, useEffect } from 'react';
-import { MarkdownViewer } from '@/components/features/content-reading';
-import MarkdownEditor from './markdown-editor';
-import HeroMain from './hero-section';
+import { useState, useCallback } from 'react';
 import Header from './header';
-import { useReadingStore } from '@/components/features/content-reading/store/use-reading-store';
 import { FileExplorerSidebar } from '@/components/features/file-explorer';
+import {
+  TabbedContentArea,
+  FullscreenMarkdownViewer,
+  useTabsActions,
+} from '@/components/features/tabs';
 import type { StoredFile } from '@/services/indexeddb';
 
 const Homepage = () => {
-  const markdownInput = useReadingStore((state) => state.markdownInput);
-  const isInitialized = useReadingStore((state) => state.isInitialized);
-  const hasHydrated = useReadingStore((state) => state._hasHydrated);
-  const initializeReading = useReadingStore((state) => state.initializeReading);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenTabId, setFullscreenTabId] = useState<string | null>(null);
+  const { createTab, setActiveTab, findTabByFileId, setShowEmptyState } = useTabsActions();
 
-  // Auto-resume reading after hydration completes
-  useEffect(() => {
-    if (hasHydrated && isInitialized && markdownInput.trim()) {
-      setIsFullscreen(true);
-    }
-  }, [hasHydrated, isInitialized, markdownInput]);
-
-  const handleStartReading = useCallback(() => {
-    if (!markdownInput.trim()) return;
-    setIsFullscreen(true);
-  }, [markdownInput]);
+  const handleEnterFullscreen = useCallback((tabId: string) => {
+    setFullscreenTabId(tabId);
+  }, []);
 
   const handleExitFullscreen = useCallback(() => {
-    setIsFullscreen(false);
+    setFullscreenTabId(null);
   }, []);
 
   const handleFileSelect = useCallback(
     (file: StoredFile) => {
-      initializeReading(file.content);
-      setIsFullscreen(true);
+      // Check if a tab already exists for this file
+      const existingTab = findTabByFileId(file.id);
+
+      if (existingTab) {
+        // Activate existing tab
+        setActiveTab(existingTab.id);
+        setShowEmptyState(false);
+      } else {
+        // Create new tab for this file
+        createTab(file.content, file.name, 'file', file.id, file.path);
+      }
     },
-    [initializeReading]
+    [createTab, setActiveTab, findTabByFileId, setShowEmptyState]
   );
 
-  if (isFullscreen) {
-    return <MarkdownViewer markdown={markdownInput} exitFullScreen={handleExitFullscreen} />;
+  // Fullscreen mode
+  if (fullscreenTabId) {
+    return (
+      <FullscreenMarkdownViewer
+        tabId={fullscreenTabId}
+        onExit={handleExitFullscreen}
+      />
+    );
   }
 
   return (
@@ -52,22 +57,8 @@ const Homepage = () => {
           onFileSelect={handleFileSelect}
         />
 
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-auto">
-          <div className="container mx-auto px-6 py-12">
-            {/* Hero Section */}
-            <HeroMain />
-
-            {/* Editor */}
-            <div className="max-w-3xl mx-auto">
-              <MarkdownEditor
-                markdownInput={markdownInput}
-                setMarkdownInput={initializeReading}
-                handleStartReading={handleStartReading}
-              />
-            </div>
-          </div>
-        </div>
+        {/* Main Content Area with Tabs */}
+        <TabbedContentArea onEnterFullscreen={handleEnterFullscreen} />
       </div>
     </div>
   );
