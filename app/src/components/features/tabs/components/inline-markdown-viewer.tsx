@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Maximize2, Settings, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence } from 'framer-motion';
@@ -15,6 +15,7 @@ import {
   ScrollContentReader,
 } from '@/components/features/content-reading/components/layout';
 import { useControls } from '@/components/features/content-reading/hooks';
+import { useTabNavigation } from '../hooks/use-tab-navigation';
 import { useTabsStore } from '../store/tabs-store';
 
 interface InlineMarkdownViewerProps {
@@ -142,78 +143,29 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
   ({ tabId, onEnterFullscreen }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const [isTransitioning, setIsTransitioning] = useState(false);
 
     const pendingFloatingPickerOpen = useThemeStore((state) => state.pendingFloatingPickerOpen);
     const openFloatingPicker = useThemeStore((state) => state.openFloatingPicker);
 
-    // Get tab data from store
     const tab = useTabsStore((state) => state.tabs.find((t) => t.id === tabId));
-    const updateTabReadingState = useTabsStore((state) => state.updateTabReadingState);
 
-    // Extract reading state from tab
-    const sections = useMemo(() => tab?.readingState.sections ?? [], [tab?.readingState.sections]);
-    const readSections = useMemo(
-      () => tab?.readingState.readSections ?? new Set<number>(),
-      [tab?.readingState.readSections]
-    );
-    const currentIndex = tab?.readingState.currentIndex ?? 0;
-    const readingMode = tab?.readingState.readingMode ?? 'card';
-    const scrollProgress = tab?.readingState.scrollProgress ?? 0;
+    const {
+      sections,
+      readSections,
+      currentIndex,
+      readingMode,
+      scrollProgress,
+      isTransitioning,
+      goToNext,
+      goToPrevious,
+      changeSection,
+      markSectionAsRead,
+      getSection,
+      handleScrollProgress,
+    } = useTabNavigation(tabId);
 
-    // Navigation functions
-    const changeSection = useCallback(
-      (newIndex: number) => {
-        if (!tab || newIndex < 0 || newIndex >= sections.length) return;
+    const scrollRef = React.useRef<HTMLDivElement>(null);
 
-        setIsTransitioning(true);
-
-        setTimeout(() => {
-          const newReadSections = new Set(readSections);
-          newReadSections.add(newIndex);
-
-          updateTabReadingState(tabId, {
-            currentIndex: newIndex,
-            readSections: newReadSections,
-          });
-          setIsTransitioning(false);
-        }, 200);
-      },
-      [tab, tabId, sections.length, readSections, updateTabReadingState]
-    );
-
-    const goToNext = useCallback(() => {
-      if (currentIndex < sections.length - 1) {
-        changeSection(currentIndex + 1);
-      }
-    }, [currentIndex, sections.length, changeSection]);
-
-    const goToPrevious = useCallback(() => {
-      if (currentIndex > 0) {
-        changeSection(currentIndex - 1);
-      }
-    }, [currentIndex, changeSection]);
-
-    const markSectionAsRead = useCallback(
-      (index: number) => {
-        if (!tab) return;
-        const newReadSections = new Set(readSections);
-        newReadSections.add(index);
-        updateTabReadingState(tabId, { readSections: newReadSections });
-      },
-      [tab, tabId, readSections, updateTabReadingState]
-    );
-
-    const getSection = useCallback(
-      (index: number) => {
-        if (index < 0 || index >= sections.length) return null;
-        return sections[index];
-      },
-      [sections]
-    );
-
-    // Controls hook for visibility
     const { isControlsVisible, handleInteraction, handleDoubleClick } = useControls({
       goToNext,
       goToPrevious,
@@ -251,14 +203,6 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
         }
       },
       [readingMode, sections, currentIndex, changeSection, markSectionAsRead]
-    );
-
-    // Handle scroll progress update
-    const handleScrollProgress = useCallback(
-      (progress: number) => {
-        updateTabReadingState(tabId, { scrollProgress: progress });
-      },
-      [tabId, updateTabReadingState]
     );
 
     // Handle section visibility

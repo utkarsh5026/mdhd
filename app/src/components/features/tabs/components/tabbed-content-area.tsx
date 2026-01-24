@@ -22,7 +22,18 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
   const activeTabId = useActiveTabId();
   const activeTab = useActiveTab();
   const showEmptyState = useShowEmptyState();
-  const { createTab, closeTab, setActiveTab, setShowEmptyState } = useTabsActions();
+  const {
+    createTab,
+    closeTab,
+    setActiveTab,
+    setShowEmptyState,
+    closeAllTabs,
+    closeOtherTabs,
+    closeTabsToTheRight,
+    closeTabsToTheLeft,
+    closeTabsByPathPrefix,
+    closeTabsBySourceType,
+  } = useTabsActions();
 
   const markdownInput = useReadingStore((state) => state.markdownInput);
   const initializeReading = useReadingStore((state) => state.initializeReading);
@@ -65,6 +76,12 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
           onTabSelect={handleTabSelect}
           onTabClose={handleTabClose}
           onNewTab={handleNewTab}
+          onCloseAllTabs={closeAllTabs}
+          onCloseOtherTabs={closeOtherTabs}
+          onCloseTabsToTheRight={closeTabsToTheRight}
+          onCloseTabsToTheLeft={closeTabsToTheLeft}
+          onCloseTabsByPathPrefix={closeTabsByPathPrefix}
+          onCloseTabsBySourceType={closeTabsBySourceType}
         />
       )}
 

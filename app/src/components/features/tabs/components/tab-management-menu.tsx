@@ -33,11 +33,17 @@ interface MenuItemProps {
 }
 
 const MenuItem: React.FC<MenuItemProps> = ({ icon: Icon, label, count, disabled, onClick }) => (
-  <DropdownMenuItem onClick={onClick} disabled={disabled} className="cursor-pointer">
-    <Icon className="mr-2 h-4 w-4" />
-    {label}
+  <DropdownMenuItem
+    onClick={onClick}
+    disabled={disabled}
+    className="cursor-pointer gap-2 transition-colors duration-150"
+  >
+    <Icon className="h-4 w-4 text-muted-foreground" />
+    <span className="flex-1">{label}</span>
     {count !== undefined && count > 0 && (
-      <span className="ml-auto text-xs text-muted-foreground">{count}</span>
+      <span className="ml-2 rounded-md bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+        {count}
+      </span>
     )}
   </DropdownMenuItem>
 );
@@ -196,30 +202,35 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0 rounded-none border-l border-border/30 hover:bg-primary/10"
+            className="h-9 w-9 shrink-0 rounded-none border-l border-border/30 transition-all duration-150 hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary"
             aria-label="Tab management menu"
             disabled={hasNoTabs}
           >
-            <MoreHorizontal className="w-4 h-4" />
+            <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 font-cascadia-code rounded-2xl">
-          <DropdownMenuLabel>Tab Management</DropdownMenuLabel>
-          <DropdownMenuSeparator />
+        <DropdownMenuContent align="end" className="w-60 rounded-xl border-border/50 font-cascadia-code shadow-lg">
+          <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Tab Management
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-border/50" />
 
           {menuItems.map((item, index) => {
             if ('separator' in item) {
-              return <DropdownMenuSeparator key={`sep-${index}`} />;
+              return <DropdownMenuSeparator key={`sep-${index}`} className="bg-border/50" />;
             }
 
             if ('folderSubmenu' in item) {
               return (
                 <DropdownMenuSub key="folder-submenu">
-                  <DropdownMenuSubTrigger disabled={hasNoFolders} className="cursor-pointer">
-                    <FolderX className="mr-2 h-4 w-4" />
-                    Close tabs from folder
+                  <DropdownMenuSubTrigger
+                    disabled={hasNoFolders}
+                    className="cursor-pointer gap-2 transition-colors duration-150"
+                  >
+                    <FolderX className="h-4 w-4 text-muted-foreground" />
+                    <span className="flex-1">Close tabs from folder</span>
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-56">
+                  <DropdownMenuSubContent className="w-56 rounded-lg border-border/50 shadow-md">
                     {uniqueFolders.length > 0 ? (
                       uniqueFolders.map(([folderPath, folderName]) => {
                         const tabCount = tabs.filter((t) =>
@@ -229,17 +240,17 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
                           <DropdownMenuItem
                             key={folderPath}
                             onClick={() => onCloseByPathPrefix(folderPath)}
-                            className="cursor-pointer"
+                            className="cursor-pointer gap-2 transition-colors duration-150"
                           >
-                            <span className="truncate">{folderName}</span>
-                            <span className="ml-auto text-xs text-muted-foreground">
+                            <span className="flex-1 truncate">{folderName}</span>
+                            <span className="rounded-md bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
                               {tabCount}
                             </span>
                           </DropdownMenuItem>
                         );
                       })
                     ) : (
-                      <DropdownMenuItem disabled className="text-muted-foreground">
+                      <DropdownMenuItem disabled className="text-muted-foreground/70">
                         No folders available
                       </DropdownMenuItem>
                     )}
