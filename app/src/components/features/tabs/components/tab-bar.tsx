@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence } from 'framer-motion';
 import TabItem from './tab-item';
+import TabManagementMenu from './tab-management-menu';
 import type { Tab } from '../store/tabs-store';
 
 interface TabBarProps {
@@ -12,10 +13,28 @@ interface TabBarProps {
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
   onNewTab: () => void;
+  onCloseAllTabs: () => void;
+  onCloseOtherTabs: (tabId: string) => void;
+  onCloseTabsToTheRight: (tabId: string) => void;
+  onCloseTabsToTheLeft: (tabId: string) => void;
+  onCloseTabsByPathPrefix: (pathPrefix: string) => void;
+  onCloseTabsBySourceType: (sourceType: 'paste' | 'file') => void;
 }
 
 const TabBar: React.FC<TabBarProps> = memo(
-  ({ tabs, activeTabId, onTabSelect, onTabClose, onNewTab }) => {
+  ({
+    tabs,
+    activeTabId,
+    onTabSelect,
+    onTabClose,
+    onNewTab,
+    onCloseAllTabs,
+    onCloseOtherTabs,
+    onCloseTabsToTheRight,
+    onCloseTabsToTheLeft,
+    onCloseTabsByPathPrefix,
+    onCloseTabsBySourceType,
+  }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const handleScrollLeft = useCallback(() => {
@@ -106,6 +125,18 @@ const TabBar: React.FC<TabBarProps> = memo(
         >
           <Plus className="w-4 h-4" />
         </Button>
+
+        {/* Tab management menu */}
+        <TabManagementMenu
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onCloseAll={onCloseAllTabs}
+          onCloseOthers={onCloseOtherTabs}
+          onCloseToTheRight={onCloseTabsToTheRight}
+          onCloseToTheLeft={onCloseTabsToTheLeft}
+          onCloseByPathPrefix={onCloseTabsByPathPrefix}
+          onCloseBySourceType={onCloseTabsBySourceType}
+        />
       </div>
     );
   }

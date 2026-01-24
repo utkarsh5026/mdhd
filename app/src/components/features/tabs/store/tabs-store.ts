@@ -78,6 +78,11 @@ interface TabsActions {
   closeTabByFileId: (fileId: string) => void;
   closeTabsByPathPrefix: (pathPrefix: string) => void;
 
+  // Tab management menu actions
+  closeTabsToTheRight: (tabId: string) => void;
+  closeTabsToTheLeft: (tabId: string) => void;
+  closeTabsBySourceType: (sourceType: 'paste' | 'file') => void;
+
   // Persistence
   clearPersistedTabs: () => void;
 }
@@ -417,6 +422,36 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           }
         },
 
+        closeTabsToTheRight: (tabId: string) => {
+          const state = get();
+          const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
+          if (tabIndex === -1) return;
+
+          const tabsToRemove = state.tabs.slice(tabIndex + 1);
+          for (const tab of tabsToRemove) {
+            state.closeTab(tab.id);
+          }
+        },
+
+        closeTabsToTheLeft: (tabId: string) => {
+          const state = get();
+          const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
+          if (tabIndex === -1) return;
+
+          const tabsToRemove = state.tabs.slice(0, tabIndex);
+          for (const tab of [...tabsToRemove].reverse()) {
+            state.closeTab(tab.id);
+          }
+        },
+
+        closeTabsBySourceType: (sourceType: 'paste' | 'file') => {
+          const state = get();
+          const tabsToClose = state.tabs.filter((t) => t.sourceType === sourceType);
+          for (const tab of tabsToClose) {
+            state.closeTab(tab.id);
+          }
+        },
+
         clearPersistedTabs: () => {
           localStorage.removeItem(STORAGE_KEY);
           set({
@@ -478,6 +513,9 @@ export const useTabsActions = () =>
       findTabByFileId: state.findTabByFileId,
       closeTabByFileId: state.closeTabByFileId,
       closeTabsByPathPrefix: state.closeTabsByPathPrefix,
+      closeTabsToTheRight: state.closeTabsToTheRight,
+      closeTabsToTheLeft: state.closeTabsToTheLeft,
+      closeTabsBySourceType: state.closeTabsBySourceType,
       clearPersistedTabs: state.clearPersistedTabs,
     }))
   );
