@@ -3,6 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
 import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
+import { attempt } from '@/utils/functions/error';
 
 const STORAGE_VERSION = 1;
 const STORAGE_KEY = 'mdhd-tabs-storage';
@@ -115,34 +116,39 @@ const customTabsStorage = {
     const str = localStorage.getItem(name);
     if (!str) return null;
 
-    try {
+    const getParsedTabs = () => {
       const parsed: PersistedTabsState = JSON.parse(str);
-      // Convert readSections arrays back to Sets and re-parse sections for each tab
-      if (parsed.state?.tabs) {
-        parsed.state.tabs = parsed.state.tabs.map((tab) => {
-          const { metadata, sections } = parseMarkdownIntoSections(tab.content);
-          return {
-            ...tab,
-            readingState: {
-              ...tab.readingState,
-              readSections: new Set(tab.readingState.readSections || []),
-              viewMode: tab.readingState.viewMode || 'preview',
-              sections,
-              isInitialized: sections.length > 0,
-              metadata,
-            },
-          };
-        }) as typeof parsed.state.tabs;
-      }
+      if (!parsed.state?.tabs) return parsed;
+
+      const updated = parsed.state.tabs.map((tab) => {
+        const { metadata, sections } = parseMarkdownIntoSections(tab.content);
+        return {
+          ...tab,
+          readingState: {
+            ...tab.readingState,
+            readSections: new Set(tab.readingState.readSections || []),
+            viewMode: tab.readingState.viewMode || 'preview',
+            sections,
+            isInitialized: sections.length > 0,
+            metadata,
+          },
+        };
+      }) as typeof parsed.state.tabs;
+
+      parsed.state.tabs = updated;
       return parsed;
-    } catch (e) {
-      console.error('Error parsing tabs session:', e);
+    }
+
+    const [error, parsedTabs] = attempt(getParsedTabs);
+    if (error) {
+      console.error('Error parsing tabs session:', error);
       return null;
     }
+    return parsedTabs;
   },
 
   setItem: (name: string, value: PersistedTabsState) => {
-    try {
+    const storeTabState = () => {
       const serialized = {
         ...value,
         state: {
@@ -158,8 +164,11 @@ const customTabsStorage = {
         },
       };
       localStorage.setItem(name, JSON.stringify(serialized));
-    } catch (e) {
-      console.error('Error saving tabs session:', e);
+    }
+
+    const [error] = attempt(storeTabState);
+    if (error) {
+      console.error('Error saving tabs session:', error);
     }
   },
 
@@ -490,14 +499,14 @@ export const useTabsStore = create<TabsState & TabsActions>()(
       {
         name: STORAGE_KEY,
         storage: customTabsStorage,
-        partialize: (state) =>
+        partialize: ({ tabs, activeTabId, showEmptyState, version, untitledCounter, isHeaderVisible }) =>
           ({
-            tabs: state.tabs,
-            activeTabId: state.activeTabId,
-            showEmptyState: state.showEmptyState,
-            version: state.version,
-            untitledCounter: state.untitledCounter,
-            isHeaderVisible: state.isHeaderVisible,
+            tabs,
+            activeTabId,
+            showEmptyState,
+            version,
+            untitledCounter,
+            isHeaderVisible,
           }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
         version: STORAGE_VERSION,
         onRehydrateStorage: () => (state, error) => {
