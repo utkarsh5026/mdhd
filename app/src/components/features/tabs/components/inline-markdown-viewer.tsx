@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Maximize2, Settings, List } from 'lucide-react';
+import { Settings, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import SectionsSheet from '@/components/features/content-reading/components/table-of-contents/sections-sheet';
 import ReadingSettingsSheet from '@/components/features/settings/components/reading-settings-selector';
 import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
+import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 import {
   NavigationControls,
   DesktopProgressIndicator,
@@ -27,114 +27,46 @@ interface InlineMarkdownViewerProps {
 }
 
 interface InlineHeaderProps {
-  onFullscreen: () => void;
   onSettings: () => void;
   onMenu: () => void;
-  isVisible: boolean;
 }
 
 const InlineHeader: React.FC<InlineHeaderProps> = memo(
-  ({ onFullscreen, onSettings, onMenu, isVisible }) => {
-    if (!isVisible) return null;
-
+  ({ onSettings, onMenu }) => {
     return (
-      <div
-        className={cn(
-          'relative w-full z-50',
-          'animate-in fade-in slide-in-from-top-4 duration-500'
-        )}
-      >
-        <div className="relative flex items-center justify-between p-3 sm:p-4">
-          {/* Left: Fullscreen button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={onFullscreen}
-                className={cn(
-                  'relative group touch-manipulation',
-                  'p-2.5 sm:p-3 rounded-full',
-                  'transition-all duration-300 ease-out',
-                  'border-2 backdrop-blur-md shadow-lg',
-                  'bg-cardBg/80 border-border/50 text-foreground',
-                  'hover:border-primary/50 hover:bg-cardBg/90',
-                  'hover:shadow-xl hover:scale-105',
-                  'hover:text-primary',
-                  'active:scale-95'
-                )}
-              >
-                <Maximize2 className="h-4 w-4 sm:h-5 sm:w-5 transition-all duration-300 group-hover:scale-110" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              sideOffset={8}
-              className="font-cascadia-code text-xs rounded-2xl backdrop-blur-2xl bg-background/20 text-primary"
+      <div className="absolute top-0 right-0 z-50 flex items-center gap-1 p-2">
+        <TooltipButton
+          tooltipText="Reading Settings"
+          button={
+            <button
+              onClick={onSettings}
+              className={cn(
+                'p-1.5 rounded-md',
+                'text-muted-foreground hover:text-foreground',
+                'hover:bg-accent/50',
+                'transition-colors'
+              )}
             >
-              Fullscreen
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Right: Settings and Menu */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={onSettings}
-                  className={cn(
-                    'relative group touch-manipulation',
-                    'p-2.5 sm:p-3 rounded-full',
-                    'transition-all duration-300 ease-out',
-                    'border-2 backdrop-blur-md shadow-lg',
-                    'bg-cardBg/80 border-border/50 text-foreground',
-                    'hover:border-border hover:bg-cardBg/90',
-                    'hover:shadow-xl hover:scale-105',
-                    'hover:text-primary',
-                    'active:scale-95'
-                  )}
-                >
-                  <Settings className="h-4 w-4 sm:h-5 sm:w-5 transition-all duration-300 group-hover:scale-110" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                sideOffset={8}
-                className="font-cascadia-code text-xs rounded-2xl backdrop-blur-2xl bg-background/20 text-primary"
-              >
-                Reading Settings
-              </TooltipContent>
-            </Tooltip>
-
-            <div className="w-px h-5 sm:h-6 bg-linear-to-b from-transparent via-border to-transparent" />
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={onMenu}
-                  className={cn(
-                    'relative group touch-manipulation',
-                    'p-2.5 sm:p-3 rounded-full',
-                    'transition-all duration-300 ease-out',
-                    'border-2 backdrop-blur-md shadow-lg',
-                    'bg-cardBg/80 border-border/50 text-foreground',
-                    'hover:border-border hover:bg-cardBg/90',
-                    'hover:shadow-xl hover:scale-105',
-                    'hover:text-primary',
-                    'active:scale-95'
-                  )}
-                >
-                  <List className="h-4 w-4 sm:h-5 sm:w-5 transition-all duration-300 group-hover:scale-110" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                sideOffset={8}
-                className="font-cascadia-code text-xs rounded-2xl backdrop-blur-2xl bg-background/20 text-primary"
-              >
-                Table of Contents
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
+              <Settings className="h-4 w-4" />
+            </button>
+          }
+        />
+        <TooltipButton
+          tooltipText="Table of Contents"
+          button={
+            <button
+              onClick={onMenu}
+              className={cn(
+                'p-1.5 rounded-md',
+                'text-muted-foreground hover:text-foreground',
+                'hover:bg-accent/50',
+                'transition-colors'
+              )}
+            >
+              <List className="h-4 w-4" />
+            </button>
+          }
+        />
       </div>
     );
   }
@@ -143,7 +75,7 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
 InlineHeader.displayName = 'InlineHeader';
 
 const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
-  ({ tabId, viewMode, onContentChange, onEnterFullscreen }) => {
+  ({ tabId, viewMode, onContentChange }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -284,22 +216,16 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
 
         {/* Header - only show in preview mode */}
         {viewMode === 'preview' && (
-          <AnimatePresence>
-            <div className="absolute top-0 left-0 right-0 z-50">
-              <InlineHeader
-                onFullscreen={onEnterFullscreen}
-                onSettings={() => {
-                  setSettingsOpen(true);
-                  handleInteraction();
-                }}
-                onMenu={() => {
-                  setMenuOpen(true);
-                  handleInteraction();
-                }}
-                isVisible={isControlsVisible}
-              />
-            </div>
-          </AnimatePresence>
+          <InlineHeader
+            onSettings={() => {
+              setSettingsOpen(true);
+              handleInteraction();
+            }}
+            onMenu={() => {
+              setMenuOpen(true);
+              handleInteraction();
+            }}
+          />
         )}
 
         {/* Navigation Controls (card mode only, preview mode only) */}
