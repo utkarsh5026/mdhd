@@ -58,7 +58,7 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = memo(
               </span>
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={8}>
+          <TooltipContent side="bottom" sideOffset={8} className='font-cascadia-code rounded-xl'>
             {isPreview ? 'Switch to Edit Mode (Edit raw markdown)' : 'Switch to Preview Mode (View rendered)'}
           </TooltipContent>
         </Tooltip>

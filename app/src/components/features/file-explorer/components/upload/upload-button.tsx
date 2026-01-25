@@ -45,7 +45,7 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
             {isDirectory ? <FolderUp className="h-4 w-4" /> : <File className="h-4 w-4" />}
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">
+        <TooltipContent side="bottom" className="font-cascadia-code">
           <p>{isDirectory ? 'Upload folder' : 'Upload files'}</p>
         </TooltipContent>
       </Tooltip>
