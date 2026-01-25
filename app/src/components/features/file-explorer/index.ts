@@ -16,4 +16,9 @@ export {
 } from './store/file-store';
 
 // Types (re-export from indexeddb)
-export type { FileTreeNode, StoredFile, StoredDirectory, UploadProgress } from '@/services/indexeddb';
+export type {
+  FileTreeNode,
+  StoredFile,
+  StoredDirectory,
+  UploadProgress,
+} from '@/services/indexeddb';

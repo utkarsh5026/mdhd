@@ -107,12 +107,7 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
   if (!isOpen) {
     return (
       <div className={cn('flex flex-col items-center bg-background py-2', className, 'w-10')}>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={() => setIsOpen(true)}
-        >
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(true)}>
           <PanelLeftOpen className="h-4 w-4" />
         </Button>
       </div>
@@ -121,17 +116,16 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
 
   return (
     <>
-      <DropZone onDrop={handleDropZone} className={cn('flex flex-col overflow-y-auto bg-background', className)}>
+      <DropZone
+        onDrop={handleDropZone}
+        className={cn('flex flex-col overflow-y-auto bg-background', className)}
+      >
         {/* Header */}
         <div className="px-3 py-2 border-b border-border/50">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">Files</h2>
             <div className="flex items-center gap-1">
-              <UploadButton
-                variant="files"
-                onUpload={handleFilesUpload}
-                disabled={isUploading}
-              />
+              <UploadButton variant="files" onUpload={handleFilesUpload} disabled={isUploading} />
               <UploadButton
                 variant="directory"
                 onUpload={handleDirectoryUpload}

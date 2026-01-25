@@ -16,9 +16,7 @@ export const useSaveShortcut = (): UseSaveShortcutReturn => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const activeTab = useTabsStore((state) =>
-    state.tabs.find((t) => t.id === state.activeTabId)
-  );
+  const activeTab = useTabsStore((state) => state.tabs.find((t) => t.id === state.activeTabId));
   const updateTabSource = useTabsStore((state) => state.updateTabSource);
 
   // Handle Ctrl+S

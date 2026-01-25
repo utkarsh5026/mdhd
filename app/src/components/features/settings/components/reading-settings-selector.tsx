@@ -1,4 +1,12 @@
-import React, { lazy, Suspense, useState, memo, useEffect, startTransition, useCallback } from 'react';
+import React, {
+  lazy,
+  Suspense,
+  useState,
+  memo,
+  useEffect,
+  startTransition,
+  useCallback,
+} from 'react';
 import { Paintbrush, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

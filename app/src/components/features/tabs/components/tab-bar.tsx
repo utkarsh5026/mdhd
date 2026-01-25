@@ -130,14 +130,8 @@ const TabBar: React.FC<TabBarProps> = memo(
         >
           <Plus className="w-4 h-4" />
         </Button>
-
         {/* View mode toggle */}
-        <ViewModeToggle
-          viewMode={viewMode}
-          onToggle={onViewModeToggle}
-          disabled={!activeTabId}
-        />
-
+        <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} disabled={!activeTabId} />
         {/* Tab management menu */}
         <TabManagementMenu
           tabs={tabs}

@@ -58,13 +58,8 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
   const clearPersistedSession = useReadingStore((state) => state.clearPersistedSession);
 
   // Save shortcut hook
-  const {
-    showSaveDialog,
-    setShowSaveDialog,
-    defaultFileName,
-    handleSaveToFile,
-    isSaving,
-  } = useSaveShortcut();
+  const { showSaveDialog, setShowSaveDialog, defaultFileName, handleSaveToFile, isSaving } =
+    useSaveShortcut();
 
   const handleNewTab = useCallback(() => {
     createUntitledTab();
@@ -105,7 +100,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
   const shouldShowEmptyState = showEmptyState || tabs.length === 0 || isActiveTabEmpty;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden border-2 rounded-2xl m-2">
+    <div className="flex-1 flex flex-col overflow-hidden rounded-2xl">
       {/* Tab Bar - only show if there are tabs */}
       {tabs.length > 0 && (
         <TabBar

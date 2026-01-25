@@ -407,12 +407,12 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) =>
               t.id === tabId
                 ? {
-                  ...t,
-                  readingState: {
-                    ...t.readingState,
-                    ...newReadingState,
-                  },
-                }
+                    ...t,
+                    readingState: {
+                      ...t.readingState,
+                      ...newReadingState,
+                    },
+                  }
                 : t
             ),
           }));
@@ -453,11 +453,11 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) =>
               t.id === tabId
                 ? {
-                  ...t,
-                  sourceType,
-                  sourceFileId,
-                  sourcePath,
-                }
+                    ...t,
+                    sourceType,
+                    sourceFileId,
+                    sourcePath,
+                  }
                 : t
             ),
           }));
@@ -486,7 +486,9 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         closeTabsByPathPrefix: (pathPrefix: string) => {
           const state = get();
           const tabsToClose = state.tabs.filter(
-            (t) => t.sourcePath && (t.sourcePath === pathPrefix || t.sourcePath.startsWith(pathPrefix + '/'))
+            (t) =>
+              t.sourcePath &&
+              (t.sourcePath === pathPrefix || t.sourcePath.startsWith(pathPrefix + '/'))
           );
           for (const tab of tabsToClose) {
             state.closeTab(tab.id);
@@ -537,13 +539,14 @@ export const useTabsStore = create<TabsState & TabsActions>()(
       {
         name: STORAGE_KEY,
         storage: customTabsStorage,
-        partialize: (state) => ({
-          tabs: state.tabs,
-          activeTabId: state.activeTabId,
-          showEmptyState: state.showEmptyState,
-          version: state.version,
-          untitledCounter: state.untitledCounter,
-        }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        partialize: (state) =>
+          ({
+            tabs: state.tabs,
+            activeTabId: state.activeTabId,
+            showEmptyState: state.showEmptyState,
+            version: state.version,
+            untitledCounter: state.untitledCounter,
+          }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
         version: STORAGE_VERSION,
         onRehydrateStorage: () => (state, error) => {
           if (error) {

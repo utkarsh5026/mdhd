@@ -15,11 +15,7 @@ interface NavigationButtonProps {
   icon: LucideIcon;
 }
 
-const NavigationButton: React.FC<NavigationButtonProps> = ({
-  onClick,
-  disabled,
-  icon: Icon,
-}) => (
+const NavigationButton: React.FC<NavigationButtonProps> = ({ onClick, disabled, icon: Icon }) => (
   <button
     onClick={onClick}
     disabled={disabled}

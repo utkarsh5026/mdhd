@@ -33,17 +33,13 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = memo(
                 <Eye
                   className={cn(
                     'w-4 h-4 absolute transition-all duration-200',
-                    isPreview
-                      ? 'opacity-100 scale-100 text-primary'
-                      : 'opacity-0 scale-75'
+                    isPreview ? 'opacity-100 scale-100 text-primary' : 'opacity-0 scale-75'
                   )}
                 />
                 <Code
                   className={cn(
                     'w-4 h-4 absolute transition-all duration-200',
-                    !isPreview
-                      ? 'opacity-100 scale-100 text-primary'
-                      : 'opacity-0 scale-75'
+                    !isPreview ? 'opacity-100 scale-100 text-primary' : 'opacity-0 scale-75'
                   )}
                 />
               </div>
@@ -58,8 +54,10 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = memo(
               </span>
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={8} className='font-cascadia-code rounded-xl'>
-            {isPreview ? 'Switch to Edit Mode (Edit raw markdown)' : 'Switch to Preview Mode (View rendered)'}
+          <TooltipContent side="bottom" sideOffset={8} className="font-cascadia-code rounded-xl">
+            {isPreview
+              ? 'Switch to Edit Mode (Edit raw markdown)'
+              : 'Switch to Preview Mode (View rendered)'}
           </TooltipContent>
         </Tooltip>
       </div>

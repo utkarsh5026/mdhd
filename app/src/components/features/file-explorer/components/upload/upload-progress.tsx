@@ -7,7 +7,8 @@ interface UploadProgressIndicatorProps {
 }
 
 export const UploadProgressIndicator: React.FC<UploadProgressIndicatorProps> = ({ progress }) => {
-  const percentage = progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0;
+  const percentage =
+    progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0;
 
   return (
     <div className="px-3 py-2 space-y-1">

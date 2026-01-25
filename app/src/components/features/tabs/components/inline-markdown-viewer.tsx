@@ -235,10 +235,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="h-full"
             >
-              <MarkdownCodeMirrorEditor
-                content={tab.content}
-                onChange={onContentChange}
-              />
+              <MarkdownCodeMirrorEditor content={tab.content} onChange={onContentChange} />
             </motion.div>
           ) : readingMode === 'card' ? (
             <motion.div

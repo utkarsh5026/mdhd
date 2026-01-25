@@ -209,7 +209,10 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-60 rounded-xl border-border/50 font-cascadia-code shadow-lg">
+        <DropdownMenuContent
+          align="end"
+          className="w-60 rounded-xl border-border/50 font-cascadia-code shadow-lg"
+        >
           <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
             Tab Management
           </DropdownMenuLabel>

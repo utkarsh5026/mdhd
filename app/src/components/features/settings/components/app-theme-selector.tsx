@@ -168,8 +168,7 @@ const AppThemeSelector: React.FC<AppThemeSelectorProps> = ({ onRequestCloseSheet
         className="w-full justify-center gap-2 rounded-2xl border-none opacity-70 hover:opacity-100 shadow-sm hover:shadow-md"
         onClick={handleLaunchPicker}
       >
-        🎨
-        Launch Theme Picker
+        🎨 Launch Theme Picker
       </Button>
 
       <ScrollArea className="max-h-full pr-2">
