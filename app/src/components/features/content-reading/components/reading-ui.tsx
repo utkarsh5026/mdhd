@@ -13,10 +13,11 @@ import {
 } from './layout';
 import { useControls } from '@/components/features/content-reading/hooks';
 import { AnimatePresence } from 'framer-motion';
-import type { MarkdownSection } from '@/services/section/parsing';
+import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
 
 export interface ReadingUIProps {
   markdown: string;
+  metadata: MarkdownMetadata | null;
   sections: MarkdownSection[];
   readSections: Set<number>;
   currentIndex: number;
@@ -40,6 +41,7 @@ export interface ReadingUIProps {
 const ReadingUI: React.FC<ReadingUIProps> = memo(
   ({
     markdown,
+    metadata,
     sections,
     readSections,
     currentIndex,
@@ -138,6 +140,8 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
         {readingMode === 'card' ? (
           <ContentReader
             markdown={markdown}
+            metadata={metadata}
+            currentIndex={currentIndex}
             goToNext={goToNext}
             goToPrevious={goToPrevious}
             isTransitioning={isTransitioning}
@@ -148,6 +152,7 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
         ) : (
           <ScrollContentReader
             sections={sections}
+            metadata={metadata}
             scrollRef={scrollRef}
             handleDoubleClick={handleContentDoubleClick}
             onScrollProgress={onScrollProgressChange}

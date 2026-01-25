@@ -72,18 +72,18 @@ const TabBar: React.FC<TabBarProps> = memo(
     }, []);
 
     return (
-      <div className="flex items-center bg-muted/20 border-b border-border/50">
+      <div className="flex items-center bg-muted/10 border-b border-border/20">
         {' '}
         {/* Scroll left button */}
         {tabs.length > 3 && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-8 shrink-0 rounded-none border-r border-border/30"
+            className="h-7 w-7 shrink-0 rounded-none border-r border-border/10"
             onClick={handleScrollLeft}
             aria-label="Scroll tabs left"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
           </Button>
         )}
         {/* Tabs container */}
@@ -115,22 +115,22 @@ const TabBar: React.FC<TabBarProps> = memo(
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-8 shrink-0 rounded-none border-l border-border/30"
+            className="h-7 w-7 shrink-0 rounded-none border-l border-border/10"
             onClick={handleScrollRight}
             aria-label="Scroll tabs right"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </Button>
         )}
         {/* New tab button */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 rounded-none border-l border-border/30 hover:bg-primary/10"
+          className="h-7 w-7 shrink-0 rounded-none border-l border-border/10 hover:bg-primary/10"
           onClick={onNewTab}
           aria-label="Create new tab"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
         </Button>
         {/* View mode toggle */}
         <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} disabled={!activeTabId} />

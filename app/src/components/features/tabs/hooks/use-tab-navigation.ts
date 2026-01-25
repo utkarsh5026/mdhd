@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useTabsStore } from '../store/tabs-store';
-import type { MarkdownSection } from '@/services/section/parsing';
+import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 
 interface UseTabNavigationReturn {
   sections: MarkdownSection[];
@@ -15,6 +15,7 @@ interface UseTabNavigationReturn {
   markSectionAsRead: (index: number) => void;
   getSection: (index: number) => MarkdownSection | null;
   handleScrollProgress: (progress: number) => void;
+  metadata: MarkdownMetadata | null;
 }
 
 /**
@@ -28,6 +29,7 @@ export const useTabNavigation = (tabId: string): UseTabNavigationReturn => {
   const updateTabReadingState = useTabsStore((state) => state.updateTabReadingState);
 
   const sections = useMemo(() => tab?.readingState.sections ?? [], [tab?.readingState.sections]);
+  const metadata = useMemo(() => tab?.readingState.metadata ?? null, [tab?.readingState.metadata]);
   const readSections = useMemo(
     () => tab?.readingState.readSections ?? new Set<number>(),
     [tab?.readingState.readSections]
@@ -105,6 +107,7 @@ export const useTabNavigation = (tabId: string): UseTabNavigationReturn => {
     changeSection,
     markSectionAsRead,
     getSection,
+    metadata,
     handleScrollProgress,
   };
 };

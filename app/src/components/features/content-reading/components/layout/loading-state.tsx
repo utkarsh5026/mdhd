@@ -2,37 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { generateArrayWithUniqueIds } from '@/utils/array';
 
-const particles = generateArrayWithUniqueIds(12);
 const contentSkeleton = generateArrayWithUniqueIds(3);
 
 const LoadingState: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center h-full bg-linear-to-br from-background via-primary/5 to-secondary/10 relative overflow-hidden font-cascadia-code">
-      <div className="absolute inset-0">
-        {particles.map((particle) => (
-          <motion.div
-            key={particle}
-            className="absolute w-2 h-2 bg-primary/20 rounded-full"
-            initial={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
-              opacity: 0,
-            }}
-            animate={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
-              opacity: [0, 0.5, 0],
-            }}
-            transition={{
-              duration: Math.random() * 10 + 10,
-              repeat: Infinity,
-              ease: 'linear',
-              delay: Math.random() * 5,
-            }}
-          />
-        ))}
-      </div>
-
       {/* Main loading content */}
       <div className="relative z-10 flex flex-col items-center space-y-8">
         {/* Animated logo/icon */}

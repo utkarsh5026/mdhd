@@ -24,6 +24,7 @@ interface MarkdownViewerProviderProps extends MarkdownViewerProps {
 const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen, markdown }) => {
   const {
     sections,
+    metadata,
     readSections,
     currentIndex,
     isTransitioning,
@@ -73,6 +74,12 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
 
   const currentSection = getSection(currentIndex);
 
+  console.log('MarkdownViewer Render:', {
+    sections,
+    currentIndex,
+    currentSection,
+  });
+
   if (sections.length === 0 || !currentSection) {
     return <LoadingState />;
   }
@@ -80,6 +87,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProviderProps> = ({ exitFullScreen,
   return (
     <ReadingUI
       markdown={markdown}
+      metadata={metadata}
       sections={sections}
       readSections={readSections}
       currentIndex={currentIndex}

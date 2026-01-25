@@ -5,6 +5,7 @@ import LoadingState from './loading-state';
 import ContentReader from './content-reader';
 import ScrollContentReader from './scroll-content-reader';
 import ZenPositionIndicator from './zen-position-indicator';
+import MetadataDisplay from './metadata-display';
 
 export {
   Header,
@@ -14,4 +15,5 @@ export {
   ContentReader,
   ScrollContentReader,
   ZenPositionIndicator,
+  MetadataDisplay,
 };
