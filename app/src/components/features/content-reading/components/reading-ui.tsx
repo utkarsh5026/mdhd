@@ -1,18 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import SectionsSheet from './table-of-contents/sections-sheet';
-import ReadingSettingsSheet from '@/components/features/settings/components/reading-settings-selector';
-import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
-import { useThemeStore } from '@/components/shared/theme/store/theme-store';
-import {
-  Header,
-  NavigationControls,
-  DesktopProgressIndicator,
-  ContentReader,
-  ScrollContentReader,
-  ZenPositionIndicator,
-} from './layout';
-import { useControls } from '@/components/features/content-reading/hooks';
-import { AnimatePresence } from 'framer-motion';
+import React, { memo } from 'react';
+import ReadingCore from './reading-core';
+import { Header } from './layout';
 import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
 
 export interface ReadingUIProps {
@@ -38,6 +26,14 @@ export interface ReadingUIProps {
   onExit: () => void;
 }
 
+/**
+ * 🎯 ReadingUI - Fullscreen reading mode wrapper
+ *
+ * This component wraps ReadingCore and adds:
+ * - Exit button header (instead of fullscreen button)
+ * - Zen mode support
+ * - Fullscreen-specific controls
+ */
 const ReadingUI: React.FC<ReadingUIProps> = memo(
   ({
     markdown,
@@ -61,178 +57,32 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
     onZenDoubleTap,
     onExit,
   }) => {
-    const [settingsOpen, setSettingsOpen] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
-
-    const pendingFloatingPickerOpen = useThemeStore((state) => state.pendingFloatingPickerOpen);
-    const openFloatingPicker = useThemeStore((state) => state.openFloatingPicker);
-
-    const { isControlsVisible, handleInteraction, handleDoubleClick } = useControls({
-      goToNext,
-      goToPrevious,
-      readingMode,
-    });
-
-    // Scroll to top when changing sections (card mode)
-    useEffect(() => {
-      if (readingMode === 'card' && scrollRef.current) {
-        scrollRef.current.scrollTop = 0;
-      }
-    }, [currentIndex, readingMode]);
-
-    // Open floating theme picker after settings sheet closes
-    useEffect(() => {
-      if (!settingsOpen && pendingFloatingPickerOpen) {
-        const timer = setTimeout(() => {
-          openFloatingPicker();
-        }, 350);
-        return () => clearTimeout(timer);
-      }
-    }, [settingsOpen, pendingFloatingPickerOpen, openFloatingPicker]);
-
-    // Jump to specific section (works in both card and scroll mode)
-    const handleSelectCard = useCallback(
-      (index: number) => {
-        if (readingMode === 'scroll') {
-          const sectionElement = document.getElementById(`section-${sections[index]?.id}`);
-          if (sectionElement) {
-            sectionElement.scrollIntoView({ behavior: 'instant', block: 'start' });
-          }
-          markSectionAsRead(index);
-        } else {
-          if (index !== currentIndex) changeSection(index);
-        }
-      },
-      [readingMode, sections, currentIndex, changeSection, markSectionAsRead]
-    );
-
-    // Handle section visibility for marking sections as read in scroll mode
-    const handleSectionVisible = useCallback(
-      (index: number) => {
-        markSectionAsRead(index);
-      },
-      [markSectionAsRead]
-    );
-
-    // Determine if controls should be visible (hide when dialog is open)
-    const shouldShowControls = !isDialogOpen && (!isZenMode || zenControlsVisible);
-
-    // Combined double-click handler for zen mode and regular mode
-    const handleContentDoubleClick = () => {
-      if (isZenMode) {
-        onZenDoubleTap();
-      } else {
-        handleDoubleClick();
-      }
-    };
-
-    // Combined click handler for zen mode tap
-    const handleContentClick = () => {
-      if (isZenMode) {
-        onZenTap();
-      }
-    };
-
     return (
-      <div className="h-full relative bg-background text-foreground" onClick={handleContentClick}>
-        {/* Content Container - Card Mode or Scroll Mode */}
-        {readingMode === 'card' ? (
-          <ContentReader
-            markdown={markdown}
-            metadata={metadata}
-            currentIndex={currentIndex}
-            goToNext={goToNext}
-            goToPrevious={goToPrevious}
-            isTransitioning={isTransitioning}
-            scrollRef={scrollRef}
-            handleDoubleClick={handleContentDoubleClick}
-            currentSection={currentSection}
-          />
-        ) : (
-          <ScrollContentReader
-            sections={sections}
-            metadata={metadata}
-            scrollRef={scrollRef}
-            handleDoubleClick={handleContentDoubleClick}
-            onScrollProgress={onScrollProgressChange}
-            onSectionVisible={handleSectionVisible}
-          />
+      <ReadingCore
+        markdown={markdown}
+        metadata={metadata}
+        sections={sections}
+        readSections={readSections}
+        currentIndex={currentIndex}
+        currentSection={currentSection}
+        isTransitioning={isTransitioning}
+        readingMode={readingMode}
+        scrollProgress={scrollProgress}
+        goToNext={goToNext}
+        goToPrevious={goToPrevious}
+        changeSection={changeSection}
+        markSectionAsRead={markSectionAsRead}
+        onScrollProgressChange={onScrollProgressChange}
+        viewMode="preview"
+        isZenMode={isZenMode}
+        zenControlsVisible={zenControlsVisible}
+        isDialogOpen={isDialogOpen}
+        onZenTap={onZenTap}
+        onZenDoubleTap={onZenDoubleTap}
+        headerSlot={({ onSettings, onMenu, isVisible }) => (
+          <Header onExit={onExit} onSettings={onSettings} onMenu={onMenu} isVisible={isVisible} />
         )}
-
-        {/* Header - hidden in zen mode unless controls visible */}
-        <AnimatePresence>
-          {shouldShowControls && (
-            <div className="absolute top-0 left-0 right-0 z-50">
-              <Header
-                onExit={onExit}
-                onSettings={() => {
-                  setSettingsOpen(true);
-                  handleInteraction();
-                }}
-                onMenu={() => {
-                  setMenuOpen(true);
-                  handleInteraction();
-                }}
-                isVisible={isControlsVisible || zenControlsVisible}
-              />
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Navigation Controls - hidden in zen mode and scroll mode */}
-        <AnimatePresence>
-          {shouldShowControls && readingMode === 'card' && (
-            <div className="absolute bottom-0 left-0 right-0 z-50">
-              <NavigationControls
-                currentIndex={currentIndex}
-                total={sections.length}
-                onPrevious={() => {
-                  goToPrevious();
-                  handleInteraction();
-                }}
-                onNext={() => {
-                  goToNext();
-                  handleInteraction();
-                }}
-                isVisible={isControlsVisible || zenControlsVisible}
-              />
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Desktop side progress - hidden in zen mode */}
-        {!isZenMode && (
-          <DesktopProgressIndicator
-            currentIndex={currentIndex}
-            total={sections.length}
-            onSelectSection={(index) => handleSelectCard(index)}
-            sections={sections}
-            readSections={readSections}
-            readingMode={readingMode}
-            scrollProgress={scrollProgress}
-          />
-        )}
-
-        {/* Zen Mode Position Indicator - only shown in zen mode */}
-        {isZenMode && <ZenPositionIndicator currentIndex={currentIndex} total={sections.length} />}
-
-        {/* Sections Sheet */}
-        <SectionsSheet
-          currentIndex={currentIndex}
-          handleSelectCard={handleSelectCard}
-          menuOpen={menuOpen}
-          setMenuOpen={setMenuOpen}
-          sections={sections}
-          readSections={readSections}
-        />
-
-        {/* Reading Settings Sheet */}
-        <ReadingSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
-
-        {/* Floating Theme Picker */}
-        <FloatingThemePicker />
-      </div>
+      />
     );
   }
 );
