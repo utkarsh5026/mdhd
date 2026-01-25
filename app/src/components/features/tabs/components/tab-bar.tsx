@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { AnimatePresence } from 'framer-motion';
 import TabItem from './tab-item';
 import TabManagementMenu from './tab-management-menu';
+import ViewModeToggle from './view-mode-toggle';
 import type { Tab } from '../store/tabs-store';
 
 interface TabBarProps {
   tabs: Tab[];
   activeTabId: string | null;
+  viewMode: 'preview' | 'edit';
+  onViewModeToggle: (mode: 'preview' | 'edit') => void;
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
   onNewTab: () => void;
@@ -25,6 +28,8 @@ const TabBar: React.FC<TabBarProps> = memo(
   ({
     tabs,
     activeTabId,
+    viewMode,
+    onViewModeToggle,
     onTabSelect,
     onTabClose,
     onNewTab,
@@ -125,6 +130,13 @@ const TabBar: React.FC<TabBarProps> = memo(
         >
           <Plus className="w-4 h-4" />
         </Button>
+
+        {/* View mode toggle */}
+        <ViewModeToggle
+          viewMode={viewMode}
+          onToggle={onViewModeToggle}
+          disabled={!activeTabId}
+        />
 
         {/* Tab management menu */}
         <TabManagementMenu

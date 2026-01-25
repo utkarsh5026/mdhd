@@ -15,6 +15,7 @@ export interface TabReadingState {
   readSections: Set<number>;
   scrollProgress: number;
   readingMode: 'card' | 'scroll';
+  viewMode: 'preview' | 'edit';
   sections: MarkdownSection[];
   isInitialized: boolean;
 }
@@ -101,6 +102,7 @@ interface PersistedTabsState {
       Tab & {
         readingState: Omit<TabReadingState, 'readSections' | 'sections'> & {
           readSections: number[];
+          viewMode?: 'preview' | 'edit';
         };
       }
     >;
@@ -131,6 +133,7 @@ const customTabsStorage = {
             readingState: {
               ...tab.readingState,
               readSections: new Set(tab.readingState.readSections || []),
+              viewMode: tab.readingState.viewMode || 'preview',
               sections,
               isInitialized: sections.length > 0,
             },
@@ -221,6 +224,7 @@ const createInitialReadingState = (content: string): TabReadingState => {
     readSections: new Set([0]),
     scrollProgress: 0,
     readingMode: 'card',
+    viewMode: 'preview',
     sections,
     isInitialized: sections.length > 0,
   };

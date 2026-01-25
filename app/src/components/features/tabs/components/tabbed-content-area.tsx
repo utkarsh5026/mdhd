@@ -31,6 +31,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     setActiveTab,
     setShowEmptyState,
     updateTabContent,
+    updateTabReadingState,
     closeAllTabs,
     closeOtherTabs,
     closeTabsToTheRight,
@@ -38,6 +39,19 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     closeTabsByPathPrefix,
     closeTabsBySourceType,
   } = useTabsActions();
+
+  // Get current view mode from active tab
+  const viewMode = activeTab?.readingState.viewMode ?? 'preview';
+
+  // Handle view mode toggle
+  const handleViewModeToggle = useCallback(
+    (mode: 'preview' | 'edit') => {
+      if (activeTab) {
+        updateTabReadingState(activeTab.id, { viewMode: mode });
+      }
+    },
+    [activeTab, updateTabReadingState]
+  );
 
   const markdownInput = useReadingStore((state) => state.markdownInput);
   const initializeReading = useReadingStore((state) => state.initializeReading);
@@ -97,6 +111,8 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
         <TabBar
           tabs={tabs}
           activeTabId={activeTabId}
+          viewMode={viewMode}
+          onViewModeToggle={handleViewModeToggle}
           onTabSelect={handleTabSelect}
           onTabClose={handleTabClose}
           onNewTab={handleNewTab}
@@ -143,6 +159,8 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
             >
               <InlineMarkdownViewer
                 tabId={activeTab.id}
+                viewMode={viewMode}
+                onContentChange={(content) => updateTabContent(activeTab.id, content)}
                 onEnterFullscreen={() => onEnterFullscreen(activeTab.id)}
               />
             </motion.div>

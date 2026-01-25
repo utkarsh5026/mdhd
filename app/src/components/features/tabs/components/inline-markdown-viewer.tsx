@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Maximize2, Settings, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import SectionsSheet from '@/components/features/content-reading/components/table-of-contents/sections-sheet';
 import ReadingSettingsSheet from '@/components/features/settings/components/reading-settings-selector';
@@ -17,9 +17,12 @@ import {
 import { useControls } from '@/components/features/content-reading/hooks';
 import { useTabNavigation } from '../hooks/use-tab-navigation';
 import { useTabsStore } from '../store/tabs-store';
+import MarkdownCodeMirrorEditor from './markdown-codemirror-editor';
 
 interface InlineMarkdownViewerProps {
   tabId: string;
+  viewMode: 'preview' | 'edit';
+  onContentChange: (content: string) => void;
   onEnterFullscreen: () => void;
 }
 
@@ -140,7 +143,7 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
 InlineHeader.displayName = 'InlineHeader';
 
 const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
-  ({ tabId, onEnterFullscreen }) => {
+  ({ tabId, viewMode, onContentChange, onEnterFullscreen }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -222,75 +225,115 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
     return (
       <div className="h-full relative bg-background text-foreground">
         {/* Content Container */}
-        {readingMode === 'card' ? (
-          <ContentReader
-            markdown={tab.content}
-            goToNext={goToNext}
-            goToPrevious={goToPrevious}
-            isTransitioning={isTransitioning}
-            scrollRef={scrollRef}
-            handleDoubleClick={handleDoubleClick}
-            currentSection={currentSection}
-          />
-        ) : (
-          <ScrollContentReader
-            sections={sections}
-            scrollRef={scrollRef}
-            handleDoubleClick={handleDoubleClick}
-            onScrollProgress={handleScrollProgress}
-            onSectionVisible={handleSectionVisible}
-          />
-        )}
-
-        {/* Header */}
-        <AnimatePresence>
-          <div className="absolute top-0 left-0 right-0 z-50">
-            <InlineHeader
-              onFullscreen={onEnterFullscreen}
-              onSettings={() => {
-                setSettingsOpen(true);
-                handleInteraction();
-              }}
-              onMenu={() => {
-                setMenuOpen(true);
-                handleInteraction();
-              }}
-              isVisible={isControlsVisible}
-            />
-          </div>
+        <AnimatePresence mode="wait">
+          {viewMode === 'edit' ? (
+            <motion.div
+              key="edit-mode"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="h-full"
+            >
+              <MarkdownCodeMirrorEditor
+                content={tab.content}
+                onChange={onContentChange}
+              />
+            </motion.div>
+          ) : readingMode === 'card' ? (
+            <motion.div
+              key="preview-card-mode"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="h-full"
+            >
+              <ContentReader
+                markdown={tab.content}
+                goToNext={goToNext}
+                goToPrevious={goToPrevious}
+                isTransitioning={isTransitioning}
+                scrollRef={scrollRef}
+                handleDoubleClick={handleDoubleClick}
+                currentSection={currentSection}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="preview-scroll-mode"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="h-full"
+            >
+              <ScrollContentReader
+                sections={sections}
+                scrollRef={scrollRef}
+                handleDoubleClick={handleDoubleClick}
+                onScrollProgress={handleScrollProgress}
+                onSectionVisible={handleSectionVisible}
+              />
+            </motion.div>
+          )}
         </AnimatePresence>
 
-        {/* Navigation Controls (card mode only) */}
-        <AnimatePresence>
-          {readingMode === 'card' && (
-            <div className="absolute bottom-0 left-0 right-0 z-50">
-              <NavigationControls
-                currentIndex={currentIndex}
-                total={sections.length}
-                onPrevious={() => {
-                  goToPrevious();
+        {/* Header - only show in preview mode */}
+        {viewMode === 'preview' && (
+          <AnimatePresence>
+            <div className="absolute top-0 left-0 right-0 z-50">
+              <InlineHeader
+                onFullscreen={onEnterFullscreen}
+                onSettings={() => {
+                  setSettingsOpen(true);
                   handleInteraction();
                 }}
-                onNext={() => {
-                  goToNext();
+                onMenu={() => {
+                  setMenuOpen(true);
                   handleInteraction();
                 }}
                 isVisible={isControlsVisible}
               />
             </div>
-          )}
-        </AnimatePresence>
+          </AnimatePresence>
+        )}
 
-        {/* Desktop side progress */}
-        <DesktopProgressIndicator
-          currentIndex={currentIndex}
-          total={sections.length}
-          onSelectSection={(index) => handleSelectCard(index)}
-          sections={sections}
-          readSections={readSections}
-          readingMode={readingMode}
-          scrollProgress={scrollProgress}
-        />
+        {/* Navigation Controls (card mode only, preview mode only) */}
+        {viewMode === 'preview' && (
+          <AnimatePresence>
+            {readingMode === 'card' && (
+              <div className="absolute bottom-0 left-0 right-0 z-50">
+                <NavigationControls
+                  currentIndex={currentIndex}
+                  total={sections.length}
+                  onPrevious={() => {
+                    goToPrevious();
+                    handleInteraction();
+                  }}
+                  onNext={() => {
+                    goToNext();
+                    handleInteraction();
+                  }}
+                  isVisible={isControlsVisible}
+                />
+              </div>
+            )}
+          </AnimatePresence>
+        )}
+
+        {/* Desktop side progress - only in preview mode */}
+        {viewMode === 'preview' && (
+          <DesktopProgressIndicator
+            currentIndex={currentIndex}
+            total={sections.length}
+            onSelectSection={(index) => handleSelectCard(index)}
+            sections={sections}
+            readSections={readSections}
+            readingMode={readingMode}
+            scrollProgress={scrollProgress}
+          />
+        )}
 
         {/* Sections Sheet */}
         <SectionsSheet
