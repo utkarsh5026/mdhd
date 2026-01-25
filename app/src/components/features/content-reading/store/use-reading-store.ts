@@ -1,13 +1,14 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
-import { type MarkdownSection, countWords } from '@/services/section/parsing';
+import { type MarkdownSection, type MarkdownMetadata, countWords } from '@/services/section/parsing';
 
 const STORAGE_VERSION = 1;
 const STORAGE_KEY = 'reading-session-storage';
 
 interface ReadingState {
   sections: MarkdownSection[];
+  metadata: MarkdownMetadata | null;
   readSections: Set<number>;
   currentIndex: number;
   isTransitioning: boolean;
@@ -116,6 +117,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
     persist(
       (set, get) => ({
         sections: [],
+        metadata: null,
         readSections: new Set<number>(),
         currentIndex: 0,
         isTransitioning: false,
@@ -188,10 +190,11 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
             return;
           }
 
-          const parsedSections = parseMarkdownIntoSections(markdownInput);
+          const { sections: parsedSections, metadata } = parseMarkdownIntoSections(markdownInput);
 
           set({
             sections: parsedSections,
+            metadata,
             readSections: new Set([0]),
             currentIndex: 0,
             isInitialized: true,
@@ -231,6 +234,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
         resetReading: () =>
           set({
             sections: [],
+            metadata: null,
             readSections: new Set<number>(),
             currentIndex: 0,
             isInitialized: false,
@@ -250,6 +254,7 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
           localStorage.removeItem(STORAGE_KEY);
           set({
             sections: [],
+            metadata: null,
             readSections: new Set<number>(),
             currentIndex: 0,
             isInitialized: false,
@@ -290,8 +295,9 @@ export const useReadingStore = create<ReadingState & ReadingActions>()(
             // Re-parse sections from persisted markdown
             // (sections are not persisted to save space)
             if (state.markdownInput && state.sections.length === 0) {
-              const parsedSections = parseMarkdownIntoSections(state.markdownInput);
+              const { sections: parsedSections, metadata } = parseMarkdownIntoSections(state.markdownInput);
               state.sections = parsedSections;
+              state.metadata = metadata;
             }
             // Mark hydration as complete
             state._hasHydrated = true;

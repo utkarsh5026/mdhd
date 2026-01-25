@@ -20,6 +20,7 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
 
     const {
       sections,
+      metadata,
       readSections,
       currentIndex,
       readingMode,
@@ -86,6 +87,7 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
       <div className="fixed inset-0 z-50 bg-background text-foreground overflow-hidden">
         <ReadingUI
           markdown={tab.content}
+          metadata={metadata}
           sections={sections}
           readSections={readSections}
           currentIndex={currentIndex}
