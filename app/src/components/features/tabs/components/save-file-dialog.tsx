@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { attemptAsync } from '@/utils/functions/error';
 
 interface SaveFileDialogProps {
   open: boolean;
@@ -23,6 +24,18 @@ const stripMdExtension = (name: string): string => {
   return name.replace(/\.md$/i, '');
 };
 
+function validateFileName(name: string): string | null {
+  if (!name.trim()) {
+    return 'File name is required';
+  }
+
+  const invalidCharsRegex = /[.<>:"/\\|?*]/;
+  if (invalidCharsRegex.test(name)) {
+    return 'File name cannot contain . < > : " / \\ | ? *';
+  }
+  return null;
+}
+
 export const SaveFileDialog: React.FC<SaveFileDialogProps> = ({
   open,
   onOpenChange,
@@ -33,7 +46,6 @@ export const SaveFileDialog: React.FC<SaveFileDialogProps> = ({
   const [fileName, setFileName] = useState(stripMdExtension(defaultFileName));
   const [error, setError] = useState<string | null>(null);
 
-  // Reset state when dialog opens
   useEffect(() => {
     if (open) {
       setFileName(stripMdExtension(defaultFileName));
@@ -41,17 +53,6 @@ export const SaveFileDialog: React.FC<SaveFileDialogProps> = ({
     }
   }, [open, defaultFileName]);
 
-  const validateFileName = (name: string): string | null => {
-    if (!name.trim()) {
-      return 'File name is required';
-    }
-    // Check for invalid characters (dots, slashes, etc.)
-    const invalidCharsRegex = /[.<>:"/\\|?*]/;
-    if (invalidCharsRegex.test(name)) {
-      return 'File name cannot contain . < > : " / \\ | ? *';
-    }
-    return null;
-  };
 
   const handleFileNameChange = (value: string) => {
     setFileName(value);
@@ -65,13 +66,15 @@ export const SaveFileDialog: React.FC<SaveFileDialogProps> = ({
       return;
     }
     const finalName = `${fileName.trim()}.md`;
-
-    try {
+    const [error] = await attemptAsync(async () => {
       await onSave(finalName);
       onOpenChange(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save file');
+    })
+
+    if (error) {
+      setError(error instanceof Error ? error.message : 'Failed to save file');
     }
+
   }, [fileName, onSave, onOpenChange]);
 
   const handleKeyDown = useCallback(
