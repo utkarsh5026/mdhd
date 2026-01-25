@@ -2,7 +2,7 @@ import React, { memo, useCallback, useMemo } from 'react';
 import type { ThemeOption as ThemeTypeOption } from '@/theme/themes';
 import { cn } from '@/lib/utils';
 import { FiCheck, FiStar } from 'react-icons/fi';
-import { useThemeStore } from '@/components/shared/theme/store/theme-store';
+import { useBookmarkedThemes } from '@/components/shared/theme/store/theme-store';
 
 interface ThemeOptionProps {
   theme: ThemeTypeOption;
@@ -17,8 +17,7 @@ interface ThemeOptionProps {
  */
 const ThemeOption: React.FC<ThemeOptionProps> = memo(
   ({ theme, isActive, onSelect, showCategory = false, showBookmark = true }) => {
-    const toggleBookmark = useThemeStore((state) => state.toggleBookmark);
-    const bookmarkedThemes = useThemeStore((state) => state.bookmarkedThemes);
+    const { bookmarkedThemes, toggleBookmark } = useBookmarkedThemes()
 
     const bookmarked = useMemo(
       () => bookmarkedThemes.some((b) => b.name === theme.name),

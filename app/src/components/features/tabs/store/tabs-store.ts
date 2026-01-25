@@ -3,6 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
 import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
+import { attempt } from '@/utils/functions/error';
 
 const STORAGE_VERSION = 1;
 const STORAGE_KEY = 'mdhd-tabs-storage';
@@ -48,7 +49,9 @@ interface TabsState {
 }
 
 interface TabsActions {
-  // Tab CRUD
+  addTab: (newTab: Tab, options?: { incrementCounter?: boolean }) => string;
+  updateTab: (tabId: string, updater: Partial<Tab> | ((tab: Tab) => Partial<Tab>)) => void;
+
   createTab: (
     content: string,
     title?: string,
@@ -61,15 +64,9 @@ interface TabsActions {
   closeAllTabs: () => void;
   closeOtherTabs: (tabId: string) => void;
 
-  // Tab selection
   setActiveTab: (tabId: string) => void;
-  activateNextTab: () => void;
-  activatePreviousTab: () => void;
-
-  // Reading state per tab
   updateTabReadingState: (tabId: string, state: Partial<TabReadingState>) => void;
 
-  // Tab content
   updateTabContent: (tabId: string, content: string) => void;
   updateTabSource: (
     tabId: string,
@@ -79,25 +76,17 @@ interface TabsActions {
   ) => void;
   getTabById: (tabId: string) => Tab | undefined;
 
-  // Empty state
   setShowEmptyState: (show: boolean) => void;
-
-  // Find tab by file
   findTabByFileId: (fileId: string) => Tab | undefined;
 
-  // Close tabs by file/path (for delete operations)
   closeTabByFileId: (fileId: string) => void;
   closeTabsByPathPrefix: (pathPrefix: string) => void;
 
-  // Tab management menu actions
   closeTabsToTheRight: (tabId: string) => void;
   closeTabsToTheLeft: (tabId: string) => void;
   closeTabsBySourceType: (sourceType: 'paste' | 'file') => void;
 
-  // UI preferences
   toggleHeaderVisibility: () => void;
-
-  // Persistence
   clearPersistedTabs: () => void;
 }
 
@@ -127,34 +116,39 @@ const customTabsStorage = {
     const str = localStorage.getItem(name);
     if (!str) return null;
 
-    try {
+    const getParsedTabs = () => {
       const parsed: PersistedTabsState = JSON.parse(str);
-      // Convert readSections arrays back to Sets and re-parse sections for each tab
-      if (parsed.state?.tabs) {
-        parsed.state.tabs = parsed.state.tabs.map((tab) => {
-          const { metadata, sections } = parseMarkdownIntoSections(tab.content);
-          return {
-            ...tab,
-            readingState: {
-              ...tab.readingState,
-              readSections: new Set(tab.readingState.readSections || []),
-              viewMode: tab.readingState.viewMode || 'preview',
-              sections,
-              isInitialized: sections.length > 0,
-              metadata
-            },
-          };
-        }) as typeof parsed.state.tabs;
-      }
+      if (!parsed.state?.tabs) return parsed;
+
+      const updated = parsed.state.tabs.map((tab) => {
+        const { metadata, sections } = parseMarkdownIntoSections(tab.content);
+        return {
+          ...tab,
+          readingState: {
+            ...tab.readingState,
+            readSections: new Set(tab.readingState.readSections || []),
+            viewMode: tab.readingState.viewMode || 'preview',
+            sections,
+            isInitialized: sections.length > 0,
+            metadata,
+          },
+        };
+      }) as typeof parsed.state.tabs;
+
+      parsed.state.tabs = updated;
       return parsed;
-    } catch (e) {
-      console.error('Error parsing tabs session:', e);
+    }
+
+    const [error, parsedTabs] = attempt(getParsedTabs);
+    if (error) {
+      console.error('Error parsing tabs session:', error);
       return null;
     }
+    return parsedTabs;
   },
 
   setItem: (name: string, value: PersistedTabsState) => {
-    try {
+    const storeTabState = () => {
       const serialized = {
         ...value,
         state: {
@@ -163,17 +157,18 @@ const customTabsStorage = {
             ...tab,
             readingState: {
               ...tab.readingState,
-              // Convert Set to array for JSON serialization
               readSections: Array.from(tab.readingState.readSections || []),
-              // Don't persist sections - they will be re-parsed on load
               sections: undefined,
             },
           })),
         },
       };
       localStorage.setItem(name, JSON.stringify(serialized));
-    } catch (e) {
-      console.error('Error saving tabs session:', e);
+    }
+
+    const [error] = attempt(storeTabState);
+    if (error) {
+      console.error('Error saving tabs session:', error);
     }
   },
 
@@ -224,7 +219,9 @@ const extractTitleFromMarkdown = (content: string): string => {
  * Create initial reading state for a new tab
  */
 const createInitialReadingState = (content: string): TabReadingState => {
-  const { metadata, sections } = content ? parseMarkdownIntoSections(content) : { metadata: {}, sections: [] };
+  const { metadata, sections } = content
+    ? parseMarkdownIntoSections(content)
+    : { metadata: {}, sections: [] };
   return {
     currentIndex: 0,
     readSections: new Set([0]),
@@ -236,6 +233,30 @@ const createInitialReadingState = (content: string): TabReadingState => {
     isInitialized: sections.length > 0,
   };
 };
+
+function createTab(
+  content: string,
+  title: string,
+  source: {
+    fileID?: string;
+    path?: string;
+    sType: 'paste' | 'file';
+  }
+): Tab {
+  const now = Date.now();
+  return {
+    id: generateTabId(),
+    title,
+    content,
+    contentHash: hashString(content),
+    createdAt: now,
+    lastAccessedAt: now,
+    sourceType: source.sType,
+    sourceFileId: source.fileID,
+    sourcePath: source.path,
+    readingState: createInitialReadingState(content),
+  };
+}
 
 /**
  * Tabs Store
@@ -255,6 +276,27 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         untitledCounter: 0,
         isHeaderVisible: true,
 
+        addTab: (newTab: Tab, options?: { incrementCounter?: boolean }) => {
+          set((state) => ({
+            tabs: [...state.tabs, newTab],
+            activeTabId: newTab.id,
+            showEmptyState: false,
+            ...(options?.incrementCounter ? { untitledCounter: state.untitledCounter + 1 } : {}),
+          }));
+          return newTab.id;
+        },
+
+        updateTab: (tabId: string, updater: Partial<Tab> | ((tab: Tab) => Partial<Tab>)) => {
+          set((state) => ({
+            tabs: state.tabs.map((t) => {
+              if (t.id !== tabId) return t;
+
+              const updates = typeof updater === 'function' ? updater(t) : updater;
+              return { ...t, ...updates };
+            }),
+          }));
+        },
+
         createTab: (
           content: string,
           title?: string,
@@ -262,59 +304,23 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           sourceFileId?: string,
           sourcePath?: string
         ) => {
-          const tabId = generateTabId();
-          const now = Date.now();
           const resolvedTitle = title || extractTitleFromMarkdown(content);
 
-          const newTab: Tab = {
-            id: tabId,
-            title: resolvedTitle,
-            content,
-            contentHash: hashString(content),
-            sourceType,
-            sourceFileId,
-            sourcePath,
-            createdAt: now,
-            lastAccessedAt: now,
-            readingState: createInitialReadingState(content),
-          };
+          const newTab = createTab(content, resolvedTitle, {
+            fileID: sourceFileId,
+            path: sourcePath,
+            sType: sourceType,
+          });
 
-          set((state) => ({
-            tabs: [...state.tabs, newTab],
-            activeTabId: tabId,
-            showEmptyState: false,
-          }));
-
-          return tabId;
+          return get().addTab(newTab);
         },
 
         createUntitledTab: () => {
-          const tabId = generateTabId();
-          const now = Date.now();
           const { untitledCounter } = get();
-
-          // Generate title: "Untitled", "Untitled-1", "Untitled-2", etc.
           const title = untitledCounter === 0 ? 'Untitled' : `Untitled-${untitledCounter}`;
+          const newTab = createTab('', title, { sType: 'paste' });
 
-          const newTab: Tab = {
-            id: tabId,
-            title,
-            content: '',
-            contentHash: hashString(''),
-            sourceType: 'paste',
-            createdAt: now,
-            lastAccessedAt: now,
-            readingState: createInitialReadingState(''),
-          };
-
-          set((state) => ({
-            tabs: [...state.tabs, newTab],
-            activeTabId: tabId,
-            showEmptyState: false,
-            untitledCounter: state.untitledCounter + 1,
-          }));
-
-          return tabId;
+          return get().addTab(newTab, { incrementCounter: true });
         },
 
         closeTab: (tabId: string) => {
@@ -324,7 +330,6 @@ export const useTabsStore = create<TabsState & TabsActions>()(
 
           const newTabs = state.tabs.filter((t) => t.id !== tabId);
 
-          // Determine new active tab
           let newActiveTabId: string | null = null;
           if (newTabs.length > 0) {
             if (state.activeTabId === tabId) {
@@ -363,66 +368,23 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         },
 
         setActiveTab: (tabId: string) => {
-          const state = get();
-          const tab = state.tabs.find((t) => t.id === tabId);
+          const tab = get().tabs.find((t) => t.id === tabId);
           if (!tab) return;
 
-          const updatedTabs = state.tabs.map((t) =>
-            t.id === tabId ? { ...t, lastAccessedAt: Date.now() } : t
-          );
+          get().updateTab(tabId, { lastAccessedAt: Date.now() });
 
           set({
-            tabs: updatedTabs,
             activeTabId: tabId,
             showEmptyState: false,
           });
         },
 
-        activateNextTab: () => {
-          const state = get();
-          if (state.tabs.length === 0 || !state.activeTabId) return;
-
-          const currentIndex = state.tabs.findIndex((t) => t.id === state.activeTabId);
-          const nextIndex = (currentIndex + 1) % state.tabs.length;
-          const nextTab = state.tabs[nextIndex];
-
-          set({
-            activeTabId: nextTab.id,
-            tabs: state.tabs.map((t) =>
-              t.id === nextTab.id ? { ...t, lastAccessedAt: Date.now() } : t
-            ),
-          });
-        },
-
-        activatePreviousTab: () => {
-          const state = get();
-          if (state.tabs.length === 0 || !state.activeTabId) return;
-
-          const currentIndex = state.tabs.findIndex((t) => t.id === state.activeTabId);
-          const prevIndex = currentIndex === 0 ? state.tabs.length - 1 : currentIndex - 1;
-          const prevTab = state.tabs[prevIndex];
-
-          set({
-            activeTabId: prevTab.id,
-            tabs: state.tabs.map((t) =>
-              t.id === prevTab.id ? { ...t, lastAccessedAt: Date.now() } : t
-            ),
-          });
-        },
-
         updateTabReadingState: (tabId: string, newReadingState: Partial<TabReadingState>) => {
-          set((state) => ({
-            tabs: state.tabs.map((t) =>
-              t.id === tabId
-                ? {
-                  ...t,
-                  readingState: {
-                    ...t.readingState,
-                    ...newReadingState,
-                  },
-                }
-                : t
-            ),
+          get().updateTab(tabId, (tab) => ({
+            readingState: {
+              ...tab.readingState,
+              ...newReadingState,
+            },
           }));
         },
 
@@ -431,7 +393,9 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) => {
               if (t.id !== tabId) return t;
 
-              const { metadata, sections } = content ? parseMarkdownIntoSections(content) : { metadata: null, sections: [] };
+              const { metadata, sections } = content
+                ? parseMarkdownIntoSections(content)
+                : { metadata: null, sections: [] };
               return {
                 ...t,
                 content,
@@ -458,18 +422,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           sourceFileId: string,
           sourcePath: string
         ) => {
-          set((state) => ({
-            tabs: state.tabs.map((t) =>
-              t.id === tabId
-                ? {
-                  ...t,
-                  sourceType,
-                  sourceFileId,
-                  sourcePath,
-                }
-                : t
-            ),
-          }));
+          get().updateTab(tabId, { sourceType, sourceFileId, sourcePath });
         },
 
         getTabById: (tabId: string) => {
@@ -493,45 +446,37 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         },
 
         closeTabsByPathPrefix: (pathPrefix: string) => {
-          const state = get();
-          const tabsToClose = state.tabs.filter(
-            (t) =>
-              t.sourcePath &&
-              (t.sourcePath === pathPrefix || t.sourcePath.startsWith(pathPrefix + '/'))
-          );
-          for (const tab of tabsToClose) {
-            state.closeTab(tab.id);
-          }
+          const { tabs, closeTab } = get();
+          tabs
+            .filter(
+              (t) =>
+                t.sourcePath &&
+                (t.sourcePath === pathPrefix || t.sourcePath.startsWith(pathPrefix + '/'))
+            )
+            .forEach((t) => closeTab(t.id));
         },
 
         closeTabsToTheRight: (tabId: string) => {
-          const state = get();
-          const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
+          const { closeTab, tabs } = get();
+          const tabIndex = tabs.findIndex((t) => t.id === tabId);
           if (tabIndex === -1) return;
 
-          const tabsToRemove = state.tabs.slice(tabIndex + 1);
-          for (const tab of tabsToRemove) {
-            state.closeTab(tab.id);
-          }
+          tabs.slice(tabIndex + 1).forEach((t) => closeTab(t.id));
         },
 
         closeTabsToTheLeft: (tabId: string) => {
-          const state = get();
-          const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
+          const { tabs, closeTab } = get();
+          const tabIndex = tabs.findIndex((t) => t.id === tabId);
           if (tabIndex === -1) return;
-
-          const tabsToRemove = state.tabs.slice(0, tabIndex);
-          for (const tab of [...tabsToRemove].reverse()) {
-            state.closeTab(tab.id);
-          }
+          tabs
+            .slice(0, tabIndex)
+            .reverse()
+            .forEach((t) => closeTab(t.id));
         },
 
         closeTabsBySourceType: (sourceType: 'paste' | 'file') => {
-          const state = get();
-          const tabsToClose = state.tabs.filter((t) => t.sourceType === sourceType);
-          for (const tab of tabsToClose) {
-            state.closeTab(tab.id);
-          }
+          const { tabs, closeTab } = get();
+          tabs.filter((t) => t.sourceType === sourceType).forEach((t) => closeTab(t.id));
         },
 
         toggleHeaderVisibility: () => {
@@ -554,14 +499,14 @@ export const useTabsStore = create<TabsState & TabsActions>()(
       {
         name: STORAGE_KEY,
         storage: customTabsStorage,
-        partialize: (state) =>
+        partialize: ({ tabs, activeTabId, showEmptyState, version, untitledCounter, isHeaderVisible }) =>
           ({
-            tabs: state.tabs,
-            activeTabId: state.activeTabId,
-            showEmptyState: state.showEmptyState,
-            version: state.version,
-            untitledCounter: state.untitledCounter,
-            isHeaderVisible: state.isHeaderVisible,
+            tabs,
+            activeTabId,
+            showEmptyState,
+            version,
+            untitledCounter,
+            isHeaderVisible,
           }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
         version: STORAGE_VERSION,
         onRehydrateStorage: () => (state, error) => {
@@ -579,7 +524,6 @@ export const useTabsStore = create<TabsState & TabsActions>()(
   )
 );
 
-// Selectors
 export const useTabs = () => useTabsStore((state) => state.tabs);
 export const useActiveTabId = () => useTabsStore((state) => state.activeTabId);
 export const useActiveTab = () =>
@@ -594,23 +538,41 @@ export const useTabsActions = () =>
       createTab: state.createTab,
       createUntitledTab: state.createUntitledTab,
       closeTab: state.closeTab,
-      closeAllTabs: state.closeAllTabs,
-      closeOtherTabs: state.closeOtherTabs,
       setActiveTab: state.setActiveTab,
-      activateNextTab: state.activateNextTab,
-      activatePreviousTab: state.activatePreviousTab,
       updateTabReadingState: state.updateTabReadingState,
       updateTabContent: state.updateTabContent,
       updateTabSource: state.updateTabSource,
       getTabById: state.getTabById,
       setShowEmptyState: state.setShowEmptyState,
       findTabByFileId: state.findTabByFileId,
-      closeTabByFileId: state.closeTabByFileId,
-      closeTabsByPathPrefix: state.closeTabsByPathPrefix,
-      closeTabsToTheRight: state.closeTabsToTheRight,
-      closeTabsToTheLeft: state.closeTabsToTheLeft,
       closeTabsBySourceType: state.closeTabsBySourceType,
       toggleHeaderVisibility: state.toggleHeaderVisibility,
       clearPersistedTabs: state.clearPersistedTabs,
     }))
   );
+
+export function useTabClose() {
+  return useTabsStore(
+    useShallow(
+      ({
+        closeAllTabs,
+        closeOtherTabs,
+        closeTabByFileId,
+        closeTabsByPathPrefix,
+        closeTabsBySourceType,
+        closeTabsToTheLeft,
+        closeTabsToTheRight,
+      }) => {
+        return {
+          closeAllTabs,
+          closeOtherTabs,
+          closeTabByFileId,
+          closeTabsByPathPrefix,
+          closeTabsBySourceType,
+          closeTabsToTheLeft,
+          closeTabsToTheRight,
+        };
+      }
+    )
+  );
+}

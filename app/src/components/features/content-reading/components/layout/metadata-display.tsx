@@ -49,17 +49,17 @@ const MetadataDisplay: React.FC<MetadataDisplayProps> = memo(({ metadata, classN
   const otherEntries = entries.filter(([key]) => key !== 'title');
 
   return (
-    <div className={cn('mb-4 pb-3 border-b border-border/20', className)}>
-      {title && (
-        <h1 className="text-lg font-medium text-foreground/85 mb-2">{title}</h1>
-      )}
+    <div className={cn('mb-4 pb-3 border-b border-border/20 font-cascadia-code', className)}>
+      {title && <h1 className="text-lg font-medium text-foreground/85 mb-2">{title}</h1>}
 
       {otherEntries.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground/60">
           {otherEntries.map(([key, value]) => {
             const typedValue = value as MetadataValue;
             const arrayValue = toStringArray(typedValue);
-            const isArray = isArrayLike(typedValue) || (typeof typedValue === 'string' && typedValue.includes(','));
+            const isArray =
+              isArrayLike(typedValue) ||
+              (typeof typedValue === 'string' && typedValue.includes(','));
 
             if (isArray && arrayValue.length > 0) {
               return (

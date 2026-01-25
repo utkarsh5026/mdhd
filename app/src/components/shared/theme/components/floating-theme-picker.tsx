@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useThemeStore } from '../store/theme-store';
+import { useCurrentTheme, useThemeFloatingPicker } from '../store/theme-store';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/fast-tabs';
 import { X, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,13 @@ import { cn } from '@/lib/utils';
 import ThemeCategories from './theme-categories';
 import ThemesList from './themes-list';
 import BookmarkedThemes from './bookmarked-themes';
-import { type ThemeOption, themes } from '@/theme/themes';
+import { themes } from '@/theme/themes';
 
 type TabValue = 'categories' | 'bookmarked' | 'all';
 
 const FloatingThemePicker: React.FC = () => {
-  const isOpen = useThemeStore((state) => state.isFloatingPickerOpen);
-  const closeFloatingPicker = useThemeStore((state) => state.closeFloatingPicker);
-  const currentTheme = useThemeStore((state) => state.currentTheme);
-  const setTheme = useThemeStore((state) => state.setTheme);
+  const { currentTheme, setTheme } = useCurrentTheme();
+  const { closeFloatingPicker, isFloatingPickerOpen: isOpen } = useThemeFloatingPicker();
 
   const [activeTab, setActiveTab] = useState<TabValue>('categories');
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,31 +24,24 @@ const FloatingThemePicker: React.FC = () => {
   const filteredThemes = useMemo(
     () =>
       themes.filter(
-        (theme) =>
-          theme.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          theme.category.toLowerCase().includes(searchQuery.toLowerCase())
+        ({ name, category }) =>
+          name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          category.toLowerCase().includes(searchQuery.toLowerCase())
       ),
     [searchQuery]
   );
 
-  const toggleCategory = useCallback((categoryName: string) => {
+  const toggleCategory = useCallback((category: string) => {
     setOpenCategories((prev) => {
       const next = new Set(prev);
-      if (next.has(categoryName)) {
-        next.delete(categoryName);
+      if (next.has(category)) {
+        next.delete(category);
       } else {
-        next.add(categoryName);
+        next.add(category);
       }
       return next;
     });
   }, []);
-
-  const handleThemeChange = useCallback(
-    (theme: ThemeOption) => {
-      setTheme(theme);
-    },
-    [setTheme]
-  );
 
   const handleTabChange = useCallback((value: string) => {
     setActiveTab(value as TabValue);
@@ -61,12 +52,12 @@ const FloatingThemePicker: React.FC = () => {
   return (
     <>
       {/* Semi-transparent backdrop */}
-      <div className="fixed inset-0 bg-black/30 z-[60]" onClick={closeFloatingPicker} />
+      <div className="fixed inset-0 bg-black/30 z-60" onClick={closeFloatingPicker} />
 
       {/* Floating picker panel - positioned at bottom for mobile */}
       <div
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-[61]',
+          'fixed bottom-0 left-0 right-0 z-61',
           'bg-card border-t border-border rounded-t-3xl shadow-2xl',
           'h-[70vh] overflow-hidden flex flex-col',
           'animate-in slide-in-from-bottom duration-200',
@@ -122,18 +113,18 @@ const FloatingThemePicker: React.FC = () => {
               {activeTab === 'categories' && (
                 <ThemeCategories
                   currentTheme={currentTheme.name}
-                  onThemeChange={handleThemeChange}
+                  onThemeChange={setTheme}
                   openCategories={openCategories}
                   toggleCategory={toggleCategory}
                 />
               )}
 
-              {activeTab === 'bookmarked' && <BookmarkedThemes onThemeChange={handleThemeChange} />}
+              {activeTab === 'bookmarked' && <BookmarkedThemes onThemeChange={setTheme} />}
 
               {activeTab === 'all' && (
                 <ThemesList
                   currentTheme={currentTheme.name}
-                  onThemeChange={handleThemeChange}
+                  onThemeChange={setTheme}
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
                   filteredThemes={filteredThemes}

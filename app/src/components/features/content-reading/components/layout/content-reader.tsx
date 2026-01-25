@@ -4,7 +4,7 @@ import CustomMarkdownRenderer from '@/components/features/markdown-render/compon
 import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
 import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
-import { RefObject } from 'react';
+import { memo, type RefObject } from 'react';
 import MetadataDisplay from './metadata-display';
 
 interface ContentReaderProps {
@@ -19,7 +19,7 @@ interface ContentReaderProps {
   currentSection: MarkdownSection;
 }
 
-const ContentReader: React.FC<ContentReaderProps> = ({
+const ContentReader: React.FC<ContentReaderProps> = memo(({
   metadata,
   currentIndex,
   goToNext,
@@ -32,8 +32,6 @@ const ContentReader: React.FC<ContentReaderProps> = ({
   const { settings } = useReadingSettings();
   const fontFamily = fontFamilyMap[settings.fontFamily];
   const { fontSize, lineHeight, contentWidth } = settings;
-
-  console.log('Rendering ContentReader at index:', currentIndex, metadata);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (eventData) => {
@@ -90,6 +88,8 @@ const ContentReader: React.FC<ContentReaderProps> = ({
       </div>
     </div>
   );
-};
+});
+
+ContentReader.displayName = 'ContentReader';
 
 export default ContentReader;

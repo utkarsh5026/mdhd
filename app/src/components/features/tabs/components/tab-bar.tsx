@@ -16,12 +16,6 @@ interface TabBarProps {
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
   onNewTab: () => void;
-  onCloseAllTabs: () => void;
-  onCloseOtherTabs: (tabId: string) => void;
-  onCloseTabsToTheRight: (tabId: string) => void;
-  onCloseTabsToTheLeft: (tabId: string) => void;
-  onCloseTabsByPathPrefix: (pathPrefix: string) => void;
-  onCloseTabsBySourceType: (sourceType: 'paste' | 'file') => void;
   onToggleHeaderVisibility: () => void;
 }
 
@@ -34,12 +28,6 @@ const TabBar: React.FC<TabBarProps> = memo(
     onTabSelect,
     onTabClose,
     onNewTab,
-    onCloseAllTabs,
-    onCloseOtherTabs,
-    onCloseTabsToTheRight,
-    onCloseTabsToTheLeft,
-    onCloseTabsByPathPrefix,
-    onCloseTabsBySourceType,
     onToggleHeaderVisibility,
   }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -134,18 +122,7 @@ const TabBar: React.FC<TabBarProps> = memo(
         </Button>
         {/* View mode toggle */}
         <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} disabled={!activeTabId} />
-        {/* Tab management menu */}
-        <TabManagementMenu
-          tabs={tabs}
-          activeTabId={activeTabId}
-          onCloseAll={onCloseAllTabs}
-          onCloseOthers={onCloseOtherTabs}
-          onCloseToTheRight={onCloseTabsToTheRight}
-          onCloseToTheLeft={onCloseTabsToTheLeft}
-          onCloseByPathPrefix={onCloseTabsByPathPrefix}
-          onCloseBySourceType={onCloseTabsBySourceType}
-          onToggleHeaderVisibility={onToggleHeaderVisibility}
-        />
+        <TabManagementMenu onToggleHeaderVisibility={onToggleHeaderVisibility} />
       </div>
     );
   }

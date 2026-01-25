@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +16,7 @@ interface NavigationButtonProps {
   icon: LucideIcon;
 }
 
-const NavigationButton: React.FC<NavigationButtonProps> = ({ onClick, disabled, icon: Icon }) => (
+const NavigationButton: React.FC<NavigationButtonProps> = memo(({ onClick, disabled, icon: Icon }) => (
   <button
     onClick={onClick}
     disabled={disabled}
@@ -38,9 +39,11 @@ const NavigationButton: React.FC<NavigationButtonProps> = ({ onClick, disabled, 
       )}
     />
   </button>
-);
+));
 
-const NavigationControls: React.FC<NavigationControlsProps> = ({
+NavigationButton.displayName = 'NavigationButton';
+
+const NavigationControls: React.FC<NavigationControlsProps> = memo(({
   currentIndex,
   total,
   onPrevious,
@@ -71,8 +74,8 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
 
             {/* Modern separator with gradient */}
             <div className="relative">
-              <div className="w-px h-6 sm:h-8 lg:h-10 bg-gradient-to-b from-transparent via-border to-transparent" />
-              <div className="absolute inset-0 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent blur-sm" />
+              <div className="w-px h-6 sm:h-8 lg:h-10 bg-linear-to-b from-transparent via-border to-transparent" />
+              <div className="absolute inset-0 w-px bg-linear-to-b from-transparent via-primary/20 to-transparent blur-sm" />
             </div>
 
             {/* Next Button */}
@@ -106,6 +109,8 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
       </div>
     </div>
   );
-};
+});
+
+NavigationControls.displayName = 'NavigationControls';
 
 export default NavigationControls;

@@ -4,52 +4,50 @@ import { useTabsStore } from '../store/tabs-store';
 import { fileStorageDB } from '@/services/indexeddb';
 import { useFileStore } from '@/components/features/file-explorer/store/file-store';
 
-interface UseSaveShortcutReturn {
-  showSaveDialog: boolean;
-  setShowSaveDialog: (show: boolean) => void;
-  defaultFileName: string;
-  handleSaveToFile: (fileName: string) => Promise<void>;
-  isSaving: boolean;
-}
 
-export const useSaveShortcut = (): UseSaveShortcutReturn => {
+/**
+ * Custom hook that handles keyboard shortcut (Ctrl/Cmd + S) for saving tab content
+ * 
+ * This hook:
+ * - Listens for Ctrl/Cmd + S keyboard shortcut
+ * - Saves content to existing file if tab is linked to a file
+ * - Shows save dialog for new/unlinked tabs
+ * - Prevents saving empty content
+ * - Manages save dialog visibility and saving state
+ * 
+ */
+export function useSaveShortcut() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const activeTab = useTabsStore((state) => state.tabs.find((t) => t.id === state.activeTabId));
   const updateTabSource = useTabsStore((state) => state.updateTabSource);
 
-  // Handle Ctrl+S
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
-      // Check for Ctrl+S (or Cmd+S on Mac)
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
 
         if (!activeTab) return;
 
-        // Don't save empty untitled tabs
         if (!activeTab.content.trim()) {
           toast.error('Cannot save empty file');
           return;
         }
 
         if (activeTab.sourceType === 'file' && activeTab.sourceFileId) {
-          // Auto-save to existing file
           try {
             setIsSaving(true);
             await fileStorageDB.updateFile(activeTab.sourceFileId, activeTab.content);
             toast.success('File saved');
-          } catch (error) {
+          } catch {
             toast.error('Failed to save file');
-            console.error('Save error:', error);
           } finally {
             setIsSaving(false);
           }
-        } else {
-          // Show save dialog for paste/untitled tabs
-          setShowSaveDialog(true);
+          return;
         }
+        setShowSaveDialog(true);
       }
     };
 
@@ -57,7 +55,12 @@ export const useSaveShortcut = (): UseSaveShortcutReturn => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeTab]);
 
-  // Handle saving to new file
+  /**
+   * Saves the active tab's content to a new file in IndexedDB
+   * 
+   * @param {string} fileName - Name for the new file (without path)
+   * @throws {Error} If a file with the same name already exists
+   */
   const handleSaveToFile = useCallback(
     async (fileName: string) => {
       if (!activeTab) return;
@@ -65,13 +68,11 @@ export const useSaveShortcut = (): UseSaveShortcutReturn => {
       setIsSaving(true);
 
       try {
-        // Check if file already exists
         const existingFile = await fileStorageDB.getFileByPath(`/${fileName}`);
         if (existingFile) {
           throw new Error('A file with this name already exists');
         }
 
-        // Create new file in IndexedDB
         const storedFile = await fileStorageDB.addFile({
           name: fileName,
           path: `/${fileName}`,
@@ -80,10 +81,7 @@ export const useSaveShortcut = (): UseSaveShortcutReturn => {
           size: new Blob([activeTab.content]).size,
         });
 
-        // Update tab to be linked to this file
         updateTabSource(activeTab.id, 'file', storedFile.id, storedFile.path);
-
-        // Refresh file tree
         await useFileStore.getState().refreshFileTree();
 
         toast.success(`Saved as ${fileName}`);
@@ -94,21 +92,50 @@ export const useSaveShortcut = (): UseSaveShortcutReturn => {
     [activeTab, updateTabSource]
   );
 
-  // Generate default file name from tab title
-  const defaultFileName = activeTab
-    ? activeTab.title.startsWith('Untitled')
-      ? 'untitled.md'
-      : `${activeTab.title
-          .replace(/[^a-zA-Z0-9-_\s]/g, '')
-          .replace(/\s+/g, '-')
-          .toLowerCase()}.md`
-    : 'untitled.md';
-
   return {
     showSaveDialog,
     setShowSaveDialog,
-    defaultFileName,
+    defaultFileName: getDefaultFileName(activeTab?.title || ''),
     handleSaveToFile,
     isSaving,
   };
 };
+
+/**
+ * Generates a default file name from a tab title
+ * 
+ * Rules:
+ * - Preserves 'untitled' prefix with numeric suffixes (e.g., "untitled 2" → "untitled 2.md")
+ * - Converts regular titles to lowercase, kebab-case format (e.g., "My File" → "my-file.md")
+ * - Removes special characters (keeps only alphanumeric, hyphens, underscores)
+ * - Replaces spaces with hyphens
+ * - Always appends .md extension
+ * 
+ * @param {string} title - The tab title to convert
+ * @returns {string} Sanitized file name with .md extension
+ * 
+ * @example
+ * ```ts
+ * getDefaultFileName("untitled 2")    // returns "untitled 2.md"
+ * getDefaultFileName("My Document")   // returns "my-document.md"
+ * getDefaultFileName("file@name!")    // returns "filename.md"
+ * ```
+ */
+function getDefaultFileName(title: string): string {
+  const untitled = 'untitled';
+  if (!title) return `${untitled}.md`;
+
+  if (title.startsWith(untitled) && title.length > untitled.length) {
+    const suffix = title.substring(untitled.length).trim();
+    return `${untitled}${suffix}.md`;
+  }
+
+  if (title.startsWith(untitled)) {
+    return `${untitled}.md`;
+  }
+
+  return `${title
+    .replace(/[^a-zA-Z0-9-_\s]/g, '')
+    .replace(/\s+/g, '-')
+    .toLowerCase()}.md`;
+}

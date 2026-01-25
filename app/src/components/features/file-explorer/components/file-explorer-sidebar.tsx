@@ -10,15 +10,16 @@ import {
   useFileTree,
   useSelectedFile,
   useExpandedDirectories,
-  useIsUploading,
-  useUploadProgress,
+  useFileUpload,
   useFileStoreActions,
   useIsFileStoreInitialized,
   useIsFileLoading,
+  useDirectory,
 } from '../store/file-store';
 import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
 import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 
 interface FileExplorerSidebarProps {
   className?: string;
@@ -32,21 +33,11 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
   const fileTree = useFileTree();
   const selectedFile = useSelectedFile();
   const expandedDirectories = useExpandedDirectories();
-  const isUploading = useIsUploading();
-  const uploadProgress = useUploadProgress();
   const isInitialized = useIsFileStoreInitialized();
   const isLoading = useIsFileLoading();
-
-  const {
-    initialize,
-    selectFile,
-    toggleDirectory,
-    uploadFiles,
-    uploadDirectory,
-    handleDrop,
-    deleteFile,
-    deleteDirectory,
-  } = useFileStoreActions();
+  const { isUploading, uploadProgress, uploadDirectory, uploadFiles } = useFileUpload();
+  const { toggleDirectory, deleteDirectory } = useDirectory();
+  const { initialize, selectFile, handleDrop, deleteFile } = useFileStoreActions();
 
   const [isOpen, setIsOpen] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -107,9 +98,14 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
   if (!isOpen) {
     return (
       <div className={cn('flex flex-col items-center bg-background py-2', className, 'w-10')}>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(true)}>
-          <PanelLeftOpen className="h-4 w-4" />
-        </Button>
+        <TooltipButton
+          button={
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsOpen(true)}>
+              <PanelLeftOpen className="h-4 w-4" />
+            </Button>
+          }
+          tooltipText="Open sidebar"
+        />
       </div>
     );
   }
@@ -131,14 +127,19 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
                 onUpload={handleDirectoryUpload}
                 disabled={isUploading}
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setIsOpen(false)}
-              >
-                <PanelLeftClose className="h-4 w-4" />
-              </Button>
+              <TooltipButton
+                button={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <PanelLeftClose className="h-4 w-4" />
+                  </Button>
+                }
+                tooltipText="Close sidebar"
+              />
             </div>
           </div>
         </div>
