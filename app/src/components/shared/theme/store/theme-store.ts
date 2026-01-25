@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ThemeOption, themes } from '@/theme/themes';
+import { withErrorHandling } from '@/utils/functions/error';
 
 const defaultTheme = themes.find((t) => t.name === 'Night Reader') ?? themes[0];
 
@@ -16,33 +17,13 @@ interface ThemeState {
   setPendingFloatingPickerOpen: (pending: boolean) => void;
 }
 
-const getInitialTheme = (): ThemeOption => {
-  const savedTheme = localStorage.getItem('theme');
-  if (!savedTheme) {
-    return defaultTheme;
-  }
 
-  try {
-    return JSON.parse(savedTheme);
-  } catch (e) {
-    console.error('Error parsing theme from localStorage:', e);
-    return defaultTheme;
-  }
-};
+function getFromLocal<T>(key: string, defaultValue: T): T {
+  const saved = localStorage.getItem(key);
+  if (!saved) return defaultValue;
 
-const getInitialBookmarkedThemes = (): ThemeOption[] => {
-  const savedBookmarks = localStorage.getItem('bookmarked-themes');
-  if (!savedBookmarks) {
-    return [];
-  }
-
-  try {
-    return JSON.parse(savedBookmarks);
-  } catch (e) {
-    console.error('Error parsing bookmarked themes from localStorage:', e);
-    return [];
-  }
-};
+  return withErrorHandling(JSON.parse, defaultValue)(saved);
+}
 
 /**
  * 🎨 Theme Store
@@ -51,8 +32,8 @@ const getInitialBookmarkedThemes = (): ThemeOption[] => {
  * It allows you to set the theme, bookmark/unbookmark themes, and check bookmark status.
  */
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  currentTheme: getInitialTheme(),
-  bookmarkedThemes: getInitialBookmarkedThemes(),
+  currentTheme: getFromLocal('theme', defaultTheme),
+  bookmarkedThemes: getFromLocal('bookmarked-themes', []),
   isFloatingPickerOpen: false,
   pendingFloatingPickerOpen: false,
 

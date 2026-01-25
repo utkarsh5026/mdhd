@@ -3,16 +3,22 @@ import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 import { ThemeOption } from '@/theme/themes';
 
 /**
- * 🎨 A delightful theme hook that lets users personalize their experience!
- *
- * This hook provides a way to set and apply themes to the application.
- * It also ensures that the dark mode is always enabled.
- *
+ * Custom React hook for managing application theme.
+ * 
+ * This hook provides access to the current theme and allows changing themes dynamically.
+ * It automatically applies theme CSS variables to the document root element whenever
+ * the theme changes.
+ * 
  */
 export const useTheme = () => {
   const currentTheme = useThemeStore((state) => state.currentTheme);
   const setTheme = useThemeStore((state) => state.setTheme);
 
+  /**
+   * Applies the current theme's CSS variables to the document root element.
+   * This function updates all theme-related CSS custom properties and ensures
+   * the 'dark' class is applied to the root element.
+   */
   const changeDocumentTheme = useCallback(() => {
     const root = document.documentElement;
 
