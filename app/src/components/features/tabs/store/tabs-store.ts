@@ -43,6 +43,7 @@ interface TabsState {
   version: number;
   _hasHydrated: boolean;
   untitledCounter: number;
+  isHeaderVisible: boolean;
 }
 
 interface TabsActions {
@@ -91,6 +92,9 @@ interface TabsActions {
   closeTabsToTheRight: (tabId: string) => void;
   closeTabsToTheLeft: (tabId: string) => void;
   closeTabsBySourceType: (sourceType: 'paste' | 'file') => void;
+
+  // UI preferences
+  toggleHeaderVisibility: () => void;
 
   // Persistence
   clearPersistedTabs: () => void;
@@ -246,6 +250,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         version: STORAGE_VERSION,
         _hasHydrated: false,
         untitledCounter: 0,
+        isHeaderVisible: true,
 
         createTab: (
           content: string,
@@ -525,6 +530,12 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           }
         },
 
+        toggleHeaderVisibility: () => {
+          set((state) => ({
+            isHeaderVisible: !state.isHeaderVisible,
+          }));
+        },
+
         clearPersistedTabs: () => {
           localStorage.removeItem(STORAGE_KEY);
           set({
@@ -546,6 +557,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             showEmptyState: state.showEmptyState,
             version: state.version,
             untitledCounter: state.untitledCounter,
+            isHeaderVisible: state.isHeaderVisible,
           }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
         version: STORAGE_VERSION,
         onRehydrateStorage: () => (state, error) => {
@@ -570,6 +582,7 @@ export const useActiveTab = () =>
   useTabsStore((state) => state.tabs.find((t) => t.id === state.activeTabId));
 export const useShowEmptyState = () => useTabsStore((state) => state.showEmptyState);
 export const useTabsHasHydrated = () => useTabsStore((state) => state._hasHydrated);
+export const useHeaderVisible = () => useTabsStore((state) => state.isHeaderVisible);
 
 export const useTabsActions = () =>
   useTabsStore(
@@ -593,6 +606,7 @@ export const useTabsActions = () =>
       closeTabsToTheRight: state.closeTabsToTheRight,
       closeTabsToTheLeft: state.closeTabsToTheLeft,
       closeTabsBySourceType: state.closeTabsBySourceType,
+      toggleHeaderVisibility: state.toggleHeaderVisibility,
       clearPersistedTabs: state.clearPersistedTabs,
     }))
   );

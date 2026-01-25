@@ -38,6 +38,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     closeTabsToTheLeft,
     closeTabsByPathPrefix,
     closeTabsBySourceType,
+    toggleHeaderVisibility,
   } = useTabsActions();
 
   // Get current view mode from active tab
@@ -117,6 +118,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
           onCloseTabsToTheLeft={closeTabsToTheLeft}
           onCloseTabsByPathPrefix={closeTabsByPathPrefix}
           onCloseTabsBySourceType={closeTabsBySourceType}
+          onToggleHeaderVisibility={toggleHeaderVisibility}
         />
       )}
 

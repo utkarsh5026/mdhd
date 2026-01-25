@@ -22,6 +22,7 @@ interface TabBarProps {
   onCloseTabsToTheLeft: (tabId: string) => void;
   onCloseTabsByPathPrefix: (pathPrefix: string) => void;
   onCloseTabsBySourceType: (sourceType: 'paste' | 'file') => void;
+  onToggleHeaderVisibility: () => void;
 }
 
 const TabBar: React.FC<TabBarProps> = memo(
@@ -39,6 +40,7 @@ const TabBar: React.FC<TabBarProps> = memo(
     onCloseTabsToTheLeft,
     onCloseTabsByPathPrefix,
     onCloseTabsBySourceType,
+    onToggleHeaderVisibility,
   }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -142,6 +144,7 @@ const TabBar: React.FC<TabBarProps> = memo(
           onCloseToTheLeft={onCloseTabsToTheLeft}
           onCloseByPathPrefix={onCloseTabsByPathPrefix}
           onCloseBySourceType={onCloseTabsBySourceType}
+          onToggleHeaderVisibility={onToggleHeaderVisibility}
         />
       </div>
     );

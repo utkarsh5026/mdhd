@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   FileText,
   ClipboardPaste,
+  Maximize,
+  Minimize,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import type { Tab } from '../store/tabs-store';
+import { useHeaderVisible } from '../store/tabs-store';
 
 interface MenuItemProps {
   icon: LucideIcon;
@@ -57,6 +60,7 @@ interface TabManagementMenuProps {
   onCloseToTheLeft: (tabId: string) => void;
   onCloseByPathPrefix: (pathPrefix: string) => void;
   onCloseBySourceType: (sourceType: 'paste' | 'file') => void;
+  onToggleHeaderVisibility: () => void;
 }
 
 const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
@@ -69,7 +73,9 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
     onCloseToTheLeft,
     onCloseByPathPrefix,
     onCloseBySourceType,
+    onToggleHeaderVisibility,
   }) => {
+    const isHeaderVisible = useHeaderVisible();
     // Derive unique folders from tabs with sourcePath
     const uniqueFolders = useMemo(() => {
       const folders = new Map<string, string>();
@@ -135,6 +141,13 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
     const menuItems = useMemo(
       () => [
         {
+          icon: isHeaderVisible ? Maximize : Minimize,
+          label: isHeaderVisible ? 'Hide header' : 'Show header',
+          disabled: false,
+          onClick: onToggleHeaderVisibility,
+        },
+        { separator: true },
+        {
           icon: XCircle,
           label: 'Close all tabs',
           count: tabs.length,
@@ -182,6 +195,8 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
         },
       ],
       [
+        isHeaderVisible,
+        onToggleHeaderVisibility,
         tabs.length,
         hasNoTabs,
         hasOnlyOneTab,

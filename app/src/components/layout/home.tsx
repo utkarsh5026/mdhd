@@ -5,12 +5,14 @@ import {
   TabbedContentArea,
   FullscreenMarkdownViewer,
   useTabsActions,
+  useHeaderVisible,
 } from '@/components/features/tabs';
 import type { StoredFile } from '@/services/indexeddb';
 
 const Homepage = () => {
   const [fullscreenTabId, setFullscreenTabId] = useState<string | null>(null);
   const { createTab, setActiveTab, findTabByFileId, setShowEmptyState } = useTabsActions();
+  const isHeaderVisible = useHeaderVisible();
 
   const handleEnterFullscreen = useCallback((tabId: string) => {
     setFullscreenTabId(tabId);
@@ -44,9 +46,9 @@ const Homepage = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden font-cascadia-code bg-card">
-      <Header />
+      {isHeaderVisible && <Header />}
 
-      <div className="shrink-0 h-15" />
+      {isHeaderVisible && <div className="shrink-0 h-15" />}
       <div className="relative flex flex-1 min-h-0 p-2 gap-2">
         <div
           className="absolute inset-0 pointer-events-none"
