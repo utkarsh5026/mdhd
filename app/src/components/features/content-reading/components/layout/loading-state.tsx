@@ -7,7 +7,7 @@ const contentSkeleton = generateArrayWithUniqueIds(3);
 
 const LoadingState: React.FC = () => {
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-background via-primary/5 to-secondary/10 relative overflow-hidden font-cascadia-code">
+    <div className="flex flex-col items-center justify-center h-full bg-linear-to-br from-background via-primary/5 to-secondary/10 relative overflow-hidden font-cascadia-code">
       <div className="absolute inset-0">
         {particles.map((particle) => (
           <motion.div
@@ -131,7 +131,7 @@ const LoadingState: React.FC = () => {
             {/* Title skeleton */}
             <div className="space-y-2">
               <motion.div
-                className="h-8 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg"
+                className="h-8 bg-linear-to-r from-primary/20 to-secondary/20 rounded-lg"
                 animate={{ opacity: [0.3, 0.6, 0.3] }}
                 transition={{
                   duration: 1.5,
@@ -146,7 +146,7 @@ const LoadingState: React.FC = () => {
             {[...Array(3)].map((_, i) => (
               <div key={i} className="space-y-2">
                 <motion.div
-                  className="h-4 bg-gradient-to-r from-muted/40 to-muted/20 rounded"
+                  className="h-4 bg-linear-to-r from-muted/40 to-muted/20 rounded"
                   animate={{ opacity: [0.2, 0.4, 0.2] }}
                   transition={{
                     duration: 1.8,
@@ -157,7 +157,7 @@ const LoadingState: React.FC = () => {
                   style={{ width: `${85 + Math.random() * 15}%` }}
                 />
                 <motion.div
-                  className="h-4 bg-gradient-to-r from-muted/30 to-muted/15 rounded"
+                  className="h-4 bg-linear-to-r from-muted/30 to-muted/15 rounded"
                   animate={{ opacity: [0.15, 0.35, 0.15] }}
                   transition={{
                     duration: 2,

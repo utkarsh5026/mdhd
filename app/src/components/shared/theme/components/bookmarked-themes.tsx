@@ -13,9 +13,12 @@ const BookmarkedThemes: React.FC<BookmarkedThemesProps> = memo(({ onThemeChange 
   const bookmarkedThemes = useThemeStore((state) => state.bookmarkedThemes);
   const currentTheme = useThemeStore((state) => state.currentTheme);
 
-  const handleThemeSelect = useCallback((theme: ThemeTypeOption) => {
-    onThemeChange(theme);
-  }, [onThemeChange]);
+  const handleThemeSelect = useCallback(
+    (theme: ThemeTypeOption) => {
+      onThemeChange(theme);
+    },
+    [onThemeChange]
+  );
 
   return (
     <div className={cn('space-y-2')}>

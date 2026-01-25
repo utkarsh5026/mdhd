@@ -1,55 +1,67 @@
-import { useState, useCallback, useEffect } from 'react';
-import { MarkdownViewer } from '@/components/features/content-reading';
-import MarkdownEditor from './markdown-editor';
-import HeroMain from './hero-section';
+import { useState, useCallback } from 'react';
 import Header from './header';
-import { useReadingStore } from '@/components/features/content-reading/store/use-reading-store';
+import { FileExplorerSidebar } from '@/components/features/file-explorer';
+import {
+  TabbedContentArea,
+  FullscreenMarkdownViewer,
+  useTabsActions,
+  useHeaderVisible,
+} from '@/components/features/tabs';
+import type { StoredFile } from '@/services/indexeddb';
 
 const Homepage = () => {
-  const markdownInput = useReadingStore((state) => state.markdownInput);
-  const isInitialized = useReadingStore((state) => state.isInitialized);
-  const hasHydrated = useReadingStore((state) => state._hasHydrated);
-  const initializeReading = useReadingStore((state) => state.initializeReading);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenTabId, setFullscreenTabId] = useState<string | null>(null);
+  const { createTab, setActiveTab, findTabByFileId, setShowEmptyState } = useTabsActions();
+  const isHeaderVisible = useHeaderVisible();
 
-  // Auto-resume reading after hydration completes
-  useEffect(() => {
-    if (hasHydrated && isInitialized && markdownInput.trim()) {
-      setIsFullscreen(true);
-    }
-  }, [hasHydrated, isInitialized, markdownInput]);
-
-  const handleStartReading = useCallback(() => {
-    if (!markdownInput.trim()) return;
-    setIsFullscreen(true);
-  }, [markdownInput]);
-
-  const handleExitFullscreen = useCallback(() => {
-    setIsFullscreen(false);
+  const handleEnterFullscreen = useCallback((tabId: string) => {
+    setFullscreenTabId(tabId);
   }, []);
 
-  if (isFullscreen) {
-    return <MarkdownViewer markdown={markdownInput} exitFullScreen={handleExitFullscreen} />;
+  const handleExitFullscreen = useCallback(() => {
+    setFullscreenTabId(null);
+  }, []);
+
+  const handleFileSelect = useCallback(
+    (file: StoredFile) => {
+      // Check if a tab already exists for this file
+      const existingTab = findTabByFileId(file.id);
+
+      if (existingTab) {
+        // Activate existing tab
+        setActiveTab(existingTab.id);
+        setShowEmptyState(false);
+      } else {
+        // Create new tab for this file
+        createTab(file.content, file.name, 'file', file.id, file.path);
+      }
+    },
+    [createTab, setActiveTab, findTabByFileId, setShowEmptyState]
+  );
+
+  // Fullscreen mode
+  if (fullscreenTabId) {
+    return <FullscreenMarkdownViewer tabId={fullscreenTabId} onExit={handleExitFullscreen} />;
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden font-cascadia-code bg-background">
-      <Header />
+    <div className="h-screen flex flex-col overflow-hidden font-cascadia-code bg-card">
+      {isHeaderVisible && <Header />}
 
-      <div className="relative z-10 pt-20">
-        <div className="container mx-auto px-6 py-12">
-          {/* Hero Section */}
-          <HeroMain />
+      {isHeaderVisible && <div className="shrink-0 h-15" />}
+      <div className="relative flex flex-1 min-h-0 p-2 gap-2">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--primary) 10%, transparent) 0%, transparent 50%)',
+          }}
+        />
 
-          {/* Editor */}
-          <div className="max-w-3xl mx-auto">
-            <MarkdownEditor
-              markdownInput={markdownInput}
-              setMarkdownInput={initializeReading}
-              handleStartReading={handleStartReading}
-            />
-          </div>
-        </div>
+        <FileExplorerSidebar className="w-64 rounded-2xl" onFileSelect={handleFileSelect} />
+
+        {/* Main Content Area with Tabs */}
+        <TabbedContentArea onEnterFullscreen={handleEnterFullscreen} />
       </div>
     </div>
   );

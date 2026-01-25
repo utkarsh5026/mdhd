@@ -1,0 +1,156 @@
+import React, { useRef, useCallback, memo } from 'react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { AnimatePresence } from 'framer-motion';
+import TabItem from './tab-item';
+import TabManagementMenu from './tab-management-menu';
+import ViewModeToggle from './view-mode-toggle';
+import type { Tab } from '../store/tabs-store';
+
+interface TabBarProps {
+  tabs: Tab[];
+  activeTabId: string | null;
+  viewMode: 'preview' | 'edit';
+  onViewModeToggle: (mode: 'preview' | 'edit') => void;
+  onTabSelect: (tabId: string) => void;
+  onTabClose: (tabId: string) => void;
+  onNewTab: () => void;
+  onCloseAllTabs: () => void;
+  onCloseOtherTabs: (tabId: string) => void;
+  onCloseTabsToTheRight: (tabId: string) => void;
+  onCloseTabsToTheLeft: (tabId: string) => void;
+  onCloseTabsByPathPrefix: (pathPrefix: string) => void;
+  onCloseTabsBySourceType: (sourceType: 'paste' | 'file') => void;
+  onToggleHeaderVisibility: () => void;
+}
+
+const TabBar: React.FC<TabBarProps> = memo(
+  ({
+    tabs,
+    activeTabId,
+    viewMode,
+    onViewModeToggle,
+    onTabSelect,
+    onTabClose,
+    onNewTab,
+    onCloseAllTabs,
+    onCloseOtherTabs,
+    onCloseTabsToTheRight,
+    onCloseTabsToTheLeft,
+    onCloseTabsByPathPrefix,
+    onCloseTabsBySourceType,
+    onToggleHeaderVisibility,
+  }) => {
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    const handleScrollLeft = useCallback(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+      }
+    }, []);
+
+    const handleScrollRight = useCallback(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+      }
+    }, []);
+
+    const handleTabClose = useCallback(
+      (tabId: string) => (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onTabClose(tabId);
+      },
+      [onTabClose]
+    );
+
+    const handleWheel = useCallback((e: React.WheelEvent) => {
+      if (scrollContainerRef.current) {
+        e.preventDefault();
+        scrollContainerRef.current.scrollLeft += e.deltaY;
+      }
+    }, []);
+
+    return (
+      <div className="flex items-center bg-muted/20 border-b border-border/50">
+        {' '}
+        {/* Scroll left button */}
+        {tabs.length > 3 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-8 shrink-0 rounded-none border-r border-border/30"
+            onClick={handleScrollLeft}
+            aria-label="Scroll tabs left"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+        )}
+        {/* Tabs container */}
+        <div
+          ref={scrollContainerRef}
+          onWheel={handleWheel}
+          className={cn(
+            'flex-1 flex items-stretch overflow-x-auto scrollbar-none',
+            'scroll-smooth'
+          )}
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <AnimatePresence mode="popLayout" initial={false}>
+            {tabs.map((tab) => (
+              <TabItem
+                key={tab.id}
+                id={tab.id}
+                title={tab.title}
+                isActive={tab.id === activeTabId}
+                sourceType={tab.sourceType}
+                onSelect={() => onTabSelect(tab.id)}
+                onClose={handleTabClose(tab.id)}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+        {/* Scroll right button */}
+        {tabs.length > 3 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-8 shrink-0 rounded-none border-l border-border/30"
+            onClick={handleScrollRight}
+            aria-label="Scroll tabs right"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        )}
+        {/* New tab button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 rounded-none border-l border-border/30 hover:bg-primary/10"
+          onClick={onNewTab}
+          aria-label="Create new tab"
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
+        {/* View mode toggle */}
+        <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} disabled={!activeTabId} />
+        {/* Tab management menu */}
+        <TabManagementMenu
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onCloseAll={onCloseAllTabs}
+          onCloseOthers={onCloseOtherTabs}
+          onCloseToTheRight={onCloseTabsToTheRight}
+          onCloseToTheLeft={onCloseTabsToTheLeft}
+          onCloseByPathPrefix={onCloseTabsByPathPrefix}
+          onCloseBySourceType={onCloseTabsBySourceType}
+          onToggleHeaderVisibility={onToggleHeaderVisibility}
+        />
+      </div>
+    );
+  }
+);
+
+TabBar.displayName = 'TabBar';
+
+export default TabBar;

@@ -242,9 +242,7 @@ export const ExpandableCategory = memo<ExpandableCategoryProps>(
           </div>
         </button>
 
-        {expanded && (
-          <div className={cn('p-3', contentClassName)}>{children}</div>
-        )}
+        {expanded && <div className={cn('p-3', contentClassName)}>{children}</div>}
       </div>
     );
   }

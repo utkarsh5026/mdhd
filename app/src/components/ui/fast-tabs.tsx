@@ -36,13 +36,7 @@ interface FastTabsProps {
  * Fast tabs component using startTransition for smooth tab switching.
  * Drop-in replacement for shadcn Tabs with better performance.
  */
-function FastTabs({
-  defaultValue,
-  value,
-  onValueChange,
-  className,
-  children,
-}: FastTabsProps) {
+function FastTabs({ defaultValue, value, onValueChange, className, children }: FastTabsProps) {
   const [internalValue, setInternalValue] = useState(defaultValue);
 
   const activeTab = value ?? internalValue;
@@ -60,10 +54,7 @@ function FastTabs({
     [onValueChange]
   );
 
-  const contextValue = useMemo(
-    () => ({ activeTab, setActiveTab }),
-    [activeTab, setActiveTab]
-  );
+  const contextValue = useMemo(() => ({ activeTab, setActiveTab }), [activeTab, setActiveTab]);
 
   return (
     <TabsContext.Provider value={contextValue}>
@@ -79,10 +70,7 @@ interface FastTabsListProps {
   children: React.ReactNode;
 }
 
-const FastTabsList = memo(function FastTabsList({
-  className,
-  children,
-}: FastTabsListProps) {
+const FastTabsList = memo(function FastTabsList({ className, children }: FastTabsListProps) {
   return (
     <div
       data-slot="tabs-list"

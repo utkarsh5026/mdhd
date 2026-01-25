@@ -61,10 +61,7 @@ const FloatingThemePicker: React.FC = () => {
   return (
     <>
       {/* Semi-transparent backdrop */}
-      <div
-        className="fixed inset-0 bg-black/30 z-[60]"
-        onClick={closeFloatingPicker}
-      />
+      <div className="fixed inset-0 bg-black/30 z-[60]" onClick={closeFloatingPicker} />
 
       {/* Floating picker panel - positioned at bottom for mobile */}
       <div
@@ -87,9 +84,7 @@ const FloatingThemePicker: React.FC = () => {
             <Palette className="h-5 w-5 text-primary" />
             <div>
               <h3 className="font-semibold text-base">Choose Theme</h3>
-              <p className="text-xs text-muted-foreground">
-                Preview changes in real-time
-              </p>
+              <p className="text-xs text-muted-foreground">Preview changes in real-time</p>
             </div>
           </div>
           <Button
@@ -104,7 +99,12 @@ const FloatingThemePicker: React.FC = () => {
 
         {/* Tabs with lazy rendering - only render active tab */}
         <div className="overflow-y-auto flex-1 p-4">
-          <Tabs defaultValue="categories" value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <Tabs
+            defaultValue="categories"
+            value={activeTab}
+            onValueChange={handleTabChange}
+            className="w-full"
+          >
             <TabsList className="w-full mb-4 h-10 rounded-xl bg-muted/50">
               <TabsTrigger value="categories" className="text-sm flex-1">
                 Categories
@@ -128,9 +128,7 @@ const FloatingThemePicker: React.FC = () => {
                 />
               )}
 
-              {activeTab === 'bookmarked' && (
-                <BookmarkedThemes onThemeChange={handleThemeChange} />
-              )}
+              {activeTab === 'bookmarked' && <BookmarkedThemes onThemeChange={handleThemeChange} />}
 
               {activeTab === 'all' && (
                 <ThemesList
