@@ -51,10 +51,15 @@ const Homepage = () => {
     <div className="h-screen flex flex-col overflow-hidden font-cascadia-code bg-background">
       <Header />
 
-      {/* Spacer for fixed header - header is approximately 60px (py-3 + content) */}
       <div className="shrink-0 h-15" />
+      <div className="relative flex flex-1 min-h-0">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--primary) 10%, transparent) 0%, transparent 50%)',
+          }}
+        />
 
-      <div className="flex flex-1 min-h-0">
         <FileExplorerSidebar
           className="w-64 border-r border-border/50 shrink-0"
           onFileSelect={handleFileSelect}
