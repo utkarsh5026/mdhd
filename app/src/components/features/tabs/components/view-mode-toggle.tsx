@@ -14,18 +14,18 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = memo(
     const isPreview = viewMode === 'preview';
 
     return (
-      <div className="flex items-center h-9 border-l border-border/30">
+      <div className="flex items-center h-7 border-l border-border/10">
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               disabled={disabled}
               onClick={() => onToggle(isPreview ? 'edit' : 'preview')}
               className={cn(
-                'h-9 px-3 flex items-center gap-2',
+                'h-7 px-2 flex items-center gap-1.5',
                 'transition-all duration-200 ease-out',
                 'hover:bg-primary/10',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50'
+                'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30'
               )}
               aria-label={isPreview ? 'Switch to Edit Mode' : 'Switch to Preview Mode'}
             >

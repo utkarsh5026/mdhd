@@ -217,16 +217,16 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0 rounded-none border-l border-border/30 transition-all duration-150 hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary"
+            className="h-7 w-7 shrink-0 rounded-none border-l border-border/10 transition-all duration-150 hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary"
             aria-label="Tab management menu"
             disabled={hasNoTabs}
           >
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal className="h-3.5 w-3.5" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="w-60 rounded-xl border-border/50 font-cascadia-code shadow-lg"
+          className="w-60 rounded-2xl border-border/50 font-cascadia-code shadow-lg backdrop-blur-2xl"
         >
           <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
             Tab Management
