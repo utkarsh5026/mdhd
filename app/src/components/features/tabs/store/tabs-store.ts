@@ -141,7 +141,7 @@ const customTabsStorage = {
               viewMode: tab.readingState.viewMode || 'preview',
               sections,
               isInitialized: sections.length > 0,
-              metadata
+              metadata,
             },
           };
         }) as typeof parsed.state.tabs;
@@ -224,7 +224,9 @@ const extractTitleFromMarkdown = (content: string): string => {
  * Create initial reading state for a new tab
  */
 const createInitialReadingState = (content: string): TabReadingState => {
-  const { metadata, sections } = content ? parseMarkdownIntoSections(content) : { metadata: {}, sections: [] };
+  const { metadata, sections } = content
+    ? parseMarkdownIntoSections(content)
+    : { metadata: {}, sections: [] };
   return {
     currentIndex: 0,
     readSections: new Set([0]),
@@ -415,12 +417,12 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) =>
               t.id === tabId
                 ? {
-                  ...t,
-                  readingState: {
-                    ...t.readingState,
-                    ...newReadingState,
-                  },
-                }
+                    ...t,
+                    readingState: {
+                      ...t.readingState,
+                      ...newReadingState,
+                    },
+                  }
                 : t
             ),
           }));
@@ -431,7 +433,9 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) => {
               if (t.id !== tabId) return t;
 
-              const { metadata, sections } = content ? parseMarkdownIntoSections(content) : { metadata: null, sections: [] };
+              const { metadata, sections } = content
+                ? parseMarkdownIntoSections(content)
+                : { metadata: null, sections: [] };
               return {
                 ...t,
                 content,
@@ -462,11 +466,11 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) =>
               t.id === tabId
                 ? {
-                  ...t,
-                  sourceType,
-                  sourceFileId,
-                  sourcePath,
-                }
+                    ...t,
+                    sourceType,
+                    sourceFileId,
+                    sourcePath,
+                  }
                 : t
             ),
           }));
@@ -594,8 +598,6 @@ export const useTabsActions = () =>
       createTab: state.createTab,
       createUntitledTab: state.createUntitledTab,
       closeTab: state.closeTab,
-      closeAllTabs: state.closeAllTabs,
-      closeOtherTabs: state.closeOtherTabs,
       setActiveTab: state.setActiveTab,
       activateNextTab: state.activateNextTab,
       activatePreviousTab: state.activatePreviousTab,
@@ -605,12 +607,34 @@ export const useTabsActions = () =>
       getTabById: state.getTabById,
       setShowEmptyState: state.setShowEmptyState,
       findTabByFileId: state.findTabByFileId,
-      closeTabByFileId: state.closeTabByFileId,
-      closeTabsByPathPrefix: state.closeTabsByPathPrefix,
-      closeTabsToTheRight: state.closeTabsToTheRight,
-      closeTabsToTheLeft: state.closeTabsToTheLeft,
       closeTabsBySourceType: state.closeTabsBySourceType,
       toggleHeaderVisibility: state.toggleHeaderVisibility,
       clearPersistedTabs: state.clearPersistedTabs,
     }))
   );
+
+export function useTabClose() {
+  return useTabsStore(
+    useShallow(
+      ({
+        closeAllTabs,
+        closeOtherTabs,
+        closeTabByFileId,
+        closeTabsByPathPrefix,
+        closeTabsBySourceType,
+        closeTabsToTheLeft,
+        closeTabsToTheRight,
+      }) => {
+        return {
+          closeAllTabs,
+          closeOtherTabs,
+          closeTabByFileId,
+          closeTabsByPathPrefix,
+          closeTabsBySourceType,
+          closeTabsToTheLeft,
+          closeTabsToTheRight,
+        };
+      }
+    )
+  );
+}
