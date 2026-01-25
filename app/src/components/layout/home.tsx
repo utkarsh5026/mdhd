@@ -39,31 +39,24 @@ const Homepage = () => {
 
   // Fullscreen mode
   if (fullscreenTabId) {
-    return (
-      <FullscreenMarkdownViewer
-        tabId={fullscreenTabId}
-        onExit={handleExitFullscreen}
-      />
-    );
+    return <FullscreenMarkdownViewer tabId={fullscreenTabId} onExit={handleExitFullscreen} />;
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden font-cascadia-code bg-background">
+    <div className="h-screen flex flex-col overflow-hidden font-cascadia-code bg-card">
       <Header />
 
       <div className="shrink-0 h-15" />
-      <div className="relative flex flex-1 min-h-0">
+      <div className="relative flex flex-1 min-h-0 p-2 gap-2">
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--primary) 10%, transparent) 0%, transparent 50%)',
+            background:
+              'radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--primary) 10%, transparent) 0%, transparent 50%)',
           }}
         />
 
-        <FileExplorerSidebar
-          className="w-64 border-r border-border/50 shrink-0"
-          onFileSelect={handleFileSelect}
-        />
+        <FileExplorerSidebar className="w-64 rounded-2xl" onFileSelect={handleFileSelect} />
 
         {/* Main Content Area with Tabs */}
         <TabbedContentArea onEnterFullscreen={handleEnterFullscreen} />

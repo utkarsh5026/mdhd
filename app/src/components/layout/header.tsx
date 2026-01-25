@@ -28,7 +28,7 @@ const Header = () => {
               transition={{ type: 'spring', stiffness: 400, damping: 17 }}
             >
               <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:bg-primary/30 transition-colors duration-300" />
-              <div className="relative w-9 h-9 bg-linear-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg shadow-primary/25">
+              <div className="relative w-7 h-7 bg-linear-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25">
                 <Hash className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
               </div>
             </motion.div>

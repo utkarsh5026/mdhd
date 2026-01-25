@@ -121,7 +121,7 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
 
   return (
     <>
-      <DropZone onDrop={handleDropZone} className={cn('flex h-full flex-col overflow-y-auto bg-background', className)}>
+      <DropZone onDrop={handleDropZone} className={cn('flex flex-col overflow-y-auto bg-background', className)}>
         {/* Header */}
         <div className="px-3 py-2 border-b border-border/50">
           <div className="flex items-center justify-between">
