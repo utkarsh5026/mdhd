@@ -6,6 +6,7 @@ export {
   useActiveTab,
   useShowEmptyState,
   useTabsHasHydrated,
+  useHeaderVisible,
   useTabsActions,
   type Tab,
   type TabReadingState,
