@@ -87,8 +87,6 @@ export const useSaveShortcut = (): UseSaveShortcutReturn => {
         await useFileStore.getState().refreshFileTree();
 
         toast.success(`Saved as ${fileName}`);
-      } catch (error) {
-        throw error; // Re-throw so dialog can display error
       } finally {
         setIsSaving(false);
       }
