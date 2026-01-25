@@ -1,3 +1,9 @@
+/**
+ * Parses an error into a readable string message.
+ * @param error - The error to parse (can be any type)
+ * @param fallback - Optional fallback message if error is not an Error instance
+ * @returns The parsed error message as a string
+ */
 export const parseError = (error: unknown, fallback?: string) => {
   if (error instanceof Error) {
     return error.message;
@@ -6,39 +12,98 @@ export const parseError = (error: unknown, fallback?: string) => {
 };
 
 /**
- * Creates a function that handles errors automatically.
- * @param fn - The function to wrap with error handling
- * @param fallback - The fallback value to return in case of error
- * @param options - Additional options for error handling
- * @returns A wrapped function that handles errors
+ * Options for configuring error handling behavior.
+ * 
+ * @property context - Context label for error messages (default: 'Error occurred:')
+ * @property logError - Whether to log errors to console (default: true)
+ * @property onError - Optional callback to execute when an error occurs
  */
-export const withErrorHandling = <T, Args extends unknown[]>(
+type ErrorHandlingOptions = {
+  context?: string;
+  logError?: boolean;
+  onError?: (error: unknown) => void;
+}
+
+/**
+ * Internal helper to handle errors consistently across sync and async wrappers.
+ * @template T - The return type of the function
+ * @returns The fallback value
+ */
+function handleErrorWithFallback<T>(error: unknown, fallback: T, options?: ErrorHandlingOptions): T {
+  const { context = 'Error occurred:', onError, logError = true } = options || {};
+
+  if (logError) {
+    console.error(`${context}`, {
+      message: parseError(error),
+      originalError: error,
+    });
+  }
+
+  if (onError) {
+    onError(error);
+  }
+
+  return fallback;
+}
+
+/**
+ * Wraps an asynchronous function with error handling.
+ * @template T - The return type of the wrapped function
+ * @template Args - The argument types of the wrapped function
+ * 
+ * @param fn - The async function to wrap with error handling
+ * @param fallback - The value to return if an error occurs
+ * @param options - Optional configuration for error handling
+ * 
+ * @returns A wrapped version of the function that catches errors and returns the fallback
+ * 
+ * @example
+ * const safeFetch = withErrorHandlingAsync(
+ *   async (url: string) => fetch(url).then(r => r.json()),
+ *   { data: [] },
+ *   { context: 'Fetch failed:' }
+ * );
+ * const result = await safeFetch('/api/data');
+ */
+export const withErrorHandlingAsync = <T, Args extends unknown[]>(
   fn: (...args: Args) => Promise<T>,
   fallback: T,
-  options?: {
-    errorPrefix?: string;
-    onError?: (error: unknown) => void;
-    logError?: boolean;
-  }
+  options?: ErrorHandlingOptions
 ) => {
   return async (...args: Args): Promise<T> => {
     try {
       return await fn(...args);
     } catch (error) {
-      const { errorPrefix = 'Error occurred:', onError, logError = true } = options || {};
+      return handleErrorWithFallback(error, fallback, options);
+    }
+  };
+};
 
-      if (logError) {
-        console.error(`${errorPrefix}`, {
-          message: parseError(error),
-          originalError: error,
-        });
-      }
-
-      if (onError) {
-        onError(error);
-      }
-
-      return fallback;
+/**
+ * Wraps a synchronous function with error handling.
+ * @template T - The return type of the wrapped function
+ * @template Args - The argument types of the wrapped function
+ * 
+ * @param fn - The synchronous function to wrap with error handling
+ * @param fallback - The value to return if an error occurs
+ * @param options - Optional configuration for error handling
+ * 
+ * @returns A wrapped version of the function that catches errors and returns the fallback
+ * 
+ * @example
+ * const safeJsonParse = withErrorHandling(JSON.parse, {}, { context: 'JSON parsing' });
+ * const result = safeJsonParse('{invalid json}');
+ */
+export const withErrorHandling = <T, Args extends unknown[]>(
+  fn: (...args: Args) => T,
+  fallback: T,
+  options?: ErrorHandlingOptions
+) => {
+  return (...args: Args): T => {
+    try {
+      return fn(...args);
+    } catch (error) {
+      return handleErrorWithFallback(error, fallback, options);
     }
   };
 };
