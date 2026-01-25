@@ -190,6 +190,40 @@ class FileStorageDB {
   }
 
   /**
+   * Update an existing file's content
+   */
+  async updateFile(id: string, content: string): Promise<StoredFile | undefined> {
+    const db = await this.getDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([FILES_STORE], 'readwrite');
+      const store = transaction.objectStore(FILES_STORE);
+      const getRequest = store.get(id);
+
+      getRequest.onsuccess = () => {
+        const file = getRequest.result as StoredFile | undefined;
+        if (!file) {
+          resolve(undefined);
+          return;
+        }
+
+        const updatedFile: StoredFile = {
+          ...file,
+          content,
+          size: new Blob([content]).size,
+          updatedAt: Date.now(),
+        };
+
+        const putRequest = store.put(updatedFile);
+        putRequest.onsuccess = () => resolve(updatedFile);
+        putRequest.onerror = () => reject(new Error('Failed to update file'));
+      };
+
+      getRequest.onerror = () => reject(new Error('Failed to get file for update'));
+    });
+  }
+
+  /**
    * Delete a file by ID
    */
   async deleteFile(id: string): Promise<void> {
