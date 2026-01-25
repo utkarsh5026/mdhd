@@ -122,12 +122,7 @@ const TabBar: React.FC<TabBarProps> = memo(
         </Button>
         {/* View mode toggle */}
         <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} disabled={!activeTabId} />
-        {/* Tab management menu */}
-        <TabManagementMenu
-          tabs={tabs}
-          activeTabId={activeTabId}
-          onToggleHeaderVisibility={onToggleHeaderVisibility}
-        />
+        <TabManagementMenu onToggleHeaderVisibility={onToggleHeaderVisibility} />
       </div>
     );
   }
