@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { Eye, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 
 interface ViewModeToggleProps {
   viewMode: 'preview' | 'edit';
@@ -15,8 +15,8 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = memo(
 
     return (
       <div className="flex items-center h-7 border-l border-border/10">
-        <Tooltip>
-          <TooltipTrigger asChild>
+        <TooltipButton
+          button={
             <button
               disabled={disabled}
               onClick={() => onToggle(isPreview ? 'edit' : 'preview')}
@@ -53,13 +53,13 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = memo(
                 {isPreview ? 'Preview' : 'Edit'}
               </span>
             </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={8} className="font-cascadia-code rounded-xl">
-            {isPreview
+          }
+          tooltipText={
+            isPreview
               ? 'Switch to Edit Mode (Edit raw markdown)'
-              : 'Switch to Preview Mode (View rendered)'}
-          </TooltipContent>
-        </Tooltip>
+              : 'Switch to Preview Mode (View rendered)'
+          }
+        />
       </div>
     );
   }

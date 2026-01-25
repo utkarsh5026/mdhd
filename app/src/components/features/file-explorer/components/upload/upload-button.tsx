@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { File, FolderUp } from 'lucide-react';
+import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 
 interface UploadButtonProps {
   variant: 'files' | 'directory';
@@ -24,7 +24,6 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
     const files = e.target.files;
     if (files && files.length > 0) {
       onUpload(files);
-      // Reset input so the same files can be selected again
       e.target.value = '';
     }
   };
@@ -32,24 +31,20 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
   const isDirectory = variant === 'directory';
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClick}
-            disabled={disabled}
-            className="h-7 w-7"
-          >
-            {isDirectory ? <FolderUp className="h-4 w-4" /> : <File className="h-4 w-4" />}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="font-cascadia-code">
-          <p>{isDirectory ? 'Upload folder' : 'Upload files'}</p>
-        </TooltipContent>
-      </Tooltip>
-
+    <TooltipButton
+      button={
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleClick}
+          disabled={disabled}
+          className="h-7 w-7"
+        >
+          {isDirectory ? <FolderUp className="h-4 w-4" /> : <File className="h-4 w-4" />}
+        </Button>
+      }
+      tooltipText={isDirectory ? 'Upload folder' : 'Upload files'}
+    >
       <input
         ref={inputRef}
         type="file"
@@ -62,6 +57,6 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
           directory: '',
         })}
       />
-    </TooltipProvider>
+    </TooltipButton>
   );
 };
