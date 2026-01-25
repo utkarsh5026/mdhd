@@ -48,10 +48,13 @@ const Homepage = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden font-cascadia-code bg-background">
+    <div className="h-screen flex flex-col overflow-hidden font-cascadia-code bg-background">
       <Header />
 
-      <div className="flex h-[calc(100vh-80px)] pt-20">
+      {/* Spacer for fixed header - header is approximately 60px (py-3 + content) */}
+      <div className="shrink-0 h-15" />
+
+      <div className="flex flex-1 min-h-0">
         <FileExplorerSidebar
           className="w-64 border-r border-border/50 shrink-0"
           onFileSelect={handleFileSelect}

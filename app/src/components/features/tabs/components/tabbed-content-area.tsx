@@ -105,7 +105,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
   const shouldShowEmptyState = showEmptyState || tabs.length === 0 || isActiveTabEmpty;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden border-2 rounded-2xl m-2">
       {/* Tab Bar - only show if there are tabs */}
       {tabs.length > 0 && (
         <TabBar
