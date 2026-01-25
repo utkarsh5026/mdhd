@@ -407,12 +407,12 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) =>
               t.id === tabId
                 ? {
-                    ...t,
-                    readingState: {
-                      ...t.readingState,
-                      ...newReadingState,
-                    },
-                  }
+                  ...t,
+                  readingState: {
+                    ...t.readingState,
+                    ...newReadingState,
+                  },
+                }
                 : t
             ),
           }));
@@ -420,17 +420,26 @@ export const useTabsStore = create<TabsState & TabsActions>()(
 
         updateTabContent: (tabId: string, content: string) => {
           set((state) => ({
-            tabs: state.tabs.map((t) =>
-              t.id === tabId
-                ? {
-                    ...t,
-                    content,
-                    contentHash: hashString(content),
-                    title: extractTitleFromMarkdown(content),
-                    readingState: createInitialReadingState(content),
-                  }
-                : t
-            ),
+            tabs: state.tabs.map((t) => {
+              if (t.id !== tabId) return t;
+
+              const sections = content ? parseMarkdownIntoSections(content) : [];
+              return {
+                ...t,
+                content,
+                contentHash: hashString(content),
+                title: extractTitleFromMarkdown(content),
+                readingState: {
+                  ...t.readingState,
+                  sections,
+                  isInitialized: sections.length > 0,
+                  currentIndex: 0,
+                  readSections: new Set([0]),
+                  scrollProgress: 0,
+                  // Preserve viewMode and readingMode
+                },
+              };
+            }),
           }));
         },
 
@@ -444,11 +453,11 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) =>
               t.id === tabId
                 ? {
-                    ...t,
-                    sourceType,
-                    sourceFileId,
-                    sourcePath,
-                  }
+                  ...t,
+                  sourceType,
+                  sourceFileId,
+                  sourcePath,
+                }
                 : t
             ),
           }));
