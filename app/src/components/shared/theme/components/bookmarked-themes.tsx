@@ -3,15 +3,15 @@ import { cn } from '@/lib/utils';
 import { ThemeOption as ThemeTypeOption } from '@/theme/themes';
 import { Star } from 'lucide-react';
 import ThemeOption from './theme-option';
-import { useThemeStore } from '@/components/shared/theme/store/theme-store';
+import { useBookmarkedThemes, useCurrentTheme } from '@/components/shared/theme/store/theme-store';
 
 interface BookmarkedThemesProps {
   onThemeChange: (theme: ThemeTypeOption) => void;
 }
 
 const BookmarkedThemes: React.FC<BookmarkedThemesProps> = memo(({ onThemeChange }) => {
-  const bookmarkedThemes = useThemeStore((state) => state.bookmarkedThemes);
-  const currentTheme = useThemeStore((state) => state.currentTheme);
+  const { bookmarkedThemes } = useBookmarkedThemes();
+  const { currentTheme } = useCurrentTheme();
 
   const handleThemeSelect = useCallback(
     (theme: ThemeTypeOption) => {

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ThemeOption, themes } from '@/theme/themes';
 import { withErrorHandling } from '@/utils/functions/error';
+import { useShallow } from 'zustand/react/shallow';
 
 const defaultTheme = themes.find((t) => t.name === 'Night Reader') ?? themes[0];
 
@@ -16,7 +17,6 @@ interface ThemeState {
   closeFloatingPicker: () => void;
   setPendingFloatingPickerOpen: (pending: boolean) => void;
 }
-
 
 function getFromLocal<T>(key: string, defaultValue: T): T {
   const saved = localStorage.getItem(key);
@@ -67,3 +67,26 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   closeFloatingPicker: () => set({ isFloatingPickerOpen: false }),
   setPendingFloatingPickerOpen: (pending: boolean) => set({ pendingFloatingPickerOpen: pending }),
 }));
+
+export function useCurrentTheme() {
+  return useThemeStore(
+    useShallow(({ currentTheme, setTheme }) => {
+      return { currentTheme, setTheme };
+    })
+  );
+}
+export function useThemeFloatingPicker() {
+  return useThemeStore(
+    useShallow(({ isFloatingPickerOpen, openFloatingPicker, closeFloatingPicker }) => {
+      return { isFloatingPickerOpen, openFloatingPicker, closeFloatingPicker };
+    })
+  );
+}
+
+export const useBookmarkedThemes = () => {
+  return useThemeStore(
+    useShallow(({ bookmarkedThemes, toggleBookmark, isBookmarked }) => {
+      return { bookmarkedThemes, toggleBookmark, isBookmarked };
+    })
+  );
+};
