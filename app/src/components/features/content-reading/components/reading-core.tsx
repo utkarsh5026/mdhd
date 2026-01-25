@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { useThemeStore } from '@/components/shared/theme/store/theme-store';
+import { useThemeFloatingPicker } from '@/components/shared/theme/store/theme-store';
 import { useControls } from '@/components/features/content-reading/hooks';
 import {
   NavigationControls,
@@ -101,8 +101,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     const [menuOpen, setMenuOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const pendingFloatingPickerOpen = useThemeStore((state) => state.pendingFloatingPickerOpen);
-    const openFloatingPicker = useThemeStore((state) => state.openFloatingPicker);
+    const { openFloatingPicker, pendingFloatingPickerOpen } = useThemeFloatingPicker();
 
     const { isControlsVisible, handleInteraction, handleDoubleClick } = useControls({
       goToNext,

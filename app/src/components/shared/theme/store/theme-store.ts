@@ -77,9 +77,21 @@ export function useCurrentTheme() {
 }
 export function useThemeFloatingPicker() {
   return useThemeStore(
-    useShallow(({ isFloatingPickerOpen, openFloatingPicker, closeFloatingPicker }) => {
-      return { isFloatingPickerOpen, openFloatingPicker, closeFloatingPicker };
-    })
+    useShallow(
+      ({
+        isFloatingPickerOpen,
+        openFloatingPicker,
+        closeFloatingPicker,
+        pendingFloatingPickerOpen,
+      }) => {
+        return {
+          isFloatingPickerOpen,
+          openFloatingPicker,
+          closeFloatingPicker,
+          pendingFloatingPickerOpen,
+        };
+      }
+    )
   );
 }
 
