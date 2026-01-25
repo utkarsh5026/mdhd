@@ -366,8 +366,6 @@ export const useFileTree = () => useFileStore((state) => state.fileTree);
 export const useSelectedFile = () => useFileStore((state) => state.selectedFile);
 export const useExpandedDirectories = () => useFileStore((state) => state.expandedDirectories);
 export const useIsFileLoading = () => useFileStore((state) => state.isLoading);
-export const useIsUploading = () => useFileStore((state) => state.isUploading);
-export const useUploadProgress = () => useFileStore((state) => state.uploadProgress);
 export const useFileError = () => useFileStore((state) => state.error);
 export const useIsFileStoreInitialized = () => useFileStore((state) => state.isInitialized);
 
@@ -378,18 +376,36 @@ export const useFileStoreActions = () => {
       refreshFileTree: state.refreshFileTree,
       selectFile: state.selectFile,
       clearSelection: state.clearSelection,
-      toggleDirectory: state.toggleDirectory,
-      expandDirectory: state.expandDirectory,
-      collapseDirectory: state.collapseDirectory,
       expandAll: state.expandAll,
       collapseAll: state.collapseAll,
-      uploadFiles: state.uploadFiles,
-      uploadDirectory: state.uploadDirectory,
       handleDrop: state.handleDrop,
       deleteFile: state.deleteFile,
-      deleteDirectory: state.deleteDirectory,
       clearAll: state.clearAll,
       clearError: state.clearError,
     }))
   );
 };
+
+
+export function useFileUpload() {
+  return useFileStore(useShallow(({ isUploading, uploadDirectory, uploadFiles, uploadProgress }) => {
+    return {
+      isUploading,
+      uploadDirectory,
+      uploadFiles,
+      uploadProgress,
+    }
+  }))
+}
+
+export function useDirectory() {
+  return useFileStore(useShallow(({ expandDirectory, collapseDirectory, deleteDirectory, toggleDirectory, expandedDirectories }) => {
+    return {
+      expandDirectory,
+      collapseDirectory,
+      deleteDirectory,
+      toggleDirectory,
+      expandedDirectories,
+    }
+  }));
+}

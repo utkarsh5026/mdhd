@@ -10,11 +10,11 @@ import {
   useFileTree,
   useSelectedFile,
   useExpandedDirectories,
-  useIsUploading,
-  useUploadProgress,
+  useFileUpload,
   useFileStoreActions,
   useIsFileStoreInitialized,
   useIsFileLoading,
+  useDirectory,
 } from '../store/file-store';
 import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
 import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
@@ -33,21 +33,11 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
   const fileTree = useFileTree();
   const selectedFile = useSelectedFile();
   const expandedDirectories = useExpandedDirectories();
-  const isUploading = useIsUploading();
-  const uploadProgress = useUploadProgress();
   const isInitialized = useIsFileStoreInitialized();
   const isLoading = useIsFileLoading();
-
-  const {
-    initialize,
-    selectFile,
-    toggleDirectory,
-    uploadFiles,
-    uploadDirectory,
-    handleDrop,
-    deleteFile,
-    deleteDirectory,
-  } = useFileStoreActions();
+  const { isUploading, uploadProgress, uploadDirectory, uploadFiles } = useFileUpload();
+  const { toggleDirectory, deleteDirectory } = useDirectory();
+  const { initialize, selectFile, handleDrop, deleteFile } = useFileStoreActions();
 
   const [isOpen, setIsOpen] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
