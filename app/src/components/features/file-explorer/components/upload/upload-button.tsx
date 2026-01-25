@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { File, FolderUp } from 'lucide-react';
+import { FolderUp, FilePlus2 } from 'lucide-react';
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 
 interface UploadButtonProps {
@@ -40,7 +40,7 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
           disabled={disabled}
           className="h-7 w-7"
         >
-          {isDirectory ? <FolderUp className="h-4 w-4" /> : <File className="h-4 w-4" />}
+          {isDirectory ? <FolderUp className="h-4 w-4" /> : <FilePlus2 className="h-4 w-4" />}
         </Button>
       }
       tooltipText={isDirectory ? 'Upload folder' : 'Upload files'}
