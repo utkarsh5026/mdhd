@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Settings, List } from 'lucide-react';
+import { Settings, List, Maximize } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import SectionsSheet from '@/components/features/content-reading/components/table-of-contents/sections-sheet';
@@ -27,14 +27,31 @@ interface InlineMarkdownViewerProps {
 }
 
 interface InlineHeaderProps {
+  onFullscreen: () => void;
   onSettings: () => void;
   onMenu: () => void;
 }
 
 const InlineHeader: React.FC<InlineHeaderProps> = memo(
-  ({ onSettings, onMenu }) => {
+  ({ onFullscreen, onSettings, onMenu }) => {
     return (
       <div className="absolute top-0 right-0 z-50 flex items-center gap-1 p-2">
+        <TooltipButton
+          tooltipText="Enter Fullscreen"
+          button={
+            <button
+              onClick={onFullscreen}
+              className={cn(
+                'p-1.5 rounded-md',
+                'text-muted-foreground hover:text-foreground',
+                'hover:bg-accent/50',
+                'transition-colors'
+              )}
+            >
+              <Maximize className="h-4 w-4" />
+            </button>
+          }
+        />
         <TooltipButton
           tooltipText="Reading Settings"
           button={
@@ -75,7 +92,7 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
 InlineHeader.displayName = 'InlineHeader';
 
 const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
-  ({ tabId, viewMode, onContentChange }) => {
+  ({ tabId, viewMode, onContentChange, onEnterFullscreen }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -217,6 +234,10 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
         {/* Header - only show in preview mode */}
         {viewMode === 'preview' && (
           <InlineHeader
+            onFullscreen={() => {
+              onEnterFullscreen();
+              handleInteraction();
+            }}
             onSettings={() => {
               setSettingsOpen(true);
               handleInteraction();
