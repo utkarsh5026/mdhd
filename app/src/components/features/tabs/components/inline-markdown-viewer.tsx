@@ -165,6 +165,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
       markSectionAsRead,
       getSection,
       handleScrollProgress,
+      metadata
     } = useTabNavigation(tabId);
 
     const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -218,6 +219,8 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
 
     const currentSection = getSection(currentIndex);
 
+
+
     if (!tab || sections.length === 0 || !currentSection) {
       return <LoadingState />;
     }
@@ -247,6 +250,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
               className="h-full"
             >
               <ContentReader
+                currentIndex={currentIndex}
                 markdown={tab.content}
                 goToNext={goToNext}
                 goToPrevious={goToPrevious}
@@ -254,6 +258,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
                 scrollRef={scrollRef}
                 handleDoubleClick={handleDoubleClick}
                 currentSection={currentSection}
+                metadata={metadata}
               />
             </motion.div>
           ) : (
@@ -271,6 +276,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
                 handleDoubleClick={handleDoubleClick}
                 onScrollProgress={handleScrollProgress}
                 onSectionVisible={handleSectionVisible}
+                metadata={metadata}
               />
             </motion.div>
           )}

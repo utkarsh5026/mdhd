@@ -1,4 +1,45 @@
+import { parse as parseYaml } from 'yaml';
+
 const AVERAGE_READING_SPEED_WPM = 250;
+
+export type MarkdownMetadata = Record<string, unknown>;
+
+export type ParseResult = {
+  sections: MarkdownSection[];
+  metadata: MarkdownMetadata | null;
+};
+
+/**
+ * Extracts YAML frontmatter from markdown content
+ *
+ * Returns the metadata object and the content without frontmatter
+ */
+function extractFrontmatter(markdown: string): {
+  content: string;
+  metadata: MarkdownMetadata | null;
+} {
+  const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
+  const match = frontmatterRegex.exec(markdown);
+
+  if (!match) {
+    return { content: markdown, metadata: null };
+  }
+
+  try {
+    const yamlContent = match[1];
+    const data = parseYaml(yamlContent) as MarkdownMetadata;
+    const content = markdown.slice(match[0].length);
+    const hasMetadata = data && typeof data === 'object' && Object.keys(data).length > 0;
+
+    return {
+      content,
+      metadata: hasMetadata ? data : null,
+    };
+  } catch (e) {
+    console.error('Failed to parse frontmatter YAML:', e);
+    return { content: markdown, metadata: null };
+  }
+}
 
 /**
  * 📝 Cleans up Markdown text to make word counting more accurate
@@ -71,10 +112,13 @@ export type MarkdownSection = {
  * structured sections based on headings. It preserves code blocks, handles
  * introduction content, and calculates word counts for each section.
  *
+ * Also extracts YAML frontmatter metadata if present.
+ *
  * 🧩 Perfect for creating a table of contents or a sectioned reading experience!
  */
-export const parseMarkdownIntoSections = (markdown: string): MarkdownSection[] => {
-  const lines = markdown.split('\n');
+export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
+  const { content, metadata } = extractFrontmatter(markdown);
+  const lines = content.split('\n');
   const sections: MarkdownSection[] = [];
 
   let currentSection: MarkdownSection | null = null;
@@ -182,10 +226,15 @@ export const parseMarkdownIntoSections = (markdown: string): MarkdownSection[] =
       wordCount: countWords(introContent),
     });
 
-  return sections.map((section) => ({
+  const finalSections = sections.map((section) => ({
     ...section,
     wordCount: countWords(section.content),
   }));
+
+  return {
+    sections: finalSections,
+    metadata,
+  };
 };
 
 /**

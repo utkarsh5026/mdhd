@@ -1,13 +1,16 @@
 import { cn } from '@/lib/utils';
 import { useSwipeable } from 'react-swipeable';
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
-import type { MarkdownSection } from '@/services/section/parsing';
+import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
 import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { RefObject } from 'react';
+import MetadataDisplay from './metadata-display';
 
 interface ContentReaderProps {
   markdown: string;
+  metadata: MarkdownMetadata | null;
+  currentIndex: number;
   goToNext: () => void;
   goToPrevious: () => void;
   isTransitioning: boolean;
@@ -17,6 +20,8 @@ interface ContentReaderProps {
 }
 
 const ContentReader: React.FC<ContentReaderProps> = ({
+  metadata,
+  currentIndex,
   goToNext,
   goToPrevious,
   isTransitioning,
@@ -27,6 +32,8 @@ const ContentReader: React.FC<ContentReaderProps> = ({
   const { settings } = useReadingSettings();
   const fontFamily = fontFamilyMap[settings.fontFamily];
   const { fontSize, lineHeight, contentWidth } = settings;
+
+  console.log('Rendering ContentReader at index:', currentIndex, metadata);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: (eventData) => {
@@ -62,6 +69,8 @@ const ContentReader: React.FC<ContentReaderProps> = ({
       <div {...swipeHandlers} onDoubleClick={handleDoubleClick} className="h-full">
         <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24 h-auto">
           <div className="mx-auto rounded-2xl" style={{ maxWidth: `${contentWidth}px` }}>
+            {/* Show metadata only on the first section */}
+            {currentIndex === 0 && metadata && <MetadataDisplay metadata={metadata} />}
             <div
               key={currentSection.id}
               className="prose prose-lg prose-invert max-w-none"

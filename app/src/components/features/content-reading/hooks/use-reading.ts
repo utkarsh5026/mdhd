@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef } from 'react';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
-import type { MarkdownSection } from '@/services/section/parsing';
+import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
 
 interface UseReadingReturn {
   sections: MarkdownSection[];
+  metadata: MarkdownMetadata | null;
   readSections: Set<number>;
   currentIndex: number;
   isTransitioning: boolean;
@@ -51,6 +52,7 @@ interface UseReadingReturn {
  */
 export const useReading = (markdownInput: string): UseReadingReturn => {
   const [sections, setSections] = useState<MarkdownSection[]>([]);
+  const [metadata, setMetadata] = useState<MarkdownMetadata | null>(null);
   const [readSections, setReadSections] = useState(new Set<number>());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -167,8 +169,10 @@ export const useReading = (markdownInput: string): UseReadingReturn => {
    */
   const initializeReading = useCallback(() => {
     if (!markdownInput.trim()) return;
-    const parsedSections = parseMarkdownIntoSections(markdownInput);
+    const { sections: parsedSections, metadata: parsedMetadata } =
+      parseMarkdownIntoSections(markdownInput);
     setSections(parsedSections);
+    setMetadata(parsedMetadata);
     setReadSections(new Set([0]));
     setCurrentIndex(0);
     setIsInitialized(true);
@@ -188,6 +192,7 @@ export const useReading = (markdownInput: string): UseReadingReturn => {
    */
   const resetReading = useCallback(() => {
     setSections([]);
+    setMetadata(null);
     setReadSections(new Set());
     setCurrentIndex(0);
     setIsInitialized(false);
@@ -197,6 +202,7 @@ export const useReading = (markdownInput: string): UseReadingReturn => {
 
   return {
     sections,
+    metadata,
     readSections,
     currentIndex,
     isTransitioning,

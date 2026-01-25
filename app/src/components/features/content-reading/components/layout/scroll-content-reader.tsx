@@ -1,12 +1,14 @@
 import { cn } from '@/lib/utils';
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
-import type { MarkdownSection } from '@/services/section/parsing';
+import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
 import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { RefObject, useEffect, useCallback, useRef, useState } from 'react';
+import MetadataDisplay from './metadata-display';
 
 interface ScrollContentReaderProps {
   sections: MarkdownSection[];
+  metadata: MarkdownMetadata | null;
   scrollRef: RefObject<HTMLDivElement | null>;
   handleDoubleClick: () => void;
   onScrollProgress: (progress: number) => void;
@@ -15,6 +17,7 @@ interface ScrollContentReaderProps {
 
 const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
   sections,
+  metadata,
   scrollRef,
   handleDoubleClick,
   onScrollProgress,
@@ -103,6 +106,8 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
     >
       <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24">
         <div className="mx-auto" style={{ maxWidth: `${contentWidth}px` }}>
+          {/* Show metadata at the top of the content */}
+          {metadata && <MetadataDisplay metadata={metadata} />}
           {sections.map((section, index) => (
             <div
               key={section.id}

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
-import type { MarkdownSection } from '@/services/section/parsing';
+import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 
 const STORAGE_VERSION = 1;
 const STORAGE_KEY = 'mdhd-tabs-storage';
@@ -18,6 +18,7 @@ export interface TabReadingState {
   viewMode: 'preview' | 'edit';
   sections: MarkdownSection[];
   isInitialized: boolean;
+  metadata?: MarkdownMetadata | null;
 }
 
 /**
@@ -131,7 +132,7 @@ const customTabsStorage = {
       // Convert readSections arrays back to Sets and re-parse sections for each tab
       if (parsed.state?.tabs) {
         parsed.state.tabs = parsed.state.tabs.map((tab) => {
-          const sections = tab.content ? parseMarkdownIntoSections(tab.content) : [];
+          const { metadata, sections } = parseMarkdownIntoSections(tab.content);
           return {
             ...tab,
             readingState: {
@@ -140,6 +141,7 @@ const customTabsStorage = {
               viewMode: tab.readingState.viewMode || 'preview',
               sections,
               isInitialized: sections.length > 0,
+              metadata
             },
           };
         }) as typeof parsed.state.tabs;
@@ -222,7 +224,7 @@ const extractTitleFromMarkdown = (content: string): string => {
  * Create initial reading state for a new tab
  */
 const createInitialReadingState = (content: string): TabReadingState => {
-  const sections = content ? parseMarkdownIntoSections(content) : [];
+  const { metadata, sections } = content ? parseMarkdownIntoSections(content) : { metadata: {}, sections: [] };
   return {
     currentIndex: 0,
     readSections: new Set([0]),
@@ -230,6 +232,7 @@ const createInitialReadingState = (content: string): TabReadingState => {
     readingMode: 'card',
     viewMode: 'preview',
     sections,
+    metadata,
     isInitialized: sections.length > 0,
   };
 };
@@ -412,12 +415,12 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) =>
               t.id === tabId
                 ? {
-                    ...t,
-                    readingState: {
-                      ...t.readingState,
-                      ...newReadingState,
-                    },
-                  }
+                  ...t,
+                  readingState: {
+                    ...t.readingState,
+                    ...newReadingState,
+                  },
+                }
                 : t
             ),
           }));
@@ -428,7 +431,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) => {
               if (t.id !== tabId) return t;
 
-              const sections = content ? parseMarkdownIntoSections(content) : [];
+              const { metadata, sections } = content ? parseMarkdownIntoSections(content) : { metadata: null, sections: [] };
               return {
                 ...t,
                 content,
@@ -443,6 +446,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
                   scrollProgress: 0,
                   // Preserve viewMode and readingMode
                 },
+                metadata,
               };
             }),
           }));
@@ -458,11 +462,11 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) =>
               t.id === tabId
                 ? {
-                    ...t,
-                    sourceType,
-                    sourceFileId,
-                    sourcePath,
-                  }
+                  ...t,
+                  sourceType,
+                  sourceFileId,
+                  sourcePath,
+                }
                 : t
             ),
           }));

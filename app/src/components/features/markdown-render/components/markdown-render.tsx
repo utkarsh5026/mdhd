@@ -56,7 +56,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
         code: (props: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean }) => {
           if (props?.inline) {
             return (
-              <code className="px-1.5 py-0.5 text-primary/95 font-cascadia-code break-words text-[0.9em] bg-primary/10 rounded-lg">
+              <code className="px-1.5 py-0.5 text-primary/95 font-cascadia-code wrap-break-word text-[0.9em] bg-primary/10 rounded-lg">
                 {props.children}
               </code>
             );
