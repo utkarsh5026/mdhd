@@ -12,6 +12,12 @@ const DB_VERSION = 1;
 const FILES_STORE = 'files';
 const DIRECTORIES_STORE = 'directories';
 
+type StoreOperationOptions<T> = {
+  resolvedValue?: T;
+  defaultValue?: T;
+  errorMessage?: string;
+};
+
 /**
  * Get the parent path from a full path
  */
@@ -100,7 +106,6 @@ class FileStorageDB {
    * Add a new file
    */
   async addFile(input: CreateFileInput): Promise<StoredFile> {
-    const db = await this.getDB();
     const now = Date.now();
     const file: StoredFile = {
       ...input,
@@ -111,13 +116,28 @@ class FileStorageDB {
       updatedAt: now,
     };
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([FILES_STORE], 'readwrite');
-      const store = transaction.objectStore(FILES_STORE);
-      const request = store.add(file);
+    return this.withStore(FILES_STORE, 'readwrite', (store) => store.add(file), {
+      resolvedValue: file,
+      errorMessage: 'Failed to add file',
+    });
+  }
 
-      request.onsuccess = () => resolve(file);
-      request.onerror = () => reject(new Error('Failed to add file'));
+  private async withStore<T>(
+    storeName: string,
+    mode: IDBTransactionMode,
+    operation: (store: IDBObjectStore) => IDBRequest,
+    options: StoreOperationOptions<T> = { errorMessage: 'Store operation failed' }
+  ): Promise<T> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const { resolvedValue, errorMessage, defaultValue } = options;
+      const transaction = db.transaction([storeName], mode);
+      const store = transaction.objectStore(storeName);
+      const request = operation(store);
+
+      request.onsuccess = () =>
+        resolve(resolvedValue !== undefined ? resolvedValue : request.result || defaultValue);
+      request.onerror = () => reject(new Error(errorMessage));
     });
   }
 
@@ -125,68 +145,45 @@ class FileStorageDB {
    * Get a file by ID
    */
   async getFile(id: string): Promise<StoredFile | undefined> {
-    const db = await this.getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([FILES_STORE], 'readonly');
-      const store = transaction.objectStore(FILES_STORE);
-      const request = store.get(id);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(new Error('Failed to get file'));
-    });
+    return this.withStore(FILES_STORE, 'readonly', (store) => store.get(id));
   }
 
   /**
    * Get a file by path
    */
   async getFileByPath(path: string): Promise<StoredFile | undefined> {
-    const db = await this.getDB();
     const normalizedPath = normalizePath(path);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([FILES_STORE], 'readonly');
-      const store = transaction.objectStore(FILES_STORE);
-      const index = store.index('path');
-      const request = index.get(normalizedPath);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(new Error('Failed to get file by path'));
-    });
+    return this.withStore(
+      FILES_STORE,
+      'readonly',
+      (store) => store.index('path').get(normalizedPath),
+      {
+        errorMessage: 'Failed to get file by path',
+      }
+    );
   }
 
   /**
    * Get all files in a directory
    */
   async getFilesByParentPath(parentPath: string): Promise<StoredFile[]> {
-    const db = await this.getDB();
     const normalizedPath = normalizePath(parentPath);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([FILES_STORE], 'readonly');
-      const store = transaction.objectStore(FILES_STORE);
-      const index = store.index('parentPath');
-      const request = index.getAll(normalizedPath);
-
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(new Error('Failed to get files by parent path'));
-    });
+    return this.withStore(
+      FILES_STORE,
+      'readonly',
+      (store) => store.index('parentPath').getAll(normalizedPath),
+      {
+        defaultValue: [],
+        errorMessage: 'Failed to get files by parent path',
+      }
+    );
   }
 
   /**
    * Get all files
    */
   async getAllFiles(): Promise<StoredFile[]> {
-    const db = await this.getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([FILES_STORE], 'readonly');
-      const store = transaction.objectStore(FILES_STORE);
-      const request = store.getAll();
-
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(new Error('Failed to get all files'));
-    });
+    return this.withStore(FILES_STORE, 'readonly', (store) => store.getAll());
   }
 
   /**
@@ -227,16 +224,7 @@ class FileStorageDB {
    * Delete a file by ID
    */
   async deleteFile(id: string): Promise<void> {
-    const db = await this.getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([FILES_STORE], 'readwrite');
-      const store = transaction.objectStore(FILES_STORE);
-      const request = store.delete(id);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error('Failed to delete file'));
-    });
+    return this.withStore(FILES_STORE, 'readwrite', (store) => store.delete(id));
   }
 
   /**
@@ -274,7 +262,6 @@ class FileStorageDB {
    * Add a new directory
    */
   async addDirectory(input: CreateDirectoryInput): Promise<StoredDirectory> {
-    const db = await this.getDB();
     const dir: StoredDirectory = {
       ...input,
       id: uuidv4(),
@@ -283,13 +270,9 @@ class FileStorageDB {
       createdAt: Date.now(),
     };
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([DIRECTORIES_STORE], 'readwrite');
-      const store = transaction.objectStore(DIRECTORIES_STORE);
-      const request = store.add(dir);
-
-      request.onsuccess = () => resolve(dir);
-      request.onerror = () => reject(new Error('Failed to add directory'));
+    return this.withStore(DIRECTORIES_STORE, 'readwrite', (store) => store.add(dir), {
+      resolvedValue: dir,
+      errorMessage: 'Failed to add directory',
     });
   }
 
@@ -297,33 +280,16 @@ class FileStorageDB {
    * Get a directory by ID
    */
   async getDirectory(id: string): Promise<StoredDirectory | undefined> {
-    const db = await this.getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([DIRECTORIES_STORE], 'readonly');
-      const store = transaction.objectStore(DIRECTORIES_STORE);
-      const request = store.get(id);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(new Error('Failed to get directory'));
-    });
+    return await this.withStore(DIRECTORIES_STORE, 'readonly', (store) => store.get(id));
   }
 
   /**
    * Get a directory by path
    */
   async getDirectoryByPath(path: string): Promise<StoredDirectory | undefined> {
-    const db = await this.getDB();
-    const normalizedPath = normalizePath(path);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([DIRECTORIES_STORE], 'readonly');
-      const store = transaction.objectStore(DIRECTORIES_STORE);
+    return await this.withStore(DIRECTORIES_STORE, 'readonly', (store) => {
       const index = store.index('path');
-      const request = index.get(normalizedPath);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(new Error('Failed to get directory by path'));
+      return index.get(normalizePath(path));
     });
   }
 
@@ -331,33 +297,21 @@ class FileStorageDB {
    * Get all directories in a parent directory
    */
   async getDirectoriesByParentPath(parentPath: string): Promise<StoredDirectory[]> {
-    const db = await this.getDB();
     const normalizedPath = normalizePath(parentPath);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([DIRECTORIES_STORE], 'readonly');
-      const store = transaction.objectStore(DIRECTORIES_STORE);
-      const index = store.index('parentPath');
-      const request = index.getAll(normalizedPath);
-
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(new Error('Failed to get directories by parent path'));
-    });
+    return this.withStore(
+      DIRECTORIES_STORE,
+      'readonly',
+      (store) => store.index('parentPath').getAll(normalizedPath),
+      { defaultValue: [] }
+    );
   }
 
   /**
    * Get all directories
    */
   async getAllDirectories(): Promise<StoredDirectory[]> {
-    const db = await this.getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([DIRECTORIES_STORE], 'readonly');
-      const store = transaction.objectStore(DIRECTORIES_STORE);
-      const request = store.getAll();
-
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(new Error('Failed to get all directories'));
+    return this.withStore(DIRECTORIES_STORE, 'readonly', (store) => store.getAll(), {
+      defaultValue: [],
     });
   }
 
@@ -365,16 +319,7 @@ class FileStorageDB {
    * Delete a directory by ID
    */
   async deleteDirectory(id: string): Promise<void> {
-    const db = await this.getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([DIRECTORIES_STORE], 'readwrite');
-      const store = transaction.objectStore(DIRECTORIES_STORE);
-      const request = store.delete(id);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error('Failed to delete directory'));
-    });
+    return this.withStore(DIRECTORIES_STORE, 'readwrite', (store) => store.delete(id));
   }
 
   /**
