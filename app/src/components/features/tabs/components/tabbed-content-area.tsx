@@ -32,12 +32,6 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     setShowEmptyState,
     updateTabContent,
     updateTabReadingState,
-    closeAllTabs,
-    closeOtherTabs,
-    closeTabsToTheRight,
-    closeTabsToTheLeft,
-    closeTabsByPathPrefix,
-    closeTabsBySourceType,
     toggleHeaderVisibility,
   } = useTabsActions();
 
@@ -112,12 +106,6 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
           onTabSelect={handleTabSelect}
           onTabClose={handleTabClose}
           onNewTab={handleNewTab}
-          onCloseAllTabs={closeAllTabs}
-          onCloseOtherTabs={closeOtherTabs}
-          onCloseTabsToTheRight={closeTabsToTheRight}
-          onCloseTabsToTheLeft={closeTabsToTheLeft}
-          onCloseTabsByPathPrefix={closeTabsByPathPrefix}
-          onCloseTabsBySourceType={closeTabsBySourceType}
           onToggleHeaderVisibility={toggleHeaderVisibility}
         />
       )}

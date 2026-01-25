@@ -25,7 +25,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import type { Tab } from '../store/tabs-store';
-import { useHeaderVisible } from '../store/tabs-store';
+import { useHeaderVisible, useTabClose } from '../store/tabs-store';
 
 interface MenuItemProps {
   icon: LucideIcon;
@@ -54,12 +54,6 @@ const MenuItem: React.FC<MenuItemProps> = ({ icon: Icon, label, count, disabled,
 interface TabManagementMenuProps {
   tabs: Tab[];
   activeTabId: string | null;
-  onCloseAll: () => void;
-  onCloseOthers: (tabId: string) => void;
-  onCloseToTheRight: (tabId: string) => void;
-  onCloseToTheLeft: (tabId: string) => void;
-  onCloseByPathPrefix: (pathPrefix: string) => void;
-  onCloseBySourceType: (sourceType: 'paste' | 'file') => void;
   onToggleHeaderVisibility: () => void;
 }
 
@@ -67,16 +61,11 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
   ({
     tabs,
     activeTabId,
-    onCloseAll,
-    onCloseOthers,
-    onCloseToTheRight,
-    onCloseToTheLeft,
-    onCloseByPathPrefix,
-    onCloseBySourceType,
     onToggleHeaderVisibility,
   }) => {
     const isHeaderVisible = useHeaderVisible();
-    // Derive unique folders from tabs with sourcePath
+    const { closeAllTabs, closeOtherTabs, closeTabsToTheRight, closeTabsToTheLeft, closeTabsByPathPrefix, closeTabsBySourceType } = useTabClose();
+
     const uniqueFolders = useMemo(() => {
       const folders = new Map<string, string>();
 
@@ -122,16 +111,16 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
     }, [tabs, activeTabId]);
 
     const handleCloseOthers = useCallback(() => {
-      if (activeTabId) onCloseOthers(activeTabId);
-    }, [activeTabId, onCloseOthers]);
+      if (activeTabId) closeOtherTabs(activeTabId);
+    }, [activeTabId, closeOtherTabs]);
 
     const handleCloseToTheRight = useCallback(() => {
-      if (activeTabId) onCloseToTheRight(activeTabId);
-    }, [activeTabId, onCloseToTheRight]);
+      if (activeTabId) closeTabsToTheRight(activeTabId);
+    }, [activeTabId, closeTabsToTheRight]);
 
     const handleCloseToTheLeft = useCallback(() => {
-      if (activeTabId) onCloseToTheLeft(activeTabId);
-    }, [activeTabId, onCloseToTheLeft]);
+      if (activeTabId) closeTabsToTheLeft(activeTabId);
+    }, [activeTabId, closeTabsToTheLeft]);
 
     const hasNoTabs = tabs.length === 0;
     const hasOnlyOneTab = tabs.length === 1;
@@ -152,7 +141,7 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
           label: 'Close all tabs',
           count: tabs.length,
           disabled: hasNoTabs,
-          onClick: onCloseAll,
+          onClick: closeAllTabs,
         },
         {
           icon: X,
@@ -184,14 +173,14 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
           label: 'Close file tabs',
           count: tabCounts.file || undefined,
           disabled: tabCounts.file === 0,
-          onClick: () => onCloseBySourceType('file'),
+          onClick: () => closeTabsBySourceType('file'),
         },
         {
           icon: ClipboardPaste,
           label: 'Close pasted tabs',
           count: tabCounts.paste || undefined,
           disabled: tabCounts.paste === 0,
-          onClick: () => onCloseBySourceType('paste'),
+          onClick: () => closeTabsBySourceType('paste'),
         },
       ],
       [
@@ -203,11 +192,11 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
         activeTabId,
         positionCounts,
         tabCounts,
-        onCloseAll,
+        closeAllTabs,
         handleCloseOthers,
         handleCloseToTheRight,
         handleCloseToTheLeft,
-        onCloseBySourceType,
+        closeTabsBySourceType,
       ]
     );
 
@@ -257,7 +246,7 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(
                         return (
                           <DropdownMenuItem
                             key={folderPath}
-                            onClick={() => onCloseByPathPrefix(folderPath)}
+                            onClick={() => closeTabsByPathPrefix(folderPath)}
                             className="cursor-pointer gap-2 transition-colors duration-150"
                           >
                             <span className="flex-1 truncate">{folderName}</span>
