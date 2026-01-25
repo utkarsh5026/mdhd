@@ -12,6 +12,8 @@ import {
 } from '../store/tabs-store';
 import { useReadingStore } from '@/components/features/content-reading/store/use-reading-store';
 import InlineMarkdownViewer from './inline-markdown-viewer';
+import { SaveFileDialog } from './save-file-dialog';
+import { useSaveShortcut } from '../hooks/use-save-shortcut';
 
 interface TabbedContentAreaProps {
   onEnterFullscreen: (tabId: string) => void;
@@ -24,9 +26,11 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
   const showEmptyState = useShowEmptyState();
   const {
     createTab,
+    createUntitledTab,
     closeTab,
     setActiveTab,
     setShowEmptyState,
+    updateTabContent,
     closeAllTabs,
     closeOtherTabs,
     closeTabsToTheRight,
@@ -39,15 +43,31 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
   const initializeReading = useReadingStore((state) => state.initializeReading);
   const clearPersistedSession = useReadingStore((state) => state.clearPersistedSession);
 
+  // Save shortcut hook
+  const {
+    showSaveDialog,
+    setShowSaveDialog,
+    defaultFileName,
+    handleSaveToFile,
+    isSaving,
+  } = useSaveShortcut();
+
   const handleNewTab = useCallback(() => {
-    setShowEmptyState(true);
-  }, [setShowEmptyState]);
+    createUntitledTab();
+  }, [createUntitledTab]);
 
   const handleStartReading = useCallback(() => {
     if (!markdownInput.trim()) return;
-    createTab(markdownInput, undefined, 'paste');
+
+    // If active tab is empty (untitled with no content), update its content
+    if (activeTab && activeTab.content === '') {
+      updateTabContent(activeTab.id, markdownInput);
+    } else {
+      // Create new tab (when no tabs exist or coming from initial state)
+      createTab(markdownInput, undefined, 'paste');
+    }
     clearPersistedSession();
-  }, [markdownInput, createTab, clearPersistedSession]);
+  }, [markdownInput, activeTab, updateTabContent, createTab, clearPersistedSession]);
 
   const handleTabSelect = useCallback(
     (tabId: string) => {
@@ -64,7 +84,11 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     [closeTab]
   );
 
-  const shouldShowEmptyState = showEmptyState || tabs.length === 0;
+  // Check if active tab is empty (untitled with no content)
+  const isActiveTabEmpty = activeTab && activeTab.content === '';
+
+  // Show empty state UI if no tabs OR if active tab is empty
+  const shouldShowEmptyState = showEmptyState || tabs.length === 0 || isActiveTabEmpty;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -72,7 +96,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
       {tabs.length > 0 && (
         <TabBar
           tabs={tabs}
-          activeTabId={showEmptyState ? null : activeTabId}
+          activeTabId={activeTabId}
           onTabSelect={handleTabSelect}
           onTabClose={handleTabClose}
           onNewTab={handleNewTab}
@@ -90,7 +114,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
         <AnimatePresence mode="wait">
           {shouldShowEmptyState ? (
             <motion.div
-              key="empty-state"
+              key={isActiveTabEmpty ? `empty-tab-${activeTab?.id}` : 'empty-state'}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -125,6 +149,15 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
           ) : null}
         </AnimatePresence>
       </div>
+
+      {/* Save File Dialog */}
+      <SaveFileDialog
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+        defaultFileName={defaultFileName}
+        onSave={handleSaveToFile}
+        isSaving={isSaving}
+      />
     </div>
   );
 });

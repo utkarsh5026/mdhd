@@ -41,6 +41,7 @@ interface TabsState {
   showEmptyState: boolean;
   version: number;
   _hasHydrated: boolean;
+  untitledCounter: number;
 }
 
 interface TabsActions {
@@ -52,6 +53,7 @@ interface TabsActions {
     sourceFileId?: string,
     sourcePath?: string
   ) => string;
+  createUntitledTab: () => string;
   closeTab: (tabId: string) => void;
   closeAllTabs: () => void;
   closeOtherTabs: (tabId: string) => void;
@@ -66,6 +68,12 @@ interface TabsActions {
 
   // Tab content
   updateTabContent: (tabId: string, content: string) => void;
+  updateTabSource: (
+    tabId: string,
+    sourceType: 'paste' | 'file',
+    sourceFileId: string,
+    sourcePath: string
+  ) => void;
   getTabById: (tabId: string) => Tab | undefined;
 
   // Empty state
@@ -233,6 +241,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         showEmptyState: true,
         version: STORAGE_VERSION,
         _hasHydrated: false,
+        untitledCounter: 0,
 
         createTab: (
           content: string,
@@ -262,6 +271,35 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: [...state.tabs, newTab],
             activeTabId: tabId,
             showEmptyState: false,
+          }));
+
+          return tabId;
+        },
+
+        createUntitledTab: () => {
+          const tabId = generateTabId();
+          const now = Date.now();
+          const { untitledCounter } = get();
+
+          // Generate title: "Untitled", "Untitled-1", "Untitled-2", etc.
+          const title = untitledCounter === 0 ? 'Untitled' : `Untitled-${untitledCounter}`;
+
+          const newTab: Tab = {
+            id: tabId,
+            title,
+            content: '',
+            contentHash: hashString(''),
+            sourceType: 'paste',
+            createdAt: now,
+            lastAccessedAt: now,
+            readingState: createInitialReadingState(''),
+          };
+
+          set((state) => ({
+            tabs: [...state.tabs, newTab],
+            activeTabId: tabId,
+            showEmptyState: false,
+            untitledCounter: state.untitledCounter + 1,
           }));
 
           return tabId;
@@ -392,6 +430,26 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           }));
         },
 
+        updateTabSource: (
+          tabId: string,
+          sourceType: 'paste' | 'file',
+          sourceFileId: string,
+          sourcePath: string
+        ) => {
+          set((state) => ({
+            tabs: state.tabs.map((t) =>
+              t.id === tabId
+                ? {
+                    ...t,
+                    sourceType,
+                    sourceFileId,
+                    sourcePath,
+                  }
+                : t
+            ),
+          }));
+        },
+
         getTabById: (tabId: string) => {
           return get().tabs.find((t) => t.id === tabId);
         },
@@ -471,6 +529,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           activeTabId: state.activeTabId,
           showEmptyState: state.showEmptyState,
           version: state.version,
+          untitledCounter: state.untitledCounter,
         }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
         version: STORAGE_VERSION,
         onRehydrateStorage: () => (state, error) => {
@@ -500,6 +559,7 @@ export const useTabsActions = () =>
   useTabsStore(
     useShallow((state) => ({
       createTab: state.createTab,
+      createUntitledTab: state.createUntitledTab,
       closeTab: state.closeTab,
       closeAllTabs: state.closeAllTabs,
       closeOtherTabs: state.closeOtherTabs,
@@ -508,6 +568,7 @@ export const useTabsActions = () =>
       activatePreviousTab: state.activatePreviousTab,
       updateTabReadingState: state.updateTabReadingState,
       updateTabContent: state.updateTabContent,
+      updateTabSource: state.updateTabSource,
       getTabById: state.getTabById,
       setShowEmptyState: state.setShowEmptyState,
       findTabByFileId: state.findTabByFileId,
