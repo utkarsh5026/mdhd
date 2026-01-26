@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { downloadAsFile, downloadAsImage } from '@/utils/download';
 import { Badge } from '@/components/ui/badge';
 import { useCodeDetection } from '../../hooks/use-code-detection';
-import { useSetDialogOpen } from '@/components/features/content-reading/store/use-reading-store';
+import { useActiveTab, useTabsActions } from '@/components/features/tabs/store/tabs-store';
 import CodeMirrorDisplay from './codemirror-display';
 import { getThemeBackground } from '@/components/features/settings/store/codemirror-themes';
 
@@ -56,9 +56,8 @@ const getHeadingCodeStyle = (headingLevel: number | null) => {
     2: 'text-lg sm:text-2xl',
     3: 'text-base sm:text-xl',
   };
-  return `${
-    sizes[headingLevel as keyof typeof sizes]
-  } mx-1 sm:mx-2 px-2 py-1 bg-primary/10 rounded-xl sm:rounded-2xl`;
+  return `${sizes[headingLevel as keyof typeof sizes]
+    } mx-1 sm:mx-2 px-2 py-1 bg-primary/10 rounded-xl sm:rounded-2xl`;
 };
 
 /**
@@ -88,17 +87,17 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[98vw] w-[98vw] sm:max-w-[95vw] sm:w-[95vw] xl:max-w-[90vw] xl:w-[90vw] 2xl:max-w-[85vw] 2xl:w-[85vw] h-[95vh] sm:h-[90vh] p-0 font-cascadia-code rounded-2xl sm:rounded-3xl border-none shadow-2xl shadow-black/20 overflow-y-auto">
-        <DialogHeader className="relative px-3 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-6 border-b border-border/50 bg-gradient-to-r from-card/80 via-card/60 to-card/40 backdrop-blur-xl rounded-t-2xl sm:rounded-t-3xl">
+        <DialogHeader className="relative px-3 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-6 border-b border-border/50 bg-linear-to-r from-card/80 via-card/60 to-card/40 backdrop-blur-xl rounded-t-2xl sm:rounded-t-3xl">
           {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 rounded-t-2xl sm:rounded-t-3xl" />
+          <div className="absolute inset-0 bg-linear-to-r from-primary/5 via-transparent to-accent/5 rounded-t-2xl sm:rounded-t-3xl" />
 
           <div className="relative flex items-center justify-between gap-2">
             <div className="flex items-center flex-1 min-w-0">
               {/* Mobile: Smaller icon, Desktop: Original size */}
-              <div className="relative flex-shrink-0">
+              <div className="relative shrink-0">
                 {/* Icon with subtle glow effect */}
                 <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full" />
-                <div className="relative p-2 sm:p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl sm:rounded-2xl border border-primary/20 backdrop-blur-sm">
+                <div className="relative p-2 sm:p-3 bg-linear-to-br from-primary/10 to-primary/5 rounded-xl sm:rounded-2xl border border-primary/20 backdrop-blur-sm">
                   {(() => {
                     const IconComponent = getIconForTech(language || 'code');
                     return <IconComponent className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />;
@@ -107,13 +106,13 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
               </div>
 
               <div className="ml-3 sm:ml-4 space-y-0.5 sm:space-y-1 min-w-0 flex-1">
-                <DialogTitle className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent truncate">
+                <DialogTitle className="text-lg sm:text-xl lg:text-2xl font-bold bg-linear-to-r from-foreground to-foreground/80 bg-clip-text text-transparent truncate">
                   Code Preview
                 </DialogTitle>
                 <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
                   <Badge
                     variant="outline"
-                    className="text-xs px-1.5 py-0.5 sm:px-2 bg-primary/10 text-primary border-none flex-shrink-0 rounded-2xl hidden sm:block"
+                    className="text-xs px-1.5 py-0.5 sm:px-2 bg-primary/10 text-primary border-none shrink-0 rounded-2xl hidden sm:block"
                   >
                     {language || 'plaintext'}
                   </Badge>
@@ -126,7 +125,7 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
             </div>
 
             {/* Enhanced Action Buttons - More compact on mobile */}
-            <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0 mr-10 sm:mr-12">
+            <div className="flex items-center gap-1 sm:gap-3 shrink-0 mr-10 sm:mr-12">
               <div className="flex items-center gap-0.5 sm:gap-2 p-1 bg-card/50 rounded-xl sm:rounded-2xl border border-border/50 backdrop-blur-sm">
                 {/* Theme Selector - Hidden on mobile */}
                 <div className="hidden sm:block">
@@ -226,9 +225,11 @@ const CodePreviewDialog: React.FC<CodePreviewDialogProps> = ({
 
 const CodeRender: React.FC<CodeRenderProps> = ({ inline, className, children }) => {
   const [copied, setCopied] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [downloading, setDownloading] = useState<'image' | 'file' | null>(null);
-  const setGlobalDialogOpen = useSetDialogOpen();
+
+  const activeTab = useActiveTab();
+  const { updateTabReadingState } = useTabsActions();
+  const dialogOpen = activeTab?.readingState.isDialogOpen ?? false;
 
   const match = /language-(\w+)/.exec(className ?? '');
   const language = match ? match[1] : '';
@@ -302,12 +303,13 @@ const CodeRender: React.FC<CodeRenderProps> = ({ inline, className, children }) 
   /**
    * Handle Dialog Open/Close
    *
-   * Updates both local and global dialog state to hide navigation controls
+   * Updates tab-specific dialog state to hide navigation controls
    * when the code preview dialog is open.
    */
   const handleDialogOpenChange = (open: boolean) => {
-    setDialogOpen(open);
-    setGlobalDialogOpen(open);
+    if (activeTab) {
+      updateTabReadingState(activeTab.id, { isDialogOpen: open });
+    }
   };
 
   const showSimpleCode = isInTableCell || inList || isInParagraph || (!inline && isCompactCode);
@@ -317,7 +319,7 @@ const CodeRender: React.FC<CodeRenderProps> = ({ inline, className, children }) 
       <span ref={codeRef}>
         <code
           className={cn(
-            'px-2 py-1 text-primary font-cascadia-code break-words  bg-card/50 rounded-full shadow-sm',
+            'px-2 py-1 text-primary font-cascadia-code wrap-break-word  bg-card/50 rounded-full shadow-sm',
             getHeadingCodeStyle(headingLevel)
           )}
         >

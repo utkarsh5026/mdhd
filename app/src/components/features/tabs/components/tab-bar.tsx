@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, memo } from 'react';
+import React, { useRef, useCallback, memo, useMemo } from 'react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,71 @@ import TabItem from './tab-item';
 import TabManagementMenu from './tab-management-menu';
 import ViewModeToggle from './view-mode-toggle';
 import type { Tab } from '../store/tabs-store';
+/**
+ * Information about how to display a tab
+ */
+interface TabDisplayInfo {
+  filename: string;
+  folderPath: string | null;
+  fullPath: string | null;
+  isDuplicate: boolean;
+}
+
+/**
+ * Extracts the folder path from a file path (without the filename)
+ * Example: "xy/ab/skill.md" -> "xy/ab"
+ */
+const getFolderPath = (path: string): string | null => {
+  const normalized = path.replace(/\\/g, '/');
+  const lastSlashIndex = normalized.lastIndexOf('/');
+
+  if (lastSlashIndex === -1) {
+    return null;
+  }
+
+  return normalized.substring(0, lastSlashIndex);
+};
+
+/**
+ * Generates display information for tabs
+ *
+ * @param tabs - Array of tabs to process
+ * @returns Map of tab ID to display information
+ */
+function generateTabDisplayNames(tabs: Tab[]): Map<string, TabDisplayInfo> {
+  const displayMap = new Map<string, TabDisplayInfo>();
+  const titleGroups = new Map<string, Tab[]>();
+
+  tabs.forEach((tab) => {
+    const existing = titleGroups.get(tab.title) || [];
+    existing.push(tab);
+    titleGroups.set(tab.title, existing);
+  });
+
+  tabs.forEach((tab) => {
+    const tabsWithSameTitle = titleGroups.get(tab.title) || [];
+    const isDuplicate = tabsWithSameTitle.length > 1;
+
+    const filename = tab.title;
+    let folderPath: string | null = null;
+    let fullPath: string | null = null;
+
+    if (tab.sourcePath) {
+      folderPath = getFolderPath(tab.sourcePath);
+      fullPath = tab.sourcePath;
+    }
+
+    displayMap.set(tab.id, {
+      filename,
+      folderPath,
+      fullPath,
+      isDuplicate,
+    });
+  });
+
+  return displayMap;
+};
+
 
 interface TabBarProps {
   tabs: Tab[];
@@ -31,6 +96,7 @@ const TabBar: React.FC<TabBarProps> = memo(
     onToggleHeaderVisibility,
   }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const tabDisplayMap = useMemo(() => generateTabDisplayNames(tabs), [tabs]);
 
     const handleScrollLeft = useCallback(() => {
       if (scrollContainerRef.current) {
@@ -85,17 +151,22 @@ const TabBar: React.FC<TabBarProps> = memo(
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           <AnimatePresence mode="popLayout" initial={false}>
-            {tabs.map((tab) => (
-              <TabItem
-                key={tab.id}
-                id={tab.id}
-                title={tab.title}
-                isActive={tab.id === activeTabId}
-                sourceType={tab.sourceType}
-                onSelect={() => onTabSelect(tab.id)}
-                onClose={handleTabClose(tab.id)}
-              />
-            ))}
+            {tabs.map(({ id, readingState, title }) => {
+              const displayInfo = tabDisplayMap.get(id);
+              return (
+                <TabItem
+                  key={id}
+                  id={id}
+                  title={title}
+                  folderPath={displayInfo?.folderPath}
+                  fullPath={displayInfo?.fullPath}
+                  isActive={id === activeTabId}
+                  viewMode={readingState.viewMode}
+                  onSelect={() => onTabSelect(id)}
+                  onClose={handleTabClose(id)}
+                />
+              );
+            })}
           </AnimatePresence>
         </div>
         {/* Scroll right button */}

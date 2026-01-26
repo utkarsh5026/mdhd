@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Play, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useReadingStore } from '@/components/features/content-reading/store/use-reading-store';
 import type { ClipboardEvent } from 'react';
 
 interface MarkdownEditorProps {
@@ -16,11 +15,10 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   setMarkdownInput,
   handleStartReading,
 }) => {
-  const clearPersistedSession = useReadingStore((state) => state.clearPersistedSession);
   const hasContent = markdownInput.trim().length > 0;
 
   const handleClear = () => {
-    clearPersistedSession();
+    setMarkdownInput('');
   };
 
   const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {

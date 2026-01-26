@@ -1,12 +1,6 @@
 import React from 'react';
 import { BookOpen, Focus, Layers, ScrollText } from 'lucide-react';
-import {
-  useIsZenMode,
-  useZenModeActions,
-  useReadingMode,
-  useReadingModeActions,
-} from '@/components/features/content-reading/store/use-reading-store';
-import { useActiveTabId, useTabsActions } from '@/components/features/tabs/store/tabs-store';
+import { useActiveTab, useTabsActions } from '@/components/features/tabs/store/tabs-store';
 import { SettingsHeader, SettingToggle, SelectableOption } from './settings-commons';
 
 const READING_MODE_OPTIONS = [
@@ -25,28 +19,25 @@ const READING_MODE_OPTIONS = [
 ] as const;
 
 const ReadingModeSelector: React.FC = () => {
-  const isZenMode = useIsZenMode();
-  const { toggleZenMode } = useZenModeActions();
-  const globalReadingMode = useReadingMode();
-  const { toggleReadingMode } = useReadingModeActions();
+  const activeTab = useActiveTab();
+  const { updateTabReadingState } = useTabsActions();
 
-  // Get active tab info to also update tab-specific reading state
-  const activeTabId = useActiveTabId();
-  const { updateTabReadingState, getTabById } = useTabsActions();
+  // Get state from active tab (single source of truth)
+  const isZenMode = activeTab?.readingState.isZenMode ?? false;
+  const readingMode = activeTab?.readingState.readingMode ?? 'card';
 
-  // Use the active tab's reading mode if available, otherwise use global
-  const activeTab = activeTabId ? getTabById(activeTabId) : null;
-  const readingMode = activeTab?.readingState.readingMode ?? globalReadingMode;
+  const handleZenModeToggle = () => {
+    if (activeTab) {
+      updateTabReadingState(activeTab.id, {
+        isZenMode: !isZenMode,
+        zenControlsVisible: false,
+      });
+    }
+  };
 
   const handleModeSelect = (mode: 'card' | 'scroll') => {
-    if (readingMode !== mode) {
-      // Update global reading store (for fullscreen mode)
-      toggleReadingMode();
-
-      // Also update the active tab's reading state (for inline viewer)
-      if (activeTabId) {
-        updateTabReadingState(activeTabId, { readingMode: mode });
-      }
+    if (activeTab && readingMode !== mode) {
+      updateTabReadingState(activeTab.id, { readingMode: mode });
     }
   };
 
@@ -67,7 +58,7 @@ const ReadingModeSelector: React.FC = () => {
           title="Zen Mode"
           description="Hide all UI controls for distraction-free reading"
           checked={isZenMode}
-          onCheckedChange={() => toggleZenMode()}
+          onCheckedChange={handleZenModeToggle}
         />
       </div>
 

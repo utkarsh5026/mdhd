@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useEffect, useCallback, memo } from 'react';
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import { useZenMode } from '@/components/features/content-reading/hooks/use-zen-mode';
 import { useTabNavigation } from '../hooks/use-tab-navigation';
@@ -12,11 +12,13 @@ interface FullscreenMarkdownViewerProps {
 
 const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
   ({ tabId, onExit }) => {
-    // Local zen mode state
-    const [isZenMode, setIsZenMode] = useState(false);
-    const [zenControlsVisible, setZenControlsVisible] = useState(false);
-
     const tab = useTabsStore((state) => state.tabs.find((t) => t.id === tabId));
+    const updateTabReadingState = useTabsStore((state) => state.updateTabReadingState);
+
+    // Get zen mode and dialog state from tab
+    const isZenMode = tab?.readingState.isZenMode ?? false;
+    const zenControlsVisible = tab?.readingState.zenControlsVisible ?? false;
+    const isDialogOpen = tab?.readingState.isDialogOpen ?? false;
 
     const {
       sections,
@@ -34,9 +36,18 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
       handleScrollProgress,
     } = useTabNavigation(tabId);
 
-    const showZenControls = useCallback(() => setZenControlsVisible(true), []);
-    const hideZenControls = useCallback(() => setZenControlsVisible(false), []);
-    const setZenMode = useCallback((v: boolean) => setIsZenMode(v), []);
+    const showZenControls = useCallback(
+      () => updateTabReadingState(tabId, { zenControlsVisible: true }),
+      [tabId, updateTabReadingState]
+    );
+    const hideZenControls = useCallback(
+      () => updateTabReadingState(tabId, { zenControlsVisible: false }),
+      [tabId, updateTabReadingState]
+    );
+    const setZenMode = useCallback(
+      (v: boolean) => updateTabReadingState(tabId, { isZenMode: v, zenControlsVisible: false }),
+      [tabId, updateTabReadingState]
+    );
 
     const { handleZenTap, handleZenDoubleTap } = useZenMode({
       isZenMode,
@@ -50,7 +61,7 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           if (isZenMode) {
-            setIsZenMode(false);
+            updateTabReadingState(tabId, { isZenMode: false, zenControlsVisible: false });
           } else {
             onExit();
           }
@@ -59,7 +70,7 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
 
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isZenMode, onExit]);
+    }, [isZenMode, onExit, tabId, updateTabReadingState]);
 
     // Handle history for back button
     useEffect(() => {
@@ -102,7 +113,7 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
           onScrollProgressChange={handleScrollProgress}
           isZenMode={isZenMode}
           zenControlsVisible={zenControlsVisible}
-          isDialogOpen={false}
+          isDialogOpen={isDialogOpen}
           onZenTap={handleZenTap}
           onZenDoubleTap={handleZenDoubleTap}
           onExit={onExit}
