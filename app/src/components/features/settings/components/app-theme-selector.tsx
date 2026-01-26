@@ -1,9 +1,8 @@
 import React, { useMemo, memo, useCallback } from 'react';
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 import { type ThemeOption, themes } from '@/theme/themes';
-import { Palette, Check } from 'lucide-react';
+import { Palette, Check, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FiStar } from 'react-icons/fi';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -62,7 +61,7 @@ const ThemePreview = memo<ThemePreviewProps>(
             )}
             aria-label={isBookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}
           >
-            <FiStar
+            <Star
               className={cn(
                 'w-4 h-4 transition-all duration-200',
                 isBookmarked ? 'fill-current' : ''
