@@ -1,4 +1,4 @@
-import React, { useCallback, memo } from 'react';
+import React, { useCallback, memo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TabBar from './tab-bar';
 import HeroMain from '@/components/layout/hero-section';
@@ -10,7 +10,6 @@ import {
   useShowEmptyState,
   useTabsActions,
 } from '../store/tabs-store';
-import { useReadingStore } from '@/components/features/content-reading/store/use-reading-store';
 import InlineMarkdownViewer from './inline-markdown-viewer';
 import { SaveFileDialog } from './save-file-dialog';
 import { useSaveShortcut } from '../hooks/use-save-shortcut';
@@ -35,6 +34,9 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     toggleHeaderVisibility,
   } = useTabsActions();
 
+  // Local state for paste input (replaces reading-store.markdownInput)
+  const [markdownInput, setMarkdownInput] = useState('');
+
   // Get current view mode from active tab
   const viewMode = activeTab?.readingState.viewMode ?? 'preview';
 
@@ -47,10 +49,6 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     },
     [activeTab, updateTabReadingState]
   );
-
-  const markdownInput = useReadingStore((state) => state.markdownInput);
-  const initializeReading = useReadingStore((state) => state.initializeReading);
-  const clearPersistedSession = useReadingStore((state) => state.clearPersistedSession);
 
   // Save shortcut hook
   const { showSaveDialog, setShowSaveDialog, defaultFileName, handleSaveToFile, isSaving } =
@@ -70,8 +68,10 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
       // Create new tab (when no tabs exist or coming from initial state)
       createTab(markdownInput, undefined, 'paste');
     }
-    clearPersistedSession();
-  }, [markdownInput, activeTab, updateTabContent, createTab, clearPersistedSession]);
+
+    // Clear paste input after creating tab
+    setMarkdownInput('');
+  }, [markdownInput, activeTab, updateTabContent, createTab]);
 
   const handleTabSelect = useCallback(
     (tabId: string) => {
@@ -127,7 +127,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
                 <div className="max-w-3xl mx-auto">
                   <MarkdownEditor
                     markdownInput={markdownInput}
-                    setMarkdownInput={initializeReading}
+                    setMarkdownInput={setMarkdownInput}
                     handleStartReading={handleStartReading}
                   />
                 </div>

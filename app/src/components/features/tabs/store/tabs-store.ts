@@ -20,6 +20,11 @@ export interface TabReadingState {
   sections: MarkdownSection[];
   isInitialized: boolean;
   metadata?: MarkdownMetadata | null;
+  // Zen mode state (per-tab)
+  isZenMode?: boolean;
+  zenControlsVisible?: boolean;
+  // Dialog state (per-tab, for code preview dialogs)
+  isDialogOpen?: boolean;
 }
 
 /**
@@ -131,6 +136,10 @@ const customTabsStorage = {
             sections,
             isInitialized: sections.length > 0,
             metadata,
+            // Initialize new fields for backward compatibility
+            isZenMode: tab.readingState.isZenMode ?? false,
+            zenControlsVisible: tab.readingState.zenControlsVisible ?? false,
+            isDialogOpen: tab.readingState.isDialogOpen ?? false,
           },
         };
       }) as typeof parsed.state.tabs;
@@ -231,6 +240,9 @@ const createInitialReadingState = (content: string): TabReadingState => {
     sections,
     metadata,
     isInitialized: sections.length > 0,
+    isZenMode: false,
+    zenControlsVisible: false,
+    isDialogOpen: false,
   };
 };
 
