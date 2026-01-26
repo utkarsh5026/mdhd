@@ -1,6 +1,6 @@
 import React from 'react';
 import { BookOpen, Focus, Layers, ScrollText } from 'lucide-react';
-import { useActiveTab, useTabsActions } from '@/components/features/tabs/store/tabs-store';
+import { useActiveTab, useTabsActions } from '@/components/features/tabs';
 import { SettingsHeader, SettingToggle, SelectableOption } from './settings-commons';
 
 const READING_MODE_OPTIONS = [

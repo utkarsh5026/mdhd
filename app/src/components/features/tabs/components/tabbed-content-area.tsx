@@ -9,7 +9,7 @@ import {
   useShowEmptyState,
   useTabsActions,
   type ViewMode,
-} from '../store/tabs-store';
+} from '../store';
 import InlineMarkdownViewer from './markdown/inline-markdown-viewer';
 import { SaveFileDialog } from './save-file-dialog';
 import { useSaveShortcut } from '../hooks/use-save-shortcut';
