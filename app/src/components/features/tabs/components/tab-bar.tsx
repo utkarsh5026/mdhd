@@ -2,7 +2,6 @@ import React, { useRef, useCallback, memo, useMemo } from 'react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { AnimatePresence } from 'framer-motion';
 import TabItem from './tab-item';
 import TabManagementMenu from './tab-management-menu';
 import ViewModeToggle from './view-mode-toggle';
@@ -150,24 +149,22 @@ const TabBar: React.FC<TabBarProps> = memo(
           )}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          <AnimatePresence mode="popLayout" initial={false}>
-            {tabs.map(({ id, readingState, title }) => {
-              const displayInfo = tabDisplayMap.get(id);
-              return (
-                <TabItem
-                  key={id}
-                  id={id}
-                  title={title}
-                  folderPath={displayInfo?.folderPath}
-                  fullPath={displayInfo?.fullPath}
-                  isActive={id === activeTabId}
-                  viewMode={readingState.viewMode}
-                  onSelect={() => onTabSelect(id)}
-                  onClose={handleTabClose(id)}
-                />
-              );
-            })}
-          </AnimatePresence>
+          {tabs.map(({ id, readingState, title }) => {
+            const displayInfo = tabDisplayMap.get(id);
+            return (
+              <TabItem
+                key={id}
+                id={id}
+                title={title}
+                folderPath={displayInfo?.folderPath}
+                fullPath={displayInfo?.fullPath}
+                isActive={id === activeTabId}
+                viewMode={readingState.viewMode}
+                onSelect={() => onTabSelect(id)}
+                onClose={handleTabClose(id)}
+              />
+            );
+          })}
         </div>
         {/* Scroll right button */}
         {tabs.length > 3 && (

@@ -1,0 +1,39 @@
+/* Header Animations */
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slideInLeft {
+  animation: slideInLeft 0.4s ease-out;
+}
+
+.slideInRight {
+  animation: slideInRight 0.4s ease-out 0.1s backwards;
+}
+
+.logoContainer {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logoContainer:hover {
+  transform: scale(1.05);
+}

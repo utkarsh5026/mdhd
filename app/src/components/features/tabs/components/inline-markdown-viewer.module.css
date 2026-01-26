@@ -1,0 +1,29 @@
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.editMode {
+  animation: slideInRight 0.2s ease-out;
+}
+
+.previewMode {
+  animation: slideInLeft 0.2s ease-out;
+}

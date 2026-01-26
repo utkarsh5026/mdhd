@@ -1,8 +1,8 @@
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import React, { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { MarkdownSection } from '@/services/section/parsing';
+import styles from './progress-indicator.module.css';
 
 interface DesktopProgressIndicatorProps {
   currentIndex: number;
@@ -52,16 +52,14 @@ export const DesktopProgressIndicator: React.FC<DesktopProgressIndicatorProps> =
       </div>
 
       <div className="relative">
-        <motion.div
-          className="absolute left-1/2 -translate-x-1/2 w-0.5 bg-linear-to-b from-muted-foreground/40 to-muted-foreground/20 rounded-full"
-          initial={{ height: 0 }}
-          animate={{
+        <div
+          className={styles.progressBar}
+          style={{
             height:
               readingMode === 'scroll'
                 ? `${scrollProgress}%`
                 : `${((currentIndex + 1) / Math.min(total, 15)) * 100}%`,
           }}
-          transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
         />
 
         <div className="flex flex-col gap-4">

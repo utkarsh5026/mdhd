@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
 import { Play, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ClipboardEvent } from 'react';
+import styles from './markdown-editor.module.css';
 
 interface MarkdownEditorProps {
   markdownInput: string;
@@ -28,12 +28,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="space-y-4"
-    >
+    <div className={`space-y-4 ${styles.container}`}>
       <div className="relative">
         <textarea
           value={markdownInput}
@@ -53,11 +48,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       </div>
 
       {hasContent && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between gap-2"
-        >
+        <div className={`flex items-center justify-between gap-2 ${styles.actions}`}>
           <Button
             type="button"
             onClick={handleClear}
@@ -77,9 +68,9 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             <Play className="w-4 h-4" />
             Start Reading
           </Button>
-        </motion.div>
+        </div>
       )}
-    </motion.div>
+    </div>
   );
 };
 
