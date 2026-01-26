@@ -1,4 +1,4 @@
-import { Hash, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import ThemeSelector from '../shared/theme/components/theme-selector';
@@ -18,8 +18,8 @@ const Header = () => {
           <div className={`flex items-center gap-3 ${styles.slideInLeft}`}>
             <div className={`relative group ${styles.logoContainer}`}>
               <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:bg-primary/30 transition-colors duration-300" />
-              <div className="relative w-7 h-7 bg-linear-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25">
-                <Hash className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
+              <div className="relative w-7 h-7 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 overflow-hidden">
+                <img src="/apple-touch-icon.png" alt="MDHD Logo" className="w-full h-full object-cover" />
               </div>
             </div>
 
