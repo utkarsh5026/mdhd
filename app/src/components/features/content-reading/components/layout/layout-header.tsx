@@ -1,6 +1,6 @@
 import { X, Settings, List, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 
 interface HeaderProps {
   onExit: () => void;
@@ -28,8 +28,9 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   };
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
+    <TooltipButton
+      tooltipText={tooltip}
+      button={
         <button
           onClick={onClick}
           className={cn(
@@ -53,15 +54,8 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
             )}
           />
         </button>
-      </TooltipTrigger>
-      <TooltipContent
-        side="bottom"
-        sideOffset={8}
-        className="font-cascadia-code text-xs rounded-2xl backdrop-blur-2xl bg-background/20 text-primary"
-      >
-        {tooltip}
-      </TooltipContent>
-    </Tooltip>
+      }
+    />
   );
 };
 
@@ -72,28 +66,14 @@ const Header: React.FC<HeaderProps> = ({ onExit, onSettings, onMenu, isVisible }
     <div
       className={cn('relative w-full z-50', 'animate-in fade-in slide-in-from-top-4 duration-500')}
     >
-      {/* Modern gradient background with sophisticated blur */}
       <div className="relative">
-        {/* Content container */}
         <div className="relative flex items-center justify-between p-4 sm:p-5 lg:p-6">
           <AnimatedButton onClick={onExit} icon={X} variant="danger" tooltip="Exit Reading Mode" />
 
           <div className="flex items-center gap-3 sm:gap-3.5 lg:gap-4">
             <AnimatedButton onClick={onSettings} icon={Settings} tooltip="Reading Settings" />
 
-            <div className="relative">
-              <div className="w-px h-6 sm:h-8 lg:h-10 bg-gradient-to-b from-transparent via-border to-transparent" />
-              <div className="absolute inset-0 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent blur-sm" />
-            </div>
-
             <AnimatedButton onClick={onMenu} icon={List} tooltip="Table of Contents" />
-          </div>
-
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 sm:hidden">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-cardBg/90 border border-border/50 rounded-full backdrop-blur-md">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-              <span className="text-xs text-mutedForeground font-medium">Reading Mode</span>
-            </div>
           </div>
         </div>
       </div>
