@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import TabItem from './tab-item';
 import TabManagementMenu from './tab-management-menu';
-import ViewModeToggle from '../view-mode-toggle';
-import type { Tab } from '../../store/tabs-store';
+import ViewModeToggle from './view-mode-toggle';
+import type { Tab } from '../../store';
 /**
  * Information about how to display a tab
  */
@@ -69,14 +69,13 @@ function generateTabDisplayNames(tabs: Tab[]): Map<string, TabDisplayInfo> {
   });
 
   return displayMap;
-};
-
+}
 
 interface TabBarProps {
   tabs: Tab[];
   activeTabId: string | null;
-  viewMode: 'preview' | 'edit';
-  onViewModeToggle: (mode: 'preview' | 'edit') => void;
+  viewMode: 'preview' | 'edit' | 'dual';
+  onViewModeToggle: (mode: 'preview' | 'edit' | 'dual') => void;
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
   onNewTab: () => void;

@@ -11,7 +11,7 @@ import styles from './inline-markdown-viewer.module.css';
 
 interface InlineMarkdownViewerProps {
   tabId: string;
-  viewMode: 'preview' | 'edit';
+  viewMode: 'preview' | 'edit' | 'dual';
   onContentChange: (content: string) => void;
   onEnterFullscreen: () => void;
 }
@@ -115,44 +115,76 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
       return <LoadingState />;
     }
 
-    return (
-      <>
-        {viewMode === 'edit' ? (
+    const readingCoreProps = {
+      markdown: tab.content,
+      metadata,
+      sections,
+      readSections,
+      currentIndex,
+      currentSection,
+      isTransitioning,
+      readingMode,
+      scrollProgress,
+      goToNext,
+      goToPrevious,
+      changeSection,
+      markSectionAsRead,
+      onScrollProgressChange: handleScrollProgress,
+      viewMode: 'preview' as const,
+      headerSlot: ({ onSettings, onMenu }: { onSettings: () => void; onMenu: () => void }) => (
+        <InlineHeader
+          onFullscreen={onEnterFullscreen}
+          onSettings={onSettings}
+          onMenu={onMenu}
+        />
+      ),
+    };
+
+    const PreviewPanel = () => <ReadingCore {...readingCoreProps} />;
+
+    const EditorPanel = () => (
+      <MarkdownCodeMirrorEditor content={tab.content} onChange={onContentChange} />
+    );
+
+
+    const renderContent = () => {
+      if (viewMode === 'edit') {
+        return (
           <div key="edit-mode" className={`h-full ${styles.editMode}`}>
             <div className="h-full relative bg-background text-foreground">
-              <MarkdownCodeMirrorEditor content={tab.content} onChange={onContentChange} />
+              <EditorPanel />
             </div>
           </div>
-        ) : (
+        );
+      }
+
+      if (viewMode === 'preview') {
+        return (
           <div key="preview-mode" className={`h-full ${styles.previewMode}`}>
-            <ReadingCore
-              markdown={tab.content}
-              metadata={metadata}
-              sections={sections}
-              readSections={readSections}
-              currentIndex={currentIndex}
-              currentSection={currentSection}
-              isTransitioning={isTransitioning}
-              readingMode={readingMode}
-              scrollProgress={scrollProgress}
-              goToNext={goToNext}
-              goToPrevious={goToPrevious}
-              changeSection={changeSection}
-              markSectionAsRead={markSectionAsRead}
-              onScrollProgressChange={handleScrollProgress}
-              viewMode="preview"
-              headerSlot={({ onSettings, onMenu }) => (
-                <InlineHeader
-                  onFullscreen={onEnterFullscreen}
-                  onSettings={onSettings}
-                  onMenu={onMenu}
-                />
-              )}
-            />
+            <PreviewPanel />
           </div>
-        )}
-      </>
-    );
+        );
+      }
+
+      return (
+        <div key="dual-mode" className={`h-full ${styles.dualMode}`}>
+          <div className="hidden lg:flex flex-row h-full overflow-hidden">
+            <div className="w-1/2 h-full border-r border-border/20 relative bg-background text-foreground">
+              <EditorPanel />
+            </div>
+            <div className="w-1/2 h-full relative">
+              <PreviewPanel />
+            </div>
+          </div>
+
+          <div className="lg:hidden h-full">
+            <PreviewPanel />
+          </div>
+        </div>
+      );
+    };
+
+    return <>{renderContent()}</>;
   }
 );
 

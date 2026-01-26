@@ -1,7 +1,17 @@
 import React, { useCallback, memo } from 'react';
-import { X, Eye, Pencil } from 'lucide-react';
+import { X, Eye, Pencil, Columns2, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import type { ViewMode } from '../../store';
+
+const VIEW_MODE_CONFIG: Record<
+  ViewMode,
+  { Icon: LucideIcon; color: string; label: string }
+> = {
+  edit: { Icon: Pencil, color: 'amber', label: 'Edit mode' },
+  dual: { Icon: Columns2, color: 'green', label: 'Dual mode' },
+  preview: { Icon: Eye, color: 'blue', label: 'Preview mode' },
+} as const;
 
 interface TabItemProps {
   id: string;
@@ -9,7 +19,7 @@ interface TabItemProps {
   folderPath?: string | null;
   fullPath?: string | null;
   isActive: boolean;
-  viewMode: 'preview' | 'edit';
+  viewMode: ViewMode;
   onSelect: () => void;
   onClose: (e: React.MouseEvent) => void;
 }
@@ -41,7 +51,7 @@ interface TabButtonProps {
   title: string;
   displayPath: string | null;
   isActive: boolean;
-  viewMode: 'preview' | 'edit';
+  viewMode: 'preview' | 'edit' | 'dual';
   onSelect: () => void;
   onClose: (e: React.MouseEvent) => void;
   onMiddleClick: (e: React.MouseEvent) => void;
@@ -68,23 +78,18 @@ const TabButton: React.FC<TabButtonProps> = memo(
         data-tab-id={id}
       >
         {/* View mode icon */}
-        {viewMode === 'edit' ? (
-          <Pencil
-            className={cn(
-              'w-3.5 h-3.5 shrink-0',
-              isActive ? 'text-amber-500/80' : 'text-amber-500/60'
-            )}
-            aria-label="Edit mode"
-          />
-        ) : (
-          <Eye
-            className={cn(
-              'w-3.5 h-3.5 shrink-0',
-              isActive ? 'text-blue-500/80' : 'text-blue-500/60'
-            )}
-            aria-label="Preview mode"
-          />
-        )}
+        {(() => {
+          const { Icon, color, label } = VIEW_MODE_CONFIG[viewMode];
+          return (
+            <Icon
+              className={cn(
+                'w-3.5 h-3.5 shrink-0',
+                isActive ? `text-${color}-500/80` : `text-${color}-500/60`
+              )}
+              aria-label={label}
+            />
+          );
+        })()}
 
         {/* Title with optional folder path */}
         <div className="flex flex-col flex-1 min-w-0 text-left">

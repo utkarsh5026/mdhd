@@ -20,10 +20,23 @@
   }
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .editMode {
   animation: slideInRight 0.2s ease-out;
 }
 
 .previewMode {
   animation: slideInLeft 0.2s ease-out;
+}
+
+.dualMode {
+  animation: fadeIn 0.2s ease-out;
 }

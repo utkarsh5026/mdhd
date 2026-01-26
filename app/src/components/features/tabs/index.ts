@@ -10,7 +10,8 @@ export {
   useTabsActions,
   type Tab,
   type TabReadingState,
-} from './store/tabs-store';
+} from './store';
+
 
 // Components
 export { default as TabBar } from './components/tab-bar/tab-bar';

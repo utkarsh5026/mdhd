@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { downloadAsFile, downloadAsImage } from '@/utils/download';
 import { Badge } from '@/components/ui/badge';
 import { useCodeDetection } from '../../hooks/use-code-detection';
-import { useActiveTab, useTabsActions } from '@/components/features/tabs/store/tabs-store';
+import { useActiveTab, useTabsActions } from '@/components/features/tabs';
 import CodeMirrorDisplay from './codemirror-display';
 import { getThemeBackground } from '@/components/features/settings/store/codemirror-themes';
 
@@ -56,8 +56,9 @@ const getHeadingCodeStyle = (headingLevel: number | null) => {
     2: 'text-lg sm:text-2xl',
     3: 'text-base sm:text-xl',
   };
-  return `${sizes[headingLevel as keyof typeof sizes]
-    } mx-1 sm:mx-2 px-2 py-1 bg-primary/10 rounded-xl sm:rounded-2xl`;
+  return `${
+    sizes[headingLevel as keyof typeof sizes]
+  } mx-1 sm:mx-2 px-2 py-1 bg-primary/10 rounded-xl sm:rounded-2xl`;
 };
 
 /**
