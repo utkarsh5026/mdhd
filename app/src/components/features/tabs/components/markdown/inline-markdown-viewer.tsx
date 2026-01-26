@@ -1,13 +1,13 @@
 import React, { memo } from 'react';
 import { Settings, List, Maximize } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
 import ReadingCore from '@/components/features/content-reading/components/reading-core';
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
-import { useTabNavigation } from '../hooks/use-tab-navigation';
-import { useTabsStore } from '../store/tabs-store';
+import { useTabNavigation } from '../../hooks/use-tab-navigation';
+import { useTabsStore } from '../../store/tabs-store';
 import MarkdownCodeMirrorEditor from './markdown-codemirror-editor';
+import styles from './inline-markdown-viewer.module.css';
 
 interface InlineMarkdownViewerProps {
   tabId: string;
@@ -116,29 +116,15 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
     }
 
     return (
-      <AnimatePresence mode="wait">
+      <>
         {viewMode === 'edit' ? (
-          <motion.div
-            key="edit-mode"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="h-full"
-          >
+          <div key="edit-mode" className={`h-full ${styles.editMode}`}>
             <div className="h-full relative bg-background text-foreground">
               <MarkdownCodeMirrorEditor content={tab.content} onChange={onContentChange} />
             </div>
-          </motion.div>
+          </div>
         ) : (
-          <motion.div
-            key="preview-mode"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="h-full"
-          >
+          <div key="preview-mode" className={`h-full ${styles.previewMode}`}>
             <ReadingCore
               markdown={tab.content}
               metadata={metadata}
@@ -163,9 +149,9 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
                 />
               )}
             />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </>
     );
   }
 );

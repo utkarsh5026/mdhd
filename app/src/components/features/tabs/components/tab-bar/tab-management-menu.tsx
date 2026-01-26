@@ -24,7 +24,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { useActiveTabId, useHeaderVisible, useTabClose, useTabs } from '../store/tabs-store';
+import { useActiveTabId, useHeaderVisible, useTabClose, useTabs } from '../../store/tabs-store';
 
 interface MenuItemProps {
   icon: LucideIcon;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import styles from './loading-state.module.css';
 
 const LoadingState: React.FC = () => {
   return (
@@ -7,19 +7,9 @@ const LoadingState: React.FC = () => {
       {/* Breathing dots */}
       <div className="flex items-center gap-3">
         {[0, 1, 2].map((index) => (
-          <motion.div
+          <div
             key={index}
-            className="w-3 h-3 bg-primary rounded-full"
-            animate={{
-              scale: [1, 1.4, 1],
-              opacity: [0.5, 1, 0.5],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              delay: index * 0.2,
-              ease: 'easeInOut',
-            }}
+            className={`w-3 h-3 bg-primary rounded-full ${styles.dot}`}
           />
         ))}
       </div>

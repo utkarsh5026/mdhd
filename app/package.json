@@ -56,7 +56,6 @@
     "clsx": "^2.1.1",
     "d3-force": "^3.0.0",
     "date-fns": "^4.1.0",
-    "framer-motion": "^12.27.1",
     "glob": "^13.0.0",
     "gray-matter": "^4.0.3",
     "html2canvas": "^1.4.1",

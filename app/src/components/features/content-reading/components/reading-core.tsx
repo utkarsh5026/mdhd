@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { useThemeFloatingPicker } from '@/components/shared/theme/store/theme-store';
 import { useControls } from '@/components/features/content-reading/hooks';
 import {
@@ -212,38 +211,34 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
         )}
 
         {/* Header - passed from parent */}
-        <AnimatePresence>
-          {shouldShowControls && headerSlot && (
-            <div className="absolute top-0 left-0 right-0 z-50">
-              {headerSlot({
-                onSettings: handleSettingsOpen,
-                onMenu: handleMenuOpen,
-                isVisible: isControlsVisible || zenControlsVisible,
-              })}
-            </div>
-          )}
-        </AnimatePresence>
+        {shouldShowControls && headerSlot && (
+          <div className="absolute top-0 left-0 right-0 z-50">
+            {headerSlot({
+              onSettings: handleSettingsOpen,
+              onMenu: handleMenuOpen,
+              isVisible: isControlsVisible || zenControlsVisible,
+            })}
+          </div>
+        )}
 
         {/* Navigation Controls - hidden in zen mode and scroll mode */}
-        <AnimatePresence>
-          {shouldShowControls && readingMode === 'card' && (
-            <div className="absolute bottom-0 left-0 right-0 z-50">
-              <NavigationControls
-                currentIndex={currentIndex}
-                total={sections.length}
-                onPrevious={() => {
-                  goToPrevious();
-                  handleInteraction();
-                }}
-                onNext={() => {
-                  goToNext();
-                  handleInteraction();
-                }}
-                isVisible={isControlsVisible || zenControlsVisible}
-              />
-            </div>
-          )}
-        </AnimatePresence>
+        {shouldShowControls && readingMode === 'card' && (
+          <div className="absolute bottom-0 left-0 right-0 z-50">
+            <NavigationControls
+              currentIndex={currentIndex}
+              total={sections.length}
+              onPrevious={() => {
+                goToPrevious();
+                handleInteraction();
+              }}
+              onNext={() => {
+                goToNext();
+                handleInteraction();
+              }}
+              isVisible={isControlsVisible || zenControlsVisible}
+            />
+          </div>
+        )}
 
         {/* Desktop side progress - hidden in zen mode */}
         {!isZenMode && (

@@ -1,0 +1,9 @@
+.progressBar {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  background: linear-gradient(to bottom, hsl(var(--muted-foreground) / 0.4), hsl(var(--muted-foreground) / 0.2));
+  border-radius: 9999px;
+  transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}

@@ -1,6 +1,6 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import styles from './zen-position-indicator.module.css';
 
 interface ZenPositionIndicatorProps {
   currentIndex: number;
@@ -32,16 +32,10 @@ const ZenPositionIndicator: React.FC<ZenPositionIndicatorProps> = ({
       {/* Track line */}
       <div className="w-0.5 h-full bg-white/10 rounded-full relative">
         {/* Position indicator dot */}
-        <motion.div
-          className="absolute left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white/60"
-          initial={false}
-          animate={{
+        <div
+          className={styles.indicator}
+          style={{
             top: `${progressPercent}%`,
-          }}
-          transition={{
-            type: 'spring',
-            stiffness: 300,
-            damping: 30,
           }}
         />
       </div>

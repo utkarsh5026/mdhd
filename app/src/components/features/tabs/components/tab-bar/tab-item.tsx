@@ -1,7 +1,6 @@
 import React, { useCallback, memo } from 'react';
 import { X, Eye, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 
 interface TabItemProps {
@@ -37,41 +36,31 @@ const truncatePath = (path: string, maxLength: number = 30): string => {
   return `...${path.slice(-(maxLength - 3))}`;
 };
 
-const TabItem: React.FC<TabItemProps> = memo(
-  ({ id, title, folderPath, fullPath, isActive, viewMode, onSelect, onClose }) => {
-    const handleClose = useCallback(
-      (e: React.MouseEvent) => {
-        e.stopPropagation();
-        onClose(e);
-      },
-      [onClose]
-    );
+interface TabButtonProps {
+  id: string;
+  title: string;
+  displayPath: string | null;
+  isActive: boolean;
+  viewMode: 'preview' | 'edit';
+  onSelect: () => void;
+  onClose: (e: React.MouseEvent) => void;
+  onMiddleClick: (e: React.MouseEvent) => void;
+}
 
-    const handleMiddleClick = useCallback(
-      (e: React.MouseEvent) => {
-        if (e.button === 1) {
-          e.preventDefault();
-          onClose(e);
-        }
-      },
-      [onClose]
-    );
-
-    const displayPath = folderPath ? truncatePath(folderPath) : null;
-
-    const tabButton = (
-      <motion.button
-        layout
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ duration: 0.15 }}
+/**
+ * TabButton component with CSS animations
+ */
+const TabButton: React.FC<TabButtonProps> = memo(
+  ({ id, title, displayPath, isActive, viewMode, onSelect, onClose, onMiddleClick }) => {
+    return (
+      <button
         onClick={onSelect}
-        onMouseDown={handleMiddleClick}
+        onMouseDown={onMiddleClick}
         className={cn(
           'group relative flex items-center gap-1.5 px-2.5 py-1 min-w-24 max-w-48',
           'text-xs border-r border-border/10 transition-colors duration-150',
           'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30',
+          'animate-in fade-in zoom-in-95 duration-150',
           isActive
             ? 'bg-background/50 text-foreground border-b border-b-primary/70'
             : 'bg-transparent text-muted-foreground/70 hover:bg-muted/20 hover:text-foreground/90'
@@ -116,7 +105,10 @@ const TabItem: React.FC<TabItemProps> = memo(
         <span
           role="button"
           tabIndex={0}
-          onClick={handleClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose(e);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
@@ -132,7 +124,46 @@ const TabItem: React.FC<TabItemProps> = memo(
         >
           <X className="w-3 h-3" />
         </span>
-      </motion.button>
+      </button>
+    );
+  }
+);
+
+TabButton.displayName = 'TabButton';
+
+const TabItem: React.FC<TabItemProps> = memo(
+  ({ id, title, folderPath, fullPath, isActive, viewMode, onSelect, onClose }) => {
+    const handleClose = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onClose(e);
+      },
+      [onClose]
+    );
+
+    const handleMiddleClick = useCallback(
+      (e: React.MouseEvent) => {
+        if (e.button === 1) {
+          e.preventDefault();
+          onClose(e);
+        }
+      },
+      [onClose]
+    );
+
+    const displayPath = folderPath ? truncatePath(folderPath) : null;
+
+    const tabButton = (
+      <TabButton
+        id={id}
+        title={title}
+        displayPath={displayPath}
+        isActive={isActive}
+        viewMode={viewMode}
+        onSelect={onSelect}
+        onClose={handleClose}
+        onMiddleClick={handleMiddleClick}
+      />
     );
 
     if (fullPath) {
