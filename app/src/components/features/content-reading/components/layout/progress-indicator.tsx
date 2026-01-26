@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { MarkdownSection } from '@/services/section/parsing';
 
@@ -45,15 +45,15 @@ export const DesktopProgressIndicator: React.FC<DesktopProgressIndicatorProps> =
 
   return (
     <div className="hidden lg:block fixed right-8 top-1/2 -translate-y-1/2 z-40">
-      <div className="absolute -top-16 left-1/2 -translate-x-1/2 text-center min-w-[80px]">
-        <div className="bg-background/90 backdrop-blur-xl border-none rounded-2xl px-3 py-2.5 shadow-xl font-cascadia-code">
-          <div className="text-lg font-bold text-primary tabular-nums">{percentage}%</div>
+      <div className="absolute -top-16 left-1/2 -translate-x-1/2 text-center min-w-20">
+        <div className="bg-background/60 backdrop-blur-sm border border-border/40 rounded-2xl px-3 py-2 shadow-sm font-cascadia-code">
+          <div className="text-sm font-medium text-muted-foreground tabular-nums">{percentage}%</div>
         </div>
       </div>
 
       <div className="relative">
         <motion.div
-          className="absolute left-1/2 -translate-x-1/2 w-1 bg-gradient-to-b from-primary to-primary/60 rounded-full"
+          className="absolute left-1/2 -translate-x-1/2 w-0.5 bg-linear-to-b from-muted-foreground/40 to-muted-foreground/20 rounded-full"
           initial={{ height: 0 }}
           animate={{
             height:
@@ -111,33 +111,33 @@ const SectionToolTip: React.FC<SectionToolTipProps> = ({
         <button
           onClick={() => onSelectSection(actualIndex)}
           className={cn(
-            'relative w-5 h-5 rounded-full transition-all duration-300 group z-10',
-            'border-2 backdrop-blur-sm active:scale-90',
+            'relative w-4 h-4 rounded-full transition-all duration-300 group z-10',
+            'border backdrop-blur-sm active:scale-90',
             isActive
-              ? 'bg-primary border-primary shadow-lg shadow-primary/40 scale-125'
+              ? 'bg-muted-foreground/60 border-muted-foreground/60 shadow-sm scale-110'
               : isCompleted
-                ? 'bg-primary/80 border-primary/80 shadow-md shadow-primary/20'
-                : 'bg-cardBg border-border hover:border-secondary hover:bg-secondary/50'
+                ? 'bg-muted-foreground/30 border-muted-foreground/30'
+                : 'bg-background/80 border-border/50 hover:border-muted-foreground/40 hover:bg-muted-foreground/10'
           )}
         >
           {isCompleted && !isActive && (
-            <div className="absolute inset-1 bg-background/40 rounded-full" />
+            <div className="absolute inset-0.5 bg-background/60 rounded-full" />
           )}
         </button>
       </TooltipTrigger>
       <TooltipContent
         side="left"
         sideOffset={12}
-        className="max-w-xs bg-background border border-border shadow-xl font-cascadia-code rounded-2xl backdrop-blur-2xl"
+        className="max-w-xs bg-background/95 border border-border/60 shadow-sm font-cascadia-code rounded-2xl backdrop-blur-sm"
       >
         <div className="flex flex-col gap-1.5 p-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-xs font-normal text-muted-foreground/80">
               Section {actualIndex + 1}
               {isCompleted && ' ✓'}
             </span>
           </div>
-          <p className="text-sm font-semibold text-foreground leading-snug">
+          <p className="text-sm font-medium text-foreground/90 leading-snug">
             {section?.title || `Section ${actualIndex + 1}`}
           </p>
         </div>
