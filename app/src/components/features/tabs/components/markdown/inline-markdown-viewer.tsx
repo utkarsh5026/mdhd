@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 import ReadingCore from '@/components/features/content-reading/components/reading-core';
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
-import { useTabNavigation } from '../hooks/use-tab-navigation';
-import { useTabsStore } from '../store/tabs-store';
+import { useTabNavigation } from '../../hooks/use-tab-navigation';
+import { useTabsStore } from '../../store/tabs-store';
 import MarkdownCodeMirrorEditor from './markdown-codemirror-editor';
 import styles from './inline-markdown-viewer.module.css';
 

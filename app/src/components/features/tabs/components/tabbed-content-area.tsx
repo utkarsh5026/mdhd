@@ -1,5 +1,5 @@
 import React, { useCallback, memo, useState } from 'react';
-import TabBar from './tab-bar';
+import TabBar from './tab-bar/tab-bar';
 import HeroMain from '@/components/layout/hero-section';
 import MarkdownEditor from '@/components/layout/markdown-editor';
 import {
@@ -9,7 +9,7 @@ import {
   useShowEmptyState,
   useTabsActions,
 } from '../store/tabs-store';
-import InlineMarkdownViewer from './inline-markdown-viewer';
+import InlineMarkdownViewer from './markdown/inline-markdown-viewer';
 import { SaveFileDialog } from './save-file-dialog';
 import { useSaveShortcut } from '../hooks/use-save-shortcut';
 

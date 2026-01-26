@@ -1,8 +1,8 @@
 import React, { useEffect, useCallback, memo } from 'react';
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import { useZenMode } from '@/components/features/content-reading/hooks/use-zen-mode';
-import { useTabNavigation } from '../hooks/use-tab-navigation';
-import { useTabsStore } from '../store/tabs-store';
+import { useTabNavigation } from '../../hooks/use-tab-navigation';
+import { useTabsStore } from '../../store/tabs-store';
 import ReadingUI from '@/components/features/content-reading/components/reading-ui';
 
 interface FullscreenMarkdownViewerProps {
