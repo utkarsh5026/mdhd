@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { ThemeOption, themes } from '@/theme/themes';
 import { withErrorHandling } from '@/utils/functions/error';
 import { useShallow } from 'zustand/react/shallow';
+import { useCodeThemeStore, codeThemes, type ThemeKey } from '@/components/features/settings/store/code-theme';
 
 const defaultTheme = themes.find((t) => t.name === 'Night Reader') ?? themes[0];
 
@@ -40,6 +41,19 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   setTheme: (theme: ThemeOption) => {
     localStorage.setItem('theme', JSON.stringify(theme));
     set({ currentTheme: theme });
+
+    const codeThemeStore = useCodeThemeStore.getState();
+    const currentCodeTheme = codeThemeStore.selectedTheme;
+    const isCurrentCodeThemeDark = currentCodeTheme in codeThemes['Dark Themes'];
+
+    if (theme.isDark && !isCurrentCodeThemeDark) {
+      codeThemeStore.setTheme('vscDarkPlus' as ThemeKey);
+      return;
+    }
+
+    if (!theme.isDark && isCurrentCodeThemeDark) {
+      codeThemeStore.setTheme('vs' as ThemeKey);
+    }
   },
 
   toggleBookmark: (theme: ThemeOption) => {
