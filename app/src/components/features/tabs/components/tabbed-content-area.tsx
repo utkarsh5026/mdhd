@@ -1,5 +1,4 @@
 import React, { useCallback, memo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import TabBar from './tab-bar';
 import HeroMain from '@/components/layout/hero-section';
 import MarkdownEditor from '@/components/layout/markdown-editor';
@@ -112,45 +111,35 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden relative">
-        <AnimatePresence mode="wait">
-          {shouldShowEmptyState ? (
-            <motion.div
-              key={isActiveTabEmpty ? `empty-tab-${activeTab?.id}` : 'empty-state'}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="h-full overflow-auto"
-            >
-              <div className="container mx-auto px-6 py-12">
-                <HeroMain />
-                <div className="max-w-3xl mx-auto">
-                  <MarkdownEditor
-                    markdownInput={markdownInput}
-                    setMarkdownInput={setMarkdownInput}
-                    handleStartReading={handleStartReading}
-                  />
-                </div>
+        {shouldShowEmptyState ? (
+          <div
+            key={isActiveTabEmpty ? `empty-tab-${activeTab?.id}` : 'empty-state'}
+            className="h-full overflow-auto animate-fade-in"
+          >
+            <div className="container mx-auto px-6 py-12">
+              <HeroMain />
+              <div className="max-w-3xl mx-auto">
+                <MarkdownEditor
+                  markdownInput={markdownInput}
+                  setMarkdownInput={setMarkdownInput}
+                  handleStartReading={handleStartReading}
+                />
               </div>
-            </motion.div>
-          ) : activeTab ? (
-            <motion.div
-              key={activeTab.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="h-full"
-            >
-              <InlineMarkdownViewer
-                tabId={activeTab.id}
-                viewMode={viewMode}
-                onContentChange={(content) => updateTabContent(activeTab.id, content)}
-                onEnterFullscreen={() => onEnterFullscreen(activeTab.id)}
-              />
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+            </div>
+          </div>
+        ) : activeTab ? (
+          <div
+            key={activeTab.id}
+            className="h-full animate-fade-in-fast"
+          >
+            <InlineMarkdownViewer
+              tabId={activeTab.id}
+              viewMode={viewMode}
+              onContentChange={(content) => updateTabContent(activeTab.id, content)}
+              onEnterFullscreen={() => onEnterFullscreen(activeTab.id)}
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* Save File Dialog */}
