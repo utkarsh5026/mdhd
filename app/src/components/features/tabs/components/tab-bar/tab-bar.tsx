@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import TabItem from './tab-item';
 import TabManagementMenu from './tab-management-menu';
 import ViewModeToggle from './view-mode-toggle';
-import type { Tab } from '../../store/tabs-store';
+import type { Tab } from '../../store';
 /**
  * Information about how to display a tab
  */

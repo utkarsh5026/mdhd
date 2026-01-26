@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Eye, Code, Columns2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
-import type { ViewMode } from '../../store/tabs-store';
+import type { ViewMode } from '../../store';
 
 interface ViewModeToggleProps {
   viewMode: ViewMode;

@@ -2,7 +2,7 @@ import React, { useCallback, memo } from 'react';
 import { X, Eye, Pencil, Columns2, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
-import type { ViewMode } from '../../store/tabs-store';
+import type { ViewMode } from '../../store';
 
 const VIEW_MODE_CONFIG: Record<
   ViewMode,
