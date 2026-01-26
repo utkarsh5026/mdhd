@@ -1,19 +1,44 @@
 import React, { useCallback, memo } from 'react';
-import { X, FileText } from 'lucide-react';
+import { X, Eye, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 
 interface TabItemProps {
   id: string;
   title: string;
+  folderPath?: string | null;
+  fullPath?: string | null;
   isActive: boolean;
-  sourceType: 'paste' | 'file';
+  viewMode: 'preview' | 'edit';
   onSelect: () => void;
   onClose: (e: React.MouseEvent) => void;
 }
 
+/**
+ * Truncates long paths from the start with ellipsis
+ * Example: "very/long/path/to/folder" -> "...to/folder"
+ */
+const truncatePath = (path: string, maxLength: number = 30): string => {
+  if (path.length <= maxLength) {
+    return path;
+  }
+
+  const parts = path.split('/');
+  if (parts.length <= 2) {
+    return `...${path.slice(-(maxLength - 3))}`;
+  }
+
+  const lastTwoParts = parts.slice(-2).join('/');
+  if (lastTwoParts.length <= maxLength - 3) {
+    return `.../${lastTwoParts}`;
+  }
+
+  return `...${path.slice(-(maxLength - 3))}`;
+};
+
 const TabItem: React.FC<TabItemProps> = memo(
-  ({ id, title, isActive, sourceType, onSelect, onClose }) => {
+  ({ id, title, folderPath, fullPath, isActive, viewMode, onSelect, onClose }) => {
     const handleClose = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -32,7 +57,9 @@ const TabItem: React.FC<TabItemProps> = memo(
       [onClose]
     );
 
-    return (
+    const displayPath = folderPath ? truncatePath(folderPath) : null;
+
+    const tabButton = (
       <motion.button
         layout
         initial={{ opacity: 0, scale: 0.9 }}
@@ -49,19 +76,41 @@ const TabItem: React.FC<TabItemProps> = memo(
             ? 'bg-background/50 text-foreground border-b border-b-primary/70'
             : 'bg-transparent text-muted-foreground/70 hover:bg-muted/20 hover:text-foreground/90'
         )}
-        title={title}
         data-tab-id={id}
       >
-        {/* File icon */}
-        <FileText
-          className={cn(
-            'w-3.5 h-3.5 shrink-0',
-            sourceType === 'file' ? 'text-blue-500/80' : 'text-muted-foreground/60'
-          )}
-        />
+        {/* View mode icon */}
+        {viewMode === 'edit' ? (
+          <Pencil
+            className={cn(
+              'w-3.5 h-3.5 shrink-0',
+              isActive ? 'text-amber-500/80' : 'text-amber-500/60'
+            )}
+            aria-label="Edit mode"
+          />
+        ) : (
+          <Eye
+            className={cn(
+              'w-3.5 h-3.5 shrink-0',
+              isActive ? 'text-blue-500/80' : 'text-blue-500/60'
+            )}
+            aria-label="Preview mode"
+          />
+        )}
 
-        {/* Title */}
-        <span className="truncate flex-1 text-left">{title}</span>
+        {/* Title with optional folder path */}
+        <div className="flex flex-col flex-1 min-w-0 text-left">
+          {displayPath && (
+            <span
+              className={cn(
+                'text-[9px] leading-tight truncate',
+                isActive ? 'text-muted-foreground/60' : 'text-muted-foreground/40'
+              )}
+            >
+              {displayPath}
+            </span>
+          )}
+          <span className="truncate text-xs leading-tight">{title}</span>
+        </div>
 
         {/* Close button */}
         <span
@@ -85,6 +134,12 @@ const TabItem: React.FC<TabItemProps> = memo(
         </span>
       </motion.button>
     );
+
+    if (fullPath) {
+      return <TooltipButton button={tabButton} tooltipText={fullPath} />;
+    }
+
+    return tabButton;
   }
 );
 
