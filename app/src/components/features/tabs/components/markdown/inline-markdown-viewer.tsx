@@ -11,7 +11,7 @@ import styles from './inline-markdown-viewer.module.css';
 
 interface InlineMarkdownViewerProps {
   tabId: string;
-  viewMode: 'preview' | 'edit';
+  viewMode: 'preview' | 'edit' | 'dual';
   onContentChange: (content: string) => void;
   onEnterFullscreen: () => void;
 }
@@ -117,7 +117,72 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
 
     return (
       <>
-        {viewMode === 'edit' ? (
+        {viewMode === 'dual' ? (
+          <div key="dual-mode" className={`h-full ${styles.dualMode}`}>
+            <div className="hidden lg:flex flex-row h-full overflow-hidden">
+              {/* Editor Panel */}
+              <div className="w-1/2 h-full border-r border-border/20 relative bg-background text-foreground">
+                <MarkdownCodeMirrorEditor content={tab.content} onChange={onContentChange} />
+              </div>
+
+              {/* Preview Panel */}
+              <div className="w-1/2 h-full relative">
+                <ReadingCore
+                  markdown={tab.content}
+                  metadata={metadata}
+                  sections={sections}
+                  readSections={readSections}
+                  currentIndex={currentIndex}
+                  currentSection={currentSection}
+                  isTransitioning={isTransitioning}
+                  readingMode={readingMode}
+                  scrollProgress={scrollProgress}
+                  goToNext={goToNext}
+                  goToPrevious={goToPrevious}
+                  changeSection={changeSection}
+                  markSectionAsRead={markSectionAsRead}
+                  onScrollProgressChange={handleScrollProgress}
+                  viewMode="preview"
+                  headerSlot={({ onSettings, onMenu }) => (
+                    <InlineHeader
+                      onFullscreen={onEnterFullscreen}
+                      onSettings={onSettings}
+                      onMenu={onMenu}
+                    />
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Mobile fallback: show preview mode */}
+            <div className="lg:hidden h-full">
+              <ReadingCore
+                markdown={tab.content}
+                metadata={metadata}
+                sections={sections}
+                readSections={readSections}
+                currentIndex={currentIndex}
+                currentSection={currentSection}
+                isTransitioning={isTransitioning}
+                readingMode={readingMode}
+                scrollProgress={scrollProgress}
+                goToNext={goToNext}
+                goToPrevious={goToPrevious}
+                changeSection={changeSection}
+                markSectionAsRead={markSectionAsRead}
+                onScrollProgressChange={handleScrollProgress}
+                viewMode="preview"
+                headerSlot={({ onSettings, onMenu }) => (
+                  <InlineHeader
+                    onFullscreen={onEnterFullscreen}
+                    onSettings={onSettings}
+                    onMenu={onMenu}
+                  />
+                )}
+              />
+            </div>
+          </div>
+        ) : viewMode === 'edit' ? (
           <div key="edit-mode" className={`h-full ${styles.editMode}`}>
             <div className="h-full relative bg-background text-foreground">
               <MarkdownCodeMirrorEditor content={tab.content} onChange={onContentChange} />

@@ -8,6 +8,7 @@ import {
   useActiveTab,
   useShowEmptyState,
   useTabsActions,
+  type ViewMode,
 } from '../store/tabs-store';
 import InlineMarkdownViewer from './markdown/inline-markdown-viewer';
 import { SaveFileDialog } from './save-file-dialog';
@@ -41,7 +42,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
 
   // Handle view mode toggle
   const handleViewModeToggle = useCallback(
-    (mode: 'preview' | 'edit') => {
+    (mode: ViewMode) => {
       if (activeTab) {
         updateTabReadingState(activeTab.id, { viewMode: mode });
       }

@@ -7,6 +7,7 @@ import { attempt } from '@/utils/functions/error';
 
 const STORAGE_VERSION = 1;
 const STORAGE_KEY = 'mdhd-tabs-storage';
+export type ViewMode = 'preview' | 'edit' | 'dual';
 
 /**
  * Reading state for each tab
@@ -16,7 +17,7 @@ export interface TabReadingState {
   readSections: Set<number>;
   scrollProgress: number;
   readingMode: 'card' | 'scroll';
-  viewMode: 'preview' | 'edit';
+  viewMode: ViewMode;
   sections: MarkdownSection[];
   isInitialized: boolean;
   metadata?: MarkdownMetadata | null;
@@ -101,7 +102,7 @@ interface PersistedTabsState {
       Tab & {
         readingState: Omit<TabReadingState, 'readSections' | 'sections'> & {
           readSections: number[];
-          viewMode?: 'preview' | 'edit';
+          viewMode?: 'preview' | 'edit' | 'dual';
         };
       }
     >;
@@ -127,12 +128,18 @@ const customTabsStorage = {
 
       const updated = parsed.state.tabs.map((tab) => {
         const { metadata, sections } = parseMarkdownIntoSections(tab.content);
+        // Validate viewMode and fallback to 'preview' if invalid
+        const validViewModes: ReadonlyArray<ViewMode> = ['preview', 'edit', 'dual'];
+        const viewMode = validViewModes.includes(tab.readingState.viewMode || 'preview')
+          ? tab.readingState.viewMode || 'preview'
+          : 'preview';
+
         return {
           ...tab,
           readingState: {
             ...tab.readingState,
             readSections: new Set(tab.readingState.readSections || []),
-            viewMode: tab.readingState.viewMode || 'preview',
+            viewMode,
             sections,
             isInitialized: sections.length > 0,
             metadata,
@@ -146,7 +153,7 @@ const customTabsStorage = {
 
       parsed.state.tabs = updated;
       return parsed;
-    }
+    };
 
     const [error, parsedTabs] = attempt(getParsedTabs);
     if (error) {
@@ -173,7 +180,7 @@ const customTabsStorage = {
         },
       };
       localStorage.setItem(name, JSON.stringify(serialized));
-    }
+    };
 
     const [error] = attempt(storeTabState);
     if (error) {
@@ -511,7 +518,14 @@ export const useTabsStore = create<TabsState & TabsActions>()(
       {
         name: STORAGE_KEY,
         storage: customTabsStorage,
-        partialize: ({ tabs, activeTabId, showEmptyState, version, untitledCounter, isHeaderVisible }) =>
+        partialize: ({
+          tabs,
+          activeTabId,
+          showEmptyState,
+          version,
+          untitledCounter,
+          isHeaderVisible,
+        }) =>
           ({
             tabs,
             activeTabId,
