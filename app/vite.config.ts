@@ -2,27 +2,65 @@ import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import { visualizer } from 'rollup-plugin-visualizer';
+import checker from 'vite-plugin-checker';
+import compression from 'vite-plugin-compression';
+import svgr from 'vite-plugin-svgr';
 
-// https://vite.dev/config/
-export default defineConfig({
-  base: '',
-  plugins: [
-    react({
-      babel: {
-        plugins: ['babel-plugin-react-compiler'],
+export default defineConfig(({ mode }) => {
+  const isDev = mode === 'development';
+
+  return {
+    base: '',
+    plugins: [
+      react({
+        babel: {
+          plugins: ['babel-plugin-react-compiler'],
+        },
+      }),
+      tailwindcss(),
+
+      svgr(),
+
+      checker({
+        typescript: true,
+      }),
+
+      compression({ algorithm: 'gzip' }),
+
+      visualizer({
+        open: true,
+        gzipSize: true,
+        brotliSize: true,
+        filename: 'dist/stats.html',
+      }),
+    ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
-    }),
-    tailwindcss(),
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
     },
-  },
-  server: {
-    watch: {
-      usePolling: true,
-      interval: 100,
+    esbuild: {
+      drop: isDev ? [] : ['console', 'debugger'],
     },
-  },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            if (id.includes('node_modules')) {
+              return 'vendor';
+            }
+          },
+        },
+      },
+    },
+    server: {
+      port: 5173,
+      open: true,
+      watch: {
+        usePolling: true,
+        interval: 100,
+      },
+    },
+  };
 });
