@@ -1,12 +1,24 @@
-import React, { useMemo, memo, useCallback } from 'react';
+import React, { useMemo, memo, useCallback, useEffect } from 'react';
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
-import { type ThemeOption, themes } from '@/theme/themes';
+import { type ThemeOption } from '@/theme/themes';
 import { Palette, Check, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SettingsHeader, ExpandableCategory } from './settings-commons';
+
+const categoryOrder = [
+  'Modern Dark',
+  'Modern Light',
+  'Developer',
+  'Minimal',
+  'Focus',
+  'High Contrast',
+  'Nature & Warm',
+  'Soft & Pastel',
+  'Creative',
+];
 
 interface ThemePreviewProps {
   theme: ThemeOption;
@@ -83,7 +95,6 @@ const ThemePreview = memo<ThemePreviewProps>(
 
 ThemePreview.displayName = 'ThemePreview';
 
-// Category metadata for app themes
 const CATEGORY_ICONS: Record<string, string> = {
   'Modern Dark': '🌙',
   'Modern Light': '☀️',
@@ -113,8 +124,12 @@ interface AppThemeSelectorProps {
 }
 
 const AppThemeSelector: React.FC<AppThemeSelectorProps> = ({ onRequestCloseSheet }) => {
-  const { currentTheme, setTheme, isBookmarked, toggleBookmark } = useThemeStore();
+  const { currentTheme, setTheme, isBookmarked, toggleBookmark, allThemes, loadThemes } = useThemeStore();
   const setPendingFloatingPickerOpen = useThemeStore((state) => state.setPendingFloatingPickerOpen);
+
+  useEffect(() => {
+    loadThemes();
+  }, [loadThemes]);
 
   const handleLaunchPicker = useCallback(() => {
     setPendingFloatingPickerOpen(true);
@@ -123,27 +138,16 @@ const AppThemeSelector: React.FC<AppThemeSelectorProps> = ({ onRequestCloseSheet
 
   const themesByCategory = useMemo(() => {
     const grouped: Record<string, ThemeOption[]> = {};
-    for (const theme of themes) {
+    for (const theme of allThemes) {
       if (!grouped[theme.category]) {
         grouped[theme.category] = [];
       }
       grouped[theme.category].push(theme);
     }
     return grouped;
-  }, []);
+  }, [allThemes]);
 
-  // Define category order
-  const categoryOrder = [
-    'Modern Dark',
-    'Modern Light',
-    'Developer',
-    'Minimal',
-    'Focus',
-    'High Contrast',
-    'Nature & Warm',
-    'Soft & Pastel',
-    'Creative',
-  ];
+
 
   const sortedCategories = categoryOrder.filter((cat) => themesByCategory[cat]);
 

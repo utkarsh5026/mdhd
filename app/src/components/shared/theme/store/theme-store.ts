@@ -1,22 +1,29 @@
 import { create } from 'zustand';
-import { ThemeOption, themes } from '@/theme/themes';
+import { ThemeOption, defaultThemes, loadAllThemes } from '@/theme/themes';
 import { withErrorHandling } from '@/utils/functions/error';
 import { useShallow } from 'zustand/react/shallow';
-import { useCodeThemeStore, codeThemes, type ThemeKey } from '@/components/features/settings/store/code-theme';
+import {
+  useCodeThemeStore,
+  codeThemes,
+  type ThemeKey,
+} from '@/components/features/settings/store/code-theme';
 
-const defaultTheme = themes.find((t) => t.name === 'Night Reader') ?? themes[0];
+const fallbackTheme = defaultThemes.find((t) => t.name === 'GitHub Dark') ?? defaultThemes[0];
 
 interface ThemeState {
   currentTheme: ThemeOption;
   bookmarkedThemes: ThemeOption[];
   isFloatingPickerOpen: boolean;
   pendingFloatingPickerOpen: boolean;
+  allThemes: ThemeOption[];
+  isThemesLoaded: boolean;
   setTheme: (theme: ThemeOption) => void;
   toggleBookmark: (theme: ThemeOption) => void;
   isBookmarked: (theme: ThemeOption) => boolean;
   openFloatingPicker: () => void;
   closeFloatingPicker: () => void;
   setPendingFloatingPickerOpen: (pending: boolean) => void;
+  loadThemes: () => Promise<void>;
 }
 
 function getFromLocal<T>(key: string, defaultValue: T): T {
@@ -31,12 +38,15 @@ function getFromLocal<T>(key: string, defaultValue: T): T {
  *
  * This store manages the current theme of the application and bookmarked themes.
  * It allows you to set the theme, bookmark/unbookmark themes, and check bookmark status.
+ * Themes are lazy-loaded for better initial bundle size.
  */
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  currentTheme: getFromLocal('theme', defaultTheme),
+  currentTheme: getFromLocal('theme', fallbackTheme),
   bookmarkedThemes: getFromLocal('bookmarked-themes', []),
   isFloatingPickerOpen: false,
   pendingFloatingPickerOpen: false,
+  allThemes: defaultThemes,
+  isThemesLoaded: false,
 
   setTheme: (theme: ThemeOption) => {
     localStorage.setItem('theme', JSON.stringify(theme));
@@ -80,6 +90,18 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   openFloatingPicker: () => set({ isFloatingPickerOpen: true, pendingFloatingPickerOpen: false }),
   closeFloatingPicker: () => set({ isFloatingPickerOpen: false }),
   setPendingFloatingPickerOpen: (pending: boolean) => set({ pendingFloatingPickerOpen: pending }),
+
+  loadThemes: async () => {
+    const { isThemesLoaded } = get();
+    if (isThemesLoaded) return;
+
+    try {
+      const allThemes = await loadAllThemes();
+      set({ allThemes, isThemesLoaded: true });
+    } catch (error) {
+      console.error('Failed to load themes:', error);
+    }
+  },
 }));
 
 export function useCurrentTheme() {
@@ -89,6 +111,7 @@ export function useCurrentTheme() {
     })
   );
 }
+
 export function useThemeFloatingPicker() {
   return useThemeStore(
     useShallow(

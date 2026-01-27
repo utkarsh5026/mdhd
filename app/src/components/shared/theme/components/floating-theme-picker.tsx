@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { useCurrentTheme, useThemeFloatingPicker } from '../store/theme-store';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useCurrentTheme, useThemeFloatingPicker, useThemeStore } from '../store/theme-store';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/fast-tabs';
 import { X, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,13 +7,13 @@ import { cn } from '@/lib/utils';
 import ThemeCategories from './theme-categories';
 import ThemesList from './themes-list';
 import BookmarkedThemes from './bookmarked-themes';
-import { themes } from '@/theme/themes';
 
 type TabValue = 'categories' | 'bookmarked' | 'all';
 
 const FloatingThemePicker: React.FC = () => {
   const { currentTheme, setTheme } = useCurrentTheme();
   const { closeFloatingPicker, isFloatingPickerOpen: isOpen } = useThemeFloatingPicker();
+  const { allThemes, loadThemes } = useThemeStore();
 
   const [activeTab, setActiveTab] = useState<TabValue>('categories');
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,14 +21,20 @@ const FloatingThemePicker: React.FC = () => {
     () => new Set([currentTheme.category])
   );
 
+  useEffect(() => {
+    if (isOpen) {
+      loadThemes();
+    }
+  }, [isOpen, loadThemes]);
+
   const filteredThemes = useMemo(
     () =>
-      themes.filter(
+      allThemes.filter(
         ({ name, category }) =>
           name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           category.toLowerCase().includes(searchQuery.toLowerCase())
       ),
-    [searchQuery]
+    [searchQuery, allThemes]
   );
 
   const toggleCategory = useCallback((category: string) => {

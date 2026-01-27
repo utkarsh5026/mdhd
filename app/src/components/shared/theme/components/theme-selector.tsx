@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,11 +7,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/fast-tabs';
-import { type ThemeOption as ThemeTypeOption, themes } from '@/theme/themes';
+import { type ThemeOption as ThemeTypeOption } from '@/theme/themes';
 import { Palette } from 'lucide-react';
 import ThemeCategories from './theme-categories';
 import ThemesList from './themes-list';
 import BookmarkedThemes from './bookmarked-themes';
+import { useThemeStore } from '../store/theme-store';
 
 interface ThemeSelectorProps {
   currentTheme: string;
@@ -27,17 +28,25 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   onThemeChange,
   className,
 }) => {
+  const { allThemes, loadThemes } = useThemeStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(['Modern Dark']));
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadThemes();
+    }
+  }, [isOpen, loadThemes]);
 
   const filteredThemes = useMemo(
     () =>
-      themes.filter(
+      allThemes.filter(
         (theme) =>
           theme.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           theme.category.toLowerCase().includes(searchQuery.toLowerCase())
       ),
-    [searchQuery]
+    [searchQuery, allThemes]
   );
 
   const toggleCategory = (categoryName: string) => {
@@ -51,7 +60,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
