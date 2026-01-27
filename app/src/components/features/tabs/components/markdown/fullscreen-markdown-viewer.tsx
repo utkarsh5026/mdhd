@@ -32,6 +32,7 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
       goToPrevious,
       changeSection,
       markSectionAsRead,
+      updateCurrentIndex,
       getSection,
       handleScrollProgress,
     } = useTabNavigation(tabId);
@@ -110,6 +111,7 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
           goToPrevious={goToPrevious}
           changeSection={changeSection}
           markSectionAsRead={markSectionAsRead}
+          updateCurrentIndex={updateCurrentIndex}
           onScrollProgressChange={handleScrollProgress}
           isZenMode={isZenMode}
           zenControlsVisible={zenControlsVisible}
