@@ -1,4 +1,4 @@
-import React, { useMemo, memo } from 'react';
+import React, { useMemo, memo, useState } from 'react';
 import {
   MoreHorizontal,
   X,
@@ -67,7 +67,12 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(({ onToggleHead
     closeTabsBySourceType,
   } = useTabClose();
 
+  // Track dropdown open state to avoid expensive computations when closed
+  const [isOpen, setIsOpen] = useState(false);
+
   const uniqueFolders = useMemo(() => {
+    // Only compute when menu is open
+    if (!isOpen) return [];
     const folders = new Map<string, string>();
 
     for (const tab of tabs) {
@@ -89,25 +94,29 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(({ onToggleHead
     }
 
     return Array.from(folders.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-  }, [tabs]);
+  }, [tabs, isOpen]);
 
-  const tabCounts = useMemo(
-    () => ({
+  const tabCounts = useMemo(() => {
+    // Only compute when menu is open
+    if (!isOpen) return { file: 0, paste: 0 };
+
+    return {
       file: tabs.filter((t) => t.sourceType === 'file').length,
       paste: tabs.filter((t) => t.sourceType === 'paste').length,
-    }),
-    [tabs]
-  );
+    };
+  }, [tabs, isOpen]);
 
   const positionCounts = useMemo(() => {
-    if (!activeTabId) return { left: 0, right: 0 };
+    // Only compute when menu is open
+    if (!isOpen || !activeTabId) return { left: 0, right: 0 };
+
     const activeIndex = tabs.findIndex((t) => t.id === activeTabId);
     if (activeIndex === -1) return { left: 0, right: 0 };
     return {
       left: activeIndex,
       right: tabs.length - activeIndex - 1,
     };
-  }, [tabs, activeTabId]);
+  }, [tabs, activeTabId, isOpen]);
 
   const menuItems = useMemo(
     () => [
@@ -187,7 +196,7 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(({ onToggleHead
   );
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"

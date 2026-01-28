@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useEffect, memo } from 'react';
+import { useMemo, useCallback, useEffect, memo, useState } from 'react';
 import { ListOrdered, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -68,11 +68,20 @@ const SectionsSheet: React.FC<SectionsSheetProps> = ({
     true
   );
 
+  // Track whether component should be mounted (for exit animation)
+  const [shouldRender, setShouldRender] = useState(menuOpen);
+
   useEffect(() => {
     if (menuOpen) {
+      setShouldRender(true);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
+
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 300);
+      return () => clearTimeout(timer);
     }
     return () => {
       document.body.style.overflow = '';
@@ -101,6 +110,10 @@ const SectionsSheet: React.FC<SectionsSheetProps> = ({
     },
     [handleSelectCard, setMenuOpen]
   );
+
+  if (!shouldRender) {
+    return null;
+  }
 
   return (
     <>

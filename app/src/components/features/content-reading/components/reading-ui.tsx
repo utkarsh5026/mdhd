@@ -17,6 +17,7 @@ export interface ReadingUIProps {
   goToPrevious: () => void;
   changeSection: (index: number) => void;
   markSectionAsRead: (index: number) => void;
+  updateCurrentIndex: (index: number) => void;
   onScrollProgressChange: (progress: number) => void;
   isZenMode: boolean;
   zenControlsVisible: boolean;
@@ -49,6 +50,7 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
     goToPrevious,
     changeSection,
     markSectionAsRead,
+    updateCurrentIndex,
     onScrollProgressChange,
     isZenMode,
     zenControlsVisible,
@@ -72,6 +74,7 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
         goToPrevious={goToPrevious}
         changeSection={changeSection}
         markSectionAsRead={markSectionAsRead}
+        updateCurrentIndex={updateCurrentIndex}
         onScrollProgressChange={onScrollProgressChange}
         viewMode="preview"
         isZenMode={isZenMode}

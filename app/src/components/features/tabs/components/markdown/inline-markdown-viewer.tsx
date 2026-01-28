@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { Settings, List, Maximize } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReadingCore from '@/components/features/content-reading/components/reading-core';
@@ -104,6 +104,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
       goToPrevious,
       changeSection,
       markSectionAsRead,
+      updateCurrentIndex,
       getSection,
       handleScrollProgress,
       metadata,
@@ -111,17 +112,45 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
 
     const currentSection = getSection(currentIndex);
 
-    if (!tab || sections.length === 0 || !currentSection) {
-      return <LoadingState />;
-    }
+    const PreviewPanel = useMemo(() => {
+      if (!tab || sections.length === 0 || !currentSection) {
+        return <LoadingState />;
+      }
 
-    const readingCoreProps = {
-      markdown: tab.content,
-      metadata,
+      return (
+        <ReadingCore
+          markdown={tab.content}
+          metadata={metadata}
+          sections={sections}
+          readSections={readSections}
+          currentIndex={currentIndex}
+          currentSection={currentSection}
+          isTransitioning={isTransitioning}
+          readingMode={readingMode}
+          scrollProgress={scrollProgress}
+          goToNext={goToNext}
+          goToPrevious={goToPrevious}
+          changeSection={changeSection}
+          markSectionAsRead={markSectionAsRead}
+          updateCurrentIndex={updateCurrentIndex}
+          onScrollProgressChange={handleScrollProgress}
+          viewMode="preview"
+          headerSlot={({ onSettings, onMenu }: { onSettings: () => void; onMenu: () => void }) => (
+            <InlineHeader
+              onFullscreen={onEnterFullscreen}
+              onSettings={onSettings}
+              onMenu={onMenu}
+            />
+          )}
+        />
+      );
+    }, [
+      tab,
       sections,
+      currentSection,
+      metadata,
       readSections,
       currentIndex,
-      currentSection,
       isTransitioning,
       readingMode,
       scrollProgress,
@@ -129,22 +158,21 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
       goToPrevious,
       changeSection,
       markSectionAsRead,
-      onScrollProgressChange: handleScrollProgress,
-      viewMode: 'preview' as const,
-      headerSlot: ({ onSettings, onMenu }: { onSettings: () => void; onMenu: () => void }) => (
-        <InlineHeader
-          onFullscreen={onEnterFullscreen}
-          onSettings={onSettings}
-          onMenu={onMenu}
-        />
-      ),
-    };
+      updateCurrentIndex,
+      handleScrollProgress,
+      onEnterFullscreen,
+    ]);
 
-    const PreviewPanel = () => <ReadingCore {...readingCoreProps} />;
+    const EditorPanel = useMemo(() => {
+      if (!tab) {
+        return <LoadingState />;
+      }
+      return <MarkdownCodeMirrorEditor content={tab.content} onChange={onContentChange} />;
+    }, [tab, onContentChange]);
 
-    const EditorPanel = () => (
-      <MarkdownCodeMirrorEditor content={tab.content} onChange={onContentChange} />
-    );
+    if (!tab || sections.length === 0 || !currentSection) {
+      return <LoadingState />;
+    }
 
 
     const renderContent = () => {
@@ -152,7 +180,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
         return (
           <div key="edit-mode" className={`h-full ${styles.editMode}`}>
             <div className="h-full relative bg-background text-foreground">
-              <EditorPanel />
+              {EditorPanel}
             </div>
           </div>
         );
@@ -161,7 +189,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
       if (viewMode === 'preview') {
         return (
           <div key="preview-mode" className={`h-full ${styles.previewMode}`}>
-            <PreviewPanel />
+            {PreviewPanel}
           </div>
         );
       }
@@ -170,15 +198,15 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
         <div key="dual-mode" className={`h-full ${styles.dualMode}`}>
           <div className="hidden lg:flex flex-row h-full overflow-hidden">
             <div className="w-1/2 h-full border-r border-border/20 relative bg-background text-foreground">
-              <EditorPanel />
+              {EditorPanel}
             </div>
             <div className="w-1/2 h-full relative">
-              <PreviewPanel />
+              {PreviewPanel}
             </div>
           </div>
 
           <div className="lg:hidden h-full">
-            <PreviewPanel />
+            {PreviewPanel}
           </div>
         </div>
       );

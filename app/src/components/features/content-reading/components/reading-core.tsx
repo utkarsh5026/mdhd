@@ -36,6 +36,7 @@ export interface ReadingCoreProps {
   goToPrevious: () => void;
   changeSection: (index: number) => void;
   markSectionAsRead: (index: number) => void;
+  updateCurrentIndex: (index: number) => void;
   onScrollProgressChange: (progress: number) => void;
 
   // View mode
@@ -86,6 +87,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     goToPrevious,
     changeSection,
     markSectionAsRead,
+    updateCurrentIndex,
     onScrollProgressChange,
     viewMode,
     headerSlot,
@@ -145,8 +147,9 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     const handleSectionVisible = useCallback(
       (index: number) => {
         markSectionAsRead(index);
+        updateCurrentIndex(index);
       },
-      [markSectionAsRead]
+      [markSectionAsRead, updateCurrentIndex]
     );
 
     // Combined double-click handler for zen mode and regular mode

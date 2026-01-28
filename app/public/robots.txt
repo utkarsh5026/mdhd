@@ -1,0 +1,11 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow sensitive directories
+Disallow: /api/
+Disallow: /.git/
+Disallow: /node_modules/
+
+# Sitemap
+# Sitemap: https://yourdomain.com/sitemap.xml

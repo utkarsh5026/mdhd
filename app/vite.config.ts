@@ -1,26 +1,66 @@
-import path from "path";
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import path from 'path';
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+import { visualizer } from 'rollup-plugin-visualizer';
+import checker from 'vite-plugin-checker';
+import compression from 'vite-plugin-compression';
+import svgr from 'vite-plugin-svgr';
 
-// https://vite.dev/config/
-export default defineConfig({
-  // Set the base URL to match your GitHub repository name
-  // For example, if your repo is "my-docs", use "/my-docs/"
-  // For a user/org page (username.github.io), use "/"
-  // The empty string "" means it will use relative paths which works in both cases
-  base: "",
+export default defineConfig(({ mode }) => {
+  const isDev = mode === 'development';
 
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+  return {
+    base: '',
+    plugins: [
+      react({
+        babel: {
+          plugins: ['babel-plugin-react-compiler'],
+        },
+      }),
+      tailwindcss(),
+
+      svgr(),
+
+      checker({
+        typescript: true,
+      }),
+
+      compression({ algorithm: 'gzip' }),
+
+      visualizer({
+        open: true,
+        gzipSize: true,
+        brotliSize: true,
+        filename: 'dist/stats.html',
+      }),
+    ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
     },
-  },
-  server: {
-    watch: {
-      usePolling: true,
-      interval: 100,
+    esbuild: {
+      drop: isDev ? [] : ['console', 'debugger'],
     },
-  },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            if (id.includes('node_modules')) {
+              return 'vendor';
+            }
+          },
+        },
+      },
+    },
+    server: {
+      port: 5173,
+      open: true,
+      watch: {
+        usePolling: true,
+        interval: 100,
+      },
+    },
+  };
 });

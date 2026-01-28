@@ -1,0 +1,32 @@
+<!-- Favicon Package - Add these tags to your <head> section -->
+
+<!-- Standard favicons -->
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+
+<!-- Apple Touch Icon -->
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+<!-- Android Chrome -->
+<link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
+
+<!-- Web App Manifest -->
+<link rel="manifest" href="/site.webmanifest">
+
+<!-- Microsoft Tiles -->
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="msapplication-TileImage" content="/mstile-150x150.png">
+<meta name="msapplication-config" content="/browserconfig.xml">
+
+<!-- Theme Color -->
+<meta name="theme-color" content="#ffffff">
+
+<!--
+  INSTALLATION INSTRUCTIONS:
+  1. Extract all files from the ZIP to your React app's 'public' folder
+  2. Copy the HTML snippet above into your public/index.html <head> section
+  3. Update the theme_color and TileColor values to match your brand colors
+  4. Edit site.webmanifest to customize your app name and colors
+-->

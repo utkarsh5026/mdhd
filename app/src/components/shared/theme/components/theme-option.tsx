@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import type { ThemeOption as ThemeTypeOption } from '@/theme/themes';
 import { cn } from '@/lib/utils';
-import { FiCheck, FiStar } from 'react-icons/fi';
+import { Check, Star } from 'lucide-react';
 import { useBookmarkedThemes } from '@/components/shared/theme/store/theme-store';
 
 interface ThemeOptionProps {
@@ -83,7 +83,7 @@ const ThemeOption: React.FC<ThemeOptionProps> = memo(
               )}
               aria-label={bookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}
             >
-              <FiStar
+              <Star
                 className={cn('w-3.5 h-3.5 sm:w-4 sm:h-4', bookmarked ? 'fill-current' : '')}
               />
             </button>
@@ -91,7 +91,7 @@ const ThemeOption: React.FC<ThemeOptionProps> = memo(
 
           {isActive && (
             <div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary shrink-0">
-              <FiCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary-foreground" />
+              <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary-foreground" />
             </div>
           )}
         </div>

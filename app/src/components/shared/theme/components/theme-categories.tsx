@@ -1,20 +1,10 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { themeCategories, themes, ThemeOption as ThemeTypeOption } from '@/theme/themes';
+import { themeCategories, ThemeOption as ThemeTypeOption } from '@/theme/themes';
 import { cn } from '@/lib/utils';
 import ThemeOption from './theme-option';
-
-const themesByCategory = themes.reduce(
-  (acc, theme) => {
-    if (!acc[theme.category]) {
-      acc[theme.category] = [];
-    }
-    acc[theme.category].push(theme);
-    return acc;
-  },
-  {} as Record<string, ThemeTypeOption[]>
-);
+import { useThemeStore } from '../store/theme-store';
 
 interface ThemeCategoriesProps {
   currentTheme: string;
@@ -25,6 +15,21 @@ interface ThemeCategoriesProps {
 
 const ThemeCategories: React.FC<ThemeCategoriesProps> = memo(
   ({ currentTheme, onThemeChange, openCategories, toggleCategory }) => {
+    const { allThemes } = useThemeStore();
+
+    const themesByCategory = useMemo(() => {
+      return allThemes.reduce(
+        (acc, theme) => {
+          if (!acc[theme.category]) {
+            acc[theme.category] = [];
+          }
+          acc[theme.category].push(theme);
+          return acc;
+        },
+        {} as Record<string, ThemeTypeOption[]>
+      );
+    }, [allThemes]);
+
     const handleThemeSelect = useCallback(
       (theme: ThemeTypeOption) => {
         onThemeChange(theme);

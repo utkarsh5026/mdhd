@@ -13,6 +13,7 @@ interface UseTabNavigationReturn {
   goToPrevious: () => void;
   changeSection: (index: number) => void;
   markSectionAsRead: (index: number) => void;
+  updateCurrentIndex: (index: number) => void;
   getSection: (index: number) => MarkdownSection | null;
   handleScrollProgress: (progress: number) => void;
   metadata: MarkdownMetadata | null;
@@ -95,6 +96,14 @@ export const useTabNavigation = (tabId: string): UseTabNavigationReturn => {
     [tabId, updateTabReadingState]
   );
 
+  const updateCurrentIndex = useCallback(
+    (index: number) => {
+      if (!tab || index < 0 || index >= sections.length) return;
+      updateTabReadingState(tabId, { currentIndex: index });
+    },
+    [tab, tabId, sections.length, updateTabReadingState]
+  );
+
   return {
     sections,
     readSections,
@@ -106,6 +115,7 @@ export const useTabNavigation = (tabId: string): UseTabNavigationReturn => {
     goToPrevious,
     changeSection,
     markSectionAsRead,
+    updateCurrentIndex,
     getSection,
     metadata,
     handleScrollProgress,
