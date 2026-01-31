@@ -101,7 +101,7 @@ export type MarkdownSection = {
   id: string;
   title: string;
   content: string;
-  level: 0 | 1 | 2;
+  level: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   wordCount: number;
 };
 
@@ -148,7 +148,7 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
    *
    * Sets up a section with proper ID, title, and initial content.
    */
-  const initializeSection = (title: string, level: 0 | 1 | 2) => {
+  const initializeSection = (title: string, level: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
     const pounds = '#'.repeat(level);
     return {
       id: slugify(title),
@@ -164,7 +164,7 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
    *
    * Saves the current section and prepares a new one.
    */
-  const handleHeading = (title: string, level: 0 | 1 | 2) => {
+  const handleHeading = (title: string, level: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
     if (currentSection) sections.push(currentSection);
     else if (introContent.trim()) pushIntroContent();
     currentSection = initializeSection(title, level);
@@ -190,19 +190,52 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
 
     const h1Regex = /^#\s+(.+)$/;
     const h2Regex = /^##\s+(.+)$/;
-    const h1Match = h1Regex.exec(line);
+    const h3Regex = /^###\s+(.+)$/;
+    const h4Regex = /^####\s+(.+)$/;
+    const h5Regex = /^#####\s+(.+)$/;
+    const h6Regex = /^######\s+(.+)$/;
+
+    const h6Match = h6Regex.exec(line);
+    const h5Match = h5Regex.exec(line);
+    const h4Match = h4Regex.exec(line);
+    const h3Match = h3Regex.exec(line);
     const h2Match = h2Regex.exec(line);
+    const h1Match = h1Regex.exec(line);
 
     switch (true) {
-      case !!h1Match: {
-        const title = h1Match[1].trim();
-        handleHeading(title, 1);
+      case !!h6Match: {
+        const title = h6Match[1].trim();
+        handleHeading(title, 6);
+        break;
+      }
+
+      case !!h5Match: {
+        const title = h5Match[1].trim();
+        handleHeading(title, 5);
+        break;
+      }
+
+      case !!h4Match: {
+        const title = h4Match[1].trim();
+        handleHeading(title, 4);
+        break;
+      }
+
+      case !!h3Match: {
+        const title = h3Match[1].trim();
+        handleHeading(title, 3);
         break;
       }
 
       case !!h2Match: {
         const title = h2Match[1].trim();
         handleHeading(title, 2);
+        break;
+      }
+
+      case !!h1Match: {
+        const title = h1Match[1].trim();
+        handleHeading(title, 1);
         break;
       }
 

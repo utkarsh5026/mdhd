@@ -1,6 +1,8 @@
 import { useTabsStore } from './tabs-store';
 import { useShallow } from 'zustand/react/shallow';
 
+export { useActiveTabSections } from '../hooks/use-active-tab-sections';
+
 export const useTabs = () => useTabsStore((state) => state.tabs);
 export const useActiveTabId = () => useTabsStore((state) => state.activeTabId);
 export const useActiveTab = () =>

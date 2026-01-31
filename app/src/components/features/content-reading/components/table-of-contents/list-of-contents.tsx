@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { memo } from 'react';
 
-type Section = { id: number; title: string; level?: number };
+type Section = { id: number; title: string; level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 };
 
 interface ListOfContentsProps {
   sections: Section[];
@@ -98,7 +98,7 @@ export default memo(ListOfContents, (prev, nxt) => {
 });
 
 const normalizeTitle = (title: string) => title.replace(/^\d+(\.\d+)*\s*\.?\s*/, '').trim();
-const getLevelPadding = (level: number) => level * 16 + 12;
+const getLevelPadding = (level: number) => level * 12 + 12;
 
 const areSetsEqual = (a: Set<number>, b: Set<number>) => {
   if (a.size !== b.size) return false;
