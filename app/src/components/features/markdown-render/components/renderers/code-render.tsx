@@ -19,8 +19,9 @@ const getHeadingCodeStyle = (headingLevel: number | null) => {
     2: 'text-lg sm:text-2xl',
     3: 'text-base sm:text-xl',
   };
-  return `${sizes[headingLevel as keyof typeof sizes]
-    } mx-1 sm:mx-2 px-2 py-1 bg-primary/10 rounded-xl sm:rounded-2xl`;
+  return `${
+    sizes[headingLevel as keyof typeof sizes]
+  } mx-1 sm:mx-2 px-2 py-1 bg-primary/10 rounded-xl sm:rounded-2xl`;
 };
 
 const CodeRender: React.FC<CodeRenderProps> = ({ inline, className, children }) => {
@@ -48,7 +49,6 @@ const CodeRender: React.FC<CodeRenderProps> = ({ inline, className, children }) 
 
   const isCompactCode =
     typeof codeContent === 'string' && !codeContent.includes('\n') && codeContent.length < 25;
-
 
   const copyToClipboard = async () => {
     try {
@@ -124,7 +124,5 @@ const CodeRender: React.FC<CodeRenderProps> = ({ inline, className, children }) 
     </div>
   );
 };
-
-
 
 export default CodeRender;

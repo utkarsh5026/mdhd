@@ -19,7 +19,11 @@ const Header = () => {
             <div className={`relative group ${styles.logoContainer}`}>
               <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:bg-primary/30 transition-colors duration-300" />
               <div className="relative w-7 h-7 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 overflow-hidden">
-                <img src="/apple-touch-icon.png" alt="MDHD Logo" className="w-full h-full object-cover" />
+                <img
+                  src="/apple-touch-icon.png"
+                  alt="MDHD Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
 

@@ -11,7 +11,6 @@ export {
   useFileStoreActions,
 } from './store/file-store';
 
-
 export type {
   FileTreeNode,
   StoredFile,

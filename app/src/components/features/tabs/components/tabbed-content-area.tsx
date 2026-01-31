@@ -129,10 +129,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
             </div>
           </div>
         ) : activeTab ? (
-          <div
-            key={activeTab.id}
-            className="h-full animate-fade-in-fast"
-          >
+          <div key={activeTab.id} className="h-full animate-fade-in-fast">
             <InlineMarkdownViewer
               tabId={activeTab.id}
               viewMode={viewMode}

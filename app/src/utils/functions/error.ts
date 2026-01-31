@@ -122,14 +122,14 @@ type SafeResult<T, E = Error> = [E, null] | [null, T];
 /**
  * Wraps a synchronous function in a try-catch and returns a result tuple.
  * Implements the Result Pattern for safer error handling without throwing.
- * 
+ *
  * @template T - The return type of the function on success
  * @template E - The error type (defaults to Error)
- * 
+ *
  * @param fn - The synchronous function to execute
- * 
+ *
  * @returns A tuple: [error, null] on failure or [null, data] on success
- * 
+ *
  * @example
  * // Safe JSON parsing
  * const [error, data] = attempt(() => JSON.parse(jsonString));
@@ -138,7 +138,7 @@ type SafeResult<T, E = Error> = [E, null] | [null, T];
  * } else {
  *   console.log('Parsed data:', data);
  * }
- * 
+ *
  */
 export function attempt<T, E = Error>(fn: () => T): SafeResult<T, E> {
   try {
@@ -152,14 +152,14 @@ export function attempt<T, E = Error>(fn: () => T): SafeResult<T, E> {
 /**
  * Wraps an asynchronous function and returns a result tuple.
  * Implements the Result Pattern for async operations without throwing.
- * 
+ *
  * @template T - The return type of the function on success
  * @template E - The error type (defaults to Error)
- * 
+ *
  * @param fn - The async function to execute
- * 
+ *
  * @returns A Promise resolving to a tuple: [error, null] on failure or [null, data] on success
- * 
+ *
  * @example
  * // Safe fetch operation
  * const [error, response] = await attemptAsync(() => fetch('/api/data'));
@@ -168,7 +168,7 @@ export function attempt<T, E = Error>(fn: () => T): SafeResult<T, E> {
  *   return;
  * }
  * const data = await response.json();
- * 
+ *
  */
 export async function attemptAsync<T, E = Error>(fn: () => Promise<T>): Promise<SafeResult<T, E>> {
   return fn()

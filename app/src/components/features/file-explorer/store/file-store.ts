@@ -386,26 +386,37 @@ export const useFileStoreActions = () => {
   );
 };
 
-
 export function useFileUpload() {
-  return useFileStore(useShallow(({ isUploading, uploadDirectory, uploadFiles, uploadProgress }) => {
-    return {
-      isUploading,
-      uploadDirectory,
-      uploadFiles,
-      uploadProgress,
-    }
-  }))
+  return useFileStore(
+    useShallow(({ isUploading, uploadDirectory, uploadFiles, uploadProgress }) => {
+      return {
+        isUploading,
+        uploadDirectory,
+        uploadFiles,
+        uploadProgress,
+      };
+    })
+  );
 }
 
 export function useDirectory() {
-  return useFileStore(useShallow(({ expandDirectory, collapseDirectory, deleteDirectory, toggleDirectory, expandedDirectories }) => {
-    return {
-      expandDirectory,
-      collapseDirectory,
-      deleteDirectory,
-      toggleDirectory,
-      expandedDirectories,
-    }
-  }));
+  return useFileStore(
+    useShallow(
+      ({
+        expandDirectory,
+        collapseDirectory,
+        deleteDirectory,
+        toggleDirectory,
+        expandedDirectories,
+      }) => {
+        return {
+          expandDirectory,
+          collapseDirectory,
+          deleteDirectory,
+          toggleDirectory,
+          expandedDirectories,
+        };
+      }
+    )
+  );
 }

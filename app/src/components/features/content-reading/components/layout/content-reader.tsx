@@ -19,76 +19,78 @@ interface ContentReaderProps {
   currentSection: MarkdownSection;
 }
 
-const ContentReader: React.FC<ContentReaderProps> = memo(({
-  metadata,
-  currentIndex,
-  goToNext,
-  goToPrevious,
-  isTransitioning,
-  scrollRef,
-  handleDoubleClick,
-  currentSection,
-}) => {
-  const { settings } = useReadingSettings();
-  const fontFamily = fontFamilyMap[settings.fontFamily];
-  const { fontSize, lineHeight, contentWidth } = settings;
+const ContentReader: React.FC<ContentReaderProps> = memo(
+  ({
+    metadata,
+    currentIndex,
+    goToNext,
+    goToPrevious,
+    isTransitioning,
+    scrollRef,
+    handleDoubleClick,
+    currentSection,
+  }) => {
+    const { settings } = useReadingSettings();
+    const fontFamily = fontFamilyMap[settings.fontFamily];
+    const { fontSize, lineHeight, contentWidth } = settings;
 
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: (eventData) => {
-      if (eventData.event.target instanceof Element) {
-        const target = eventData.event.target.closest('.no-swipe');
-        if (target) return;
-      }
-      goToNext();
-    },
-    onSwipedRight: (eventData) => {
-      if (eventData.event.target instanceof Element) {
-        const target = eventData.event.target.closest('.no-swipe');
-        if (target) return;
-      }
-      goToPrevious();
-    },
-    delta: 50,
-    preventScrollOnSwipe: false,
-    trackTouch: true,
-    trackMouse: false,
-    swipeDuration: 500,
-  });
+    const swipeHandlers = useSwipeable({
+      onSwipedLeft: (eventData) => {
+        if (eventData.event.target instanceof Element) {
+          const target = eventData.event.target.closest('.no-swipe');
+          if (target) return;
+        }
+        goToNext();
+      },
+      onSwipedRight: (eventData) => {
+        if (eventData.event.target instanceof Element) {
+          const target = eventData.event.target.closest('.no-swipe');
+          if (target) return;
+        }
+        goToPrevious();
+      },
+      delta: 50,
+      preventScrollOnSwipe: false,
+      trackTouch: true,
+      trackMouse: false,
+      swipeDuration: 500,
+    });
 
-  return (
-    <div
-      className={cn(
-        'h-full overflow-y-auto bg-background',
-        isTransitioning ? 'opacity-0' : 'opacity-100',
-        'transition-opacity duration-200'
-      )}
-      ref={scrollRef}
-    >
-      <div {...swipeHandlers} onDoubleClick={handleDoubleClick} className="h-full">
-        <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24 h-auto">
-          <div className="mx-auto rounded-2xl" style={{ maxWidth: `${contentWidth}px` }}>
-            {/* Show metadata only on the first section */}
-            {currentIndex === 0 && metadata && <MetadataDisplay metadata={metadata} />}
-            <div
-              key={currentSection.id}
-              className="prose prose-lg prose-invert max-w-none"
-              style={{
-                fontSize: `${fontSize}px`,
-                lineHeight: lineHeight,
-              }}
-            >
-              <CustomMarkdownRenderer
-                markdown={currentSection.content}
-                className="fullscreen-card-content"
-                fontFamily={fontFamily}
-              />
+    return (
+      <div
+        className={cn(
+          'h-full overflow-y-auto bg-background',
+          isTransitioning ? 'opacity-0' : 'opacity-100',
+          'transition-opacity duration-200'
+        )}
+        ref={scrollRef}
+      >
+        <div {...swipeHandlers} onDoubleClick={handleDoubleClick} className="h-full">
+          <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24 h-auto">
+            <div className="mx-auto rounded-2xl" style={{ maxWidth: `${contentWidth}px` }}>
+              {/* Show metadata only on the first section */}
+              {currentIndex === 0 && metadata && <MetadataDisplay metadata={metadata} />}
+              <div
+                key={currentSection.id}
+                className="prose prose-lg prose-invert max-w-none"
+                style={{
+                  fontSize: `${fontSize}px`,
+                  lineHeight: lineHeight,
+                }}
+              >
+                <CustomMarkdownRenderer
+                  markdown={currentSection.content}
+                  className="fullscreen-card-content"
+                  fontFamily={fontFamily}
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 ContentReader.displayName = 'ContentReader';
 
