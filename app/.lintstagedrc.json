@@ -1,12 +1,12 @@
 {
-  "app/src/**/*.{ts,tsx,js,jsx}": [
-    "eslint --fix",
-    "prettier --write"
+  "src/**/*.{ts,tsx,js,jsx}": [
+    "npx eslint --fix",
+    "npx prettier --write"
   ],
-  "app/src/**/*.{json,css,md}": [
-    "prettier --write"
+  "src/**/*.{json,css,md}": [
+    "npx prettier --write"
   ],
-  "app/src/**/*.{test,spec}.{ts,tsx}": [
-    "vitest related --run"
+  "src/**/*.{test,spec}.{ts,tsx}": [
+    "npx vitest related --run"
   ]
 }
