@@ -1,49 +1,18 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useActiveTabSections } from '@/components/features/tabs/hooks/use-active-tab-sections';
 import { useTabNavigation } from '@/components/features/tabs/hooks/use-tab-navigation';
 import { FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import TreeOfContents from '@/components/features/content-reading/components/table-of-contents/tree-of-contents';
+import type { FlatSection } from '@/components/features/content-reading/components/table-of-contents/types';
 
 interface SidebarTocProps {
   className?: string;
 }
 
-interface TocItemProps {
-  title: string;
-  level: number;
-  isActive: boolean;
-  onClick: () => void;
-}
-
-const normalizeTitle = (title: string) => title.replace(/^\d+(\.\d+)*\s*\.?\s*/, '').trim();
-
-const getLevelPadding = (level: number) => level * 12 + 12;
-
-const TocItem = memo<TocItemProps>(({ title, level, isActive, onClick }) => {
-  const paddingLeft = getLevelPadding(level);
-  const displayTitle = normalizeTitle(title);
-
-  return (
-    <button
-      style={{ paddingLeft: `${paddingLeft}px` }}
-      className={cn(
-        'w-full text-left py-1.5 pr-3 text-sm truncate',
-        'hover:bg-secondary/50 transition-colors rounded-sm',
-        isActive && 'bg-primary/10 text-primary font-medium border-l-2 border-primary',
-        !isActive && 'text-foreground/80'
-      )}
-      onClick={onClick}
-    >
-      {displayTitle}
-    </button>
-  );
-});
-
-TocItem.displayName = 'TocItem';
-
 export const SidebarToc: React.FC<SidebarTocProps> = memo(({ className }) => {
-  const { sections, currentIndex, tabId, hasActiveTab } = useActiveTabSections();
+  const { sections, currentIndex, tabId, hasActiveTab, readSections } = useActiveTabSections();
   const { changeSection } = useTabNavigation(tabId ?? '');
 
   const handleSectionClick = useCallback(
@@ -51,6 +20,17 @@ export const SidebarToc: React.FC<SidebarTocProps> = memo(({ className }) => {
       changeSection(index);
     },
     [changeSection]
+  );
+
+  // Transform MarkdownSection[] to FlatSection[] for TreeOfContents
+  const flatSections: FlatSection[] = useMemo(
+    () =>
+      sections.map((section, index) => ({
+        id: index,
+        title: section.title,
+        level: section.level,
+      })),
+    [sections]
   );
 
   if (!hasActiveTab || sections.length === 0) {
@@ -66,17 +46,13 @@ export const SidebarToc: React.FC<SidebarTocProps> = memo(({ className }) => {
 
   return (
     <ScrollArea className={cn('h-full', className)}>
-      <div className="py-2 px-1 space-y-0.5">
-        {sections.map((section, index) => (
-          <TocItem
-            key={section.id}
-            title={section.title}
-            level={section.level}
-            isActive={index === currentIndex}
-            onClick={() => handleSectionClick(index)}
-          />
-        ))}
-      </div>
+      <TreeOfContents
+        sections={flatSections}
+        currentIndex={currentIndex}
+        readSections={readSections}
+        showProgress={false}
+        handleSelectCard={handleSectionClick}
+      />
     </ScrollArea>
   );
 });
