@@ -212,9 +212,9 @@ const TreeNodeButton = memo<TreeNodeButtonProps>(
 
     const handleButtonClick = () => {
       if (hasChildren && !isExpanded) {
-        // When collapsed, clicking button expands AND selects
+        // When collapsed, clicking button only expands (doesn't select yet)
+        // This prevents closing sheets/menus before seeing the children
         onToggleExpanded();
-        onSelect();
       } else if (hasChildren && isExpanded && isActive) {
         // When expanded and already selected, clicking button collapses
         onToggleExpanded();
