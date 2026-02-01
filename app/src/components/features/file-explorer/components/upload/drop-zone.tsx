@@ -57,7 +57,8 @@ export const DropZone: React.FC<DropZoneProps> = ({
   );
 
   return (
-    <div
+    <section
+      aria-label="File drop zone"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -74,6 +75,6 @@ export const DropZone: React.FC<DropZoneProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
