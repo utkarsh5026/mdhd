@@ -124,7 +124,8 @@ interface AppThemeSelectorProps {
 }
 
 const AppThemeSelector: React.FC<AppThemeSelectorProps> = ({ onRequestCloseSheet }) => {
-  const { currentTheme, setTheme, isBookmarked, toggleBookmark, allThemes, loadThemes } = useThemeStore();
+  const { currentTheme, setTheme, isBookmarked, toggleBookmark, allThemes, loadThemes } =
+    useThemeStore();
   const setPendingFloatingPickerOpen = useThemeStore((state) => state.setPendingFloatingPickerOpen);
 
   useEffect(() => {
@@ -146,8 +147,6 @@ const AppThemeSelector: React.FC<AppThemeSelectorProps> = ({ onRequestCloseSheet
     }
     return grouped;
   }, [allThemes]);
-
-
 
   const sortedCategories = categoryOrder.filter((cat) => themesByCategory[cat]);
 

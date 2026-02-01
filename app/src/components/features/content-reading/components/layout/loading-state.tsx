@@ -7,17 +7,12 @@ const LoadingState: React.FC = () => {
       {/* Breathing dots */}
       <div className="flex items-center gap-3">
         {[0, 1, 2].map((index) => (
-          <div
-            key={index}
-            className={`w-3 h-3 bg-primary rounded-full ${styles.dot}`}
-          />
+          <div key={index} className={`w-3 h-3 bg-primary rounded-full ${styles.dot}`} />
         ))}
       </div>
 
       {/* Simple loading text */}
-      <p className="text-sm text-muted-foreground">
-        Loading content...
-      </p>
+      <p className="text-sm text-muted-foreground">Loading content...</p>
     </div>
   );
 };

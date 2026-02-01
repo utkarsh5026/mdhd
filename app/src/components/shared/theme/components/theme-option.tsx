@@ -17,7 +17,7 @@ interface ThemeOptionProps {
  */
 const ThemeOption: React.FC<ThemeOptionProps> = memo(
   ({ theme, isActive, onSelect, showCategory = false, showBookmark = true }) => {
-    const { bookmarkedThemes, toggleBookmark } = useBookmarkedThemes()
+    const { bookmarkedThemes, toggleBookmark } = useBookmarkedThemes();
 
     const bookmarked = useMemo(
       () => bookmarkedThemes.some((b) => b.name === theme.name),
@@ -83,9 +83,7 @@ const ThemeOption: React.FC<ThemeOptionProps> = memo(
               )}
               aria-label={bookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}
             >
-              <Star
-                className={cn('w-3.5 h-3.5 sm:w-4 sm:h-4', bookmarked ? 'fill-current' : '')}
-              />
+              <Star className={cn('w-3.5 h-3.5 sm:w-4 sm:h-4', bookmarked ? 'fill-current' : '')} />
             </button>
           )}
 

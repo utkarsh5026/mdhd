@@ -53,7 +53,6 @@ export const SaveFileDialog: React.FC<SaveFileDialogProps> = ({
     }
   }, [open, defaultFileName]);
 
-
   const handleFileNameChange = (value: string) => {
     setFileName(value);
     setError(null);
@@ -69,12 +68,11 @@ export const SaveFileDialog: React.FC<SaveFileDialogProps> = ({
     const [error] = await attemptAsync(async () => {
       await onSave(finalName);
       onOpenChange(false);
-    })
+    });
 
     if (error) {
       setError(error instanceof Error ? error.message : 'Failed to save file');
     }
-
   }, [fileName, onSave, onOpenChange]);
 
   const handleKeyDown = useCallback(

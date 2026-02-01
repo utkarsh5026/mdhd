@@ -87,17 +87,20 @@ const ViewModeButton: React.FC<ViewModeButtonProps> = ({
       aria-label={config.ariaLabel}
     >
       <div className="relative flex items-center justify-center w-5 h-5">
-        {(Object.entries(VIEW_MODE_ICONS) as [ViewMode, React.ComponentType<{ className?: string }>][]).map(
-          ([mode, Icon]) => (
-            <Icon
-              key={mode}
-              className={cn(
-                'w-4 h-4 absolute transition-all duration-200',
-                viewMode === mode ? 'opacity-100 scale-100 text-primary' : 'opacity-0 scale-75'
-              )}
-            />
-          )
-        )}
+        {(
+          Object.entries(VIEW_MODE_ICONS) as [
+            ViewMode,
+            React.ComponentType<{ className?: string }>,
+          ][]
+        ).map(([mode, Icon]) => (
+          <Icon
+            key={mode}
+            className={cn(
+              'w-4 h-4 absolute transition-all duration-200',
+              viewMode === mode ? 'opacity-100 scale-100 text-primary' : 'opacity-0 scale-75'
+            )}
+          />
+        ))}
       </div>
       <span
         className={cn(

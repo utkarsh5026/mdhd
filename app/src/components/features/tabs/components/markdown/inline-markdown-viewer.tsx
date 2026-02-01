@@ -22,62 +22,60 @@ interface InlineHeaderProps {
   onMenu: () => void;
 }
 
-const InlineHeader: React.FC<InlineHeaderProps> = memo(
-  ({ onFullscreen, onSettings, onMenu }) => {
-    return (
-      <div className="absolute top-0 right-0 z-50 flex items-center gap-1 p-2">
-        <TooltipButton
-          tooltipText="Enter Fullscreen"
-          button={
-            <button
-              onClick={onFullscreen}
-              className={cn(
-                'p-1.5 rounded-md',
-                'text-muted-foreground hover:text-foreground',
-                'hover:bg-accent/50',
-                'transition-colors'
-              )}
-            >
-              <Maximize className="h-4 w-4" />
-            </button>
-          }
-        />
-        <TooltipButton
-          tooltipText="Reading Settings"
-          button={
-            <button
-              onClick={onSettings}
-              className={cn(
-                'p-1.5 rounded-md',
-                'text-muted-foreground hover:text-foreground',
-                'hover:bg-accent/50',
-                'transition-colors'
-              )}
-            >
-              <Settings className="h-4 w-4" />
-            </button>
-          }
-        />
-        <TooltipButton
-          tooltipText="Table of Contents"
-          button={
-            <button
-              onClick={onMenu}
-              className={cn(
-                'p-1.5 rounded-md',
-                'text-muted-foreground hover:text-foreground',
-                'hover:bg-accent/50',
-                'transition-colors'
-              )}
-            >
-              <List className="h-4 w-4" />
-            </button>
-          }
-        />
-      </div>
-    );
-  }
-);
+const InlineHeader: React.FC<InlineHeaderProps> = memo(({ onFullscreen, onSettings, onMenu }) => {
+  return (
+    <div className="absolute top-0 right-0 z-50 flex items-center gap-1 p-2">
+      <TooltipButton
+        tooltipText="Enter Fullscreen"
+        button={
+          <button
+            onClick={onFullscreen}
+            className={cn(
+              'p-1.5 rounded-md',
+              'text-muted-foreground hover:text-foreground',
+              'hover:bg-accent/50',
+              'transition-colors'
+            )}
+          >
+            <Maximize className="h-4 w-4" />
+          </button>
+        }
+      />
+      <TooltipButton
+        tooltipText="Reading Settings"
+        button={
+          <button
+            onClick={onSettings}
+            className={cn(
+              'p-1.5 rounded-md',
+              'text-muted-foreground hover:text-foreground',
+              'hover:bg-accent/50',
+              'transition-colors'
+            )}
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+        }
+      />
+      <TooltipButton
+        tooltipText="Table of Contents"
+        button={
+          <button
+            onClick={onMenu}
+            className={cn(
+              'p-1.5 rounded-md',
+              'text-muted-foreground hover:text-foreground',
+              'hover:bg-accent/50',
+              'transition-colors'
+            )}
+          >
+            <List className="h-4 w-4" />
+          </button>
+        }
+      />
+    </div>
+  );
+});
 
 InlineHeader.displayName = 'InlineHeader';
 
@@ -174,14 +172,11 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
       return <LoadingState />;
     }
 
-
     const renderContent = () => {
       if (viewMode === 'edit') {
         return (
           <div key="edit-mode" className={`h-full ${styles.editMode}`}>
-            <div className="h-full relative bg-background text-foreground">
-              {EditorPanel}
-            </div>
+            <div className="h-full relative bg-background text-foreground">{EditorPanel}</div>
           </div>
         );
       }
@@ -200,14 +195,10 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
             <div className="w-1/2 h-full border-r border-border/20 relative bg-background text-foreground">
               {EditorPanel}
             </div>
-            <div className="w-1/2 h-full relative">
-              {PreviewPanel}
-            </div>
+            <div className="w-1/2 h-full relative">{PreviewPanel}</div>
           </div>
 
-          <div className="lg:hidden h-full">
-            {PreviewPanel}
-          </div>
+          <div className="lg:hidden h-full">{PreviewPanel}</div>
         </div>
       );
     };

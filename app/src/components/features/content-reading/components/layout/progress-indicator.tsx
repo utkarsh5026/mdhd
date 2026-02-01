@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import React, { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { MarkdownSection } from '@/services/section/parsing';
+import useViewportDots from '@/hooks/utils/use-viewport-dots';
 import styles from './progress-indicator.module.css';
 
 interface DesktopProgressIndicatorProps {
@@ -23,6 +24,8 @@ export const DesktopProgressIndicator: React.FC<DesktopProgressIndicatorProps> =
   readingMode = 'card',
   scrollProgress = 0,
 }) => {
+  const maxVisibleDots = useViewportDots();
+
   const { percentage } = useMemo(() => {
     if (readingMode === 'scroll') {
       return { totalWords: 0, wordsRead: 0, percentage: Math.round(scrollProgress) };
@@ -47,7 +50,9 @@ export const DesktopProgressIndicator: React.FC<DesktopProgressIndicatorProps> =
     <div className="hidden lg:block fixed right-8 top-1/2 -translate-y-1/2 z-40">
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 text-center min-w-20">
         <div className="bg-background/60 backdrop-blur-sm border border-border/40 rounded-2xl px-3 py-2 shadow-sm font-cascadia-code">
-          <div className="text-sm font-medium text-muted-foreground tabular-nums">{percentage}%</div>
+          <div className="text-sm font-medium text-muted-foreground tabular-nums">
+            {percentage}%
+          </div>
         </div>
       </div>
 
@@ -58,13 +63,16 @@ export const DesktopProgressIndicator: React.FC<DesktopProgressIndicatorProps> =
             height:
               readingMode === 'scroll'
                 ? `${scrollProgress}%`
-                : `${((currentIndex + 1) / Math.min(total, 15)) * 100}%`,
+                : `${((currentIndex + 1) / Math.min(total, maxVisibleDots)) * 100}%`,
           }}
         />
 
         <div className="flex flex-col gap-4">
-          {Array.from({ length: Math.min(total, 15) }).map((_, index) => {
-            const actualIndex = total <= 15 ? index : Math.floor((index / 14) * (total - 1));
+          {Array.from({ length: Math.min(total, maxVisibleDots) }).map((_, index) => {
+            const actualIndex =
+              total <= maxVisibleDots
+                ? index
+                : Math.floor((index / (maxVisibleDots - 1)) * (total - 1));
             const isActive = actualIndex === currentIndex;
             const isCompleted = readSections.has(actualIndex);
             const section = sections[actualIndex];

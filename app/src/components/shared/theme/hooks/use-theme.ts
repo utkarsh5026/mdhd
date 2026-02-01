@@ -4,11 +4,11 @@ import { ThemeOption } from '@/theme/themes';
 
 /**
  * Custom React hook for managing application theme.
- * 
+ *
  * This hook provides access to the current theme and allows changing themes dynamically.
  * It automatically applies theme CSS variables to the document root element whenever
  * the theme changes.
- * 
+ *
  */
 export const useTheme = () => {
   const currentTheme = useThemeStore((state) => state.currentTheme);

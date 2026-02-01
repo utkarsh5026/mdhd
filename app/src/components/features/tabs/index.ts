@@ -4,6 +4,7 @@ export {
   useTabs,
   useActiveTabId,
   useActiveTab,
+  useActiveTabSections,
   useShowEmptyState,
   useTabsHasHydrated,
   useHeaderVisible,
@@ -11,7 +12,6 @@ export {
   type Tab,
   type TabReadingState,
 } from './store';
-
 
 // Components
 export { default as TabBar } from './components/tab-bar/tab-bar';

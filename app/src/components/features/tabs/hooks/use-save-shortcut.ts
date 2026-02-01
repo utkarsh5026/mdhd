@@ -4,17 +4,16 @@ import { useTabsStore } from '../store/tabs-store';
 import { fileStorageDB } from '@/services/indexeddb';
 import { useFileStore } from '@/components/features/file-explorer/store/file-store';
 
-
 /**
  * Custom hook that handles keyboard shortcut (Ctrl/Cmd + S) for saving tab content
- * 
+ *
  * This hook:
  * - Listens for Ctrl/Cmd + S keyboard shortcut
  * - Saves content to existing file if tab is linked to a file
  * - Shows save dialog for new/unlinked tabs
  * - Prevents saving empty content
  * - Manages save dialog visibility and saving state
- * 
+ *
  */
 export function useSaveShortcut() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -57,7 +56,7 @@ export function useSaveShortcut() {
 
   /**
    * Saves the active tab's content to a new file in IndexedDB
-   * 
+   *
    * @param {string} fileName - Name for the new file (without path)
    * @throws {Error} If a file with the same name already exists
    */
@@ -99,21 +98,21 @@ export function useSaveShortcut() {
     handleSaveToFile,
     isSaving,
   };
-};
+}
 
 /**
  * Generates a default file name from a tab title
- * 
+ *
  * Rules:
  * - Preserves 'untitled' prefix with numeric suffixes (e.g., "untitled 2" → "untitled 2.md")
  * - Converts regular titles to lowercase, kebab-case format (e.g., "My File" → "my-file.md")
  * - Removes special characters (keeps only alphanumeric, hyphens, underscores)
  * - Replaces spaces with hyphens
  * - Always appends .md extension
- * 
+ *
  * @param {string} title - The tab title to convert
  * @returns {string} Sanitized file name with .md extension
- * 
+ *
  * @example
  * ```ts
  * getDefaultFileName("untitled 2")    // returns "untitled 2.md"

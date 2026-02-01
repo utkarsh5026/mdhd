@@ -4,10 +4,7 @@ import { cn } from '@/lib/utils';
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 import type { ViewMode } from '../../store';
 
-const VIEW_MODE_CONFIG: Record<
-  ViewMode,
-  { Icon: LucideIcon; color: string; label: string }
-> = {
+const VIEW_MODE_CONFIG: Record<ViewMode, { Icon: LucideIcon; color: string; label: string }> = {
   edit: { Icon: Pencil, color: 'amber', label: 'Edit mode' },
   dual: { Icon: Columns2, color: 'green', label: 'Dual mode' },
   preview: { Icon: Eye, color: 'blue', label: 'Preview mode' },

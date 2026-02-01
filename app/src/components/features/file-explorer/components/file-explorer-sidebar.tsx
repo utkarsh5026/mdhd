@@ -5,6 +5,8 @@ import { UploadButton } from './upload/upload-button';
 import { UploadProgressIndicator } from './upload/upload-progress';
 import { FileTree } from './file-tree/file-tree';
 import { DeleteDialog } from './actions/delete-dialog';
+import { TabbedSidebar } from './tabbed-sidebar';
+import { SidebarToc } from './sidebar-toc';
 import { Separator } from '@/components/ui/separator';
 import {
   useFileTree,
@@ -110,37 +112,50 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
     );
   }
 
+  const filesContent = (
+    <DropZone onDrop={handleDropZone} className="flex flex-col h-full overflow-y-auto">
+      {isLoading && !isUploading ? (
+        <div className="flex items-center justify-center flex-1">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <FileTree
+          nodes={fileTree}
+          selectedPath={selectedFile?.path || null}
+          expandedPaths={expandedDirectories}
+          onFileClick={handleFileClick}
+          onDirectoryToggle={toggleDirectory}
+          onDelete={handleDeleteNode}
+        />
+      )}
+    </DropZone>
+  );
+
   return (
     <>
-      <DropZone
-        onDrop={handleDropZone}
-        className={cn('flex flex-col overflow-y-auto bg-background', className)}
-      >
+      <div className={cn('flex flex-col overflow-hidden bg-background', className)}>
         {/* Header */}
         <div className="px-3 py-2 border-b border-border/50">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Files</h2>
-            <div className="flex items-center gap-1">
-              <UploadButton variant="files" onUpload={handleFilesUpload} disabled={isUploading} />
-              <UploadButton
-                variant="directory"
-                onUpload={handleDirectoryUpload}
-                disabled={isUploading}
-              />
-              <TooltipButton
-                button={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <PanelLeftClose className="h-4 w-4" />
-                  </Button>
-                }
-                tooltipText="Close sidebar"
-              />
-            </div>
+          <div className="flex items-center justify-end gap-1">
+            <UploadButton variant="files" onUpload={handleFilesUpload} disabled={isUploading} />
+            <UploadButton
+              variant="directory"
+              onUpload={handleDirectoryUpload}
+              disabled={isUploading}
+            />
+            <TooltipButton
+              button={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
+              }
+              tooltipText="Close sidebar"
+            />
           </div>
         </div>
 
@@ -152,22 +167,13 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
           </>
         )}
 
-        {/* File tree */}
-        {isLoading && !isUploading ? (
-          <div className="flex items-center justify-center flex-1">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <FileTree
-            nodes={fileTree}
-            selectedPath={selectedFile?.path || null}
-            expandedPaths={expandedDirectories}
-            onFileClick={handleFileClick}
-            onDirectoryToggle={toggleDirectory}
-            onDelete={handleDeleteNode}
-          />
-        )}
-      </DropZone>
+        {/* Tabbed content */}
+        <TabbedSidebar
+          filesContent={filesContent}
+          tocContent={<SidebarToc />}
+          className="flex-1 overflow-hidden"
+        />
+      </div>
 
       {/* Delete confirmation dialog */}
       <DeleteDialog

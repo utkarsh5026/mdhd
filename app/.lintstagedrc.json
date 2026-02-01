@@ -1,0 +1,12 @@
+{
+  "src/**/*.{ts,tsx,js,jsx}": [
+    "npx eslint --fix",
+    "npx prettier --write"
+  ],
+  "src/**/*.{json,css,md}": [
+    "npx prettier --write"
+  ],
+  "src/**/*.{test,spec}.{ts,tsx}": [
+    "npx vitest related --run"
+  ]
+}
