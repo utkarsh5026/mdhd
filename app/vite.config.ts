@@ -6,6 +6,7 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import checker from 'vite-plugin-checker';
 import compression from 'vite-plugin-compression';
 import svgr from 'vite-plugin-svgr';
+import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 
 export default defineConfig(({ mode }) => {
   const isDev = mode === 'development';
@@ -27,6 +28,18 @@ export default defineConfig(({ mode }) => {
       }),
 
       compression({ algorithm: 'gzip' }),
+      compression({
+        algorithm: 'brotliCompress',
+        ext: '.br',
+        threshold: 10240,
+      }),
+
+      ViteImageOptimizer({
+        png: { quality: 80 },
+        jpeg: { quality: 80 },
+        webp: { quality: 80 },
+        avif: { quality: 70 },
+      }),
 
       visualizer({
         open: true,
@@ -42,23 +55,32 @@ export default defineConfig(({ mode }) => {
     },
     esbuild: {
       drop: isDev ? [] : ['console', 'debugger'],
+      legalComments: 'none',
+      minifyIdentifiers: true,
+      minifySyntax: true,
+      minifyWhitespace: true,
     },
     build: {
+      minify: 'esbuild',
+      target: 'es2020',
+      cssMinify: 'lightningcss',
+      sourcemap: 'hidden', // Generates source maps without bundle references
       rollupOptions: {
         output: {
           manualChunks: (id) => {
             if (id.includes('node_modules')) {
-              // Check specific patterns first (before broader 'react' matching)
-              if (id.includes('@radix-ui') || id.includes('lucide-react')) {
-                return 'ui-vendor';
-              }
-              if (id.includes('codemirror') || id.includes('@codemirror')) {
+              if (id.includes('/codemirror/') || id.includes('/@codemirror/')) {
                 return 'codemirror';
               }
-              if (id.includes('zustand')) {
+              if (id.includes('/@radix-ui/') || id.includes('/lucide-react/')) {
+                return 'ui-vendor';
+              }
+              if (id.includes('/zustand/')) {
                 return 'state-vendor';
               }
-
+              if (id.includes('/dexie/') || id.includes('/d3-force/') || id.includes('/d3-')) {
+                return 'data-vendor';
+              }
               return 'vendor';
             }
           },
