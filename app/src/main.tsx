@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import router from './router.tsx';
 import './styles/font-styles.css';
+import './index.css';
 import './styles/variable-fonts.css';
 
 import '@fontsource-variable/fira-code';
