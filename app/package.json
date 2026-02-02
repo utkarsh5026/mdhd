@@ -10,7 +10,6 @@
     "preview": "vite preview",
     "preview:3000": "vite preview --port 3000",
     "watch:build": "nodemon --watch src --ext ts,tsx,js,jsx,css,json,md --exec \"npm run build\"",
-    "watch": "concurrently \"npm run watch:build\" \"npm run preview:3000\" --names \"build,serve\" --prefix-colors \"blue,green\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "knip": "knip",
