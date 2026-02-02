@@ -51,7 +51,7 @@ export function getFilePath(file: File, basePath: string = ''): string {
 }
 
 /**
- * Process and upload individual files
+ * Process and upload individual files with batched parallel operations
  */
 export async function processFileUpload(
   files: File[],
@@ -61,36 +61,57 @@ export async function processFileUpload(
   const mdFiles = filterMarkdownFiles(files);
   const storedFiles: StoredFile[] = [];
 
-  for (let i = 0; i < mdFiles.length; i++) {
-    const file = mdFiles[i];
+  const BATCH_SIZE = 10;
+  let processedCount = 0;
 
-    onProgress?.({
-      total: mdFiles.length,
-      processed: i,
-      currentFile: file.name,
-    });
+  const updateBatchProgress = (
+    batchResults: PromiseSettledResult<StoredFile | null>[],
+    batch: File[]
+  ) => {
+    for (let j = 0; j < batchResults.length; j++) {
+      const result = batchResults[j];
+      const file = batch[j];
 
-    try {
-      const content = await readFileAsText(file);
-      const path = getFilePath(file, basePath);
-      const parentPath = getParentPath(path);
-
-      if (await fileStorageDB.getFileByPath(path)) {
-        continue;
+      if (result.status === 'fulfilled' && result.value) {
+        storedFiles.push(result.value);
+      } else if (result.status === 'rejected') {
+        console.error(`Failed to process file ${file.name}:`, result.reason);
       }
 
-      const storedFile = await fileStorageDB.addFile({
-        name: file.name,
-        path,
-        parentPath,
-        content,
-        size: file.size,
-      });
+      processedCount++;
 
-      storedFiles.push(storedFile);
-    } catch (error) {
-      console.error(`Failed to process file ${file.name}:`, error);
+      onProgress?.({
+        total: mdFiles.length,
+        processed: processedCount,
+        currentFile: processedCount < mdFiles.length ? mdFiles[processedCount]?.name || '' : '',
+      });
     }
+  };
+
+  for (let i = 0; i < mdFiles.length; i += BATCH_SIZE) {
+    const batch = mdFiles.slice(i, i + BATCH_SIZE);
+
+    const batchResults = await Promise.allSettled(
+      batch.map(async (file) => {
+        const content = await readFileAsText(file);
+        const path = getFilePath(file, basePath);
+        const parentPath = getParentPath(path);
+
+        if (await fileStorageDB.getFileByPath(path)) {
+          return null;
+        }
+
+        return fileStorageDB.addFile({
+          name: file.name,
+          path,
+          parentPath,
+          content,
+          size: file.size,
+        });
+      })
+    );
+
+    updateBatchProgress(batchResults, batch);
   }
 
   onProgress?.({
