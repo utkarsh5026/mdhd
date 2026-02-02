@@ -3,7 +3,7 @@
 import lighthouse from 'lighthouse';
 import * as chromeLauncher from 'chrome-launcher';
 
-const url = process.argv[2] || 'http://localhost:5173';
+const url = process.argv[2] || 'http://localhost:4173';
 
 async function runLighthouse() {
   console.log(`\n🔍 Running Lighthouse on ${url}...\n`);
@@ -68,14 +68,25 @@ async function runLighthouse() {
     for (const [categoryKey, category] of Object.entries(scores)) {
       const categoryAudits = category.auditRefs
         .map((ref) => audits[ref.id])
-        .filter((audit) => audit && audit.score !== null && audit.score < 1 && audit.details?.type !== 'opportunity');
+        .filter(
+          (audit) =>
+            audit &&
+            audit.score !== null &&
+            audit.score < 1 &&
+            audit.details?.type !== 'opportunity'
+        );
 
       if (categoryAudits.length > 0) {
         hasIssues = true;
         const categoryName = category.title;
-        const emoji = categoryKey === 'performance' ? '⚡' :
-                     categoryKey === 'accessibility' ? '♿' :
-                     categoryKey === 'best-practices' ? '✅' : '🔍';
+        const emoji =
+          categoryKey === 'performance'
+            ? '⚡'
+            : categoryKey === 'accessibility'
+              ? '♿'
+              : categoryKey === 'best-practices'
+                ? '✅'
+                : '🔍';
 
         console.log(`\n${emoji} ${categoryName.toUpperCase()} ISSUES:`);
         console.log('─'.repeat(70));
