@@ -89,6 +89,7 @@ const FloatingThemePicker: React.FC = () => {
             size="icon"
             className="rounded-full h-8 w-8"
             onClick={closeFloatingPicker}
+            aria-label="Close theme picker"
           >
             <X className="h-5 w-5" />
           </Button>
