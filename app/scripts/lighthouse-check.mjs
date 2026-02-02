@@ -6,7 +6,7 @@ import * as chromeLauncher from 'chrome-launcher';
 const url = process.argv[2] || 'http://localhost:4173';
 
 async function runLighthouse() {
-  console.log(`\n🔍 Running Lighthouse on ${url}...\n`);
+  console.log('\n🚀 Running Lighthouse Performance Audit...\n');
 
   let chrome;
   try {
@@ -27,20 +27,22 @@ async function runLighthouse() {
     const audits = lhr.audits;
 
     // Display scores
-    console.log('📊 Lighthouse Scores:');
-    console.log('━'.repeat(70));
+    console.log('📊 LIGHTHOUSE AUDIT RESULTS\n');
 
     const formatScore = (score) => {
       const percentage = (score * 100).toFixed(0);
-      const color = percentage >= 90 ? '🟢' : percentage >= 50 ? '🟡' : '🔴';
-      return `${color} ${percentage}/100`;
+      const icon = percentage >= 90 ? '🟢' : percentage >= 50 ? '🟡' : '🔴';
+      const bar = '█'.repeat(Math.floor(percentage / 5)) + '░'.repeat(20 - Math.floor(percentage / 5));
+      return `${icon} ${percentage.padStart(3)}% ${bar}`;
     };
 
-    console.log(`⚡ Performance:      ${formatScore(scores.performance.score)}`);
-    console.log(`♿ Accessibility:    ${formatScore(scores.accessibility.score)}`);
-    console.log(`✅ Best Practices:   ${formatScore(scores['best-practices'].score)}`);
-    console.log(`🔍 SEO:              ${formatScore(scores.seo.score)}`);
-    console.log('━'.repeat(70));
+    console.log('  CATEGORY                    SCORE');
+    console.log('  ' + '-'.repeat(70));
+    console.log(`  ⚡ Performance              ${formatScore(scores.performance.score)}`);
+    console.log(`  ♿ Accessibility            ${formatScore(scores.accessibility.score)}`);
+    console.log(`  ✅ Best Practices           ${formatScore(scores['best-practices'].score)}`);
+    console.log(`  🔍 SEO                      ${formatScore(scores.seo.score)}`);
+    console.log('');
 
     // Display failed audits and opportunities
     let hasIssues = false;
@@ -52,15 +54,15 @@ async function runLighthouse() {
 
     if (opportunities.length > 0) {
       hasIssues = true;
-      console.log('\n⚡ PERFORMANCE OPPORTUNITIES:');
-      console.log('─'.repeat(70));
-      opportunities.forEach((audit) => {
+      console.log('\n⚡ PERFORMANCE OPPORTUNITIES\n');
+      opportunities.forEach((audit, idx) => {
         const savings = audit.details?.overallSavingsMs || 0;
-        console.log(`\n  🔸 ${audit.title}`);
+        console.log(`  ${idx + 1}. 🔸 ${audit.title}`);
         console.log(`     ${audit.description}`);
         if (savings > 0) {
           console.log(`     💾 Potential savings: ${Math.round(savings)}ms`);
         }
+        console.log('');
       });
     }
 
@@ -88,27 +90,35 @@ async function runLighthouse() {
                 ? '✅'
                 : '🔍';
 
-        console.log(`\n${emoji} ${categoryName.toUpperCase()} ISSUES:`);
-        console.log('─'.repeat(70));
+        console.log(`\n${emoji} ${categoryName.toUpperCase()} ISSUES\n`);
 
-        categoryAudits.forEach((audit) => {
-          console.log(`\n  🔸 ${audit.title}`);
+        categoryAudits.forEach((audit, idx) => {
+          console.log(`  ${idx + 1}. 🔴 ${audit.title}`);
           console.log(`     ${audit.description}`);
+
+          if (audit.description && audit.description.includes('Learn')) {
+            const linkMatch = audit.description.match(/https?:\/\/[^\s]+/);
+            if (linkMatch) {
+              console.log(`     📖 ${linkMatch[0]}`);
+            }
+          }
 
           // Show specific items if available
           if (audit.details?.items && audit.details.items.length > 0) {
             const items = audit.details.items.slice(0, 3); // Show first 3 items
+            console.log(`     Affected items:`);
             items.forEach((item, i) => {
               if (item.node?.snippet) {
-                console.log(`     ${i + 1}. ${item.node.snippet.substring(0, 60)}...`);
+                console.log(`       ${i + 1}. ${item.node.snippet.substring(0, 60)}...`);
               } else if (item.url) {
-                console.log(`     ${i + 1}. ${item.url}`);
+                console.log(`       ${i + 1}. ${item.url}`);
               }
             });
             if (audit.details.items.length > 3) {
-              console.log(`     ... and ${audit.details.items.length - 3} more`);
+              console.log(`       ... and ${audit.details.items.length - 3} more`);
             }
           }
+          console.log('');
         });
       }
     }
@@ -117,19 +127,21 @@ async function runLighthouse() {
     const allScores = Object.values(scores).map((s) => s.score);
     const minScore = Math.min(...allScores);
 
-    console.log('\n' + '━'.repeat(70));
+    console.log('-'.repeat(80));
     if (minScore < 0.9) {
-      console.log('\n⚠️  Some scores are below 90. Review the issues above.\n');
+      console.log('\n⚠️  RESULT: Some scores are below 90. Review the issues above.');
+      console.log('💡 Tip: Address the highest-impact issues first for best results.\n');
       process.exit(1);
     } else if (hasIssues) {
-      console.log('\n✅ All scores are excellent, but there are minor improvements to consider.\n');
+      console.log('\n✅ RESULT: All scores are excellent, but there are minor improvements to consider.\n');
       process.exit(0);
     } else {
-      console.log('\n✅ All scores are excellent! No issues found.\n');
+      console.log('\n✅ RESULT: All scores are excellent! No issues found.\n');
       process.exit(0);
     }
   } catch (error) {
     console.error('\n❌ Lighthouse failed:', error.message);
+    console.log('');
     process.exit(1);
   } finally {
     if (chrome) {
