@@ -11,7 +11,6 @@ export type {
 export { fileStorageDB, getParentPath, normalizePath } from './db';
 
 export {
-  isMarkdownFile,
   filterMarkdownFiles,
   readFileAsText,
   extractDirectoryPaths,

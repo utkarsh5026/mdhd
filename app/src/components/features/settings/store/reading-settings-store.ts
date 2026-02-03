@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 import type { FontFamily } from '@/lib/font';
+import { loadFont } from '@/lib/font-loader';
 
 export interface ReadingSettings {
   fontFamily: FontFamily;
@@ -29,7 +30,6 @@ const DEFAULT_SETTINGS: ReadingSettings = {
   contentWidth: 700,
 };
 
-// Load settings from localStorage or use defaults
 const loadInitialSettings = (): ReadingSettings => {
   if (typeof window === 'undefined') return DEFAULT_SETTINGS;
 
@@ -38,25 +38,31 @@ const loadInitialSettings = (): ReadingSettings => {
 
   try {
     const parsed = JSON.parse(savedSettings);
-    // Merge with defaults to ensure all required fields are present
     return { ...DEFAULT_SETTINGS, ...parsed };
-  } catch (e) {
-    console.error('Error parsing saved reading settings:', e);
+  } catch {
     return DEFAULT_SETTINGS;
   }
 };
+
+const initialSettings = loadInitialSettings();
+if (typeof window !== 'undefined') {
+  loadFont(initialSettings.fontFamily).catch((error) => {
+    console.error('Failed to preload initial font:', error);
+  });
+}
 
 const saveSettings = (settings: ReadingSettings) => {
   localStorage.setItem('reading-settings', JSON.stringify(settings));
 };
 
 export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
-  settings: loadInitialSettings(),
+  settings: initialSettings,
 
   setFontFamily: (family: FontFamily) =>
     set((state) => {
       const newSettings = { ...state.settings, fontFamily: family };
       saveSettings(newSettings);
+      loadFont(family);
       return { settings: newSettings };
     }),
 

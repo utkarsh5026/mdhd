@@ -8,6 +8,7 @@ import {
   fontCategories,
   getFontCss,
 } from '@/lib/font';
+import { loadFont, isFontLoaded } from '@/lib/font-loader';
 import { Type } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SettingsHeader, SelectableOption } from './settings-commons';
@@ -86,12 +87,21 @@ const FontFamilySelectItem = memo<FontFamilyItemProps>(({ font, isSelected, onSe
     onSelect(font.value);
   }, [onSelect, font.value]);
 
+  const handleMouseEnter = useCallback(() => {
+    if (!isFontLoaded(font.value)) {
+      loadFont(font.value).catch((error) => {
+        console.error('Failed to preload font on hover:', font.value, error);
+      });
+    }
+  }, [font.value]);
+
   return (
     <SelectableOption
       title={font.label}
       description={font.description}
       isSelected={isSelected}
       onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
       style={fontStyle}
     />
   );

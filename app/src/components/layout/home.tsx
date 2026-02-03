@@ -1,13 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import Header from './header';
 import { FileExplorerSidebar } from '@/components/features/file-explorer';
-import {
-  TabbedContentArea,
-  FullscreenMarkdownViewer,
-  useTabsActions,
-  useHeaderVisible,
-} from '@/components/features/tabs';
+import { TabbedContentArea, useTabsActions, useHeaderVisible } from '@/components/features/tabs';
 import type { StoredFile } from '@/services/indexeddb';
+
+const FullscreenMarkdownViewer = lazy(
+  () => import('@/components/features/tabs/components/markdown/fullscreen-markdown-viewer')
+);
 
 const Homepage = () => {
   const [fullscreenTabId, setFullscreenTabId] = useState<string | null>(null);
@@ -24,24 +23,33 @@ const Homepage = () => {
 
   const handleFileSelect = useCallback(
     (file: StoredFile) => {
-      // Check if a tab already exists for this file
       const existingTab = findTabByFileId(file.id);
 
       if (existingTab) {
-        // Activate existing tab
         setActiveTab(existingTab.id);
         setShowEmptyState(false);
       } else {
-        // Create new tab for this file
         createTab(file.content, file.name, 'file', file.id, file.path);
       }
     },
     [createTab, setActiveTab, findTabByFileId, setShowEmptyState]
   );
 
-  // Fullscreen mode
   if (fullscreenTabId) {
-    return <FullscreenMarkdownViewer tabId={fullscreenTabId} onExit={handleExitFullscreen} />;
+    return (
+      <Suspense
+        fallback={
+          <div className="flex h-screen items-center justify-center">
+            <div className="text-center">
+              <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+              <p className="text-sm text-muted-foreground">Loading fullscreen view...</p>
+            </div>
+          </div>
+        }
+      >
+        <FullscreenMarkdownViewer tabId={fullscreenTabId} onExit={handleExitFullscreen} />
+      </Suspense>
+    );
   }
 
   return (

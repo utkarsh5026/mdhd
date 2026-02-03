@@ -117,6 +117,7 @@ interface SelectableOptionProps {
   className?: string;
   style?: React.CSSProperties;
   children?: React.ReactNode;
+  onMouseEnter?: () => void;
 }
 
 /**
@@ -133,6 +134,7 @@ export const SelectableOption: React.FC<SelectableOptionProps> = ({
   className,
   style,
   children,
+  onMouseEnter,
 }) => {
   return (
     <button
@@ -144,6 +146,7 @@ export const SelectableOption: React.FC<SelectableOptionProps> = ({
         className
       )}
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
       style={style}
     >
       <div className="flex items-start gap-3">
@@ -219,6 +222,8 @@ export const ExpandableCategory = memo<ExpandableCategoryProps>(
         <button
           className="w-full flex items-center justify-between px-4 py-3 hover:bg-primary/5 transition-all duration-200 border-b border-border/20"
           onClick={toggleExpanded}
+          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${title}`}
+          aria-expanded={expanded}
         >
           <div className="flex items-center gap-3">
             <span className="text-lg">{icon}</span>

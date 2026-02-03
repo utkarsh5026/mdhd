@@ -1,27 +1,5 @@
 /* src/styles/font-styles.css */
 
-/* Font Imports */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap');
-
-/* New reading-optimized fonts */
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Vollkorn:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600;7..72,700&display=swap');
-
 /* Reading Content Styles */
 .fullscreen-reading-content {
   /* Will inherit the font-family, size, line-height, and letter-spacing from inline styles */

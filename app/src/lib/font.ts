@@ -26,6 +26,8 @@ export interface FontOption {
   label: string;
   description: string;
   category: 'serif' | 'sans-serif';
+  isVariable?: boolean; // Indicates if this font has variable font support
+  weightRange?: [number, number]; // Weight range for variable fonts, e.g., [100, 900]
 }
 
 export const fontOptions: FontOption[] = [
@@ -46,12 +48,16 @@ export const fontOptions: FontOption[] = [
     label: 'Inter',
     description: 'Clean & modern sans-serif',
     category: 'sans-serif',
+    isVariable: true,
+    weightRange: [100, 900],
   },
   {
     value: 'open-sans',
     label: 'Open Sans',
     description: 'Friendly and accessible',
     category: 'sans-serif',
+    isVariable: true,
+    weightRange: [300, 800],
   },
   {
     value: 'georgia',
@@ -70,12 +76,16 @@ export const fontOptions: FontOption[] = [
     label: 'Roboto Slab',
     description: 'Modern slab serif',
     category: 'serif',
+    isVariable: true,
+    weightRange: [100, 900],
   },
   {
     value: 'source-serif-pro',
     label: 'Source Serif Pro',
     description: 'Balanced serif design',
     category: 'serif',
+    isVariable: true,
+    weightRange: [200, 900],
   },
   {
     value: 'libre-baskerville',
@@ -88,6 +98,8 @@ export const fontOptions: FontOption[] = [
     label: 'Lora',
     description: 'Contemporary serif',
     category: 'serif',
+    isVariable: true,
+    weightRange: [400, 700],
   },
   {
     value: 'pt-serif',
@@ -106,12 +118,16 @@ export const fontOptions: FontOption[] = [
     label: 'Source Sans Pro',
     description: "Adobe's font optimized for UI and long reading",
     category: 'sans-serif',
+    isVariable: true,
+    weightRange: [200, 900],
   },
   {
     value: 'nunito-sans',
     label: 'Nunito Sans',
     description: 'Rounded, friendly font excellent for long text',
     category: 'sans-serif',
+    isVariable: true,
+    weightRange: [200, 1000],
   },
   {
     value: 'ibm-plex-sans',
@@ -136,12 +152,16 @@ export const fontOptions: FontOption[] = [
     label: 'EB Garamond',
     description: 'Classic Garamond revival, perfect for books',
     category: 'serif',
+    isVariable: true,
+    weightRange: [400, 800],
   },
   {
     value: 'bitter',
     label: 'Bitter',
     description: 'Slab serif with excellent readability',
     category: 'serif',
+    isVariable: true,
+    weightRange: [100, 900],
   },
   {
     value: 'vollkorn',
