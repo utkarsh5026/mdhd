@@ -1,4 +1,5 @@
 import React from 'react';
+import { useBionicTransform } from '../../hooks/use-bionic-transform';
 
 type ListProps =
   | { type: 'ul'; props: React.ComponentPropsWithoutRef<'ul'> }
@@ -13,12 +14,12 @@ type ListProps =
  * Optimized for both mobile and desktop viewing experiences.
  */
 const ListRender: React.FC<ListProps> = ({ type, props }) => {
-  // Base classes for consistent styling across all list types
+  const bionicChildren = useBionicTransform(type === 'li' ? props.children : undefined);
+
   const baseListClasses = [
     'my-3 sm:my-5',
     'ml-5 sm:ml-7 lg:ml-8',
     'space-y-1.5 sm:space-y-2.5',
-    // Match paragraph font sizing - cap at text-lg
     'text-base sm:text-lg',
     'leading-relaxed sm:leading-7',
     'text-pretty break-words',
@@ -51,7 +52,11 @@ const ListRender: React.FC<ListProps> = ({ type, props }) => {
     );
   }
 
-  return <li {...props} className={listItemClasses} />;
+  return (
+    <li {...props} className={listItemClasses}>
+      {bionicChildren}
+    </li>
+  );
 };
 
 export default ListRender;

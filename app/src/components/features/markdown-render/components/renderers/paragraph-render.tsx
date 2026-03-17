@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { List, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
 import { useParagraphToList } from '../../hooks/use-paragraph-to-list';
+import { transformBionicChildren } from '../../hooks/use-bionic-transform';
 
 /**
  * ParagraphRender Component
@@ -11,7 +13,13 @@ import { useParagraphToList } from '../../hooks/use-paragraph-to-list';
  * which splits the text into individual sentences for enhanced scannability.
  */
 const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ children, ...rest }) => {
+  const bionicReading = useReadingSettingsStore((s) => s.settings.bionicReading);
   const { isListView, sentences, toggleListView } = useParagraphToList(children);
+
+  const bionicChildren = useMemo(
+    () => (bionicReading ? transformBionicChildren(children) : children),
+    [bionicReading, children]
+  );
 
   const paragraphClasses = [
     'text-foreground/92',
@@ -70,7 +78,7 @@ const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ childr
         <ul className={listBaseClasses}>
           {sentences.map((sentence, i) => (
             <li key={i} className={listItemClasses}>
-              {sentence}
+              {bionicReading ? transformBionicChildren(sentence) : sentence}
             </li>
           ))}
         </ul>
@@ -82,7 +90,7 @@ const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ childr
     <div className="relative group/para">
       {toggleButton}
       <p {...rest} className={paragraphClasses}>
-        {children}
+        {bionicChildren}
       </p>
     </div>
   );
