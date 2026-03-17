@@ -32,13 +32,12 @@
   },
 
   // Tailwind CSS (if you use the Tailwind extension)
-  "tailwindCSS.experimental.classRegex": [
-    ["cn\\(([^)]*)\\)", "'([^']*)'"]
-  ],
+  "tailwindCSS.experimental.classRegex": [["cn\\(([^)]*)\\)", "'([^']*)'"]],
 
   // Spell checker
   "cSpell.words": [
     "amet",
+    "bionicify",
     "cascadia",
     "Fira",
     "hyperlegible",
