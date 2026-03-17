@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { Settings, List, Maximize } from 'lucide-react';
+import { Settings, List, Maximize, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReadingCore from '@/components/features/content-reading/components/reading-core';
 import { LoadingState } from '@/components/features/content-reading/components/layout';
@@ -16,66 +16,71 @@ interface InlineMarkdownViewerProps {
   onEnterFullscreen: () => void;
 }
 
+interface HeaderIconButtonProps {
+  tooltip: string;
+  icon: React.ComponentType<{ className?: string }>;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+const HeaderBtn: React.FC<HeaderIconButtonProps> = ({ tooltip, icon: Icon, onClick, disabled }) => (
+  <TooltipButton
+    tooltipText={tooltip}
+    button={
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={cn(
+          'p-1.5 rounded-md transition-colors',
+          'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+          'disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground'
+        )}
+      >
+        <Icon className="h-4 w-4" />
+      </button>
+    }
+  />
+);
+
 interface InlineHeaderProps {
   onFullscreen: () => void;
   onSettings: () => void;
   onMenu: () => void;
+  onPrevious: () => void;
+  onNext: () => void;
+  currentIndex: number;
+  total: number;
+  readingMode: 'card' | 'scroll';
 }
 
-const InlineHeader: React.FC<InlineHeaderProps> = memo(({ onFullscreen, onSettings, onMenu }) => {
-  return (
-    <div className="absolute top-0 right-0 z-50 flex items-center gap-1 p-2">
-      <TooltipButton
-        tooltipText="Enter Fullscreen"
-        button={
-          <button
-            onClick={onFullscreen}
-            className={cn(
-              'p-1.5 rounded-md',
-              'text-muted-foreground hover:text-foreground',
-              'hover:bg-accent/50',
-              'transition-colors'
-            )}
-          >
-            <Maximize className="h-4 w-4" />
-          </button>
-        }
-      />
-      <TooltipButton
-        tooltipText="Reading Settings"
-        button={
-          <button
-            onClick={onSettings}
-            className={cn(
-              'p-1.5 rounded-md',
-              'text-muted-foreground hover:text-foreground',
-              'hover:bg-accent/50',
-              'transition-colors'
-            )}
-          >
-            <Settings className="h-4 w-4" />
-          </button>
-        }
-      />
-      <TooltipButton
-        tooltipText="Table of Contents"
-        button={
-          <button
-            onClick={onMenu}
-            className={cn(
-              'p-1.5 rounded-md',
-              'text-muted-foreground hover:text-foreground',
-              'hover:bg-accent/50',
-              'transition-colors'
-            )}
-          >
-            <List className="h-4 w-4" />
-          </button>
-        }
-      />
-    </div>
-  );
-});
+const InlineHeader: React.FC<InlineHeaderProps> = memo(
+  ({ onFullscreen, onSettings, onMenu, onPrevious, onNext, currentIndex, total, readingMode }) => {
+    return (
+      <div className="absolute top-0 right-0 z-50 flex items-center gap-1 p-2">
+        {readingMode === 'card' && (
+          <>
+            <HeaderBtn
+              tooltip="Previous Section"
+              icon={ChevronLeft}
+              onClick={onPrevious}
+              disabled={currentIndex === 0}
+            />
+            <HeaderBtn
+              tooltip="Next Section"
+              icon={ChevronRight}
+              onClick={onNext}
+              disabled={currentIndex === total - 1}
+            />
+            <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
+          </>
+        )}
+        <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
+        <HeaderBtn tooltip="Reading Settings" icon={Settings} onClick={onSettings} />
+        <HeaderBtn tooltip="Table of Contents" icon={List} onClick={onMenu} />
+      </div>
+    );
+  }
+);
 
 InlineHeader.displayName = 'InlineHeader';
 
@@ -133,11 +138,16 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
           updateCurrentIndex={updateCurrentIndex}
           onScrollProgressChange={handleScrollProgress}
           viewMode="preview"
-          headerSlot={({ onSettings, onMenu }: { onSettings: () => void; onMenu: () => void }) => (
+          headerSlot={({ onSettings, onMenu }) => (
             <InlineHeader
               onFullscreen={onEnterFullscreen}
               onSettings={onSettings}
               onMenu={onMenu}
+              onPrevious={goToPrevious}
+              onNext={goToNext}
+              currentIndex={currentIndex}
+              total={sections.length}
+              readingMode={readingMode}
             />
           )}
         />
