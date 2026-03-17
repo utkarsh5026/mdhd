@@ -41,12 +41,16 @@ export default defineConfig(({ mode }) => {
         avif: { quality: 70 },
       }),
 
-      visualizer({
-        open: true,
-        gzipSize: true,
-        brotliSize: true,
-        filename: 'dist/stats.html',
-      }),
+      ...(process.env.ANALYZE
+        ? [
+            visualizer({
+              open: true,
+              gzipSize: true,
+              brotliSize: true,
+              filename: 'stats.html',
+            }),
+          ]
+        : []),
     ],
     resolve: {
       alias: {

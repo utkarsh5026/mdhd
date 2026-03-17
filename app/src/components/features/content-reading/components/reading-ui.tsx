@@ -82,8 +82,16 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
         isDialogOpen={isDialogOpen}
         onZenTap={onZenTap}
         onZenDoubleTap={onZenDoubleTap}
-        headerSlot={({ onSettings, onMenu, isVisible }) => (
-          <Header onExit={onExit} onSettings={onSettings} onMenu={onMenu} isVisible={isVisible} />
+        headerContainsBreadcrumb={true}
+        headerSlot={({ onSettings, onMenu, isVisible, breadcrumb, mobileBreadcrumb }) => (
+          <Header
+            onExit={onExit}
+            onSettings={onSettings}
+            onMenu={onMenu}
+            isVisible={isVisible}
+            breadcrumb={breadcrumb}
+            mobileBreadcrumb={mobileBreadcrumb}
+          />
         )}
       />
     );

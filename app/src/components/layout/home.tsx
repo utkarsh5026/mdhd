@@ -2,6 +2,7 @@ import { useState, useCallback, lazy, Suspense } from 'react';
 import Header from './header';
 import { FileExplorerSidebar } from '@/components/features/file-explorer';
 import { TabbedContentArea, useTabsActions, useHeaderVisible } from '@/components/features/tabs';
+import { ReactErrorBoundary } from '@/components/utils';
 import type { StoredFile } from '@/services/indexeddb';
 
 const FullscreenMarkdownViewer = lazy(
@@ -66,10 +67,14 @@ const Homepage = () => {
           }}
         />
 
-        <FileExplorerSidebar className="w-64 rounded-2xl" onFileSelect={handleFileSelect} />
+        <ReactErrorBoundary>
+          <FileExplorerSidebar className="w-64 rounded-2xl" onFileSelect={handleFileSelect} />
+        </ReactErrorBoundary>
 
         {/* Main Content Area with Tabs */}
-        <TabbedContentArea onEnterFullscreen={handleEnterFullscreen} />
+        <ReactErrorBoundary>
+          <TabbedContentArea onEnterFullscreen={handleEnterFullscreen} />
+        </ReactErrorBoundary>
       </div>
     </div>
   );

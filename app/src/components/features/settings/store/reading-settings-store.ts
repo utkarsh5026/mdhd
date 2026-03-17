@@ -10,6 +10,8 @@ export interface ReadingSettings {
   fontSize: number; // 14-28px
   lineHeight: number; // 1.4-2.2
   contentWidth: number; // 500-900px
+  bionicReading: boolean;
+  sentenceFocusOnHover: boolean;
 }
 
 interface ReadingSettingsState {
@@ -18,6 +20,8 @@ interface ReadingSettingsState {
   setFontSize: (size: number) => void;
   setLineHeight: (height: number) => void;
   setContentWidth: (width: number) => void;
+  toggleBionicReading: () => void;
+  toggleSentenceFocusOnHover: () => void;
   resetSettings: () => void;
 }
 
@@ -28,6 +32,8 @@ const DEFAULT_SETTINGS: ReadingSettings = {
   fontSize: 18,
   lineHeight: 1.7,
   contentWidth: 700,
+  bionicReading: false,
+  sentenceFocusOnHover: false,
 };
 
 const loadInitialSettings = (): ReadingSettings => {
@@ -87,6 +93,23 @@ export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
       return { settings: newSettings };
     }),
 
+  toggleBionicReading: () =>
+    set((state) => {
+      const newSettings = { ...state.settings, bionicReading: !state.settings.bionicReading };
+      saveSettings(newSettings);
+      return { settings: newSettings };
+    }),
+
+  toggleSentenceFocusOnHover: () =>
+    set((state) => {
+      const newSettings = {
+        ...state.settings,
+        sentenceFocusOnHover: !state.settings.sentenceFocusOnHover,
+      };
+      saveSettings(newSettings);
+      return { settings: newSettings };
+    }),
+
   resetSettings: () =>
     set(() => {
       localStorage.removeItem('reading-settings');
@@ -106,6 +129,8 @@ export const useReadingSettings = () => {
       setFontSize: state.setFontSize,
       setLineHeight: state.setLineHeight,
       setContentWidth: state.setContentWidth,
+      toggleBionicReading: state.toggleBionicReading,
+      toggleSentenceFocusOnHover: state.toggleSentenceFocusOnHover,
       resetSettings: state.resetSettings,
     }))
   );

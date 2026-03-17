@@ -35,7 +35,7 @@ export function normalizePath(path: string): string {
   if (!normalized.startsWith('/')) {
     normalized = '/' + normalized;
   }
-  // Remove trailing slash except for root
+
   if (normalized.length > 1 && normalized.endsWith('/')) {
     normalized = normalized.slice(0, -1);
   }
@@ -49,9 +49,6 @@ class FileStorageDB {
   private db: IDBDatabase | null = null;
   private initPromise: Promise<IDBDatabase> | null = null;
 
-  /**
-   * Initialize the database
-   */
   async init(): Promise<IDBDatabase> {
     if (this.db) return this.db;
     if (this.initPromise) return this.initPromise;
@@ -65,20 +62,23 @@ class FileStorageDB {
 
       request.onsuccess = () => {
         this.db = request.result;
+        this.db.onclose = () => {
+          this.db = null;
+          this.initPromise = null;
+        };
+
         resolve(this.db);
       };
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
 
-        // Create files store with indexes
         if (!db.objectStoreNames.contains(FILES_STORE)) {
           const filesStore = db.createObjectStore(FILES_STORE, { keyPath: 'id' });
           filesStore.createIndex('path', 'path', { unique: true });
           filesStore.createIndex('parentPath', 'parentPath', { unique: false });
         }
 
-        // Create directories store with indexes
         if (!db.objectStoreNames.contains(DIRECTORIES_STORE)) {
           const dirsStore = db.createObjectStore(DIRECTORIES_STORE, { keyPath: 'id' });
           dirsStore.createIndex('path', 'path', { unique: true });
@@ -90,36 +90,11 @@ class FileStorageDB {
     return this.initPromise;
   }
 
-  /**
-   * Get the database instance
-   */
   private async getDB(): Promise<IDBDatabase> {
     if (!this.db) {
       await this.init();
     }
     return this.db!;
-  }
-
-  // ============ File Operations ============
-
-  /**
-   * Add a new file
-   */
-  async addFile(input: CreateFileInput): Promise<StoredFile> {
-    const now = Date.now();
-    const file: StoredFile = {
-      ...input,
-      id: uuidv4(),
-      path: normalizePath(input.path),
-      parentPath: normalizePath(input.parentPath),
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    return this.withStore(FILES_STORE, 'readwrite', (store) => store.add(file), {
-      resolvedValue: file,
-      errorMessage: 'Failed to add file',
-    });
   }
 
   private async withStore<T>(
@@ -141,126 +116,140 @@ class FileStorageDB {
     });
   }
 
-  /**
-   * Get a file by ID
-   */
-  async getFile(id: string): Promise<StoredFile | undefined> {
-    return this.withStore(FILES_STORE, 'readonly', (store) => store.get(id));
+  private async getById<T>(storeName: string, id: string): Promise<T | undefined> {
+    return this.withStore(storeName, 'readonly', (store) => store.get(id));
   }
 
-  /**
-   * Get a file by path
-   */
-  async getFileByPath(path: string): Promise<StoredFile | undefined> {
-    const normalizedPath = normalizePath(path);
-    return this.withStore(
-      FILES_STORE,
-      'readonly',
-      (store) => store.index('path').get(normalizedPath),
-      {
-        errorMessage: 'Failed to get file by path',
-      }
+  private async getByPath<T>(storeName: string, path: string): Promise<T | undefined> {
+    return this.withStore(storeName, 'readonly', (store) =>
+      store.index('path').get(normalizePath(path))
     );
   }
 
-  /**
-   * Get all files in a directory
-   */
-  async getFilesByParentPath(parentPath: string): Promise<StoredFile[]> {
-    const normalizedPath = normalizePath(parentPath);
+  private async getByParentPath<T>(storeName: string, parentPath: string): Promise<T[]> {
     return this.withStore(
-      FILES_STORE,
+      storeName,
       'readonly',
-      (store) => store.index('parentPath').getAll(normalizedPath),
-      {
-        defaultValue: [],
-        errorMessage: 'Failed to get files by parent path',
-      }
+      (store) => store.index('parentPath').getAll(normalizePath(parentPath)),
+      { defaultValue: [] as unknown as T[] }
     );
   }
 
-  /**
-   * Get all files
-   */
-  async getAllFiles(): Promise<StoredFile[]> {
-    return this.withStore(FILES_STORE, 'readonly', (store) => store.getAll());
-  }
-
-  /**
-   * Update an existing file's content
-   */
-  async updateFile(id: string, content: string): Promise<StoredFile | undefined> {
-    const db = await this.getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([FILES_STORE], 'readwrite');
-      const store = transaction.objectStore(FILES_STORE);
-      const getRequest = store.get(id);
-
-      getRequest.onsuccess = () => {
-        const file = getRequest.result as StoredFile | undefined;
-        if (!file) {
-          resolve(undefined);
-          return;
-        }
-
-        const updatedFile: StoredFile = {
-          ...file,
-          content,
-          size: new Blob([content]).size,
-          updatedAt: Date.now(),
-        };
-
-        const putRequest = store.put(updatedFile);
-        putRequest.onsuccess = () => resolve(updatedFile);
-        putRequest.onerror = () => reject(new Error('Failed to update file'));
-      };
-
-      getRequest.onerror = () => reject(new Error('Failed to get file for update'));
+  private async getAll<T>(storeName: string): Promise<T[]> {
+    return this.withStore(storeName, 'readonly', (store) => store.getAll(), {
+      defaultValue: [] as unknown as T[],
     });
   }
 
-  /**
-   * Delete a file by ID
-   */
-  async deleteFile(id: string): Promise<void> {
-    return this.withStore(FILES_STORE, 'readwrite', (store) => store.delete(id));
+  private async deleteById(storeName: string, id: string): Promise<void> {
+    return this.withStore(storeName, 'readwrite', (store) => store.delete(id));
   }
 
-  /**
-   * Delete all files matching a path prefix
-   */
-  async deleteFilesByPathPrefix(pathPrefix: string): Promise<void> {
+  private async deleteByPredicate<T>(
+    storeName: string,
+    predicate: (value: T) => boolean
+  ): Promise<void> {
     const db = await this.getDB();
-    const normalizedPrefix = normalizePath(pathPrefix);
-
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([FILES_STORE], 'readwrite');
-      const store = transaction.objectStore(FILES_STORE);
-      const request = store.openCursor();
+      const transaction = db.transaction([storeName], 'readwrite');
+      const request = transaction.objectStore(storeName).openCursor();
 
       request.onsuccess = (event) => {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
         if (cursor) {
-          const file = cursor.value as StoredFile;
-          if (file.path.startsWith(normalizedPrefix)) {
-            cursor.delete();
-          }
+          if (predicate(cursor.value)) cursor.delete();
           cursor.continue();
         } else {
           resolve();
         }
       };
 
-      request.onerror = () => reject(new Error('Failed to delete files by path prefix'));
+      request.onerror = () => reject(new Error(`Failed to delete from ${storeName}`));
     });
+  }
+
+  private async readModifyWrite<T>(
+    storeName: string,
+    id: string,
+    modifier: (item: T) => T
+  ): Promise<T | undefined> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([storeName], 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const getRequest = store.get(id);
+
+      getRequest.onsuccess = () => {
+        const item = getRequest.result as T | undefined;
+        if (!item) {
+          resolve(undefined);
+          return;
+        }
+        const updated = modifier(item);
+        const putRequest = store.put(updated);
+        putRequest.onsuccess = () => resolve(updated);
+        putRequest.onerror = () => reject(new Error(`Failed to update in ${storeName}`));
+      };
+
+      getRequest.onerror = () => reject(new Error(`Failed to read from ${storeName} for update`));
+    });
+  }
+
+  async addFile(input: CreateFileInput): Promise<StoredFile> {
+    const now = Date.now();
+    const file: StoredFile = {
+      ...input,
+      id: uuidv4(),
+      path: normalizePath(input.path),
+      parentPath: normalizePath(input.parentPath),
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    return this.withStore(FILES_STORE, 'readwrite', (store) => store.add(file), {
+      resolvedValue: file,
+      errorMessage: 'Failed to add file',
+    });
+  }
+
+  async getFile(id: string): Promise<StoredFile | undefined> {
+    return this.getById(FILES_STORE, id);
+  }
+
+  async getFileByPath(path: string): Promise<StoredFile | undefined> {
+    return this.getByPath(FILES_STORE, path);
+  }
+
+  async getFilesByParentPath(parentPath: string): Promise<StoredFile[]> {
+    return this.getByParentPath(FILES_STORE, parentPath);
+  }
+
+  async getAllFiles(): Promise<StoredFile[]> {
+    return this.getAll(FILES_STORE);
+  }
+
+  async updateFile(id: string, content: string): Promise<StoredFile | undefined> {
+    return this.readModifyWrite<StoredFile>(FILES_STORE, id, (file) => ({
+      ...file,
+      content,
+      size: new Blob([content]).size,
+      updatedAt: Date.now(),
+    }));
+  }
+
+  async deleteFile(id: string): Promise<void> {
+    return this.deleteById(FILES_STORE, id);
+  }
+
+  async deleteFilesByPathPrefix(pathPrefix: string): Promise<void> {
+    const normalizedPrefix = normalizePath(pathPrefix);
+    return this.deleteByPredicate<StoredFile>(FILES_STORE, (file) =>
+      file.path.startsWith(normalizedPrefix)
+    );
   }
 
   // ============ Directory Operations ============
 
-  /**
-   * Add a new directory
-   */
   async addDirectory(input: CreateDirectoryInput): Promise<StoredDirectory> {
     const dir: StoredDirectory = {
       ...input,
@@ -276,99 +265,45 @@ class FileStorageDB {
     });
   }
 
-  /**
-   * Get a directory by ID
-   */
   async getDirectory(id: string): Promise<StoredDirectory | undefined> {
-    return await this.withStore(DIRECTORIES_STORE, 'readonly', (store) => store.get(id));
+    return this.getById(DIRECTORIES_STORE, id);
   }
 
-  /**
-   * Get a directory by path
-   */
   async getDirectoryByPath(path: string): Promise<StoredDirectory | undefined> {
-    return await this.withStore(DIRECTORIES_STORE, 'readonly', (store) => {
-      const index = store.index('path');
-      return index.get(normalizePath(path));
-    });
+    return this.getByPath(DIRECTORIES_STORE, path);
   }
 
-  /**
-   * Get all directories in a parent directory
-   */
   async getDirectoriesByParentPath(parentPath: string): Promise<StoredDirectory[]> {
-    const normalizedPath = normalizePath(parentPath);
-    return this.withStore(
-      DIRECTORIES_STORE,
-      'readonly',
-      (store) => store.index('parentPath').getAll(normalizedPath),
-      { defaultValue: [] }
-    );
+    return this.getByParentPath(DIRECTORIES_STORE, parentPath);
   }
 
-  /**
-   * Get all directories
-   */
   async getAllDirectories(): Promise<StoredDirectory[]> {
-    return this.withStore(DIRECTORIES_STORE, 'readonly', (store) => store.getAll(), {
-      defaultValue: [],
-    });
+    return this.getAll(DIRECTORIES_STORE);
   }
 
-  /**
-   * Delete a directory by ID
-   */
   async deleteDirectory(id: string): Promise<void> {
-    return this.withStore(DIRECTORIES_STORE, 'readwrite', (store) => store.delete(id));
+    return this.deleteById(DIRECTORIES_STORE, id);
   }
 
-  /**
-   * Delete a directory and all its contents recursively
-   */
   async deleteDirectoryRecursive(path: string): Promise<void> {
     const normalizedPath = normalizePath(path);
-
-    // Delete all files in this directory and subdirectories
-    await this.deleteFilesByPathPrefix(normalizedPath);
-
-    // Delete all subdirectories
-    const db = await this.getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([DIRECTORIES_STORE], 'readwrite');
-      const store = transaction.objectStore(DIRECTORIES_STORE);
-      const request = store.openCursor();
-
-      request.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-        if (cursor) {
-          const dir = cursor.value as StoredDirectory;
-          if (dir.path === normalizedPath || dir.path.startsWith(normalizedPath + '/')) {
-            cursor.delete();
-          }
-          cursor.continue();
-        } else {
-          resolve();
-        }
-      };
-
-      request.onerror = () => reject(new Error('Failed to delete directory recursively'));
-    });
+    await this.deleteByPredicate<StoredFile>(FILES_STORE, (file) =>
+      file.path.startsWith(normalizedPath)
+    );
+    await this.deleteByPredicate<StoredDirectory>(
+      DIRECTORIES_STORE,
+      (dir) => dir.path === normalizedPath || dir.path.startsWith(normalizedPath + '/')
+    );
   }
 
   // ============ Tree Operations ============
 
-  /**
-   * Build a file tree from all files and directories
-   */
   async buildFileTree(): Promise<FileTreeNode[]> {
     const files = await this.getAllFiles();
     const directories = await this.getAllDirectories();
 
-    // Create a map for quick lookup
     const nodeMap = new Map<string, FileTreeNode>();
 
-    // First, create all directory nodes
     for (const dir of directories) {
       nodeMap.set(dir.path, {
         id: dir.id,
@@ -379,19 +314,16 @@ class FileStorageDB {
       });
     }
 
-    // Then, create all file nodes
     for (const file of files) {
       nodeMap.set(file.path, {
         id: file.id,
         name: file.name,
         path: file.path,
         type: 'file',
-        content: file.content,
         size: file.size,
       });
     }
 
-    // Build tree structure by linking children to parents
     const root: FileTreeNode[] = [];
 
     for (const [path, node] of nodeMap) {
@@ -403,7 +335,6 @@ class FileStorageDB {
         if (parent && parent.children) {
           parent.children.push(node);
         } else {
-          // Parent doesn't exist, add to root
           root.push(node);
         }
       }
@@ -426,11 +357,6 @@ class FileStorageDB {
     return root;
   }
 
-  // ============ Bulk Operations ============
-
-  /**
-   * Clear all files and directories
-   */
   async clearAll(): Promise<void> {
     const db = await this.getDB();
 
@@ -445,22 +371,15 @@ class FileStorageDB {
     });
   }
 
-  /**
-   * Check if a file exists at the given path
-   */
   async fileExists(path: string): Promise<boolean> {
     const file = await this.getFileByPath(path);
     return !!file;
   }
 
-  /**
-   * Check if a directory exists at the given path
-   */
   async directoryExists(path: string): Promise<boolean> {
     const dir = await this.getDirectoryByPath(path);
     return !!dir;
   }
 }
 
-// Export singleton instance
 export const fileStorageDB = new FileStorageDB();

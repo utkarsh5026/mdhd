@@ -1,8 +1,7 @@
 import { useEffect, useRef, useMemo, forwardRef } from 'react';
 import { EditorView, lineNumbers, keymap } from '@codemirror/view';
 import { EditorState, Compartment } from '@codemirror/state';
-import { foldGutter, foldKeymap, indentOnInput } from '@codemirror/language';
-import { defaultKeymap } from '@codemirror/commands';
+import { foldGutter, foldKeymap } from '@codemirror/language';
 import { loadLanguage } from '../../utils/language-loader';
 import {
   getCodeMirrorTheme,
@@ -20,9 +19,6 @@ interface CodeMirrorDisplayProps {
   enableCodeFolding?: boolean;
   enableWordWrap?: boolean;
 }
-
-const languageCompartment = new Compartment();
-const themeCompartment = new Compartment();
 
 const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
   (
@@ -42,6 +38,10 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
     const editorRef = useRef<EditorView | null>(null);
     const prevThemeKey = useRef<ThemeKey | null>(null);
     const prevLanguage = useRef<string | null>(null);
+
+    // Per-instance compartments so multiple editors don't corrupt each other
+    const languageCompartment = useRef(new Compartment()).current;
+    const themeCompartment = useRef(new Compartment()).current;
 
     const baseTheme = useMemo(
       () =>
@@ -93,8 +93,7 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
       const exts = [
         EditorState.readOnly.of(true),
         EditorView.editable.of(false),
-        indentOnInput(),
-        keymap.of([...defaultKeymap, ...foldKeymap]),
+        keymap.of(foldKeymap),
         baseTheme,
         themeCompartment.of(getCodeMirrorTheme(themeKey)),
         languageCompartment.of([]),
@@ -118,7 +117,15 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
       }
 
       return exts;
-    }, [baseTheme, themeKey, showLineNumbers, enableCodeFolding, enableWordWrap]);
+    }, [
+      baseTheme,
+      themeKey,
+      showLineNumbers,
+      enableCodeFolding,
+      enableWordWrap,
+      themeCompartment,
+      languageCompartment,
+    ]);
 
     useEffect(() => {
       const container = containerRef.current;
@@ -142,9 +149,12 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
       prevThemeKey.current = themeKey;
       prevLanguage.current = language;
 
+      // Capture view instance to avoid race condition — if the component
+      // re-renders and destroys this view before the promise resolves,
+      // we check against the captured reference, not editorRef.current.
       loadLanguage(language).then((langSupport) => {
-        if (langSupport && editorRef.current) {
-          editorRef.current.dispatch({
+        if (langSupport && editorRef.current === view) {
+          view.dispatch({
             effects: languageCompartment.reconfigure(langSupport),
           });
         }
@@ -165,21 +175,22 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
         });
         prevThemeKey.current = themeKey;
       }
-    }, [themeKey]);
+    }, [themeKey, themeCompartment]);
 
     // Update language when it changes
     useEffect(() => {
       if (editorRef.current && prevLanguage.current !== language) {
+        const currentView = editorRef.current;
         loadLanguage(language).then((langSupport) => {
-          if (langSupport && editorRef.current) {
-            editorRef.current.dispatch({
+          if (langSupport && editorRef.current === currentView) {
+            currentView.dispatch({
               effects: languageCompartment.reconfigure(langSupport),
             });
           }
         });
         prevLanguage.current = language;
       }
-    }, [language]);
+    }, [language, languageCompartment]);
 
     const backgroundColor = getThemeBackground(themeKey);
 

@@ -1,5 +1,8 @@
+import { toast } from 'sonner';
 import { fileStorageDB, getParentPath, normalizePath } from './db';
 import type { StoredFile, StoredDirectory, UploadProgressCallback } from './types';
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 /**
  * Filter files to only include markdown files
@@ -47,7 +50,7 @@ export function extractDirectoryPaths(filePaths: string[]): string[] {
  * Get the file path from a File object (handles webkitRelativePath for directories)
  */
 export function getFilePath(file: File, basePath: string = ''): string {
-  return normalizePath(basePath + '/' + file.webkitRelativePath || file.name);
+  return normalizePath(basePath + '/' + (file.webkitRelativePath || file.name));
 }
 
 /**
@@ -93,6 +96,10 @@ export async function processFileUpload(
 
     const batchResults = await Promise.allSettled(
       batch.map(async (file) => {
+        if (file.size > MAX_FILE_SIZE) {
+          toast.warning(`Skipped "${file.name}" — exceeds ${MAX_FILE_SIZE / 1024 / 1024} MB limit`);
+          return null;
+        }
         const content = await readFileAsText(file);
         const path = getFilePath(file, basePath);
         const parentPath = getParentPath(path);
@@ -190,10 +197,22 @@ interface FileSystemDirectoryReader {
   ) => void;
 }
 
+const MAX_DIRECTORY_DEPTH = 10;
+const MAX_FILE_COUNT = 1000;
+
 /**
  * Recursively read all files from a directory entry (for drag-drop)
  */
-async function readDirectoryEntries(dirEntry: FileSystemEntry): Promise<File[]> {
+async function readDirectoryEntries(
+  dirEntry: FileSystemEntry,
+  depth: number = 0,
+  fileCount: { value: number } = { value: 0 }
+): Promise<File[]> {
+  if (depth > MAX_DIRECTORY_DEPTH) {
+    toast.warning('Directory too deeply nested — skipping further subdirectories');
+    return [];
+  }
+
   return new Promise((resolve, reject) => {
     const reader = dirEntry.createReader?.();
     if (!reader) {
@@ -228,14 +247,21 @@ async function readDirectoryEntries(dirEntry: FileSystemEntry): Promise<File[]> 
           }
 
           for (const entry of entries) {
+            if (fileCount.value >= MAX_FILE_COUNT) {
+              toast.warning(`File limit reached (${MAX_FILE_COUNT}) — remaining files skipped`);
+              resolve(files);
+              return;
+            }
+
             if (entry.isFile && entry.file) {
               const file = await createFile(entry.file, entry.fullPath);
               files.push(file);
+              fileCount.value++;
               continue;
             }
 
             if (entry.isDirectory) {
-              const subFiles = await readDirectoryEntries(entry);
+              const subFiles = await readDirectoryEntries(entry, depth + 1, fileCount);
               files.push(...subFiles);
             }
           }

@@ -21,6 +21,7 @@ interface FileStoreState {
   // Loading states
   isLoading: boolean;
   isUploading: boolean;
+  activeUploadCount: number;
   uploadProgress: UploadProgress | null;
   error: string | null;
 
@@ -60,9 +61,6 @@ interface FileStoreActions {
   clearError: () => void;
 }
 
-/**
- * Collect all directory paths from the file tree
- */
 function collectAllDirectoryPaths(nodes: FileTreeNode[]): string[] {
   const paths: string[] = [];
 
@@ -80,17 +78,16 @@ function collectAllDirectoryPaths(nodes: FileTreeNode[]): string[] {
 export const useFileStore = create<FileStoreState & FileStoreActions>()(
   devtools(
     (set, get) => ({
-      // Initial state
       fileTree: [],
       selectedFile: null,
       expandedDirectories: new Set<string>(),
       isLoading: false,
       isUploading: false,
+      activeUploadCount: 0,
       uploadProgress: null,
       error: null,
       isInitialized: false,
 
-      // Initialize the store
       initialize: async () => {
         const { isInitialized } = get();
         if (isInitialized) return;
@@ -113,7 +110,6 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
         }
       },
 
-      // Refresh the file tree from IndexedDB
       refreshFileTree: async () => {
         set({ isLoading: true, error: null });
 
@@ -128,17 +124,14 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
         }
       },
 
-      // Select a file
       selectFile: (file: StoredFile) => {
         set({ selectedFile: file });
       },
 
-      // Clear selection
       clearSelection: () => {
         set({ selectedFile: null });
       },
 
-      // Toggle directory expansion
       toggleDirectory: (path: string) => {
         const { expandedDirectories } = get();
         const newExpanded = new Set(expandedDirectories);
@@ -152,7 +145,6 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
         set({ expandedDirectories: newExpanded });
       },
 
-      // Expand a directory
       expandDirectory: (path: string) => {
         const { expandedDirectories } = get();
         const newExpanded = new Set(expandedDirectories);
@@ -160,7 +152,6 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
         set({ expandedDirectories: newExpanded });
       },
 
-      // Collapse a directory
       collapseDirectory: (path: string) => {
         const { expandedDirectories } = get();
         const newExpanded = new Set(expandedDirectories);
@@ -168,21 +159,23 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
         set({ expandedDirectories: newExpanded });
       },
 
-      // Expand all directories
       expandAll: () => {
         const { fileTree } = get();
         const allPaths = collectAllDirectoryPaths(fileTree);
         set({ expandedDirectories: new Set(allPaths) });
       },
 
-      // Collapse all directories
       collapseAll: () => {
         set({ expandedDirectories: new Set() });
       },
 
-      // Upload files
       uploadFiles: async (files: File[]) => {
-        set({ isUploading: true, uploadProgress: null, error: null });
+        set((s) => ({
+          activeUploadCount: s.activeUploadCount + 1,
+          isUploading: true,
+          uploadProgress: null,
+          error: null,
+        }));
 
         try {
           await processFileUpload(files, '', (progress) => {
@@ -190,23 +183,35 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
           });
 
           const fileTree = await fileStorageDB.buildFileTree();
-          set({
-            fileTree,
-            isUploading: false,
-            uploadProgress: null,
+          set((s) => {
+            const newCount = s.activeUploadCount - 1;
+            return {
+              fileTree,
+              activeUploadCount: newCount,
+              isUploading: newCount > 0,
+              uploadProgress: newCount > 0 ? s.uploadProgress : null,
+            };
           });
         } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : 'Upload failed',
-            isUploading: false,
-            uploadProgress: null,
+          set((s) => {
+            const newCount = s.activeUploadCount - 1;
+            return {
+              error: error instanceof Error ? error.message : 'Upload failed',
+              activeUploadCount: newCount,
+              isUploading: newCount > 0,
+              uploadProgress: newCount > 0 ? s.uploadProgress : null,
+            };
           });
         }
       },
 
-      // Upload directory
       uploadDirectory: async (files: FileList) => {
-        set({ isUploading: true, uploadProgress: null, error: null });
+        set((s) => ({
+          activeUploadCount: s.activeUploadCount + 1,
+          isUploading: true,
+          uploadProgress: null,
+          error: null,
+        }));
 
         try {
           await processDirectoryUpload(files, (progress) => {
@@ -215,29 +220,40 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
 
           const fileTree = await fileStorageDB.buildFileTree();
 
-          // Auto-expand newly created directories
           const allPaths = collectAllDirectoryPaths(fileTree);
           const { expandedDirectories } = get();
           const newExpanded = new Set([...expandedDirectories, ...allPaths]);
 
-          set({
-            fileTree,
-            expandedDirectories: newExpanded,
-            isUploading: false,
-            uploadProgress: null,
+          set((s) => {
+            const newCount = s.activeUploadCount - 1;
+            return {
+              fileTree,
+              expandedDirectories: newExpanded,
+              activeUploadCount: newCount,
+              isUploading: newCount > 0,
+              uploadProgress: newCount > 0 ? s.uploadProgress : null,
+            };
           });
         } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : 'Upload failed',
-            isUploading: false,
-            uploadProgress: null,
+          set((s) => {
+            const newCount = s.activeUploadCount - 1;
+            return {
+              error: error instanceof Error ? error.message : 'Upload failed',
+              activeUploadCount: newCount,
+              isUploading: newCount > 0,
+              uploadProgress: newCount > 0 ? s.uploadProgress : null,
+            };
           });
         }
       },
 
-      // Handle drag-drop
       handleDrop: async (items: DataTransferItemList) => {
-        set({ isUploading: true, uploadProgress: null, error: null });
+        set((s) => ({
+          activeUploadCount: s.activeUploadCount + 1,
+          isUploading: true,
+          uploadProgress: null,
+          error: null,
+        }));
 
         try {
           await processDroppedItems(items, (progress) => {
@@ -246,27 +262,33 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
 
           const fileTree = await fileStorageDB.buildFileTree();
 
-          // Auto-expand directories
           const allPaths = collectAllDirectoryPaths(fileTree);
           const { expandedDirectories } = get();
           const newExpanded = new Set([...expandedDirectories, ...allPaths]);
 
-          set({
-            fileTree,
-            expandedDirectories: newExpanded,
-            isUploading: false,
-            uploadProgress: null,
+          set((s) => {
+            const newCount = s.activeUploadCount - 1;
+            return {
+              fileTree,
+              expandedDirectories: newExpanded,
+              activeUploadCount: newCount,
+              isUploading: newCount > 0,
+              uploadProgress: newCount > 0 ? s.uploadProgress : null,
+            };
           });
         } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : 'Upload failed',
-            isUploading: false,
-            uploadProgress: null,
+          set((s) => {
+            const newCount = s.activeUploadCount - 1;
+            return {
+              error: error instanceof Error ? error.message : 'Upload failed',
+              activeUploadCount: newCount,
+              isUploading: newCount > 0,
+              uploadProgress: newCount > 0 ? s.uploadProgress : null,
+            };
           });
         }
       },
 
-      // Delete a file
       deleteFile: async (id: string) => {
         set({ isLoading: true, error: null });
 
@@ -275,10 +297,8 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
 
           await fileStorageDB.deleteFile(id);
 
-          // Close any tab associated with this file
           useTabsStore.getState().closeTabByFileId(id);
 
-          // Clear selection if deleted file was selected
           if (selectedFile?.id === id) {
             set({ selectedFile: null });
           }
@@ -293,7 +313,6 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
         }
       },
 
-      // Delete a directory recursively
       deleteDirectory: async (path: string) => {
         set({ isLoading: true, error: null });
 
@@ -302,15 +321,12 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
 
           await fileStorageDB.deleteDirectoryRecursive(path);
 
-          // Close all tabs for files in this directory
           useTabsStore.getState().closeTabsByPathPrefix(path);
 
-          // Clear selection if deleted file was in this directory
           if (selectedFile?.path.startsWith(path)) {
             set({ selectedFile: null });
           }
 
-          // Remove from expanded directories
           const newExpanded = new Set(expandedDirectories);
           for (const p of newExpanded) {
             if (p === path || p.startsWith(path + '/')) {
@@ -332,12 +348,14 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
         }
       },
 
-      // Clear all files and directories
       clearAll: async () => {
         set({ isLoading: true, error: null });
 
         try {
           await fileStorageDB.clearAll();
+
+          useTabsStore.getState().closeTabsBySourceType('file');
+
           set({
             fileTree: [],
             selectedFile: null,
@@ -352,7 +370,6 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
         }
       },
 
-      // Clear error
       clearError: () => {
         set({ error: null });
       },
@@ -361,7 +378,6 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
   )
 );
 
-// Selector hooks
 export const useFileTree = () => useFileStore((state) => state.fileTree);
 export const useSelectedFile = () => useFileStore((state) => state.selectedFile);
 export const useExpandedDirectories = () => useFileStore((state) => state.expandedDirectories);

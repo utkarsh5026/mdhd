@@ -52,7 +52,14 @@ const languageLoaders: Record<string, LanguageLoader> = {
   postgres: () => import('@codemirror/lang-sql').then((m) => m.sql()),
 };
 
+// Intentional indefinite cache — bounded by the ~20 supported languages above.
+// Each entry is a stateless LanguageSupport descriptor, safe to share across editors.
 const languageCache = new Map<string, LanguageSupport>();
+
+/** Clear the language cache (useful for HMR / testing). */
+export function clearLanguageCache(): void {
+  languageCache.clear();
+}
 
 export async function loadLanguage(lang: string): Promise<LanguageSupport | null> {
   const normalizedLang = lang.toLowerCase().trim();

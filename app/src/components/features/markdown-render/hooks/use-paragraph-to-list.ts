@@ -1,11 +1,64 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+/**
+ * Abbreviations that NEVER end a sentence — the sentence always continues
+ * after them regardless of the case of the next word.
+ * Includes honorifics (Dr., Mr.), Latin abbreviations (e.g., i.e., vs.),
+ * and month abbreviations (Jan., Feb., etc.).
+ */
+const ALWAYS_PROTECT_RE =
+  /(?:vs|e\.g|i\.e|Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/;
+
+/**
+ * Abbreviations that CAN end a sentence. Protected only when followed by a
+ * lowercase word (e.g. "etc. more stuff" stays together, but "etc. We" splits).
+ */
+const SOMETIMES_PROTECT_RE = /(?:etc|al|approx|dept|est|govt|vol|ch|fig|no|Inc|Corp|Ltd|Co)/;
+
+const PLACEHOLDER = '\u0000';
+
+/**
+ * Splits a text string on sentence boundaries (". ") while preserving
+ * abbreviations, initials (single uppercase letters), and ellipses.
+ *
+ * Returns the same shape as `text.split('. ')` — parts without trailing periods
+ * except the final segment which keeps its trailing period if present.
+ */
+function splitTextOnSentenceBoundaries(text: string): string[] {
+  // Protect abbreviations that never end sentences (unconditional):
+  // "Dr. Smith" → "Dr\0 Smith", "vs. Angular" → "vs\0 Angular"
+  let safe = text.replace(
+    new RegExp(`(\\b${ALWAYS_PROTECT_RE.source})\\. `, 'g'),
+    `$1${PLACEHOLDER} `
+  );
+
+  // Protect context-dependent abbreviations only when followed by lowercase:
+  // "etc. more" → "etc\0 more"  but  "etc. We" → left as-is (will split)
+  safe = safe.replace(
+    new RegExp(`(\\b${SOMETIMES_PROTECT_RE.source})\\. (?=[a-z])`, 'g'),
+    `$1${PLACEHOLDER} `
+  );
+
+  // Protect single-letter initials: "J. " → "J\0 "
+  safe = safe.replace(/\b([A-Z])\. /g, `$1${PLACEHOLDER} `);
+
+  // Protect ellipses: "... " → "..\0 "
+  safe = safe.replace(/\.\.\. /g, `..${PLACEHOLDER} `);
+
+  // Now split on genuine sentence boundaries
+  const parts = safe.split('. ');
+
+  // Restore placeholders
+  return parts.map((p) => p.split(PLACEHOLDER).join('.'));
+}
 
 /**
  * Splits React children into sentence groups.
  *
- * Text nodes are split on '. ' boundaries (period + space).
- * Inline elements (code, links, strong, etc.) are treated as atomic units
- * and attached to the current sentence being built.
+ * Text nodes are split on sentence boundaries (". ") while intelligently
+ * preserving abbreviations (e.g., vs., Dr., etc.), single-letter initials,
+ * and ellipses. Inline elements (code, links, strong, etc.) are treated as
+ * atomic units and attached to the current sentence being built.
  *
  * Exported separately so it can be tested independently of hook state.
  */
@@ -15,7 +68,7 @@ export function splitChildrenIntoSentences(children: React.ReactNode): React.Rea
 
   for (const child of childArray) {
     if (typeof child === 'string') {
-      const parts = child.split('. ');
+      const parts = splitTextOnSentenceBoundaries(child);
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         const isLast = i === parts.length - 1;
@@ -52,7 +105,10 @@ export function useParagraphToList(children: React.ReactNode): UseParagraphToLis
     setIsListView((prev) => !prev);
   }, []);
 
-  const sentences = isListView ? splitChildrenIntoSentences(children) : [];
+  const sentences = useMemo(
+    () => (isListView ? splitChildrenIntoSentences(children) : []),
+    [isListView, children]
+  );
 
   return { isListView, sentences, toggleListView };
 }

@@ -196,37 +196,63 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         },
 
         closeTabsByPathPrefix: (pathPrefix: string) => {
-          const { tabs, closeTab } = get();
-          tabs
-            .filter(
+          set((state) => {
+            const newTabs = state.tabs.filter(
               (t) =>
-                t.sourcePath &&
-                (t.sourcePath === pathPrefix || t.sourcePath.startsWith(pathPrefix + '/'))
-            )
-            .forEach((t) => closeTab(t.id));
+                !t.sourcePath ||
+                (t.sourcePath !== pathPrefix && !t.sourcePath.startsWith(pathPrefix + '/'))
+            );
+            const activeStillExists = newTabs.some((t) => t.id === state.activeTabId);
+            return {
+              tabs: newTabs,
+              activeTabId: activeStillExists ? state.activeTabId : (newTabs[0]?.id ?? null),
+              showEmptyState: newTabs.length === 0,
+            };
+          });
         },
 
         closeTabsToTheRight: (tabId: string) => {
-          const { closeTab, tabs } = get();
-          const tabIndex = tabs.findIndex((t) => t.id === tabId);
-          if (tabIndex === -1) return;
+          set((state) => {
+            const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
+            if (tabIndex === -1) return state;
 
-          tabs.slice(tabIndex + 1).forEach((t) => closeTab(t.id));
+            const newTabs = state.tabs.slice(0, tabIndex + 1);
+            const activeStillExists = newTabs.some((t) => t.id === state.activeTabId);
+            return {
+              tabs: newTabs,
+              activeTabId: activeStillExists
+                ? state.activeTabId
+                : (newTabs[newTabs.length - 1]?.id ?? null),
+              showEmptyState: newTabs.length === 0,
+            };
+          });
         },
 
         closeTabsToTheLeft: (tabId: string) => {
-          const { tabs, closeTab } = get();
-          const tabIndex = tabs.findIndex((t) => t.id === tabId);
-          if (tabIndex === -1) return;
-          tabs
-            .slice(0, tabIndex)
-            .reverse()
-            .forEach((t) => closeTab(t.id));
+          set((state) => {
+            const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
+            if (tabIndex === -1) return state;
+
+            const newTabs = state.tabs.slice(tabIndex);
+            const activeStillExists = newTabs.some((t) => t.id === state.activeTabId);
+            return {
+              tabs: newTabs,
+              activeTabId: activeStillExists ? state.activeTabId : (newTabs[0]?.id ?? null),
+              showEmptyState: newTabs.length === 0,
+            };
+          });
         },
 
         closeTabsBySourceType: (sourceType: 'paste' | 'file') => {
-          const { tabs, closeTab } = get();
-          tabs.filter((t) => t.sourceType === sourceType).forEach((t) => closeTab(t.id));
+          set((state) => {
+            const newTabs = state.tabs.filter((t) => t.sourceType !== sourceType);
+            const activeStillExists = newTabs.some((t) => t.id === state.activeTabId);
+            return {
+              tabs: newTabs,
+              activeTabId: activeStillExists ? state.activeTabId : (newTabs[0]?.id ?? null),
+              showEmptyState: newTabs.length === 0,
+            };
+          });
         },
 
         toggleHeaderVisibility: () => {

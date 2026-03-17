@@ -13,7 +13,12 @@ interface HeadingRenderProps extends HeadingProps {
  * Features improved contrast, responsive scaling, and better spacing for clear content structure.
  * Optimized for both mobile and desktop viewing with consistent visual progression.
  */
-const HeadingRender: React.FC<HeadingRenderProps> = ({ level, ...props }) => {
+const HeadingRender: React.FC<HeadingRenderProps> = ({
+  level,
+  children,
+  className: externalClassName,
+  ...props
+}) => {
   const headingStyles = {
     1: [
       'text-xl sm:text-2xl lg:text-3xl',
@@ -54,12 +59,12 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({ level, ...props }) => {
     'scroll-mt-20',
   ].join(' ');
 
-  const className = `${headingStyles[level]} ${sharedClasses}`;
+  const className = `${headingStyles[level]} ${sharedClasses}${externalClassName ? ` ${externalClassName}` : ''}`;
   const HeadingTag = `h${level}` as React.ElementType;
 
   return (
     <HeadingTag {...props} className={className}>
-      {props.children}
+      {children}
     </HeadingTag>
   );
 };
