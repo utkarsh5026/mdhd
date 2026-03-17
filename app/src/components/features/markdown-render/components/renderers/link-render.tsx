@@ -1,7 +1,7 @@
 import React, { ComponentPropsWithoutRef } from 'react';
 
 interface LinkRenderProps extends ComponentPropsWithoutRef<'a'> {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 /**

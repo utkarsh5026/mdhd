@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 
 /**
  * Splits React children into sentence groups.
@@ -52,7 +52,10 @@ export function useParagraphToList(children: React.ReactNode): UseParagraphToLis
     setIsListView((prev) => !prev);
   }, []);
 
-  const sentences = isListView ? splitChildrenIntoSentences(children) : [];
+  const sentences = useMemo(
+    () => (isListView ? splitChildrenIntoSentences(children) : []),
+    [isListView, children]
+  );
 
   return { isListView, sentences, toggleListView };
 }

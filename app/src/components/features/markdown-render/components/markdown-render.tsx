@@ -12,6 +12,8 @@ import {
   BlockquoteRender,
   ListRender,
   ImageRender,
+  LinkRender,
+  HorizontalRuleRender,
 } from './renderers';
 
 interface MarkdownRendererProps {
@@ -73,11 +75,15 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
           <ListRender type="ol" props={{ ...props }} />
         ),
 
-        // Tables
+        // Links
+        a: (props: React.ComponentPropsWithoutRef<'a'>) => <LinkRender {...props} />,
+
+        // Horizontal rules
+        hr: (props: React.ComponentPropsWithoutRef<'hr'>) => <HorizontalRuleRender {...props} />,
+
+        // Tables — TableRender handles its own container wrapper
         table: (props: React.ComponentPropsWithoutRef<'table'>) => (
-          <div className="my-4 overflow-x-auto rounded-2xl border border-border">
-            <TableRender type="table" props={{ ...props }} />
-          </div>
+          <TableRender type="table" props={{ ...props }} />
         ),
         thead: (props: React.ComponentPropsWithoutRef<'thead'>) => (
           <TableRender type="thead" props={{ ...props }} />
