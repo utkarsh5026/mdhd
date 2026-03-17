@@ -22,7 +22,7 @@ interface ReadingSettingsState {
 }
 
 const DEFAULT_SETTINGS: ReadingSettings = {
-  fontFamily: 'literata',
+  fontFamily: 'merriweather',
   customBackground: useThemeStore.getState().currentTheme.background,
   // Typography defaults
   fontSize: 18,
