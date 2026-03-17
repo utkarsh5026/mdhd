@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, useCallback } from 'react';
+import { memo, useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { VscSymbolNamespace, VscSymbolClass, VscSymbolMethod, VscMarkdown } from 'react-icons/vsc';
 import { ChevronRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,8 +19,12 @@ interface SectionBreadcrumbProps {
   sections: MarkdownSection[];
   currentIndex: number;
   onNavigate?: (index: number) => void;
-  /** 'inline' strips the background/padding container — use when inside a header bar */
-  variant?: 'standalone' | 'inline';
+  /** Controls visual style and scroll behavior:
+   *  'standalone' — floating pill with background (default, used in inline reading mode)
+   *  'inline'     — no background, no-wrap + hidden overflow scroll, for the desktop header row
+   *  'mobile'     — no background, horizontal scroll row, for the mobile header row
+   */
+  variant?: 'standalone' | 'inline' | 'mobile';
 }
 
 const LEVEL_ICONS: Record<number, React.ComponentType<{ className?: string }>> = {
@@ -100,7 +104,7 @@ interface BreadcrumbDropdownProps {
   onNavigate: (index: number) => void;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  variant?: 'standalone' | 'inline';
+  variant?: 'standalone' | 'inline' | 'mobile';
 }
 
 const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
@@ -144,7 +148,9 @@ const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
                   ? isCurrent
                     ? 'max-w-28 sm:max-w-40'
                     : 'max-w-16 sm:max-w-24'
-                  : 'max-w-32'
+                  : variant === 'mobile'
+                    ? 'max-w-44'
+                    : 'max-w-32'
               )}
             >
               {item.section.title}
@@ -216,6 +222,7 @@ BreadcrumbDropdown.displayName = 'BreadcrumbDropdown';
 const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
   ({ sections, currentIndex, onNavigate, variant = 'standalone' }) => {
     const [openIndex, setOpenIndex] = useState<number | null>(null);
+    const navRef = useRef<HTMLElement>(null);
 
     const breadcrumbs = useMemo(
       () => getAncestors(sections, currentIndex),
@@ -235,12 +242,20 @@ const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
       [onNavigate]
     );
 
+    useEffect(() => {
+      if (variant === 'standalone') return;
+      const nav = navRef.current;
+      if (!nav) return;
+      nav.scrollTo({ left: nav.scrollWidth, behavior: 'smooth' });
+    }, [breadcrumbs, variant]);
+
     if (breadcrumbs.length <= 1 && (sections[currentIndex]?.level ?? 0) <= 1) {
       return null;
     }
 
     return (
       <nav
+        ref={navRef}
         aria-label="Section breadcrumb"
         className={cn(
           'flex items-center gap-0.5 text-xs text-muted-foreground',
@@ -249,11 +264,18 @@ const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
             'rounded-md px-1.5 py-1',
             'bg-background/60 backdrop-blur-sm',
           ],
-          variant === 'inline' && 'flex-nowrap overflow-hidden'
+          (variant === 'inline' || variant === 'mobile') &&
+            'flex-nowrap overflow-x-auto scrollbar-hide'
         )}
       >
         {breadcrumbs.map((item, idx) => (
-          <span key={item.index} className="flex items-center gap-0.5 shrink-0 last:shrink min-w-0">
+          <span
+            key={item.index}
+            className={cn(
+              'flex items-center gap-0.5 shrink-0',
+              variant !== 'mobile' && 'last:shrink min-w-0'
+            )}
+          >
             {idx > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />}
             <BreadcrumbDropdown
               item={item}

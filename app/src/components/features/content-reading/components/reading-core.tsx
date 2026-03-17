@@ -23,6 +23,8 @@ interface HeaderHandlers {
   onSettings: () => void;
   onMenu: () => void;
   isVisible: boolean;
+  breadcrumb?: React.ReactNode;
+  mobileBreadcrumb?: React.ReactNode;
 }
 
 export interface ReadingCoreProps {
@@ -60,6 +62,10 @@ export interface ReadingCoreProps {
   isDialogOpen?: boolean;
   onZenTap?: () => void;
   onZenDoubleTap?: () => void;
+
+  // When true, breadcrumb is passed into headerSlot instead of rendered standalone
+  // Use this in fullscreen mode where the header spans full-width and would overlap the breadcrumb
+  headerContainsBreadcrumb?: boolean;
 }
 
 /**
@@ -103,6 +109,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     isDialogOpen = false,
     onZenTap,
     onZenDoubleTap,
+    headerContainsBreadcrumb = false,
   }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -217,8 +224,8 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
           />
         )}
 
-        {/* Breadcrumb - top-left overlay, card mode only */}
-        {shouldShowControls && readingMode === 'card' && (
+        {/* Breadcrumb - standalone top-left overlay when header does not contain it */}
+        {shouldShowControls && readingMode === 'card' && !headerContainsBreadcrumb && (
           <div className="absolute top-0 left-0 z-50 p-2">
             <SectionBreadcrumb
               sections={sections}
@@ -228,13 +235,31 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
           </div>
         )}
 
-        {/* Header - passed from parent */}
+        {/* Header - passed from parent; breadcrumb is injected when headerContainsBreadcrumb */}
         {shouldShowControls && headerSlot && (
           <div className="absolute top-0 left-0 right-0 z-50">
             {headerSlot({
               onSettings: handleSettingsOpen,
               onMenu: handleMenuOpen,
               isVisible: isControlsVisible || zenControlsVisible,
+              breadcrumb:
+                headerContainsBreadcrumb && readingMode === 'card' ? (
+                  <SectionBreadcrumb
+                    sections={sections}
+                    currentIndex={currentIndex}
+                    onNavigate={handleSelectCard}
+                    variant="inline"
+                  />
+                ) : undefined,
+              mobileBreadcrumb:
+                headerContainsBreadcrumb && readingMode === 'card' ? (
+                  <SectionBreadcrumb
+                    sections={sections}
+                    currentIndex={currentIndex}
+                    onNavigate={handleSelectCard}
+                    variant="mobile"
+                  />
+                ) : undefined,
             })}
           </div>
         )}

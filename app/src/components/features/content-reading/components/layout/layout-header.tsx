@@ -8,6 +8,7 @@ interface HeaderProps {
   onMenu: () => void;
   isVisible: boolean;
   breadcrumb?: React.ReactNode;
+  mobileBreadcrumb?: React.ReactNode;
 }
 
 interface BarButtonProps {
@@ -48,36 +49,48 @@ const BarButton: React.FC<BarButtonProps> = ({
   />
 );
 
-const Header: React.FC<HeaderProps> = ({ onExit, onSettings, onMenu, isVisible, breadcrumb }) => {
+const Header: React.FC<HeaderProps> = ({
+  onExit,
+  onSettings,
+  onMenu,
+  isVisible,
+  breadcrumb,
+  mobileBreadcrumb,
+}) => {
   if (!isVisible) return null;
 
   return (
     <div className={cn('w-full z-50', 'animate-in fade-in slide-in-from-top-4 duration-500')}>
       <div
         className={cn(
-          'flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5',
           'bg-background/85 backdrop-blur-2xl',
           'border-b border-border/20',
           'shadow-[0_1px_12px_rgba(0,0,0,0.08)]'
         )}
       >
-        {/* Left: Exit button + vertical divider + breadcrumb */}
-        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
-          <BarButton onClick={onExit} icon={X} variant="danger" tooltip="Exit Reading Mode" />
+        {/* Main row — always visible */}
+        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5">
+          {/* Left: Exit + breadcrumb (breadcrumb hidden on mobile, shown sm+) */}
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+            <BarButton onClick={onExit} icon={X} variant="danger" tooltip="Exit Reading Mode" />
 
-          {breadcrumb && (
-            <>
-              <div className="w-px h-4 bg-border/40 shrink-0" aria-hidden />
-              <div className="min-w-0 overflow-hidden flex-1">{breadcrumb}</div>
-            </>
-          )}
+            {breadcrumb && (
+              <>
+                <div className="hidden sm:block w-px h-4 bg-border/40 shrink-0" aria-hidden />
+                <div className="hidden sm:block min-w-0 overflow-hidden flex-1">{breadcrumb}</div>
+              </>
+            )}
+          </div>
+
+          {/* Right: Settings + TOC */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <BarButton onClick={onSettings} icon={Settings} tooltip="Reading Settings" />
+            <BarButton onClick={onMenu} icon={List} tooltip="Table of Contents" />
+          </div>
         </div>
 
-        {/* Right: Settings + TOC */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          <BarButton onClick={onSettings} icon={Settings} tooltip="Reading Settings" />
-          <BarButton onClick={onMenu} icon={List} tooltip="Table of Contents" />
-        </div>
+        {/* Mobile breadcrumb row — visible only below sm breakpoint */}
+        {mobileBreadcrumb && <div className="sm:hidden px-3 pb-2 pt-0.5">{mobileBreadcrumb}</div>}
       </div>
     </div>
   );
