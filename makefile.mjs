@@ -122,6 +122,16 @@ const tasks = {
     category: "Quality",
     action: runValidate,
   },
+  lighthouse: {
+    description: "Run Lighthouse performance audit",
+    category: "Quality",
+    action: () => runLighthouse(),
+  },
+  "lighthouse:ci": {
+    description: "Run Lighthouse for CI (strict)",
+    category: "Quality",
+    action: () => runLighthouse(true),
+  },
   clean: {
     description: "Remove node_modules and dist",
     category: "Maintenance",
@@ -362,6 +372,31 @@ async function runValidate() {
   console.log(chalk.bold.green("═".repeat(50)));
   console.log(chalk.bold.green("✓ All validations passed! Ready to push."));
   console.log(chalk.bold.green("═".repeat(50)));
+}
+
+// Run Lighthouse performance audit
+async function runLighthouse(strict = false) {
+  try {
+    console.log(chalk.cyan("Running Lighthouse performance audit..."));
+    console.log();
+
+    const url = "http://localhost:4173";
+    await runCommand("node", ["scripts/lighthouse-check.mjs", url]);
+
+    console.log();
+    console.log(chalk.green("✓ Lighthouse audit passed!"));
+  } catch (error) {
+    if (strict) {
+      throw new Error("Lighthouse audit failed - scores below threshold");
+    } else {
+      console.log();
+      console.log(
+        chalk.yellow(
+          "⚠ Lighthouse audit found issues, but continuing (use lighthouse:ci for strict mode)",
+        ),
+      );
+    }
+  }
 }
 
 function showHelp() {

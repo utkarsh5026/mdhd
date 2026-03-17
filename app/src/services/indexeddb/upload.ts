@@ -2,18 +2,13 @@ import { fileStorageDB, getParentPath, normalizePath } from './db';
 import type { StoredFile, StoredDirectory, UploadProgressCallback } from './types';
 
 /**
- * Check if a file is a markdown file
- */
-export function isMarkdownFile(fileName: string): boolean {
-  const name = fileName.toLowerCase();
-  return name.endsWith('.md') || name.endsWith('.markdown');
-}
-
-/**
  * Filter files to only include markdown files
  */
 export function filterMarkdownFiles(files: File[]): File[] {
-  return files.filter((file) => isMarkdownFile(file.name));
+  return files.filter(({ name }) => {
+    const filename = name.toLowerCase();
+    return filename.endsWith('.md') || filename.endsWith('.markdown');
+  });
 }
 
 /**
@@ -52,15 +47,11 @@ export function extractDirectoryPaths(filePaths: string[]): string[] {
  * Get the file path from a File object (handles webkitRelativePath for directories)
  */
 export function getFilePath(file: File, basePath: string = ''): string {
-  // webkitRelativePath is set when uploading directories
-  if (file.webkitRelativePath) {
-    return normalizePath(basePath + '/' + file.webkitRelativePath);
-  }
-  return normalizePath(basePath + '/' + file.name);
+  return normalizePath(basePath + '/' + file.webkitRelativePath || file.name);
 }
 
 /**
- * Process and upload individual files
+ * Process and upload individual files with batched parallel operations
  */
 export async function processFileUpload(
   files: File[],
@@ -70,39 +61,57 @@ export async function processFileUpload(
   const mdFiles = filterMarkdownFiles(files);
   const storedFiles: StoredFile[] = [];
 
-  for (let i = 0; i < mdFiles.length; i++) {
-    const file = mdFiles[i];
+  const BATCH_SIZE = 10;
+  let processedCount = 0;
 
-    onProgress?.({
-      total: mdFiles.length,
-      processed: i,
-      currentFile: file.name,
-    });
+  const updateBatchProgress = (
+    batchResults: PromiseSettledResult<StoredFile | null>[],
+    batch: File[]
+  ) => {
+    for (let j = 0; j < batchResults.length; j++) {
+      const result = batchResults[j];
+      const file = batch[j];
 
-    try {
-      const content = await readFileAsText(file);
-      const path = getFilePath(file, basePath);
-      const parentPath = getParentPath(path);
-
-      // Check if file already exists
-      const existing = await fileStorageDB.getFileByPath(path);
-      if (existing) {
-        // Skip duplicate files
-        continue;
+      if (result.status === 'fulfilled' && result.value) {
+        storedFiles.push(result.value);
+      } else if (result.status === 'rejected') {
+        console.error(`Failed to process file ${file.name}:`, result.reason);
       }
 
-      const storedFile = await fileStorageDB.addFile({
-        name: file.name,
-        path,
-        parentPath,
-        content,
-        size: file.size,
-      });
+      processedCount++;
 
-      storedFiles.push(storedFile);
-    } catch (error) {
-      console.error(`Failed to process file ${file.name}:`, error);
+      onProgress?.({
+        total: mdFiles.length,
+        processed: processedCount,
+        currentFile: processedCount < mdFiles.length ? mdFiles[processedCount]?.name || '' : '',
+      });
     }
+  };
+
+  for (let i = 0; i < mdFiles.length; i += BATCH_SIZE) {
+    const batch = mdFiles.slice(i, i + BATCH_SIZE);
+
+    const batchResults = await Promise.allSettled(
+      batch.map(async (file) => {
+        const content = await readFileAsText(file);
+        const path = getFilePath(file, basePath);
+        const parentPath = getParentPath(path);
+
+        if (await fileStorageDB.getFileByPath(path)) {
+          return null;
+        }
+
+        return fileStorageDB.addFile({
+          name: file.name,
+          path,
+          parentPath,
+          content,
+          size: file.size,
+        });
+      })
+    );
+
+    updateBatchProgress(batchResults, batch);
   }
 
   onProgress?.({
@@ -121,20 +130,16 @@ async function ensureDirectories(dirPaths: string[]): Promise<StoredDirectory[]>
   const storedDirs: StoredDirectory[] = [];
 
   for (const dirPath of dirPaths) {
-    // Check if directory already exists
-    const existing = await fileStorageDB.getDirectoryByPath(dirPath);
-    if (existing) {
+    if (await fileStorageDB.getDirectoryByPath(dirPath)) {
       continue;
     }
 
     const name = dirPath.split('/').pop() || '';
-    const parentPath = getParentPath(dirPath);
-
     try {
       const dir = await fileStorageDB.addDirectory({
         name,
         path: dirPath,
-        parentPath,
+        parentPath: getParentPath(dirPath),
       });
       storedDirs.push(dir);
     } catch (error) {
@@ -152,26 +157,17 @@ export async function processDirectoryUpload(
   fileList: FileList,
   onProgress?: UploadProgressCallback
 ): Promise<{ files: StoredFile[]; directories: StoredDirectory[] }> {
-  // Convert FileList to array
-  const allFiles = Array.from(fileList);
-
-  // Filter to only markdown files
-  const mdFiles = filterMarkdownFiles(allFiles);
+  const mdFiles = filterMarkdownFiles(Array.from(fileList));
 
   if (mdFiles.length === 0) {
     return { files: [], directories: [] };
   }
 
-  // Extract directory paths from the filtered files
   const filePaths = mdFiles.map((file) => getFilePath(file));
   const dirPaths = extractDirectoryPaths(filePaths);
-
-  // Create directories first
   const directories = await ensureDirectories(dirPaths);
 
-  // Then upload files
   const files = await processFileUpload(mdFiles, '', onProgress);
-
   return { files, directories };
 }
 
@@ -207,6 +203,22 @@ async function readDirectoryEntries(dirEntry: FileSystemEntry): Promise<File[]> 
 
     const files: File[] = [];
 
+    const createFile = async (
+      fileMethod: (callback: (file: File) => void, errorCallback?: (error: Error) => void) => void,
+      fullPath: string
+    ) => {
+      return new Promise<File>((res, rej) => {
+        fileMethod((f) => {
+          const newFile = new File([f], f.name, { type: f.type });
+          Object.defineProperty(newFile, 'webkitRelativePath', {
+            value: fullPath.substring(1), // Remove leading /
+            writable: false,
+          });
+          res(newFile);
+        }, rej);
+      });
+    };
+
     const readBatch = () => {
       reader.readEntries(
         async (entries) => {
@@ -217,25 +229,16 @@ async function readDirectoryEntries(dirEntry: FileSystemEntry): Promise<File[]> 
 
           for (const entry of entries) {
             if (entry.isFile && entry.file) {
-              const file = await new Promise<File>((res, rej) => {
-                entry.file!((f) => {
-                  // Create a new File with the full path in webkitRelativePath
-                  const newFile = new File([f], f.name, { type: f.type });
-                  Object.defineProperty(newFile, 'webkitRelativePath', {
-                    value: entry.fullPath.substring(1), // Remove leading /
-                    writable: false,
-                  });
-                  res(newFile);
-                }, rej);
-              });
+              const file = await createFile(entry.file, entry.fullPath);
               files.push(file);
-            } else if (entry.isDirectory) {
+              continue;
+            }
+
+            if (entry.isDirectory) {
               const subFiles = await readDirectoryEntries(entry);
               files.push(...subFiles);
             }
           }
-
-          // Continue reading (directories may have more than 100 entries)
           readBatch();
         },
         (error) => reject(error)
@@ -275,7 +278,6 @@ export async function processDroppedItems(
   }
 
   if (isDirectory) {
-    // Process as directory upload
     const fileList = {
       length: allFiles.length,
       item: (index: number) => allFiles[index],

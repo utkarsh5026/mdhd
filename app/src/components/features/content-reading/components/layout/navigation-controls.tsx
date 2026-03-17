@@ -14,13 +14,15 @@ interface NavigationButtonProps {
   onClick: () => void;
   disabled: boolean;
   icon: LucideIcon;
+  ariaLabel: string;
 }
 
 const NavigationButton: React.FC<NavigationButtonProps> = memo(
-  ({ onClick, disabled, icon: Icon }) => (
+  ({ onClick, disabled, icon: Icon, ariaLabel }) => (
     <button
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
       className={cn(
         'relative group touch-manipulation',
         'p-3 sm:p-3.5 lg:p-4 rounded-full',
@@ -67,6 +69,7 @@ const NavigationControls: React.FC<NavigationControlsProps> = memo(
                 onClick={onPrevious}
                 disabled={currentIndex === 0}
                 icon={ChevronLeft}
+                ariaLabel="Previous page"
               />
 
               {/* Modern separator with gradient */}
@@ -80,6 +83,7 @@ const NavigationControls: React.FC<NavigationControlsProps> = memo(
                 onClick={onNext}
                 disabled={currentIndex === total - 1}
                 icon={ChevronRight}
+                ariaLabel="Next page"
               />
             </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo, lazy, Suspense } from 'react';
 import { useThemeFloatingPicker } from '@/components/shared/theme/store/theme-store';
 import { useControls } from '@/components/features/content-reading/hooks';
 import {
@@ -9,9 +9,14 @@ import {
   ZenPositionIndicator,
 } from './layout';
 import SectionsSheet from './table-of-contents/sections-sheet';
-import { ReadingSettingsSheet } from '@/components/features/settings';
 import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
 import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
+
+const ReadingSettingsSheet = lazy(() =>
+  import('@/components/features/settings').then((module) => ({
+    default: module.ReadingSettingsSheet,
+  }))
+);
 
 interface HeaderHandlers {
   onSettings: () => void;
@@ -110,14 +115,12 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
       readingMode,
     });
 
-    // Scroll to top when changing sections (card mode)
     useEffect(() => {
       if (readingMode === 'card' && scrollRef.current) {
         scrollRef.current.scrollTop = 0;
       }
     }, [currentIndex, readingMode]);
 
-    // Open floating theme picker after settings sheet closes
     useEffect(() => {
       if (!settingsOpen && pendingFloatingPickerOpen) {
         const timer = setTimeout(() => {
@@ -269,8 +272,12 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
           readSections={readSections}
         />
 
-        {/* Reading Settings Sheet */}
-        <ReadingSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+        {/* Reading Settings Sheet - Lazy loaded */}
+        {settingsOpen && (
+          <Suspense fallback={null}>
+            <ReadingSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+          </Suspense>
+        )}
 
         {/* Floating Theme Picker */}
         <FloatingThemePicker />

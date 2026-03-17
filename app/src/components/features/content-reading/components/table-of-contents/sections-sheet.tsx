@@ -38,6 +38,7 @@ const SheetHeaderContent: React.FC<SheetHeaderContentProps> = memo(({ count, set
         size="icon"
         onClick={() => setMenuOpen(false)}
         className="h-8 w-8 rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+        aria-label="Close sections menu"
       >
         <X className="h-4 w-4" />
       </Button>

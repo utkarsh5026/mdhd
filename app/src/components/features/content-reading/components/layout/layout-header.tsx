@@ -33,6 +33,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
       button={
         <button
           onClick={onClick}
+          aria-label={tooltip}
           className={cn(
             'relative group touch-manipulation',
             'p-3 sm:p-3.5 lg:p-4 rounded-full',

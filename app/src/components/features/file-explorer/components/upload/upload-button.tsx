@@ -39,6 +39,7 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
           onClick={handleClick}
           disabled={disabled}
           className="h-7 w-7"
+          aria-label={isDirectory ? 'Upload folder' : 'Upload files'}
         >
           {isDirectory ? <FolderUp className="h-4 w-4" /> : <FilePlus2 className="h-4 w-4" />}
         </Button>

@@ -1,0 +1,131 @@
+/**
+ * Variable Fonts Configuration
+ *
+ * This file configures variable font features and provides fallbacks
+ * for browsers that don't support variable fonts.
+ */
+
+/* Variable font configurations with font-variation-settings support */
+@supports (font-variation-settings: normal) {
+  /* Inter - Variable Sans-Serif */
+  .font-inter {
+    font-family: 'InterVariable', 'Inter', sans-serif;
+    font-optical-sizing: auto;
+  }
+
+  /* Open Sans - Variable Sans-Serif */
+  .font-open-sans {
+    font-family: 'Open SansVariable', 'Open Sans', sans-serif;
+    font-optical-sizing: auto;
+  }
+
+  /* Source Sans Pro - Variable Sans-Serif */
+  .font-source-sans-pro {
+    font-family: 'Source Sans 3 Variable', 'Source Sans Pro', sans-serif;
+    font-optical-sizing: auto;
+  }
+
+  /* Nunito Sans - Variable Sans-Serif */
+  .font-nunito-sans {
+    font-family: 'Nunito SansVariable', 'Nunito Sans', sans-serif;
+    font-optical-sizing: auto;
+  }
+
+  /* Roboto Slab - Variable Serif */
+  .font-roboto-slab {
+    font-family: 'Roboto SlabVariable', 'Roboto Slab', serif;
+    font-optical-sizing: auto;
+  }
+
+  /* Source Serif Pro - Variable Serif */
+  .font-source-serif-pro {
+    font-family: 'Source Serif 4 Variable', 'Source Serif Pro', serif;
+    font-optical-sizing: auto;
+  }
+
+  /* Lora - Variable Serif */
+  .font-lora {
+    font-family: 'LoraVariable', 'Lora', serif;
+    font-optical-sizing: auto;
+  }
+
+  /* EB Garamond - Variable Serif */
+  .font-eb-garamond {
+    font-family: 'EB GaramondVariable', 'EB Garamond', serif;
+    font-optical-sizing: auto;
+  }
+
+  /* Bitter - Variable Slab Serif */
+  .font-bitter {
+    font-family: 'BitterVariable', 'Bitter', serif;
+    font-optical-sizing: auto;
+  }
+
+  /* Code Fonts - Variable Monospace */
+  .font-source-code-pro {
+    font-family: 'Source Code ProVariable', 'Source Code Pro', monospace;
+    font-feature-settings:
+      'liga' 1,
+      'calt' 1;
+  }
+
+  .font-fira-code {
+    font-family: 'Fira CodeVariable', 'Fira Code', monospace;
+    font-feature-settings:
+      'liga' 1,
+      'calt' 1;
+    /* Enable code ligatures for better code readability */
+  }
+}
+
+/* Fallback for browsers without variable font support */
+@supports not (font-variation-settings: normal) {
+  .font-inter {
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-open-sans {
+    font-family: 'Open Sans', sans-serif;
+  }
+
+  .font-source-sans-pro {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+
+  .font-nunito-sans {
+    font-family: 'Nunito Sans', sans-serif;
+  }
+
+  .font-roboto-slab {
+    font-family: 'Roboto Slab', serif;
+  }
+
+  .font-source-serif-pro {
+    font-family: 'Source Serif Pro', serif;
+  }
+
+  .font-lora {
+    font-family: 'Lora', serif;
+  }
+
+  .font-eb-garamond {
+    font-family: 'EB Garamond', serif;
+  }
+
+  .font-bitter {
+    font-family: 'Bitter', serif;
+  }
+
+  .font-source-code-pro {
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .font-fira-code {
+    font-family: 'Fira Code', monospace;
+  }
+}
+
+/* Ensure font-display: swap for all fonts to prevent FOIT (Flash of Invisible Text) */
+@font-face {
+  font-display: swap;
+}

@@ -1,0 +1,66 @@
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subtleGlow {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.dot {
+  animation: breathe 1.5s ease-in-out infinite;
+}
+
+.text {
+  animation: fadeInUp 0.8s ease-out 0.3s backwards;
+}
+
+.glowOverlay {
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(circle, oklch(var(--primary) / 0.15) 0%, transparent 70%);
+  animation: subtleGlow 2s ease-in-out infinite;
+  border-radius: 9999px;
+  filter: blur(10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot,
+  .text,
+  .glowOverlay {
+    animation: none;
+  }
+
+  .dot {
+    opacity: 0.7;
+  }
+
+  .text {
+    opacity: 1;
+    transform: none;
+  }
+}

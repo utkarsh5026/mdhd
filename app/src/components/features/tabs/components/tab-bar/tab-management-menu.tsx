@@ -1,17 +1,5 @@
 import React, { useMemo, memo, useState } from 'react';
-import {
-  MoreHorizontal,
-  X,
-  XCircle,
-  FolderX,
-  ChevronRight,
-  ChevronLeft,
-  FileText,
-  ClipboardPaste,
-  Maximize,
-  Minimize,
-  type LucideIcon,
-} from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -27,25 +15,21 @@ import {
 import { useActiveTabId, useHeaderVisible, useTabClose, useTabs } from '../../store';
 
 interface MenuItemProps {
-  icon: LucideIcon;
   label: string;
   count?: number;
   disabled?: boolean;
   onClick: () => void;
 }
 
-const MenuItem: React.FC<MenuItemProps> = ({ icon: Icon, label, count, disabled, onClick }) => (
+const MenuItem: React.FC<MenuItemProps> = ({ label, count, disabled, onClick }) => (
   <DropdownMenuItem
     onClick={onClick}
     disabled={disabled}
-    className="cursor-pointer gap-2 transition-colors duration-150"
+    className="cursor-pointer justify-between px-3 py-1.5 text-xs text-muted-foreground transition-colors duration-100 focus:text-foreground"
   >
-    <Icon className="h-4 w-4 text-muted-foreground" />
-    <span className="flex-1 text-muted-foreground text-xs">{label}</span>
+    {label}
     {count !== undefined && count > 0 && (
-      <span className="ml-2 rounded-md bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-        {count}
-      </span>
+      <span className="text-[10px] tabular-nums text-muted-foreground/50">{count}</span>
     )}
   </DropdownMenuItem>
 );
@@ -67,11 +51,9 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(({ onToggleHead
     closeTabsBySourceType,
   } = useTabClose();
 
-  // Track dropdown open state to avoid expensive computations when closed
   const [isOpen, setIsOpen] = useState(false);
 
   const uniqueFolders = useMemo(() => {
-    // Only compute when menu is open
     if (!isOpen) return [];
     const folders = new Map<string, string>();
 
@@ -97,9 +79,7 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(({ onToggleHead
   }, [tabs, isOpen]);
 
   const tabCounts = useMemo(() => {
-    // Only compute when menu is open
     if (!isOpen) return { file: 0, paste: 0 };
-
     return {
       file: tabs.filter((t) => t.sourceType === 'file').length,
       paste: tabs.filter((t) => t.sourceType === 'paste').length,
@@ -107,9 +87,7 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(({ onToggleHead
   }, [tabs, isOpen]);
 
   const positionCounts = useMemo(() => {
-    // Only compute when menu is open
     if (!isOpen || !activeTabId) return { left: 0, right: 0 };
-
     const activeIndex = tabs.findIndex((t) => t.id === activeTabId);
     if (activeIndex === -1) return { left: 0, right: 0 };
     return {
@@ -117,83 +95,6 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(({ onToggleHead
       right: tabs.length - activeIndex - 1,
     };
   }, [tabs, activeTabId, isOpen]);
-
-  const menuItems = useMemo(
-    () => [
-      {
-        icon: isHeaderVisible ? Maximize : Minimize,
-        label: isHeaderVisible ? 'Hide header' : 'Show header',
-        disabled: false,
-        onClick: onToggleHeaderVisibility,
-      },
-      { separator: true },
-      {
-        icon: XCircle,
-        label: 'Close all tabs',
-        count: tabs.length,
-        disabled: tabs.length === 0,
-        onClick: closeAllTabs,
-      },
-      {
-        icon: X,
-        label: 'Close other tabs',
-        count: tabs.length > 1 ? tabs.length - 1 : undefined,
-        disabled: tabs.length === 1 || !activeTabId,
-        onClick: () => {
-          if (activeTabId) closeOtherTabs(activeTabId);
-        },
-      },
-      { separator: true },
-      {
-        icon: ChevronRight,
-        label: 'Close tabs to the right',
-        count: positionCounts.right || undefined,
-        disabled: positionCounts.right === 0 || !activeTabId,
-        onClick: () => {
-          if (activeTabId) closeTabsToTheRight(activeTabId);
-        },
-      },
-      {
-        icon: ChevronLeft,
-        label: 'Close tabs to the left',
-        count: positionCounts.left || undefined,
-        disabled: positionCounts.left === 0 || !activeTabId,
-        onClick: () => {
-          if (activeTabId) closeTabsToTheLeft(activeTabId);
-        },
-      },
-      { separator: true },
-      { folderSubmenu: true },
-      { separator: true },
-      {
-        icon: FileText,
-        label: 'Close file tabs',
-        count: tabCounts.file || undefined,
-        disabled: tabCounts.file === 0,
-        onClick: () => closeTabsBySourceType('file'),
-      },
-      {
-        icon: ClipboardPaste,
-        label: 'Close pasted tabs',
-        count: tabCounts.paste || undefined,
-        disabled: tabCounts.paste === 0,
-        onClick: () => closeTabsBySourceType('paste'),
-      },
-    ],
-    [
-      isHeaderVisible,
-      onToggleHeaderVisibility,
-      tabs.length,
-      activeTabId,
-      positionCounts,
-      tabCounts,
-      closeAllTabs,
-      closeOtherTabs,
-      closeTabsToTheRight,
-      closeTabsToTheLeft,
-      closeTabsBySourceType,
-    ]
-  );
 
   return (
     <DropdownMenu onOpenChange={setIsOpen}>
@@ -208,74 +109,97 @@ const TabManagementMenu: React.FC<TabManagementMenuProps> = memo(({ onToggleHead
           <MoreHorizontal className="h-3.5 w-3.5" />
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent
         align="end"
-        className="w-60 rounded-2xl border-border/50 font-cascadia-code shadow-lg backdrop-blur-2xl"
+        className="w-52 rounded-xl border-border/30 bg-background/95 p-1 font-cascadia-code shadow-xl backdrop-blur-xl"
       >
-        <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-          Tab Management
+        {/* View */}
+        <MenuItem
+          label={isHeaderVisible ? 'Hide header' : 'Show header'}
+          onClick={onToggleHeaderVisibility}
+        />
+
+        <DropdownMenuSeparator className="my-1 bg-border/30" />
+
+        {/* Close relative */}
+        <DropdownMenuLabel className="px-3 pb-0.5 pt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground/40">
+          Close
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-border/50" />
+        <MenuItem
+          label="All tabs"
+          count={tabs.length}
+          disabled={tabs.length === 0}
+          onClick={closeAllTabs}
+        />
+        <MenuItem
+          label="Other tabs"
+          count={tabs.length > 1 ? tabs.length - 1 : undefined}
+          disabled={tabs.length <= 1 || !activeTabId}
+          onClick={() => {
+            if (activeTabId) closeOtherTabs(activeTabId);
+          }}
+        />
+        <MenuItem
+          label="Tabs to the right"
+          count={positionCounts.right || undefined}
+          disabled={positionCounts.right === 0 || !activeTabId}
+          onClick={() => {
+            if (activeTabId) closeTabsToTheRight(activeTabId);
+          }}
+        />
+        <MenuItem
+          label="Tabs to the left"
+          count={positionCounts.left || undefined}
+          disabled={positionCounts.left === 0 || !activeTabId}
+          onClick={() => {
+            if (activeTabId) closeTabsToTheLeft(activeTabId);
+          }}
+        />
 
-        {menuItems.map((item, index) => {
-          if ('separator' in item) {
-            return <DropdownMenuSeparator key={`sep-${index}`} className="bg-border/50" />;
-          }
+        <DropdownMenuSeparator className="my-1 bg-border/30" />
 
-          if ('folderSubmenu' in item) {
-            return (
-              <DropdownMenuSub key="folder-submenu">
-                <DropdownMenuSubTrigger
-                  disabled={uniqueFolders.length === 0}
-                  className="cursor-pointer gap-2 transition-colors duration-150"
+        {/* Close by type */}
+        <DropdownMenuLabel className="px-3 pb-0.5 pt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground/40">
+          By type
+        </DropdownMenuLabel>
+        <MenuItem
+          label="File tabs"
+          count={tabCounts.file || undefined}
+          disabled={tabCounts.file === 0}
+          onClick={() => closeTabsBySourceType('file')}
+        />
+        <MenuItem
+          label="Pasted tabs"
+          count={tabCounts.paste || undefined}
+          disabled={tabCounts.paste === 0}
+          onClick={() => closeTabsBySourceType('paste')}
+        />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger
+            disabled={uniqueFolders.length === 0}
+            className="cursor-pointer px-3 py-1.5 text-xs text-muted-foreground transition-colors duration-100 focus:text-foreground"
+          >
+            From folder
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-48 rounded-lg border-border/30 bg-background/95 p-1 shadow-lg backdrop-blur-xl">
+            {uniqueFolders.map(([folderPath, folderName]) => {
+              const tabCount = tabs.filter((t) => t.sourcePath?.startsWith(folderPath)).length;
+              return (
+                <DropdownMenuItem
+                  key={folderPath}
+                  onClick={() => closeTabsByPathPrefix(folderPath)}
+                  className="cursor-pointer justify-between px-3 py-1.5 text-xs text-muted-foreground transition-colors duration-100 focus:text-foreground"
                 >
-                  <FolderX className="h-4 w-4 text-muted-foreground" />
-                  <span className="flex-1 text-xs text-muted-foreground">
-                    Close tabs from folder
+                  <span className="truncate">{folderName}</span>
+                  <span className="ml-2 text-[10px] tabular-nums text-muted-foreground/50">
+                    {tabCount}
                   </span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="w-56 rounded-lg border-border/50 shadow-md">
-                  {uniqueFolders.length > 0 ? (
-                    uniqueFolders.map(([folderPath, folderName]) => {
-                      const tabCount = tabs.filter((t) =>
-                        t.sourcePath?.startsWith(folderPath)
-                      ).length;
-                      return (
-                        <DropdownMenuItem
-                          key={folderPath}
-                          onClick={() => closeTabsByPathPrefix(folderPath)}
-                          className="cursor-pointer gap-2 transition-colors duration-150"
-                        >
-                          <span className="flex-1 truncate text-xs text-muted-foreground">
-                            {folderName}
-                          </span>
-                          <span className="rounded-md bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-                            {tabCount}
-                          </span>
-                        </DropdownMenuItem>
-                      );
-                    })
-                  ) : (
-                    <DropdownMenuItem disabled className="text-muted-foreground/70">
-                      No folders available
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-            );
-          }
-
-          return (
-            <MenuItem
-              key={item.label}
-              icon={item.icon}
-              label={item.label}
-              count={item.count}
-              disabled={item.disabled}
-              onClick={item.onClick}
-            />
-          );
-        })}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
   );

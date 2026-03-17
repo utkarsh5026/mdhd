@@ -127,7 +127,12 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpe
               </h2>
               <p className="text-sm text-muted-foreground">Customize your reading experience 🤗</p>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              aria-label="Close reading settings"
+            >
               <X className="h-5 w-5" />
             </Button>
           </div>
