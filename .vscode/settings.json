@@ -1,0 +1,56 @@
+{
+  // Format & Lint on save
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+
+  // TypeScript
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.suggest.autoImports": true,
+  "typescript.tsdk": "app/node_modules/typescript/lib",
+
+  // File nesting (cleaner explorer)
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "package.json": "package-lock.json, .prettierrc, .eslintrc*, eslint.config.*, tsconfig*.json, vite.config.*, vitest.config.*, commitlint.config.*",
+    "tsconfig.json": "tsconfig.*.json"
+  },
+
+  // Search & files
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/.lighthouseci": true
+  },
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  },
+
+  // Tailwind CSS (if you use the Tailwind extension)
+  "tailwindCSS.experimental.classRegex": [
+    ["cn\\(([^)]*)\\)", "'([^']*)'"]
+  ],
+
+  // Spell checker
+  "cSpell.words": [
+    "amet",
+    "cascadia",
+    "Fira",
+    "hyperlegible",
+    "indexeddb",
+    "knip",
+    "lightningcss",
+    "literata",
+    "mdhd",
+    "nunito",
+    "scannability",
+    "swipeable",
+    "uuidv",
+    "vollkorn"
+  ]
+}
