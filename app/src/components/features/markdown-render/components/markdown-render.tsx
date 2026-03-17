@@ -1,6 +1,7 @@
 import React, { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { cn } from '@/lib/utils';
 
 import {
@@ -108,7 +109,22 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
 
     return (
       <div className={cn('markdown-content', className)} style={containerStyle}>
-        <ReactMarkdown components={components} remarkPlugins={[remarkGfm]}>
+        <ReactMarkdown
+          components={components}
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[
+            [
+              rehypeSanitize,
+              {
+                ...defaultSchema,
+                attributes: {
+                  ...defaultSchema.attributes,
+                  code: [...(defaultSchema.attributes?.code || []), ['className', /^language-./]],
+                },
+              },
+            ],
+          ]}
+        >
           {markdown}
         </ReactMarkdown>
       </div>

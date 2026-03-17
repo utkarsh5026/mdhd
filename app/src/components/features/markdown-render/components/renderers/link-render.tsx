@@ -34,13 +34,21 @@ interface LinkRenderProps extends ComponentPropsWithoutRef<'a'> {
  * </LinkRender>
  * ```
  */
+const SAFE_URL_PATTERN = /^(https?:\/\/|mailto:|#|\/)/i;
+
 const LinkRender: React.FC<LinkRenderProps> = ({ children, ...props }) => {
+  const href = props.href;
+  const isSafe = !href || SAFE_URL_PATTERN.test(href);
+  const safeHref = isSafe ? href : undefined;
+  const isExternal = safeHref?.startsWith('http');
+
   return (
     <a
       {...props}
+      href={safeHref}
       className="text-primary hover:underline"
-      target={props.href?.startsWith('http') ? '_blank' : undefined}
-      rel={props.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+      target={isExternal ? '_blank' : undefined}
+      rel={isExternal ? 'noopener noreferrer' : undefined}
       aria-label={children ? undefined : (props.title ?? 'Link')}
     >
       {children}
