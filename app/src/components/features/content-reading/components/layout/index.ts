@@ -7,6 +7,7 @@ import ScrollContentReader from './scroll-content-reader';
 import ZenPositionIndicator from './zen-position-indicator';
 import MetadataDisplay from './metadata-display';
 import ReadingCore from '../reading-core';
+import SectionBreadcrumb from './section-breadcrumb';
 
 export {
   Header,
@@ -18,4 +19,5 @@ export {
   ZenPositionIndicator,
   MetadataDisplay,
   ReadingCore,
+  SectionBreadcrumb,
 };

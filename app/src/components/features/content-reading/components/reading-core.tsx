@@ -7,6 +7,7 @@ import {
   ContentReader,
   ScrollContentReader,
   ZenPositionIndicator,
+  SectionBreadcrumb,
 } from './layout';
 import SectionsSheet from './table-of-contents/sections-sheet';
 import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
@@ -214,6 +215,17 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
             onScrollProgress={onScrollProgressChange}
             onSectionVisible={handleSectionVisible}
           />
+        )}
+
+        {/* Breadcrumb - top-left overlay, card mode only */}
+        {shouldShowControls && readingMode === 'card' && (
+          <div className="absolute top-0 left-0 z-50 p-2">
+            <SectionBreadcrumb
+              sections={sections}
+              currentIndex={currentIndex}
+              onNavigate={handleSelectCard}
+            />
+          </div>
         )}
 
         {/* Header - passed from parent */}
