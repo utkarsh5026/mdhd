@@ -1,6 +1,7 @@
 import React from 'react';
-import { BookOpen, Focus, Layers, ScrollText } from 'lucide-react';
+import { BookOpen, Focus, Layers, ScrollText, ScanEye } from 'lucide-react';
 import { useActiveTab, useTabsActions } from '@/components/features/tabs';
+import { useReadingSettingsStore } from '../store/reading-settings-store';
 import { SettingsHeader, SettingToggle, SelectableOption } from './settings-commons';
 
 const READING_MODE_OPTIONS = [
@@ -21,6 +22,8 @@ const READING_MODE_OPTIONS = [
 const ReadingModeSelector: React.FC = () => {
   const activeTab = useActiveTab();
   const { updateTabReadingState } = useTabsActions();
+  const bionicReading = useReadingSettingsStore((s) => s.settings.bionicReading);
+  const toggleBionicReading = useReadingSettingsStore((s) => s.toggleBionicReading);
 
   // Get state from active tab (single source of truth)
   const isZenMode = activeTab?.readingState.isZenMode ?? false;
@@ -59,6 +62,19 @@ const ReadingModeSelector: React.FC = () => {
           description="Hide all UI controls for distraction-free reading"
           checked={isZenMode}
           onCheckedChange={handleZenModeToggle}
+        />
+      </div>
+
+      <div className="space-y-3">
+        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Reading Aids
+        </div>
+        <SettingToggle
+          icon={<ScanEye className="h-4 w-4" />}
+          title="Bionic Reading"
+          description="Bold word beginnings to create visual anchors"
+          checked={bionicReading}
+          onCheckedChange={toggleBionicReading}
         />
       </div>
 
