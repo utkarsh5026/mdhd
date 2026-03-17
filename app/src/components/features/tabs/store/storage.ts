@@ -76,6 +76,7 @@ export const customTabsStorage = {
           ...value.state,
           tabs: value.state.tabs?.map((tab) => ({
             ...tab,
+            content: undefined,
             readingState: {
               ...tab.readingState,
               readSections: Array.from(tab.readingState.readSections || []),
@@ -90,6 +91,11 @@ export const customTabsStorage = {
     const [error] = attempt(storeTabState);
     if (error) {
       console.error('Error saving tabs session:', error);
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.warn(
+          'localStorage quota exceeded. Tab content is too large to persist. Content will be available in the current session but may not survive a page reload.'
+        );
+      }
     }
   },
 
