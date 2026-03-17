@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Focus, Layers, ScrollText, ScanEye } from 'lucide-react';
+import { BookOpen, Focus, Layers, ScrollText, ScanEye, MousePointerClick } from 'lucide-react';
 import { useActiveTab, useTabsActions } from '@/components/features/tabs';
 import { useReadingSettingsStore } from '../store/reading-settings-store';
 import { SettingsHeader, SettingToggle, SelectableOption } from './settings-commons';
@@ -24,8 +24,9 @@ const ReadingModeSelector: React.FC = () => {
   const { updateTabReadingState } = useTabsActions();
   const bionicReading = useReadingSettingsStore((s) => s.settings.bionicReading);
   const toggleBionicReading = useReadingSettingsStore((s) => s.toggleBionicReading);
+  const sentenceFocusOnHover = useReadingSettingsStore((s) => s.settings.sentenceFocusOnHover);
+  const toggleSentenceFocusOnHover = useReadingSettingsStore((s) => s.toggleSentenceFocusOnHover);
 
-  // Get state from active tab (single source of truth)
   const isZenMode = activeTab?.readingState.isZenMode ?? false;
   const readingMode = activeTab?.readingState.readingMode ?? 'card';
 
@@ -75,6 +76,13 @@ const ReadingModeSelector: React.FC = () => {
           description="Bold word beginnings to create visual anchors"
           checked={bionicReading}
           onCheckedChange={toggleBionicReading}
+        />
+        <SettingToggle
+          icon={<MousePointerClick className="h-4 w-4" />}
+          title="Sentence Focus"
+          description="Dim other sentences on hover to isolate the one you're reading"
+          checked={sentenceFocusOnHover}
+          onCheckedChange={toggleSentenceFocusOnHover}
         />
       </div>
 

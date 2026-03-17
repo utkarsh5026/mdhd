@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { List, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
-import { useParagraphToList } from '../../hooks/use-paragraph-to-list';
+import { useParagraphToList, splitChildrenIntoSentences } from '../../hooks/use-paragraph-to-list';
 import { transformBionicChildren } from '../../hooks/use-bionic-transform';
 
 /**
@@ -14,7 +14,14 @@ import { transformBionicChildren } from '../../hooks/use-bionic-transform';
  */
 const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ children, ...rest }) => {
   const bionicReading = useReadingSettingsStore((s) => s.settings.bionicReading);
+  const sentenceFocusOnHover = useReadingSettingsStore((s) => s.settings.sentenceFocusOnHover);
   const { isListView, sentences, toggleListView } = useParagraphToList(children);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+
+  const focusSentences = useMemo(
+    () => (sentenceFocusOnHover && !isListView ? splitChildrenIntoSentences(children) : []),
+    [sentenceFocusOnHover, isListView, children]
+  );
 
   const bionicChildren = useMemo(
     () => (bionicReading ? transformBionicChildren(children) : children),
@@ -86,11 +93,30 @@ const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ childr
     );
   }
 
+  const showSentenceFocus = focusSentences.length > 1;
+
   return (
     <div className="relative group/para">
       {toggleButton}
-      <p {...rest} className={paragraphClasses}>
-        {bionicChildren}
+      <p
+        {...rest}
+        className={paragraphClasses}
+        onMouseLeave={showSentenceFocus ? () => setFocusedIndex(null) : undefined}
+      >
+        {showSentenceFocus
+          ? focusSentences.map((sentence, i) => (
+              <span
+                key={i}
+                onMouseEnter={() => setFocusedIndex(i)}
+                className={`transition-opacity duration-150 ${
+                  focusedIndex !== null && focusedIndex !== i ? 'opacity-30' : 'opacity-100'
+                }`}
+              >
+                {bionicReading ? transformBionicChildren(sentence) : sentence}
+                {i < focusSentences.length - 1 ? ' ' : ''}
+              </span>
+            ))
+          : bionicChildren}
       </p>
     </div>
   );
