@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileItem } from './file-item';
 import { DirectoryItem } from './directory-item';
+import { fileStorageDB } from '@/services/indexeddb';
 import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
 
 interface TreeNodeProps {
@@ -31,23 +32,19 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
   };
 
   if (node.type === 'file') {
+    const handleFileClick = async () => {
+      const file = await fileStorageDB.getFile(node.id);
+      if (file) {
+        onFileClick(file);
+      }
+    };
+
     return (
       <FileItem
         node={node}
         depth={depth}
         isSelected={isSelected}
-        onClick={() =>
-          onFileClick({
-            id: node.id,
-            name: node.name,
-            path: node.path,
-            parentPath: node.path.substring(0, node.path.lastIndexOf('/')),
-            content: node.content || '',
-            size: node.size || 0,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          })
-        }
+        onClick={handleFileClick}
         onContextMenu={handleContextMenu}
       />
     );
