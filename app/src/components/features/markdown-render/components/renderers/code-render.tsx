@@ -3,9 +3,19 @@ import { Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
+import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
 import { Button } from '@/components/ui/button';
 import CodeMirrorDisplay from './codemirror-display';
 import { getThemeBackground } from '@/components/features/settings/store/codemirror-themes';
+import type { TextSizeScale } from '../../utils/text-size-classes';
+
+const CODE_FONT_SIZES: Record<TextSizeScale, string> = {
+  xs: '0.75rem',
+  sm: '0.8rem',
+  base: '0.875rem',
+  lg: '1rem',
+  xl: '1.125rem',
+};
 
 /**
  * CodeRender — renders fenced code blocks with CodeMirror.
@@ -20,6 +30,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
   const language = match ? match[1] : '';
   const { selectedTheme } = useCodeThemeStore();
   const { settings: displaySettings } = useCodeDisplaySettingsStore();
+  const textSizeScale = useReadingSettingsStore((s) => s.settings.textSizeScale);
 
   const codeContent = useMemo(() => {
     return typeof children === 'string'
@@ -75,6 +86,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
           showLineNumbers={displaySettings.showLineNumbers}
           enableCodeFolding={displaySettings.enableCodeFolding}
           enableWordWrap={displaySettings.enableWordWrap}
+          fontSize={CODE_FONT_SIZES[textSizeScale]}
           className="rounded-2xl"
         />
       </div>

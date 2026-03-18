@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
 import { useParagraphToList, splitChildrenIntoSentences } from '../../hooks/use-paragraph-to-list';
 import { transformBionicChildren } from '../../hooks/use-bionic-transform';
+import { TEXT_SIZE_SCALE_CLASSES } from '../../utils/text-size-classes';
 
 /**
  * ParagraphRender Component
@@ -15,6 +16,7 @@ import { transformBionicChildren } from '../../hooks/use-bionic-transform';
 const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ children, ...rest }) => {
   const bionicReading = useReadingSettingsStore((s) => s.settings.bionicReading);
   const sentenceFocusOnHover = useReadingSettingsStore((s) => s.settings.sentenceFocusOnHover);
+  const textSizeScale = useReadingSettingsStore((s) => s.settings.textSizeScale);
   const { isListView, sentences, toggleListView } = useParagraphToList(children);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
@@ -33,11 +35,12 @@ const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ childr
     'my-3 sm:my-5 lg:my-6',
     'leading-relaxed sm:leading-7 lg:leading-8',
     'text-pretty break-words',
-    'text-base sm:text-lg',
+    TEXT_SIZE_SCALE_CLASSES.paragraph[textSizeScale],
     'px-0',
     'first:mt-0 last:mb-0',
     'tracking-normal',
     'font-normal',
+    '[transition:font-size_300ms_ease-in-out,line-height_300ms_ease-in-out]',
   ].join(' ');
 
   const toggleButton = (
@@ -65,7 +68,8 @@ const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ childr
       'my-3 sm:my-5',
       'ml-5 sm:ml-7 lg:ml-8',
       'space-y-1.5 sm:space-y-2.5',
-      'text-base sm:text-lg',
+      TEXT_SIZE_SCALE_CLASSES.paragraph[textSizeScale],
+      '[transition:font-size_300ms_ease-in-out]',
       'leading-relaxed sm:leading-7',
       'text-pretty break-words',
       'list-disc marker:text-primary/70 text-foreground/92',

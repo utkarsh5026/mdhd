@@ -1,27 +1,26 @@
 import React from 'react';
+import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
+import { TEXT_SIZE_SCALE_CLASSES } from '../../utils/text-size-classes';
 
-type HeadingProps = React.ComponentPropsWithoutRef<'h1' | 'h2' | 'h3'>;
+type HeadingProps = React.ComponentPropsWithoutRef<'h1' | 'h2' | 'h3' | 'h4' | 'h5'>;
 
 interface HeadingRenderProps extends HeadingProps {
-  level: 1 | 2 | 3;
+  level: 1 | 2 | 3 | 4 | 5;
 }
 
-/**
- * HeadingRender Component
- *
- * Renders h1, h2, and h3 headings with enhanced typography and visual hierarchy for optimal readability.
- * Features improved contrast, responsive scaling, and better spacing for clear content structure.
- * Optimized for both mobile and desktop viewing with consistent visual progression.
- */
 const HeadingRender: React.FC<HeadingRenderProps> = ({
   level,
   children,
   className: externalClassName,
   ...props
 }) => {
-  const headingStyles = {
+  const textSizeScale = useReadingSettingsStore((s) => s.settings.textSizeScale);
+
+  const sizeKey = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+
+  const headingStyles: Record<1 | 2 | 3 | 4 | 5, string> = {
     1: [
-      'text-xl sm:text-2xl lg:text-3xl',
+      TEXT_SIZE_SCALE_CLASSES[sizeKey][textSizeScale],
       'font-bold',
       'mt-8 sm:mt-12 lg:mt-16',
       'mb-4 sm:mb-6 lg:mb-8',
@@ -30,7 +29,7 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({
     ].join(' '),
 
     2: [
-      'text-lg sm:text-xl lg:text-2xl',
+      TEXT_SIZE_SCALE_CLASSES[sizeKey][textSizeScale],
       'font-semibold',
       'mt-7 sm:mt-10 lg:mt-12',
       'mb-3 sm:mb-5 lg:mb-6',
@@ -39,22 +38,39 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({
     ].join(' '),
 
     3: [
-      'text-base sm:text-lg lg:text-xl',
+      TEXT_SIZE_SCALE_CLASSES[sizeKey][textSizeScale],
       'font-medium',
       'mt-6 sm:mt-8 lg:mt-10',
       'mb-3 sm:mb-4 lg:mb-5',
       'leading-normal sm:leading-relaxed',
       'tracking-normal sm:tracking-wide',
     ].join(' '),
+
+    4: [
+      TEXT_SIZE_SCALE_CLASSES[sizeKey][textSizeScale],
+      'font-medium',
+      'mt-5 sm:mt-6 lg:mt-8',
+      'mb-2 sm:mb-3 lg:mb-4',
+      'leading-normal sm:leading-relaxed',
+      'tracking-normal',
+    ].join(' '),
+
+    5: [
+      TEXT_SIZE_SCALE_CLASSES[sizeKey][textSizeScale],
+      'font-medium',
+      'mt-4 sm:mt-5 lg:mt-6',
+      'mb-2 sm:mb-3',
+      'leading-normal',
+      'tracking-wide uppercase',
+    ].join(' '),
   };
 
   const sharedClasses = [
-    // Increased contrast from 85% to 98% for headings - they should stand out
     'text-primary/98',
     'text-pretty break-words',
     'group',
     'selection:bg-primary/20',
-    'transition-colors duration-200',
+    '[transition:color_200ms,font-size_300ms_ease-in-out,line-height_300ms_ease-in-out]',
     'hover:text-primary',
     'scroll-mt-20',
   ].join(' ');

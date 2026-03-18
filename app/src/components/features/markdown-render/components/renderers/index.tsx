@@ -15,6 +15,8 @@ export const markdownComponents: Components = {
   h1: (props: React.ComponentPropsWithoutRef<'h1'>) => <HeadingRender level={1} {...props} />,
   h2: (props: React.ComponentPropsWithoutRef<'h2'>) => <HeadingRender level={2} {...props} />,
   h3: (props: React.ComponentPropsWithoutRef<'h3'>) => <HeadingRender level={3} {...props} />,
+  h4: (props: React.ComponentPropsWithoutRef<'h4'>) => <HeadingRender level={4} {...props} />,
+  h5: (props: React.ComponentPropsWithoutRef<'h5'>) => <HeadingRender level={5} {...props} />,
 
   p: (props: React.ComponentPropsWithoutRef<'p'>) => <ParagraphRender {...props} />,
 
@@ -47,6 +49,9 @@ export const markdownComponents: Components = {
   ),
   ol: (props: React.ComponentPropsWithoutRef<'ol'>) => (
     <ListRender type="ol" props={{ ...props }} />
+  ),
+  li: (props: React.ComponentPropsWithoutRef<'li'>) => (
+    <ListRender type="li" props={{ ...props }} />
   ),
 
   a: (props: React.ComponentPropsWithoutRef<'a'>) => <LinkRender {...props} />,
