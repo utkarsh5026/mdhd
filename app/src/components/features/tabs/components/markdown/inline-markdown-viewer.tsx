@@ -53,33 +53,57 @@ interface InlineHeaderProps {
   currentIndex: number;
   total: number;
   readingMode: 'card' | 'scroll';
+  breadcrumb?: React.ReactNode;
+  mobileBreadcrumb?: React.ReactNode;
 }
 
 const InlineHeader: React.FC<InlineHeaderProps> = memo(
-  ({ onFullscreen, onSettings, onMenu, onPrevious, onNext, currentIndex, total, readingMode }) => {
+  ({
+    onFullscreen,
+    onSettings,
+    onMenu,
+    onPrevious,
+    onNext,
+    currentIndex,
+    total,
+    readingMode,
+    breadcrumb,
+    mobileBreadcrumb,
+  }) => {
     return (
-      <div className="absolute top-0 right-0 z-50 flex items-center gap-1 p-2">
-        {readingMode === 'card' && (
-          <>
-            <HeaderBtn
-              tooltip="Previous Section"
-              icon={ChevronLeft}
-              onClick={onPrevious}
-              disabled={currentIndex === 0}
-            />
-            <HeaderBtn
-              tooltip="Next Section"
-              icon={ChevronRight}
-              onClick={onNext}
-              disabled={currentIndex === total - 1}
-            />
-            <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
-          </>
+      <>
+        {/* Breadcrumb — top-left overlay, only in card mode */}
+        {readingMode === 'card' && breadcrumb && (
+          <div className="absolute top-0 left-0 z-50 p-2">
+            <div className="hidden sm:block">{breadcrumb}</div>
+            <div className="sm:hidden">{mobileBreadcrumb ?? breadcrumb}</div>
+          </div>
         )}
-        <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
-        <HeaderBtn tooltip="Reading Settings" icon={Settings} onClick={onSettings} />
-        <HeaderBtn tooltip="Table of Contents" icon={List} onClick={onMenu} />
-      </div>
+
+        {/* Controls — top-right */}
+        <div className="absolute top-0 right-0 z-50 flex items-center gap-1 p-2">
+          {readingMode === 'card' && (
+            <>
+              <HeaderBtn
+                tooltip="Previous Section"
+                icon={ChevronLeft}
+                onClick={onPrevious}
+                disabled={currentIndex === 0}
+              />
+              <HeaderBtn
+                tooltip="Next Section"
+                icon={ChevronRight}
+                onClick={onNext}
+                disabled={currentIndex === total - 1}
+              />
+              <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
+            </>
+          )}
+          <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
+          <HeaderBtn tooltip="Reading Settings" icon={Settings} onClick={onSettings} />
+          <HeaderBtn tooltip="Table of Contents" icon={List} onClick={onMenu} />
+        </div>
+      </>
     );
   }
 );
@@ -140,7 +164,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
           updateCurrentIndex={updateCurrentIndex}
           onScrollProgressChange={handleScrollProgress}
           viewMode="preview"
-          headerSlot={({ onSettings, onMenu }) => (
+          headerSlot={({ onSettings, onMenu, breadcrumb, mobileBreadcrumb }) => (
             <InlineHeader
               onFullscreen={onEnterFullscreen}
               onSettings={onSettings}
@@ -150,6 +174,8 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
               currentIndex={currentIndex}
               total={sections.length}
               readingMode={readingMode}
+              breadcrumb={breadcrumb}
+              mobileBreadcrumb={mobileBreadcrumb}
             />
           )}
         />

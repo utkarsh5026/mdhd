@@ -1,5 +1,5 @@
 import * as Popover from '@radix-ui/react-popover';
-import { Check, ChevronRight } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VscMarkdown, VscSymbolClass, VscSymbolMethod, VscSymbolNamespace } from 'react-icons/vsc';
 
@@ -144,23 +144,18 @@ const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
             <Icon className={cn('h-3.5 w-3.5 shrink-0', iconColor)} />
             <span
               className={cn(
-                'truncate',
                 variant === 'inline'
-                  ? isCurrent
-                    ? 'max-w-28 sm:max-w-40'
-                    : 'max-w-16 sm:max-w-24'
-                  : variant === 'mobile'
-                    ? 'max-w-44'
-                    : 'max-w-32'
+                  ? 'whitespace-nowrap'
+                  : cn('truncate', variant === 'mobile' ? 'max-w-44' : 'max-w-32')
               )}
             >
               {item.section.title}
             </span>
             {hasChildren && (
-              <ChevronRight
+              <ChevronDown
                 className={cn(
                   'h-3 w-3 shrink-0 text-muted-foreground/50 transition-transform',
-                  isOpen && 'rotate-90'
+                  isOpen && 'rotate-180'
                 )}
               />
             )}
@@ -196,7 +191,7 @@ const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
                       key={child.index}
                       onClick={() => handleSelect(child.index)}
                       className={cn(
-                        'w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left',
+                        'w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left',
                         'transition-colors',
                         isActive
                           ? 'bg-primary/10 text-primary font-medium'
@@ -270,13 +265,7 @@ const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
         )}
       >
         {breadcrumbs.map((item, idx) => (
-          <span
-            key={item.index}
-            className={cn(
-              'flex items-center gap-0.5 shrink-0',
-              variant !== 'mobile' && 'last:shrink min-w-0'
-            )}
-          >
+          <span key={item.index} className="flex items-center gap-0.5 shrink-0">
             {idx > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />}
             <BreadcrumbDropdown
               item={item}
