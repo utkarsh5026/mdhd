@@ -1,10 +1,12 @@
-import { memo, useCallback, useMemo } from 'react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { themeCategories, ThemeOption as ThemeTypeOption } from '@/theme/themes';
+import { memo, useCallback, useMemo } from 'react';
+
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import ThemeOption from './theme-option';
+import { themeCategories, ThemeOption as ThemeTypeOption } from '@/theme/themes';
+
 import { useThemeStore } from '../store/theme-store';
+import ThemeOption from './theme-option';
 
 interface ThemeCategoriesProps {
   currentTheme: string;

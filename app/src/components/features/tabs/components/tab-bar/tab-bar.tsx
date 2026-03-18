@@ -1,11 +1,13 @@
-import React, { useRef, useCallback, memo, useMemo } from 'react';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import React, { memo, useCallback, useMemo, useRef } from 'react';
+
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+import type { Tab } from '../../store';
 import TabItem from './tab-item';
 import TabManagementMenu from './tab-management-menu';
 import ViewModeToggle from './view-mode-toggle';
-import type { Tab } from '../../store';
 /**
  * Information about how to display a tab
  */

@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
+
+import type { TextSizeScale } from '@/components/features/markdown-render/utils/text-size-classes';
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 import type { FontFamily } from '@/lib/font';
 import { loadFont } from '@/lib/font-loader';
-import type { TextSizeScale } from '@/components/features/markdown-render/utils/text-size-classes';
 
 export type { TextSizeScale };
 

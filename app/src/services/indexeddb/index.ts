@@ -1,21 +1,19 @@
+export { fileStorageDB, getParentPath, normalizePath } from './db';
 export type {
-  StoredFile,
-  StoredDirectory,
+  CreateDirectoryInput,
+  CreateFileInput,
   FileTreeNode,
+  StoredDirectory,
+  StoredFile,
   UploadProgress,
   UploadProgressCallback,
-  CreateFileInput,
-  CreateDirectoryInput,
 } from './types';
-
-export { fileStorageDB, getParentPath, normalizePath } from './db';
-
 export {
-  filterMarkdownFiles,
-  readFileAsText,
   extractDirectoryPaths,
+  filterMarkdownFiles,
   getFilePath,
-  processFileUpload,
   processDirectoryUpload,
   processDroppedItems,
+  processFileUpload,
+  readFileAsText,
 } from './upload';

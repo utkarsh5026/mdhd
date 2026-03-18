@@ -1,15 +1,16 @@
-import { useEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { EditorView, lineNumbers, keymap } from '@codemirror/view';
-import { EditorState, Compartment } from '@codemirror/state';
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
 import { foldGutter, foldKeymap, indentOnInput } from '@codemirror/language';
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-import { cn } from '@/lib/utils';
+import { Compartment, EditorState } from '@codemirror/state';
+import { EditorView, keymap, lineNumbers } from '@codemirror/view';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+
+import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
 import {
   getCodeMirrorTheme,
   getThemeBackground,
 } from '@/components/features/settings/store/codemirror-themes';
-import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
+import { cn } from '@/lib/utils';
 
 interface MarkdownCodeMirrorEditorProps {
   content: string;

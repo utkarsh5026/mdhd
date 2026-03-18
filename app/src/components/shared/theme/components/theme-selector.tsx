@@ -1,18 +1,20 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { Palette } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/fast-tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/fast-tabs';
+import { cn } from '@/lib/utils';
 import { type ThemeOption as ThemeTypeOption } from '@/theme/themes';
-import { Palette } from 'lucide-react';
+
+import { useThemeStore } from '../store/theme-store';
+import BookmarkedThemes from './bookmarked-themes';
 import ThemeCategories from './theme-categories';
 import ThemesList from './themes-list';
-import BookmarkedThemes from './bookmarked-themes';
-import { useThemeStore } from '../store/theme-store';
 
 interface ThemeSelectorProps {
   currentTheme: string;

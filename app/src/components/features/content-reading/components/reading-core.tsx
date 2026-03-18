@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useRef, useCallback, memo, lazy, Suspense } from 'react';
-import { useThemeFloatingPicker } from '@/components/shared/theme/store/theme-store';
+import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+
 import { useControls } from '@/components/features/content-reading/hooks';
+import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
+import { useThemeFloatingPicker } from '@/components/shared/theme/store/theme-store';
+import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
+
 import {
-  NavigationControls,
   ContentReader,
+  NavigationControls,
   ScrollContentReader,
   SectionBreadcrumb,
 } from './layout';
 import SectionsSheet from './table-of-contents/sections-sheet';
-import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
-import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
 
 const ReadingSettingsSheet = lazy(() =>
   import('@/components/features/settings').then((module) => ({

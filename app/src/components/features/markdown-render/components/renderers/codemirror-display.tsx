@@ -1,13 +1,15 @@
-import { useEffect, useRef, useMemo, forwardRef } from 'react';
-import { EditorView, lineNumbers, keymap } from '@codemirror/view';
-import { EditorState, Compartment } from '@codemirror/state';
 import { foldGutter, foldKeymap } from '@codemirror/language';
-import { loadLanguage } from '../../utils/language-loader';
+import { Compartment, EditorState } from '@codemirror/state';
+import { EditorView, keymap, lineNumbers } from '@codemirror/view';
+import { forwardRef, useEffect, useMemo, useRef } from 'react';
+
+import type { ThemeKey } from '@/components/features/settings/store/code-theme';
 import {
   getCodeMirrorTheme,
   getThemeBackground,
 } from '@/components/features/settings/store/codemirror-themes';
-import type { ThemeKey } from '@/components/features/settings/store/code-theme';
+
+import { loadLanguage } from '../../utils/language-loader';
 
 interface CodeMirrorDisplayProps {
   code: string;

@@ -1,8 +1,10 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useTabsStore } from '../store/tabs-store';
-import { fileStorageDB } from '@/services/indexeddb';
+
 import { useFileStore } from '@/components/features/file-explorer/store/file-store';
+import { fileStorageDB } from '@/services/indexeddb';
+
+import { useTabsStore } from '../store/tabs-store';
 
 /**
  * Custom hook that handles keyboard shortcut (Ctrl/Cmd + S) for saving tab content

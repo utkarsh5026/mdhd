@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { Trash2 } from 'lucide-react';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+
 import type { FileTreeNode } from '@/services/indexeddb';
 
 interface TreeContextMenuProps {

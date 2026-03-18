@@ -1,7 +1,9 @@
-import { Button } from '@/components/ui/button';
 import { Play, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { ClipboardEvent } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
 import styles from './markdown-editor.module.css';
 
 interface MarkdownEditorProps {

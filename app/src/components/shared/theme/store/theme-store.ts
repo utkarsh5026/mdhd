@@ -1,12 +1,13 @@
 import { create } from 'zustand';
-import { ThemeOption, defaultThemes, loadAllThemes } from '@/theme/themes';
-import { withErrorHandling } from '@/utils/functions/error';
 import { useShallow } from 'zustand/react/shallow';
+
 import {
-  useCodeThemeStore,
   codeThemes,
   type ThemeKey,
+  useCodeThemeStore,
 } from '@/components/features/settings/store/code-theme';
+import { defaultThemes, loadAllThemes, ThemeOption } from '@/theme/themes';
+import { withErrorHandling } from '@/utils/functions/error';
 
 const fallbackTheme = defaultThemes.find((t) => t.name === 'GitHub Dark') ?? defaultThemes[0];
 

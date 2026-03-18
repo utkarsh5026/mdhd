@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { parseMarkdownIntoSections } from '@/services/section/parsing';
+
 import { fileStorageDB } from '@/services/indexeddb/db';
-import type { Tab, TabReadingState, TabsActions, TabsState } from './types';
-import { customTabsStorage, type PersistedTabsState } from './storage';
+import { parseMarkdownIntoSections } from '@/services/section/parsing';
+
 import { createTab, extractTitleFromMarkdown, hashString } from './helpers';
+import { customTabsStorage, type PersistedTabsState } from './storage';
+import type { Tab, TabReadingState, TabsActions, TabsState } from './types';
 
 const STORAGE_VERSION = 1;
 const STORAGE_KEY = 'mdhd-tabs-storage';

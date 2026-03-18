@@ -1,6 +1,8 @@
-import Homepage from '@/components/layout/home';
-import { useTheme } from './hooks';
 import { Toaster } from 'sonner';
+
+import Homepage from '@/components/layout/home';
+
+import { useTheme } from './hooks';
 
 const App = () => {
   useTheme();

@@ -1,10 +1,10 @@
-import Header from './layout-header';
-import NavigationControls from './navigation-controls';
-import LoadingState from './loading-state';
-import ContentReader from './content-reader';
-import ScrollContentReader from './scroll-content-reader';
-import MetadataDisplay from './metadata-display';
 import ReadingCore from '../reading-core';
+import ContentReader from './content-reader';
+import Header from './layout-header';
+import LoadingState from './loading-state';
+import MetadataDisplay from './metadata-display';
+import NavigationControls from './navigation-controls';
+import ScrollContentReader from './scroll-content-reader';
 import SectionBreadcrumb from './section-breadcrumb';
 
 /**
@@ -15,12 +15,12 @@ import SectionBreadcrumb from './section-breadcrumb';
 export const READER_PADDING_CLASSES = 'px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24';
 
 export {
-  Header,
-  NavigationControls,
-  LoadingState,
   ContentReader,
-  ScrollContentReader,
+  Header,
+  LoadingState,
   MetadataDisplay,
+  NavigationControls,
   ReadingCore,
+  ScrollContentReader,
   SectionBreadcrumb,
 };

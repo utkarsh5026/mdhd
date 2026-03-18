@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 /**
  * Abbreviations that NEVER end a sentence — the sentence always continues

@@ -1,9 +1,11 @@
+import { AlignLeft, List } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
-import { List, AlignLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
 import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
-import { useParagraphToList, splitChildrenIntoSentences } from '../../hooks/use-paragraph-to-list';
+import { Button } from '@/components/ui/button';
+
 import { transformBionicChildren } from '../../hooks/use-bionic-transform';
+import { splitChildrenIntoSentences, useParagraphToList } from '../../hooks/use-paragraph-to-list';
 import { TEXT_SIZE_SCALE_CLASSES } from '../../utils/text-size-classes';
 
 /**

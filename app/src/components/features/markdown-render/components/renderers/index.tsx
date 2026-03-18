@@ -1,15 +1,15 @@
 import React from 'react';
 import type { Components } from 'react-markdown';
 
+import BlockquoteRender from './block-render';
 import CodeRender from './code-render';
 import HeadingRender from './heading-render';
+import HorizontalRuleRender from './horizontal-rule-render';
 import ImageRender from './image-render';
 import LinkRender from './link-render';
 import ListRender from './list-render';
 import ParagraphRender from './paragraph-render';
 import TableRender from './table-render';
-import HorizontalRuleRender from './horizontal-rule-render';
-import BlockquoteRender from './block-render';
 
 export const markdownComponents: Components = {
   h1: (props: React.ComponentPropsWithoutRef<'h1'>) => <HeadingRender level={1} {...props} />,

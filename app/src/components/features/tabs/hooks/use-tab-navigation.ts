@@ -1,6 +1,8 @@
-import { useState, useCallback, useMemo } from 'react';
-import { useTabsStore } from '../store/tabs-store';
+import { useCallback, useMemo, useState } from 'react';
+
 import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
+
+import { useTabsStore } from '../store/tabs-store';
 
 interface UseTabNavigationReturn {
   sections: MarkdownSection[];

@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
+
 import { fileStorageDB, getParentPath, normalizePath } from './db';
-import type { StoredFile, StoredDirectory, UploadProgressCallback } from './types';
+import type { StoredDirectory, StoredFile, UploadProgressCallback } from './types';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 

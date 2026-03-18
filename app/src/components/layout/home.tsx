@@ -1,9 +1,11 @@
-import { useState, useCallback, lazy, Suspense } from 'react';
-import Header from './header';
+import { lazy, Suspense, useCallback, useState } from 'react';
+
 import { FileExplorerSidebar } from '@/components/features/file-explorer';
-import { TabbedContentArea, useTabsActions, useHeaderVisible } from '@/components/features/tabs';
+import { TabbedContentArea, useHeaderVisible, useTabsActions } from '@/components/features/tabs';
 import { ReactErrorBoundary } from '@/components/utils';
 import type { StoredFile } from '@/services/indexeddb';
+
+import Header from './header';
 
 const FullscreenMarkdownViewer = lazy(
   () => import('@/components/features/tabs/components/markdown/fullscreen-markdown-viewer')

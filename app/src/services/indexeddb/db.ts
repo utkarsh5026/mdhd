@@ -1,10 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
+
 import type {
-  StoredFile,
-  StoredDirectory,
-  FileTreeNode,
-  CreateFileInput,
   CreateDirectoryInput,
+  CreateFileInput,
+  FileTreeNode,
+  StoredDirectory,
+  StoredFile,
 } from './types';
 
 const DB_NAME = 'mdhd-files';

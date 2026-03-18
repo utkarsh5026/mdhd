@@ -1,12 +1,14 @@
-import { useMemo, useCallback, useEffect, memo, useState } from 'react';
 import { ListOrdered, X } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import TreeOfContents from './tree-of-contents';
-import { MarkdownSection } from '@/services/section/parsing';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLocalStorage } from '@/hooks';
 import { cn } from '@/lib/utils';
+import { MarkdownSection } from '@/services/section/parsing';
+
+import TreeOfContents from './tree-of-contents';
 
 interface SectionsSheetProps {
   currentIndex: number;

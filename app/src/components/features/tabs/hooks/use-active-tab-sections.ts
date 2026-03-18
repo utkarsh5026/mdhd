@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
-import { useTabsStore } from '../store/tabs-store';
+
 import type { MarkdownSection } from '@/services/section/parsing';
+
+import { useTabsStore } from '../store/tabs-store';
 
 interface UseActiveTabSectionsReturn {
   sections: MarkdownSection[];

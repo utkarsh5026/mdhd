@@ -1,5 +1,6 @@
-import { Progress } from '../ui/progress';
 import React from 'react';
+
+import { Progress } from '../ui/progress';
 
 interface ProgressBarWithLabelProps {
   progressPercentage: number;

@@ -1,9 +1,10 @@
-import React from 'react';
-import { useRouteError, isRouteErrorResponse, Link } from 'react-router-dom';
 import { Home, RefreshCcw } from 'lucide-react';
+import React from 'react';
+import { isRouteErrorResponse, Link, useRouteError } from 'react-router-dom';
+
+import { useTheme } from '@/components/shared/theme/hooks/use-theme';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useTheme } from '@/components/shared/theme/hooks/use-theme';
 
 /**
  * ErrorBoundary Component

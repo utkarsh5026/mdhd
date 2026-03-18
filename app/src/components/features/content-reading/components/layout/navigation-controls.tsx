@@ -1,5 +1,6 @@
-import { memo } from 'react';
 import { ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react';
+import { memo } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface NavigationControlsProps {

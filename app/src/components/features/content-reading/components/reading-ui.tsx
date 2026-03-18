@@ -1,7 +1,9 @@
 import React, { memo } from 'react';
-import ReadingCore from './reading-core';
+
+import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
+
 import { Header } from './layout';
-import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
+import ReadingCore from './reading-core';
 
 export interface ReadingUIProps {
   markdown: string;

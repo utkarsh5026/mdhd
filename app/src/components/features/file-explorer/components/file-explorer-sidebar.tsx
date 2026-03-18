@@ -1,27 +1,29 @@
+import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+
+import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
+
+import {
+  useDirectory,
+  useExpandedDirectories,
+  useFileStoreActions,
+  useFileTree,
+  useFileUpload,
+  useIsFileLoading,
+  useIsFileStoreInitialized,
+  useSelectedFile,
+} from '../store/file-store';
+import { DeleteDialog } from './actions/delete-dialog';
+import { FileTree } from './file-tree/file-tree';
+import { SidebarToc } from './sidebar-toc';
+import { TabbedSidebar } from './tabbed-sidebar';
 import { DropZone } from './upload/drop-zone';
 import { UploadButton } from './upload/upload-button';
 import { UploadProgressIndicator } from './upload/upload-progress';
-import { FileTree } from './file-tree/file-tree';
-import { DeleteDialog } from './actions/delete-dialog';
-import { TabbedSidebar } from './tabbed-sidebar';
-import { SidebarToc } from './sidebar-toc';
-import { Separator } from '@/components/ui/separator';
-import {
-  useFileTree,
-  useSelectedFile,
-  useExpandedDirectories,
-  useFileUpload,
-  useFileStoreActions,
-  useIsFileStoreInitialized,
-  useIsFileLoading,
-  useDirectory,
-} from '../store/file-store';
-import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
-import { Loader2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 
 interface FileExplorerSidebarProps {
   className?: string;

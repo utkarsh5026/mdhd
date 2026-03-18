@@ -1,19 +1,21 @@
-import React from 'react';
 import {
   BookOpen,
   Focus,
   Layers,
-  ScrollText,
-  ScanEye,
   MousePointerClick,
+  ScanEye,
+  ScrollText,
   Type,
 } from 'lucide-react';
+import React from 'react';
+
 import { useActiveTab, useTabsActions } from '@/components/features/tabs';
-import { useReadingSettingsStore } from '../store/reading-settings-store';
-import type { TextSizeScale } from '../store/reading-settings-store';
-import { SettingsHeader } from './settings-commons';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+
+import type { TextSizeScale } from '../store/reading-settings-store';
+import { useReadingSettingsStore } from '../store/reading-settings-store';
+import { SettingsHeader } from './settings-commons';
 
 const TEXT_SIZE_OPTIONS: { scale: TextSizeScale; label: string; name: string }[] = [
   { scale: 'xs', label: 'XS', name: 'Extra Small' },

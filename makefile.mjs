@@ -57,6 +57,11 @@ const tasks = {
     category: "Quality",
     action: () => runNpmCommand("lint"),
   },
+  "lint-fix": {
+    description: "Run ESLint with auto-fix (sorts imports)",
+    category: "Quality",
+    action: () => runLintFix(),
+  },
   typecheck: {
     description: "Run TypeScript type checking",
     category: "Quality",
@@ -142,13 +147,10 @@ const tasks = {
 // Helper function to run commands in the app directory
 function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
-    const isWindows = process.platform === "win32";
-    const finalCommand = isWindows && command === "npm" ? "npm.cmd" : command;
-
-    const child = spawn(finalCommand, args, {
+    const child = spawn(command, args, {
       cwd: APP_DIR,
       stdio: "inherit",
-      shell: isWindows,
+      shell: process.platform === "win32",
       ...options,
     });
 
@@ -169,15 +171,30 @@ function runCommand(command, args = [], options = {}) {
 // Helper function to run npm install
 async function runNpmInstall() {
   try {
-    console.log(chalk.cyan("Running: npm install..."));
+    console.log(chalk.cyan("Running: bun install..."));
     console.log();
 
-    await runCommand("npm", ["install"]);
+    await runCommand("bun", ["install"]);
 
     console.log();
     console.log(chalk.green("✓ Dependencies installed!"));
   } catch (error) {
-    throw new Error("npm install failed");
+    throw new Error("bun install failed");
+  }
+}
+
+// Run ESLint with auto-fix
+async function runLintFix() {
+  try {
+    console.log(chalk.cyan("Running: eslint --fix..."));
+    console.log();
+
+    await runCommand("bunx", ["eslint", ".", "--fix"]);
+
+    console.log();
+    console.log(chalk.green("✓ Imports sorted and lint issues fixed!"));
+  } catch (error) {
+    throw new Error("ESLint fix failed");
   }
 }
 
@@ -185,10 +202,10 @@ async function runNpmInstall() {
 function runNpmCommand(command) {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log(chalk.cyan(`Running: npm run ${command}...`));
+      console.log(chalk.cyan(`Running: bun run ${command}...`));
       console.log();
 
-      await runCommand("npm", ["run", command]);
+      await runCommand("bun", ["run", command]);
 
       console.log();
       console.log(chalk.green("✓ Done!"));
@@ -205,7 +222,7 @@ async function runTypeCheck() {
     console.log(chalk.cyan("Running TypeScript type check..."));
     console.log();
 
-    await runCommand("npx", ["tsc", "--noEmit"]);
+    await runCommand("bunx", ["tsc", "--noEmit"]);
 
     console.log();
     console.log(chalk.green("✓ Type check passed!"));
@@ -269,10 +286,10 @@ async function runSetup() {
 
   try {
     console.log(chalk.yellow("▶ Installing dependencies..."));
-    await runCommand("npm", ["install"]);
+    await runCommand("bun", ["install"]);
 
     console.log(chalk.yellow("▶ Setting up Husky git hooks..."));
-    await runCommand("npx", ["husky", "install"]);
+    await runCommand("bunx", ["husky"]);
 
     console.log();
     console.log(chalk.bold.green("✓ Project setup complete!"));
@@ -287,7 +304,7 @@ async function runE2ETests() {
     console.log(chalk.cyan("Running Playwright E2E tests..."));
     console.log();
 
-    await runCommand("npx", ["playwright", "test"], { cwd: __dirname });
+    await runCommand("bunx", ["playwright", "test"], { cwd: __dirname });
 
     console.log();
     console.log(chalk.green("✓ E2E tests passed!"));
@@ -330,14 +347,14 @@ async function runSecurityAudit() {
   console.log();
 
   try {
-    await runCommand("npm", ["audit", "--audit-level=moderate"]);
+    await runCommand("bun", ["audit"]);
     console.log();
     console.log(chalk.green("✓ Security audit passed!"));
   } catch (error) {
     console.log();
     console.log(
       chalk.yellow(
-        "⚠ Security vulnerabilities found. Run 'npm audit' for details.",
+        "⚠ Security vulnerabilities found. Run 'bun audit' for details.",
       ),
     );
   }

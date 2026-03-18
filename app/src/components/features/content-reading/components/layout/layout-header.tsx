@@ -1,6 +1,7 @@
-import { X, Settings, List, LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { List, LucideIcon, Settings, X } from 'lucide-react';
+
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   onExit: () => void;

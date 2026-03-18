@@ -1,8 +1,10 @@
 import React from 'react';
-import { FileItem } from './file-item';
-import { DirectoryItem } from './directory-item';
-import { fileStorageDB } from '@/services/indexeddb';
+
 import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
+import { fileStorageDB } from '@/services/indexeddb';
+
+import { DirectoryItem } from './directory-item';
+import { FileItem } from './file-item';
 
 interface TreeNodeProps {
   node: FileTreeNode;

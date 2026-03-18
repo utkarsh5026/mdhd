@@ -1,18 +1,20 @@
+import { Check, Type } from 'lucide-react';
 import React, { memo, useCallback, useMemo } from 'react';
+
 import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  FontFamily,
   FONT_CSS_MAP,
+  fontCategories,
+  FontFamily,
   FontOption,
   fontOptions,
-  fontCategories,
   getFontCss,
 } from '@/lib/font';
-import { loadFont, isFontLoaded } from '@/lib/font-loader';
-import { Check, Type } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { SettingsHeader } from './settings-commons';
+import { isFontLoaded, loadFont } from '@/lib/font-loader';
 import { cn } from '@/lib/utils';
+
+import { SettingsHeader } from './settings-commons';
 
 const sampleText = 'The quick brown fox jumps over the lazy dog.';
 

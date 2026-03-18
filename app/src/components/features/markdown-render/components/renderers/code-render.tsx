@@ -1,13 +1,15 @@
+import { Check, Copy } from 'lucide-react';
 import React, { useMemo } from 'react';
-import { Copy, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
+
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
+import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
+import { getThemeBackground } from '@/components/features/settings/store/codemirror-themes';
 import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
 import { Button } from '@/components/ui/button';
-import CodeMirrorDisplay from './codemirror-display';
-import { getThemeBackground } from '@/components/features/settings/store/codemirror-themes';
+import { cn } from '@/lib/utils';
+
 import type { TextSizeScale } from '../../utils/text-size-classes';
+import CodeMirrorDisplay from './codemirror-display';
 
 const CODE_FONT_SIZES: Record<TextSizeScale, string> = {
   xs: '0.75rem',

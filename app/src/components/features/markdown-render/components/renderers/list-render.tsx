@@ -1,6 +1,8 @@
 import React from 'react';
-import { useBionicTransform } from '../../hooks/use-bionic-transform';
+
 import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
+
+import { useBionicTransform } from '../../hooks/use-bionic-transform';
 import { TEXT_SIZE_SCALE_CLASSES } from '../../utils/text-size-classes';
 
 type ListProps =

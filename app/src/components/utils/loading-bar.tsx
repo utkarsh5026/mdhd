@@ -1,6 +1,7 @@
-import { cn } from '@/lib/utils';
-import styles from './loading-bar.module.css';
 import { useTheme } from '@/hooks';
+import { cn } from '@/lib/utils';
+
+import styles from './loading-bar.module.css';
 
 interface LoadingFallbackProps {
   message?: string;

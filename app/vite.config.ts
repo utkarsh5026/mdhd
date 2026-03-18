@@ -1,12 +1,12 @@
-import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig } from 'vite';
 import checker from 'vite-plugin-checker';
 import compression from 'vite-plugin-compression';
-import svgr from 'vite-plugin-svgr';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
+import svgr from 'vite-plugin-svgr';
 
 export default defineConfig(({ mode }) => {
   const isDev = mode === 'development';

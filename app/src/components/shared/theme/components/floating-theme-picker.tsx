@@ -1,12 +1,14 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useCurrentTheme, useThemeFloatingPicker, useThemeStore } from '../store/theme-store';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/fast-tabs';
-import { X, Palette } from 'lucide-react';
+import { Palette, X } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/fast-tabs';
 import { cn } from '@/lib/utils';
+
+import { useCurrentTheme, useThemeFloatingPicker, useThemeStore } from '../store/theme-store';
+import BookmarkedThemes from './bookmarked-themes';
 import ThemeCategories from './theme-categories';
 import ThemesList from './themes-list';
-import BookmarkedThemes from './bookmarked-themes';
 
 type TabValue = 'categories' | 'bookmarked' | 'all';
 

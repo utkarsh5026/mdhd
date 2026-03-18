@@ -1,11 +1,13 @@
-import React, { memo, useRef, useState, useEffect } from 'react';
-import { useCodeThemeStore, type ThemeKey } from '@/components/features/settings/store/code-theme';
-import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
 import { Check, Code } from 'lucide-react';
+import React, { memo, useEffect, useRef, useState } from 'react';
+
+import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
+import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
+import { type ThemeKey, useCodeThemeStore } from '@/components/features/settings/store/code-theme';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
-import { SettingsHeader, ExpandableCategory } from './settings-commons';
+
+import { ExpandableCategory, SettingsHeader } from './settings-commons';
 
 const sampleCode = `def fibonacci(n):
     if n <= 1:

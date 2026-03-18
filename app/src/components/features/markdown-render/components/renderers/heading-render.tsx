@@ -1,5 +1,7 @@
 import React from 'react';
+
 import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
+
 import { TEXT_SIZE_SCALE_CLASSES } from '../../utils/text-size-classes';
 
 type HeadingProps = React.ComponentPropsWithoutRef<'h1' | 'h2' | 'h3' | 'h4' | 'h5'>;

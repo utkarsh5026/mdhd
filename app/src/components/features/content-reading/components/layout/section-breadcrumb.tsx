@@ -1,9 +1,10 @@
-import { memo, useMemo, useState, useCallback, useRef, useEffect } from 'react';
-import { VscSymbolNamespace, VscSymbolClass, VscSymbolMethod, VscMarkdown } from 'react-icons/vsc';
-import { ChevronRight, Check } from 'lucide-react';
+import * as Popover from '@radix-ui/react-popover';
+import { Check, ChevronRight } from 'lucide-react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { VscMarkdown, VscSymbolClass, VscSymbolMethod, VscSymbolNamespace } from 'react-icons/vsc';
+
 import { cn } from '@/lib/utils';
 import type { MarkdownSection } from '@/services/section/parsing';
-import * as Popover from '@radix-ui/react-popover';
 
 interface BreadcrumbItem {
   section: MarkdownSection;
