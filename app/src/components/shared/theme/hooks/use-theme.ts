@@ -34,10 +34,14 @@ export const useTheme = () => {
     root.style.setProperty('--card-foreground', currentTheme.cardForeground);
     root.style.setProperty('--muted', currentTheme.secondary);
     root.style.setProperty('--muted-foreground', currentTheme.mutedForeground);
-    root.style.setProperty('--accent', currentTheme.secondary);
+    root.style.setProperty(
+      '--accent',
+      currentTheme.accent ?? `color-mix(in srgb, ${currentTheme.primary} 12%, transparent)`
+    );
     root.style.setProperty('--accent-foreground', currentTheme.accentForeground);
     root.style.setProperty('--popover', currentTheme.cardBg);
     root.style.setProperty('--popover-foreground', currentTheme.popoverForeground);
+    root.style.setProperty('--ring', currentTheme.primary);
   }, [currentTheme]);
 
   useEffect(() => {
