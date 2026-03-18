@@ -34,6 +34,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     updateTabContent,
     updateTabReadingState,
     toggleHeaderVisibility,
+    toggleStatusBarVisibility,
   } = useTabsActions();
 
   // Local state for paste input (replaces reading-store.markdownInput)
@@ -97,7 +98,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
   const shouldShowEmptyState = showEmptyState || tabs.length === 0 || isActiveTabEmpty;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden rounded-2xl">
+    <div className="flex-1 flex flex-col overflow-hidden rounded-2xl border border-border/50">
       {/* Tab Bar - only show if there are tabs */}
       {tabs.length > 0 && (
         <TabBar
@@ -109,6 +110,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
           onTabClose={handleTabClose}
           onNewTab={handleNewTab}
           onToggleHeaderVisibility={toggleHeaderVisibility}
+          onToggleStatusBarVisibility={toggleStatusBarVisibility}
         />
       )}
 

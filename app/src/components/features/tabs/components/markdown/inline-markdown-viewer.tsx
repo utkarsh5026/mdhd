@@ -71,7 +71,7 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
     mobileBreadcrumb,
   }) => {
     return (
-      <div className="absolute top-0 left-0 right-0 z-50 bg-background/85 backdrop-blur-2xl border-b border-border/20 shadow-[0_1px_12px_rgba(0,0,0,0.08)]">
+      <div className="absolute top-0 left-0 right-0 z-50 bg-card/60 backdrop-blur-2xl border-b border-border/20 shadow-[0_1px_12px_rgba(0,0,0,0.08)]">
         {/* Main row */}
         <div className="flex items-center gap-2 px-2 py-1">
           {/* Left: breadcrumb */}

@@ -192,7 +192,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     const shouldShowControls = !isDialogOpen && (!isZenMode || zenControlsVisible);
 
     return (
-      <div className="h-full relative bg-background text-foreground" onClick={handleContentClick}>
+      <div className="h-full relative bg-card text-foreground" onClick={handleContentClick}>
         {/* Content Container - Card Mode or Scroll Mode */}
         {readingMode === 'card' ? (
           <ContentReader

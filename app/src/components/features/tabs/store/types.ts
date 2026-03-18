@@ -45,6 +45,7 @@ export interface TabsState {
   _hasHydrated: boolean;
   untitledCounter: number;
   isHeaderVisible: boolean;
+  isStatusBarVisible: boolean;
 }
 
 export interface TabsActions {
@@ -86,6 +87,7 @@ export interface TabsActions {
   closeTabsBySourceType: (sourceType: 'paste' | 'file') => void;
 
   toggleHeaderVisibility: () => void;
+  toggleStatusBarVisibility: () => void;
   clearPersistedTabs: () => void;
 
   /**
