@@ -78,10 +78,6 @@ export const markdownComponents: Components = {
   ),
 
   img: (props: React.ComponentPropsWithoutRef<'img'>) => (
-    <ImageRender
-      {...props}
-      className="max-w-full h-auto rounded-md my-4"
-      alt={props.alt ?? 'Image'}
-    />
+    <ImageRender key={props.src} {...props} alt={props.alt ?? 'Image'} />
   ),
 };
