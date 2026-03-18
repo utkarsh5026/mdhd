@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "preview:3000": "vite preview --port 3000",
-    "watch:build": "nodemon --watch src --ext ts,tsx,js,jsx,css,json,md --exec \"npm run build\"",
+    "watch:build": "nodemon --watch src --ext ts,tsx,js,jsx,css,json,md --exec \"bun run build\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "knip": "knip",
@@ -154,6 +154,9 @@
     "vite-plugin-image-optimizer": "^2.0.3",
     "vite-plugin-svgr": "^4.5.0",
     "vitest": "^2.1.8"
+  },
+  "engines": {
+    "bun": ">=1.1"
   },
   "overrides": {
     "react-is": "^19.0.0-rc-69d4b800-20241021"

@@ -114,8 +114,7 @@ Every heading becomes a boundary. Instead of rendering the whole document at onc
 
 ### Prerequisites
 
-- **Node.js** >= 18
-- **npm** >= 9
+- **Bun** >= 1.1 — [install from bun.sh](https://bun.sh)
 
 ### Installation
 
@@ -130,13 +129,13 @@ Every heading becomes a boundary. Instead of rendering the whole document at onc
 
    ```bash
    cd app
-   npm install
+   bun install
    ```
 
 3. **Start the development server**
 
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 4. **Open in your browser**
@@ -146,8 +145,8 @@ Every heading becomes a boundary. Instead of rendering the whole document at onc
 ### Build for Production
 
 ```bash
-npm run build
-npm run preview
+bun run build
+bun run preview
 ```
 
 ---
@@ -296,14 +295,14 @@ Contributions make the open-source community an incredible place to learn, inspi
 
 ```bash
 cd app
-npm run dev              # Start dev server
-npm run build            # TypeScript check + production build
-npm run lint             # ESLint
-npm run format           # Prettier format
-npm run test             # Vitest (watch mode)
-npm run test:run         # Vitest (single run)
-npm run test:coverage    # Vitest with coverage
-npm run knip             # Detect unused code/exports
+bun run dev              # Start dev server
+bun run build            # TypeScript check + production build
+bun run lint             # ESLint
+bun run format           # Prettier format
+bun run test             # Vitest (watch mode)
+bun run test:run         # Vitest (single run)
+bun run test:coverage    # Vitest with coverage
+bun run knip             # Detect unused code/exports
 ```
 
 ### Commit Convention
