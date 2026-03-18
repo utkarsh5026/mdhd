@@ -147,6 +147,8 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
    * 🎨 Creates a fresh new section with the right formatting!
    *
    * Sets up a section with proper ID, title, and initial content.
+   * wordCount is intentionally 0 here; the final map below computes it
+   * once over the fully-assembled content, avoiding a double pass.
    */
   const initializeSection = (title: string, level: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
     const pounds = '#'.repeat(level);
@@ -155,7 +157,7 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
       title,
       content: pounds + ' ' + title + '\n',
       level,
-      wordCount: countWords(pounds + ' ' + title + '\n'),
+      wordCount: 0,
     };
   };
 
@@ -188,40 +190,20 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
       continue;
     }
 
-    const h1Regex = /^#\s+(.+)$/;
-    const h2Regex = /^##\s+(.+)$/;
-    const h3Regex = /^###\s+(.+)$/;
-
-    const h3Match = h3Regex.exec(line);
-    const h2Match = h2Regex.exec(line);
-    const h1Match = h1Regex.exec(line);
-
-    switch (true) {
-      case !!h3Match: {
-        const title = h3Match[1].trim();
-        handleHeading(title, 3);
-        break;
+    if (line.startsWith('#')) {
+      const headingMatch = /^(#{1,3})\s+(.+)$/.exec(line);
+      if (headingMatch) {
+        const depth = headingMatch[1].length as 1 | 2 | 3;
+        const title = headingMatch[2].trim();
+        handleHeading(title, depth);
+        continue;
       }
+    }
 
-      case !!h2Match: {
-        const title = h2Match[1].trim();
-        handleHeading(title, 2);
-        break;
-      }
-
-      case !!h1Match: {
-        const title = h1Match[1].trim();
-        handleHeading(title, 1);
-        break;
-      }
-
-      case currentSection !== null: {
-        (currentSection as MarkdownSection).content += line + '\n';
-        break;
-      }
-      default: {
-        introContent += line + '\n';
-      }
+    if (currentSection !== null) {
+      (currentSection as MarkdownSection).content += line + '\n';
+    } else {
+      introContent += line + '\n';
     }
   }
 
