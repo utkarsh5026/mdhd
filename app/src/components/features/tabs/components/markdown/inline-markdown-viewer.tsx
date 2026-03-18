@@ -71,39 +71,49 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
     mobileBreadcrumb,
   }) => {
     return (
-      <>
-        {/* Breadcrumb — top-left overlay, only in card mode */}
-        {readingMode === 'card' && breadcrumb && (
-          <div className="absolute top-0 left-0 z-50 p-2">
-            <div className="hidden sm:block">{breadcrumb}</div>
-            <div className="sm:hidden">{mobileBreadcrumb ?? breadcrumb}</div>
-          </div>
-        )}
-
-        {/* Controls — top-right */}
-        <div className="absolute top-0 right-0 z-50 flex items-center gap-1 p-2">
-          {readingMode === 'card' && (
-            <>
-              <HeaderBtn
-                tooltip="Previous Section"
-                icon={ChevronLeft}
-                onClick={onPrevious}
-                disabled={currentIndex === 0}
-              />
-              <HeaderBtn
-                tooltip="Next Section"
-                icon={ChevronRight}
-                onClick={onNext}
-                disabled={currentIndex === total - 1}
-              />
-              <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
-            </>
+      <div className="absolute top-0 left-0 right-0 z-50 bg-background/85 backdrop-blur-2xl border-b border-border/20 shadow-[0_1px_12px_rgba(0,0,0,0.08)]">
+        {/* Main row */}
+        <div className="flex items-center gap-2 px-2 py-1">
+          {/* Left: breadcrumb */}
+          {breadcrumb && readingMode === 'card' && (
+            <div className="hidden sm:block relative min-w-0 flex-1 overflow-hidden">
+              <div className="overflow-x-auto">{breadcrumb}</div>
+              {/* Fade mask */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-linear-to-l from-background/85 to-transparent" />
+            </div>
           )}
-          <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
-          <HeaderBtn tooltip="Reading Settings" icon={Settings} onClick={onSettings} />
-          <HeaderBtn tooltip="Table of Contents" icon={List} onClick={onMenu} />
+          {(!breadcrumb || readingMode !== 'card') && <div className="flex-1" />}
+
+          {/* Right: controls */}
+          <div className="flex items-center gap-1 shrink-0">
+            {readingMode === 'card' && (
+              <>
+                <HeaderBtn
+                  tooltip="Previous Section"
+                  icon={ChevronLeft}
+                  onClick={onPrevious}
+                  disabled={currentIndex === 0}
+                />
+                <HeaderBtn
+                  tooltip="Next Section"
+                  icon={ChevronRight}
+                  onClick={onNext}
+                  disabled={currentIndex === total - 1}
+                />
+                <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
+              </>
+            )}
+            <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
+            <HeaderBtn tooltip="Reading Settings" icon={Settings} onClick={onSettings} />
+            <HeaderBtn tooltip="Table of Contents" icon={List} onClick={onMenu} />
+          </div>
         </div>
-      </>
+
+        {/* Mobile breadcrumb row */}
+        {breadcrumb && readingMode === 'card' && (
+          <div className="sm:hidden px-2 pb-1.5 pt-0">{mobileBreadcrumb ?? breadcrumb}</div>
+        )}
+      </div>
     );
   }
 );

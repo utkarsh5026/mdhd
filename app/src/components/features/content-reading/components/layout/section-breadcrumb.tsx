@@ -180,7 +180,7 @@ const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
                 </span>
               </div>
 
-              <div className="max-h-64 overflow-y-auto py-1 scrollbar-hide">
+              <div className="max-h-64 overflow-y-auto py-1 scrollbar-none">
                 {children.map((child) => {
                   const ChildIcon = LEVEL_ICONS[child.section.level] ?? VscMarkdown;
                   const childColor = LEVEL_COLORS[child.section.level] ?? 'text-muted-foreground';
@@ -260,8 +260,8 @@ const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
             'rounded-md px-1.5 py-1',
             'bg-background/60 backdrop-blur-sm',
           ],
-          (variant === 'inline' || variant === 'mobile') &&
-            'flex-nowrap overflow-x-auto scrollbar-hide'
+          variant === 'mobile' && 'flex-nowrap overflow-x-auto',
+          variant === 'inline' && 'flex-nowrap'
         )}
       >
         {breadcrumbs.map((item, idx) => (

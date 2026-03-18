@@ -89,9 +89,42 @@
   }
 }
 
+/* Thin minimal scrollbar — visible only on hover */
 ::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
+  width: 1px;
+  height: 1px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+  transition: background 0.2s;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background: oklch(from var(--border) l c h / 40%);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: oklch(from var(--border) l c h / 40%) transparent;
+}
+
+/* Utility: hide scrollbar entirely */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* Add this for better streaming animation performance */
