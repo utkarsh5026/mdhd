@@ -98,7 +98,13 @@ export const useControls = ({ goToNext, goToPrevious, readingMode = 'card' }: Us
    */
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      const target = e.target as Element | null;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.closest?.('[contenteditable="true"]')
+      ) {
         return;
       }
 

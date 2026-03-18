@@ -4,6 +4,7 @@ import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsi
 import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { RefObject, useEffect, useCallback, useRef, useState } from 'react';
+import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
 
 interface ScrollContentReaderProps {
@@ -29,6 +30,13 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
   const sectionRefs = useRef<Map<number, HTMLElement>>(new Map());
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Stable refs for callbacks — prevents the IntersectionObserver and scroll
+  // listener from being torn down and recreated on every parent re-render.
+  const onSectionVisibleRef = useRef(onSectionVisible);
+  const onScrollProgressRef = useRef(onScrollProgress);
+  onSectionVisibleRef.current = onSectionVisible;
+  onScrollProgressRef.current = onScrollProgress;
+
   useEffect(() => {
     setIsLoaded(true);
   }, []);
@@ -38,20 +46,18 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
     const maxScroll = scrollHeight - clientHeight;
     if (maxScroll <= 0) {
-      onScrollProgress(100);
+      onScrollProgressRef.current(100);
       return;
     }
     const progress = (scrollTop / maxScroll) * 100;
-    onScrollProgress(Math.min(100, Math.max(0, progress)));
-  }, [scrollRef, onScrollProgress]);
+    onScrollProgressRef.current(Math.min(100, Math.max(0, progress)));
+  }, [scrollRef]);
 
-  // Set up scroll listener
   useEffect(() => {
     const scrollElement = scrollRef.current;
     if (!scrollElement) return;
 
     scrollElement.addEventListener('scroll', handleScroll, { passive: true });
-    // Initial progress calculation
     handleScroll();
 
     return () => {
@@ -59,14 +65,13 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
     };
   }, [scrollRef, handleScroll]);
 
-  // IntersectionObserver to track visible sections
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && entry.intersectionRatio >= 0.3) {
-            const index = parseInt(entry.target.getAttribute('data-section-index') || '0', 10);
-            onSectionVisible(index);
+            const index = parseInt(entry.target.getAttribute('data-section-index') ?? '0', 10);
+            onSectionVisibleRef.current(index);
           }
         });
       },
@@ -83,9 +88,8 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
     return () => {
       observer.disconnect();
     };
-  }, [sections, scrollRef, onSectionVisible]);
+  }, [sections, scrollRef]);
 
-  // Store ref for each section element
   const setSectionRef = useCallback((index: number, element: HTMLElement | null) => {
     if (element) {
       sectionRefs.current.set(index, element);
@@ -104,7 +108,7 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
       ref={scrollRef}
       onDoubleClick={handleDoubleClick}
     >
-      <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24">
+      <div className={READER_PADDING_CLASSES}>
         <div className="mx-auto" style={{ maxWidth: `${contentWidth}px` }}>
           {/* Show metadata at the top of the content */}
           {metadata && <MetadataDisplay metadata={metadata} />}
