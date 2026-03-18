@@ -22,15 +22,32 @@ export const FileItem: React.FC<FileItemProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-accent/50 rounded-sm transition-colors',
-        isSelected && 'bg-accent'
+        'group flex items-center gap-1.5 px-2 py-0.5 cursor-pointer rounded-md transition-all duration-150',
+        'hover:bg-accent/40',
+        isSelected && 'bg-primary/10 text-primary'
       )}
-      style={{ paddingLeft: `${depth * 12 + 8}px` }}
+      style={{ paddingLeft: `${depth * 14 + 10}px` }}
       onClick={onClick}
       onContextMenu={onContextMenu}
     >
-      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-      <span className="text-sm truncate flex-1 text-muted-foreground">{node.name}</span>
+      <FileText
+        className={cn(
+          'h-3.5 w-3.5 shrink-0 transition-colors',
+          isSelected
+            ? 'text-primary/70'
+            : 'text-muted-foreground/60 group-hover:text-muted-foreground'
+        )}
+      />
+      <span
+        className={cn(
+          'text-xs truncate flex-1 transition-colors',
+          isSelected
+            ? 'text-primary font-medium'
+            : 'text-muted-foreground group-hover:text-foreground/80'
+        )}
+      >
+        {node.name}
+      </span>
     </div>
   );
 };

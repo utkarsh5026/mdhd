@@ -60,15 +60,7 @@ const Homepage = () => {
       {isHeaderVisible && <Header />}
 
       {isHeaderVisible && <div className="shrink-0 h-15" />}
-      <div className="relative flex flex-1 min-h-0 p-2 gap-2">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--primary) 10%, transparent) 0%, transparent 50%)',
-          }}
-        />
-
+      <div className="relative flex flex-1 min-h-0 p-2 gap-1">
         <ReactErrorBoundary>
           <FileExplorerSidebar className="w-64 rounded-2xl" onFileSelect={handleFileSelect} />
         </ReactErrorBoundary>

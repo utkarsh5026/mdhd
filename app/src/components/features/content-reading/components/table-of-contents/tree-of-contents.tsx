@@ -236,12 +236,12 @@ const TreeNodeButton = memo<TreeNodeButtonProps>(
       <button
         style={{ paddingLeft: `${paddingLeft}px` }}
         className={cn(
-          'w-full text-left pr-3 py-2 rounded text-sm',
+          'group w-full text-left pr-3 py-1.5 rounded-md text-xs',
           'flex items-center gap-1.5',
-          'transition-colors',
+          'transition-all duration-150',
           isActive && 'bg-primary/10 text-primary font-medium',
-          !isActive && isRead && showProgress && 'text-muted-foreground',
-          !isActive && !isRead && 'text-foreground hover:bg-secondary/50'
+          !isActive && isRead && showProgress && 'text-muted-foreground/70',
+          !isActive && !isRead && 'text-foreground/70 hover:bg-accent/40 hover:text-foreground'
         )}
         onClick={handleButtonClick}
       >
@@ -249,24 +249,31 @@ const TreeNodeButton = memo<TreeNodeButtonProps>(
         {hasChildren ? (
           <span
             onClick={handleChevronClick}
-            className="p-0.5 hover:bg-secondary/50 rounded cursor-pointer"
+            className="p-0.5 hover:bg-secondary/60 rounded-sm cursor-pointer"
           >
             <ChevronRight
               className={cn(
-                'h-3 w-3 text-muted-foreground transition-transform',
+                'h-2.5 w-2.5 text-muted-foreground/50 transition-transform duration-200',
                 isExpanded && 'rotate-90'
               )}
             />
           </span>
         ) : (
-          <span className="w-4" />
+          <span className="w-3.5" />
         )}
 
         {/* Hierarchical number */}
-        <span className="text-xs text-muted-foreground min-w-5">{node.localIndex}.</span>
+        <span
+          className={cn(
+            'text-[10px] min-w-4 tabular-nums',
+            isActive ? 'text-primary/60' : 'text-muted-foreground/40'
+          )}
+        >
+          {node.localIndex}.
+        </span>
 
         {/* Title */}
-        <span className="line-clamp-2 flex-1">{displayTitle}</span>
+        <span className="line-clamp-2 flex-1 leading-snug">{displayTitle}</span>
       </button>
     );
   }

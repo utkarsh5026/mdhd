@@ -37,8 +37,8 @@ export const SidebarToc: React.FC<SidebarTocProps> = memo(({ className }) => {
   if (!hasActiveTab || sections.length === 0) {
     return (
       <div className={cn('flex flex-col items-center justify-center h-full p-4', className)}>
-        <FileText className="h-8 w-8 text-muted-foreground/50 mb-2" />
-        <p className="text-sm text-muted-foreground text-center">
+        <FileText className="h-6 w-6 text-muted-foreground/30 mb-2" />
+        <p className="text-xs text-muted-foreground/50 text-center">
           {!hasActiveTab ? 'No document open' : 'No headings found'}
         </p>
       </div>

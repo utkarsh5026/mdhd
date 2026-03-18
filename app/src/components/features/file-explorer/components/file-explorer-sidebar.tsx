@@ -137,8 +137,8 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
     <>
       <div className={cn('flex flex-col overflow-hidden bg-background', className)}>
         {/* Header */}
-        <div className="px-3 py-2 border-b border-border/50">
-          <div className="flex items-center justify-end gap-1">
+        <div className="px-2 py-1.5 border-b border-border/30">
+          <div className="flex items-center justify-end gap-0.5">
             <UploadButton variant="files" onUpload={handleFilesUpload} disabled={isUploading} />
             <UploadButton
               variant="directory"

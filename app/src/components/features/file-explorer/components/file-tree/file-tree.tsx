@@ -46,8 +46,8 @@ export const FileTree: React.FC<FileTreeProps> = ({
 
   if (nodes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-sm text-muted-foreground px-4 py-8">
-        <p className="text-center">
+      <div className="flex items-center justify-center h-full text-xs text-muted-foreground/60 px-4 py-8">
+        <p className="text-center leading-relaxed">
           No files yet. Upload markdown files or folders to get started.
         </p>
       </div>
