@@ -80,6 +80,10 @@ export function useSaveShortcut() {
           size: new Blob([activeTab.content]).size,
         });
 
+        if (!storedFile) {
+          throw new Error('A file with this name already exists');
+        }
+
         updateTabSource(activeTab.id, 'file', storedFile.id, storedFile.path);
         await useFileStore.getState().refreshFileTree();
 

@@ -88,10 +88,10 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     [closeTab]
   );
 
-  // Check if active tab is empty (untitled with no content)
-  const isActiveTabEmpty = activeTab && activeTab.content === '';
+  // Check if active tab is genuinely empty (paste tab with no content).
+  // File-backed tabs may have empty content temporarily while reloading from IndexedDB.
+  const isActiveTabEmpty = activeTab && activeTab.content === '' && activeTab.sourceType !== 'file';
 
-  // Show empty state UI if no tabs OR if active tab is empty
   const shouldShowEmptyState = showEmptyState || tabs.length === 0 || isActiveTabEmpty;
 
   return (
