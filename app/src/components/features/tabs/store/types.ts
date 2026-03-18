@@ -87,4 +87,11 @@ export interface TabsActions {
 
   toggleHeaderVisibility: () => void;
   clearPersistedTabs: () => void;
+
+  /**
+   * Parses sections for all tabs that have content but are not yet initialized.
+   * Called after hydration to avoid blocking the first render with synchronous
+   * parsing of every tab's markdown content.
+   */
+  initializeTabSections: () => void;
 }

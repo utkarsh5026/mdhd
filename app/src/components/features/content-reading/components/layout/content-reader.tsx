@@ -5,6 +5,7 @@ import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsi
 import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { memo, type RefObject } from 'react';
+import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
 
 interface ContentReaderProps {
@@ -66,7 +67,7 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
         ref={scrollRef}
       >
         <div {...swipeHandlers} onDoubleClick={handleDoubleClick} className="h-full">
-          <div className="px-6 md:px-12 lg:px-20 xl:px-32 py-20 md:py-24 h-auto">
+          <div className={cn(READER_PADDING_CLASSES, 'h-auto')}>
             <div className="mx-auto rounded-2xl" style={{ maxWidth: `${contentWidth}px` }}>
               {/* Show metadata only on the first section */}
               {currentIndex === 0 && metadata && <MetadataDisplay metadata={metadata} />}

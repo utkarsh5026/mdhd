@@ -104,10 +104,8 @@ export async function processFileUpload(
         const path = getFilePath(file, basePath);
         const parentPath = getParentPath(path);
 
-        if (await fileStorageDB.getFileByPath(path)) {
-          return null;
-        }
-
+        // addFile returns null if the path already exists (ConstraintError),
+        // avoiding a separate existence check that would be a TOCTOU race.
         return fileStorageDB.addFile({
           name: file.name,
           path,
@@ -201,7 +199,42 @@ const MAX_DIRECTORY_DEPTH = 10;
 const MAX_FILE_COUNT = 1000;
 
 /**
- * Recursively read all files from a directory entry (for drag-drop)
+ * Wraps the callback-based FileSystemEntry.file() in a Promise.
+ */
+function readEntryAsFile(
+  fileMethod: (callback: (file: File) => void, errorCallback?: (error: Error) => void) => void,
+  fullPath: string
+): Promise<File> {
+  return new Promise((resolve, reject) => {
+    fileMethod((f) => {
+      const newFile = new File([f], f.name, { type: f.type });
+      Object.defineProperty(newFile, 'webkitRelativePath', {
+        value: fullPath.substring(1), // Remove leading /
+        writable: false,
+      });
+      resolve(newFile);
+    }, reject);
+  });
+}
+
+/**
+ * Wraps the callback-based FileSystemDirectoryReader.readEntries() in a Promise.
+ * readEntries() must be called repeatedly until it returns an empty array.
+ */
+function readNextBatch(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
+  return new Promise((resolve, reject) => {
+    reader.readEntries(resolve, reject);
+  });
+}
+
+/**
+ * Recursively read all files from a directory entry (for drag-drop).
+ *
+ * The File System Access API's readEntries() callback is synchronous from the
+ * API's perspective — it does not await its callback's return value. Using an
+ * async callback there causes unhandled rejections to silently swallow errors
+ * and leaves the outer Promise permanently pending. This implementation avoids
+ * async callbacks entirely by wrapping each step in its own Promise.
  */
 async function readDirectoryEntries(
   dirEntry: FileSystemEntry,
@@ -213,66 +246,34 @@ async function readDirectoryEntries(
     return [];
   }
 
-  return new Promise((resolve, reject) => {
-    const reader = dirEntry.createReader?.();
-    if (!reader) {
-      resolve([]);
-      return;
+  const reader = dirEntry.createReader?.();
+  if (!reader) return [];
+
+  const files: File[] = [];
+
+  // readEntries() returns at most ~100 entries per call; loop until empty.
+  while (true) {
+    const entries = await readNextBatch(reader);
+    if (entries.length === 0) break;
+
+    for (const entry of entries) {
+      if (fileCount.value >= MAX_FILE_COUNT) {
+        toast.warning(`File limit reached (${MAX_FILE_COUNT}) — remaining files skipped`);
+        return files;
+      }
+
+      if (entry.isFile && entry.file) {
+        const file = await readEntryAsFile(entry.file.bind(entry), entry.fullPath);
+        files.push(file);
+        fileCount.value++;
+      } else if (entry.isDirectory) {
+        const subFiles = await readDirectoryEntries(entry, depth + 1, fileCount);
+        files.push(...subFiles);
+      }
     }
+  }
 
-    const files: File[] = [];
-
-    const createFile = async (
-      fileMethod: (callback: (file: File) => void, errorCallback?: (error: Error) => void) => void,
-      fullPath: string
-    ) => {
-      return new Promise<File>((res, rej) => {
-        fileMethod((f) => {
-          const newFile = new File([f], f.name, { type: f.type });
-          Object.defineProperty(newFile, 'webkitRelativePath', {
-            value: fullPath.substring(1), // Remove leading /
-            writable: false,
-          });
-          res(newFile);
-        }, rej);
-      });
-    };
-
-    const readBatch = () => {
-      reader.readEntries(
-        async (entries) => {
-          if (entries.length === 0) {
-            resolve(files);
-            return;
-          }
-
-          for (const entry of entries) {
-            if (fileCount.value >= MAX_FILE_COUNT) {
-              toast.warning(`File limit reached (${MAX_FILE_COUNT}) — remaining files skipped`);
-              resolve(files);
-              return;
-            }
-
-            if (entry.isFile && entry.file) {
-              const file = await createFile(entry.file, entry.fullPath);
-              files.push(file);
-              fileCount.value++;
-              continue;
-            }
-
-            if (entry.isDirectory) {
-              const subFiles = await readDirectoryEntries(entry, depth + 1, fileCount);
-              files.push(...subFiles);
-            }
-          }
-          readBatch();
-        },
-        (error) => reject(error)
-      );
-    };
-
-    readBatch();
-  });
+  return files;
 }
 
 /**

@@ -11,6 +11,9 @@ export type ThemeOption = {
   cardBg: string;
   cardForeground: string;
   mutedForeground: string;
+  /** Primary-tinted surface color used for hover/selected states (bg-accent).
+   *  Optional — falls back to color-mix(primary 12%, transparent) in use-theme.ts. */
+  accent?: string;
   accentForeground: string;
   popoverForeground: string;
   isDark: boolean;
@@ -30,6 +33,7 @@ export const defaultThemes: ThemeOption[] = [
     cardBg: '#161b22',
     cardForeground: '#f0f6fc',
     mutedForeground: '#8b949e',
+    accent: '#58a6ff1f',
     accentForeground: '#f0f6fc',
     popoverForeground: '#f0f6fc',
     isDark: true,
@@ -47,6 +51,7 @@ export const defaultThemes: ThemeOption[] = [
     cardBg: '#f6f8fa',
     cardForeground: '#24292f',
     mutedForeground: '#656d76',
+    accent: '#0969da1f',
     accentForeground: '#24292f',
     popoverForeground: '#24292f',
     isDark: false,
@@ -64,6 +69,7 @@ export const defaultThemes: ThemeOption[] = [
     cardBg: '#151618',
     cardForeground: '#ffffff',
     mutedForeground: '#9ca3af',
+    accent: '#5e6ad21f',
     accentForeground: '#ffffff',
     popoverForeground: '#ffffff',
     isDark: true,

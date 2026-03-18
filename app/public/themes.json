@@ -12,6 +12,7 @@
     "cardBg": "#242424",
     "cardForeground": "#ffffff",
     "mutedForeground": "#9b9b9b",
+    "accent": "#2eaadc1f",
     "accentForeground": "#ffffff",
     "popoverForeground": "#ffffff",
     "isDark": true
@@ -29,6 +30,7 @@
     "cardBg": "#111111",
     "cardForeground": "#fafafa",
     "mutedForeground": "#666666",
+    "accent": "#0070f31f",
     "accentForeground": "#fafafa",
     "popoverForeground": "#fafafa",
     "isDark": true
@@ -46,6 +48,7 @@
     "cardBg": "#36393f",
     "cardForeground": "#ffffff",
     "mutedForeground": "#b9bbbe",
+    "accent": "#7289da1f",
     "accentForeground": "#ffffff",
     "popoverForeground": "#ffffff",
     "isDark": true
@@ -63,6 +66,7 @@
     "cardBg": "#181818",
     "cardForeground": "#ffffff",
     "mutedForeground": "#b3b3b3",
+    "accent": "#1db9541f",
     "accentForeground": "#ffffff",
     "popoverForeground": "#ffffff",
     "isDark": true
@@ -80,6 +84,7 @@
     "cardBg": "#1f2225",
     "cardForeground": "#d1d2d3",
     "mutedForeground": "#ababad",
+    "accent": "#1264a31f",
     "accentForeground": "#d1d2d3",
     "popoverForeground": "#d1d2d3",
     "isDark": true
@@ -97,6 +102,7 @@
     "cardBg": "#181825",
     "cardForeground": "#cdd6f4",
     "mutedForeground": "#6c7086",
+    "accent": "#89b4fa1f",
     "accentForeground": "#cdd6f4",
     "popoverForeground": "#cdd6f4",
     "isDark": true
@@ -114,6 +120,7 @@
     "cardBg": "#353945",
     "cardForeground": "#d3dae3",
     "mutedForeground": "#8b9dc3",
+    "accent": "#5294e21f",
     "accentForeground": "#d3dae3",
     "popoverForeground": "#d3dae3",
     "isDark": true
@@ -131,6 +138,7 @@
     "cardBg": "#3b4252",
     "cardForeground": "#eceff4",
     "mutedForeground": "#81a1c1",
+    "accent": "#5e81ac1f",
     "accentForeground": "#eceff4",
     "popoverForeground": "#eceff4",
     "isDark": true
@@ -148,6 +156,7 @@
     "cardBg": "#32302f",
     "cardForeground": "#ebdbb2",
     "mutedForeground": "#a89984",
+    "accent": "#4585881f",
     "accentForeground": "#ebdbb2",
     "popoverForeground": "#ebdbb2",
     "isDark": true
@@ -165,6 +174,7 @@
     "cardBg": "#2c313c",
     "cardForeground": "#abb2bf",
     "mutedForeground": "#5c6370",
+    "accent": "#61afef1f",
     "accentForeground": "#abb2bf",
     "popoverForeground": "#abb2bf",
     "isDark": true
@@ -182,6 +192,7 @@
     "cardBg": "#252526",
     "cardForeground": "#d4d4d4",
     "mutedForeground": "#969696",
+    "accent": "#007acc1f",
     "accentForeground": "#d4d4d4",
     "popoverForeground": "#d4d4d4",
     "isDark": true
@@ -199,6 +210,7 @@
     "cardBg": "#2d2f3a",
     "cardForeground": "#f8f8f2",
     "mutedForeground": "#6272a4",
+    "accent": "#bd93f91f",
     "accentForeground": "#f8f8f2",
     "popoverForeground": "#f8f8f2",
     "isDark": true
@@ -216,6 +228,7 @@
     "cardBg": "#1f2335",
     "cardForeground": "#a9b1d6",
     "mutedForeground": "#565f89",
+    "accent": "#7aa2f71f",
     "accentForeground": "#a9b1d6",
     "popoverForeground": "#a9b1d6",
     "isDark": true
@@ -233,6 +246,7 @@
     "cardBg": "#363537",
     "cardForeground": "#fcfcfa",
     "mutedForeground": "#939293",
+    "accent": "#ab9df21f",
     "accentForeground": "#fcfcfa",
     "popoverForeground": "#fcfcfa",
     "isDark": true
@@ -250,6 +264,7 @@
     "cardBg": "#37474f",
     "cardForeground": "#eeffff",
     "mutedForeground": "#546e7a",
+    "accent": "#82aaff1f",
     "accentForeground": "#eeffff",
     "popoverForeground": "#eeffff",
     "isDark": true
@@ -267,6 +282,7 @@
     "cardBg": "#073642",
     "cardForeground": "#839496",
     "mutedForeground": "#657b83",
+    "accent": "#268bd21f",
     "accentForeground": "#839496",
     "popoverForeground": "#839496",
     "isDark": true
@@ -284,6 +300,7 @@
     "cardBg": "#3a3f58",
     "cardForeground": "#a6accd",
     "mutedForeground": "#676e95",
+    "accent": "#82b1ff1f",
     "accentForeground": "#a6accd",
     "popoverForeground": "#a6accd",
     "isDark": true
@@ -301,6 +318,7 @@
     "cardBg": "#fafbfc",
     "cardForeground": "#000000",
     "mutedForeground": "#6b7280",
+    "accent": "#5e6ad21f",
     "accentForeground": "#000000",
     "popoverForeground": "#000000",
     "isDark": false
@@ -318,6 +336,7 @@
     "cardBg": "#fbfbfa",
     "cardForeground": "#37352f",
     "mutedForeground": "#787774",
+    "accent": "#2eaadc1f",
     "accentForeground": "#37352f",
     "popoverForeground": "#37352f",
     "isDark": false
@@ -335,6 +354,7 @@
     "cardBg": "#f9f9f9",
     "cardForeground": "#1e1e1e",
     "mutedForeground": "#666666",
+    "accent": "#0d99ff1f",
     "accentForeground": "#1e1e1e",
     "popoverForeground": "#1e1e1e",
     "isDark": false
@@ -352,6 +372,7 @@
     "cardBg": "#f9f9f9",
     "cardForeground": "#1c1c1e",
     "mutedForeground": "#8e8e93",
+    "accent": "#007aff1f",
     "accentForeground": "#1c1c1e",
     "popoverForeground": "#1c1c1e",
     "isDark": false
@@ -369,6 +390,7 @@
     "cardBg": "#f3f4f6",
     "cardForeground": "#111827",
     "mutedForeground": "#6b7280",
+    "accent": "#3b82f61f",
     "accentForeground": "#111827",
     "popoverForeground": "#111827",
     "isDark": false
@@ -386,6 +408,7 @@
     "cardBg": "#fafafa",
     "cardForeground": "#000000",
     "mutedForeground": "#666666",
+    "accent": "#0070f31f",
     "accentForeground": "#000000",
     "popoverForeground": "#000000",
     "isDark": false
@@ -403,6 +426,7 @@
     "cardBg": "#f6f9fc",
     "cardForeground": "#1a1f36",
     "mutedForeground": "#8898aa",
+    "accent": "#635bff1f",
     "accentForeground": "#1a1f36",
     "popoverForeground": "#1a1f36",
     "isDark": false
@@ -420,6 +444,7 @@
     "cardBg": "#f7f7f7",
     "cardForeground": "#222222",
     "mutedForeground": "#717171",
+    "accent": "#ff5a5f1f",
     "accentForeground": "#222222",
     "popoverForeground": "#222222",
     "isDark": false
@@ -437,6 +462,7 @@
     "cardBg": "#fdf7ff",
     "cardForeground": "#1c1b1f",
     "mutedForeground": "#79747e",
+    "accent": "#7c4dff1f",
     "accentForeground": "#1c1b1f",
     "popoverForeground": "#1c1b1f",
     "isDark": false
@@ -454,6 +480,7 @@
     "cardBg": "#ecfdf5",
     "cardForeground": "#0f172a",
     "mutedForeground": "#6b7280",
+    "accent": "#10b9811f",
     "accentForeground": "#0f172a",
     "popoverForeground": "#0f172a",
     "isDark": false
@@ -471,6 +498,7 @@
     "cardBg": "#ffedd5",
     "cardForeground": "#1c1917",
     "mutedForeground": "#78716c",
+    "accent": "#ea580c1f",
     "accentForeground": "#1c1917",
     "popoverForeground": "#1c1917",
     "isDark": false
@@ -488,6 +516,7 @@
     "cardBg": "#f0f9ff",
     "cardForeground": "#0c4a6e",
     "mutedForeground": "#0369a1",
+    "accent": "#0ea5e91f",
     "accentForeground": "#0c4a6e",
     "popoverForeground": "#0c4a6e",
     "isDark": false
@@ -505,6 +534,7 @@
     "cardBg": "#fef7f0",
     "cardForeground": "#831843",
     "mutedForeground": "#be185d",
+    "accent": "#ec48991f",
     "accentForeground": "#831843",
     "popoverForeground": "#831843",
     "isDark": false
@@ -522,6 +552,7 @@
     "cardBg": "#0d0d0d",
     "cardForeground": "#ffffff",
     "mutedForeground": "#a0a0a0",
+    "accent": "#ffffff1f",
     "accentForeground": "#ffffff",
     "popoverForeground": "#ffffff",
     "isDark": true
@@ -539,6 +570,7 @@
     "cardBg": "#fcfcfc",
     "cardForeground": "#000000",
     "mutedForeground": "#666666",
+    "accent": "#0000001f",
     "accentForeground": "#000000",
     "popoverForeground": "#000000",
     "isDark": false
@@ -556,6 +588,7 @@
     "cardBg": "#121212",
     "cardForeground": "#f5f5f5",
     "mutedForeground": "#888888",
+    "accent": "#00ff001f",
     "accentForeground": "#f5f5f5",
     "popoverForeground": "#f5f5f5",
     "isDark": true
@@ -573,6 +606,7 @@
     "cardBg": "#fdfdfd",
     "cardForeground": "#2a2a2a",
     "mutedForeground": "#718096",
+    "accent": "#4a55681f",
     "accentForeground": "#2a2a2a",
     "popoverForeground": "#2a2a2a",
     "isDark": false
@@ -590,6 +624,7 @@
     "cardBg": "#181818",
     "cardForeground": "#f0f0f0",
     "mutedForeground": "#a0a0a0",
+    "accent": "#f0f0f01f",
     "accentForeground": "#f0f0f0",
     "popoverForeground": "#f0f0f0",
     "isDark": true
@@ -607,6 +642,7 @@
     "cardBg": "#222222",
     "cardForeground": "#e8e8e8",
     "mutedForeground": "#999999",
+    "accent": "#4a9eff1f",
     "accentForeground": "#e8e8e8",
     "popoverForeground": "#e8e8e8",
     "isDark": true
@@ -624,6 +660,7 @@
     "cardBg": "#ffffff",
     "cardForeground": "#2d3748",
     "mutedForeground": "#718096",
+    "accent": "#4299e11f",
     "accentForeground": "#2d3748",
     "popoverForeground": "#2d3748",
     "isDark": false
@@ -641,6 +678,7 @@
     "cardBg": "#ffffff",
     "cardForeground": "#3e2723",
     "mutedForeground": "#6d4c41",
+    "accent": "#8d6e631f",
     "accentForeground": "#3e2723",
     "popoverForeground": "#3e2723",
     "isDark": false
@@ -658,6 +696,7 @@
     "cardBg": "#242424",
     "cardForeground": "#e0d5c7",
     "mutedForeground": "#b39c7a",
+    "accent": "#d4a5741f",
     "accentForeground": "#e0d5c7",
     "popoverForeground": "#e0d5c7",
     "isDark": true
@@ -675,6 +714,7 @@
     "cardBg": "#0a0a0a",
     "cardForeground": "#ffffff",
     "mutedForeground": "#cccccc",
+    "accent": "#00ffff1f",
     "accentForeground": "#ffffff",
     "popoverForeground": "#ffffff",
     "isDark": true
@@ -692,6 +732,7 @@
     "cardBg": "#f8f8f8",
     "cardForeground": "#000000",
     "mutedForeground": "#333333",
+    "accent": "#0000ff1f",
     "accentForeground": "#000000",
     "popoverForeground": "#000000",
     "isDark": false
@@ -709,6 +750,7 @@
     "cardBg": "#1f2e1f",
     "cardForeground": "#e8f5e8",
     "mutedForeground": "#94a3b8",
+    "accent": "#4ade801f",
     "accentForeground": "#e8f5e8",
     "popoverForeground": "#e8f5e8",
     "isDark": true
@@ -726,6 +768,7 @@
     "cardBg": "#243240",
     "cardForeground": "#e0f2fe",
     "mutedForeground": "#94a3b8",
+    "accent": "#38bdf81f",
     "accentForeground": "#e0f2fe",
     "popoverForeground": "#e0f2fe",
     "isDark": true
@@ -743,6 +786,7 @@
     "cardBg": "#322727",
     "cardForeground": "#fef2e8",
     "mutedForeground": "#d1d5db",
+    "accent": "#fb923c1f",
     "accentForeground": "#fef2e8",
     "popoverForeground": "#fef2e8",
     "isDark": true
@@ -760,6 +804,7 @@
     "cardBg": "#ffffff",
     "cardForeground": "#334155",
     "mutedForeground": "#64748b",
+    "accent": "#0f766e1f",
     "accentForeground": "#334155",
     "popoverForeground": "#334155",
     "isDark": false
@@ -777,6 +822,7 @@
     "cardBg": "#fffbeb",
     "cardForeground": "#78350f",
     "mutedForeground": "#a16207",
+    "accent": "#ea580c1f",
     "accentForeground": "#78350f",
     "popoverForeground": "#78350f",
     "isDark": false
@@ -794,6 +840,7 @@
     "cardBg": "#0f1430",
     "cardForeground": "#00ffff",
     "mutedForeground": "#8a8aff",
+    "accent": "#ff00ff1f",
     "accentForeground": "#00ffff",
     "popoverForeground": "#00ffff",
     "isDark": true
@@ -811,6 +858,7 @@
     "cardBg": "#1f1035",
     "cardForeground": "#ff6ec7",
     "mutedForeground": "#ca6fc1",
+    "accent": "#00f5ff1f",
     "accentForeground": "#ff6ec7",
     "popoverForeground": "#ff6ec7",
     "isDark": true
@@ -828,6 +876,7 @@
     "cardBg": "#111926",
     "cardForeground": "#39ff14",
     "mutedForeground": "#29cc0a",
+    "accent": "#39ff141f",
     "accentForeground": "#39ff14",
     "popoverForeground": "#39ff14",
     "isDark": true
@@ -845,6 +894,7 @@
     "cardBg": "#1f1a0d",
     "cardForeground": "#ffb000",
     "mutedForeground": "#cc8800",
+    "accent": "#ff8c001f",
     "accentForeground": "#ffb000",
     "popoverForeground": "#ffb000",
     "isDark": true

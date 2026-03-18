@@ -3,10 +3,8 @@ import { useThemeFloatingPicker } from '@/components/shared/theme/store/theme-st
 import { useControls } from '@/components/features/content-reading/hooks';
 import {
   NavigationControls,
-  DesktopProgressIndicator,
   ContentReader,
   ScrollContentReader,
-  ZenPositionIndicator,
   SectionBreadcrumb,
 } from './layout';
 import SectionsSheet from './table-of-contents/sections-sheet';
@@ -94,7 +92,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     currentSection,
     isTransitioning,
     readingMode,
-    scrollProgress,
     goToNext,
     goToPrevious,
     changeSection,
@@ -154,7 +151,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
       [readingMode, sections, currentIndex, changeSection, markSectionAsRead]
     );
 
-    // Handle section visibility for marking sections as read in scroll mode
     const handleSectionVisible = useCallback(
       (index: number) => {
         markSectionAsRead(index);
@@ -282,22 +278,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
             />
           </div>
         )}
-
-        {/* Desktop side progress - hidden in zen mode */}
-        {!isZenMode && (
-          <DesktopProgressIndicator
-            currentIndex={currentIndex}
-            total={sections.length}
-            onSelectSection={(index) => handleSelectCard(index)}
-            sections={sections}
-            readSections={readSections}
-            readingMode={readingMode}
-            scrollProgress={scrollProgress}
-          />
-        )}
-
-        {/* Zen Mode Position Indicator - only shown in zen mode */}
-        {isZenMode && <ZenPositionIndicator currentIndex={currentIndex} total={sections.length} />}
 
         {/* Sections Sheet */}
         <SectionsSheet

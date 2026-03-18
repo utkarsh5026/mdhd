@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
+import { fileStorageDB } from '@/services/indexeddb/db';
 import type { Tab, TabReadingState, TabsActions, TabsState } from './types';
-import { customTabsStorage } from './storage';
+import { customTabsStorage, type PersistedTabsState } from './storage';
 import { createTab, extractTitleFromMarkdown, hashString } from './helpers';
 
 const STORAGE_VERSION = 1;
@@ -271,6 +272,24 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             _hasHydrated: true,
           });
         },
+
+        initializeTabSections: () => {
+          set((state) => ({
+            tabs: state.tabs.map((t) => {
+              if (t.readingState.isInitialized || !t.content) return t;
+              const { metadata, sections } = parseMarkdownIntoSections(t.content);
+              return {
+                ...t,
+                readingState: {
+                  ...t.readingState,
+                  sections,
+                  metadata,
+                  isInitialized: sections.length > 0,
+                },
+              };
+            }),
+          }));
+        },
       }),
       {
         name: STORAGE_KEY,
@@ -290,13 +309,51 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             version,
             untitledCounter,
             isHeaderVisible,
-          }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+          }) as unknown as PersistedTabsState,
         version: STORAGE_VERSION,
         onRehydrateStorage: () => (state, error) => {
           if (error) {
             console.error('Error rehydrating tabs session:', error);
           } else if (state) {
             state._hasHydrated = true;
+
+            if (state.tabs.some((t) => t.content && !t.readingState.isInitialized)) {
+              setTimeout(() => {
+                useTabsStore.getState().initializeTabSections();
+              }, 0);
+            }
+
+            const fileBackedTabs = state.tabs.filter(
+              (t) => t.sourceType === 'file' && t.sourceFileId && !t.content
+            );
+            if (fileBackedTabs.length > 0) {
+              Promise.all(
+                fileBackedTabs.map(async (tab) => {
+                  const file = await fileStorageDB.getFile(tab.sourceFileId!);
+                  return { tabId: tab.id, content: file?.content ?? null };
+                })
+              ).then((results) => {
+                useTabsStore.setState((prev) => ({
+                  tabs: prev.tabs.map((t) => {
+                    const result = results.find((r) => r.tabId === t.id);
+                    if (!result?.content) return t;
+
+                    const { metadata, sections } = parseMarkdownIntoSections(result.content);
+                    return {
+                      ...t,
+                      content: result.content,
+                      contentHash: hashString(result.content),
+                      readingState: {
+                        ...t.readingState,
+                        sections,
+                        metadata,
+                        isInitialized: sections.length > 0,
+                      },
+                    };
+                  }),
+                }));
+              });
+            }
           }
         },
       }

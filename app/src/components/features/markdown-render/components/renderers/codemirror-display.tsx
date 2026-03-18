@@ -18,6 +18,7 @@ interface CodeMirrorDisplayProps {
   showLineNumbers?: boolean;
   enableCodeFolding?: boolean;
   enableWordWrap?: boolean;
+  fontSize?: string;
 }
 
 const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
@@ -31,6 +32,7 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
       showLineNumbers = true,
       enableCodeFolding = true,
       enableWordWrap = false,
+      fontSize,
     },
     ref
   ) => {
@@ -43,6 +45,8 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
     const languageCompartment = useRef(new Compartment()).current;
     const themeCompartment = useRef(new Compartment()).current;
 
+    const resolvedFontSize = isDialog ? '1rem' : (fontSize ?? '0.875rem');
+
     const baseTheme = useMemo(
       () =>
         EditorView.theme({
@@ -51,7 +55,7 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
             width: '100%',
             maxWidth: '100%',
             overflow: 'hidden',
-            fontSize: isDialog ? '1rem' : '0.875rem',
+            fontSize: resolvedFontSize,
             lineHeight: isDialog ? '1.8' : '1.6',
           },
           '.cm-scroller': {
@@ -86,7 +90,7 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
             padding: '0 0.5rem',
           },
         }),
-      [isDialog]
+      [isDialog, resolvedFontSize]
     );
 
     const extensions = useMemo(() => {

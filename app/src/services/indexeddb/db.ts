@@ -8,6 +8,7 @@ import type {
 } from './types';
 
 const DB_NAME = 'mdhd-files';
+
 const DB_VERSION = 1;
 const FILES_STORE = 'files';
 const DIRECTORIES_STORE = 'directories';
@@ -72,18 +73,21 @@ class FileStorageDB {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
+        const oldVersion = event.oldVersion;
 
-        if (!db.objectStoreNames.contains(FILES_STORE)) {
+        // Version 1: initial schema
+        if (oldVersion < 1) {
           const filesStore = db.createObjectStore(FILES_STORE, { keyPath: 'id' });
           filesStore.createIndex('path', 'path', { unique: true });
           filesStore.createIndex('parentPath', 'parentPath', { unique: false });
-        }
 
-        if (!db.objectStoreNames.contains(DIRECTORIES_STORE)) {
           const dirsStore = db.createObjectStore(DIRECTORIES_STORE, { keyPath: 'id' });
           dirsStore.createIndex('path', 'path', { unique: true });
           dirsStore.createIndex('parentPath', 'parentPath', { unique: false });
         }
+
+        // Future versions: add migration blocks here, e.g.:
+        // if (oldVersion < 2) { /* migrate v1 → v2 */ }
       };
     });
 
@@ -111,7 +115,7 @@ class FileStorageDB {
       const request = operation(store);
 
       request.onsuccess = () =>
-        resolve(resolvedValue !== undefined ? resolvedValue : request.result || defaultValue);
+        resolve(resolvedValue !== undefined ? resolvedValue : (request.result ?? defaultValue));
       request.onerror = () => reject(new Error(errorMessage));
     });
   }
@@ -195,7 +199,7 @@ class FileStorageDB {
     });
   }
 
-  async addFile(input: CreateFileInput): Promise<StoredFile> {
+  async addFile(input: CreateFileInput): Promise<StoredFile | null> {
     const now = Date.now();
     const file: StoredFile = {
       ...input,
@@ -206,9 +210,20 @@ class FileStorageDB {
       updatedAt: now,
     };
 
-    return this.withStore(FILES_STORE, 'readwrite', (store) => store.add(file), {
-      resolvedValue: file,
-      errorMessage: 'Failed to add file',
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([FILES_STORE], 'readwrite');
+      const request = transaction.objectStore(FILES_STORE).add(file);
+
+      request.onsuccess = () => resolve(file);
+      request.onerror = () => {
+        if (request.error?.name === 'ConstraintError') {
+          transaction.abort();
+          resolve(null);
+        } else {
+          reject(new Error('Failed to add file'));
+        }
+      };
     });
   }
 
@@ -248,8 +263,6 @@ class FileStorageDB {
     );
   }
 
-  // ============ Directory Operations ============
-
   async addDirectory(input: CreateDirectoryInput): Promise<StoredDirectory> {
     const dir: StoredDirectory = {
       ...input,
@@ -287,16 +300,36 @@ class FileStorageDB {
 
   async deleteDirectoryRecursive(path: string): Promise<void> {
     const normalizedPath = normalizePath(path);
-    await this.deleteByPredicate<StoredFile>(FILES_STORE, (file) =>
-      file.path.startsWith(normalizedPath)
-    );
-    await this.deleteByPredicate<StoredDirectory>(
-      DIRECTORIES_STORE,
-      (dir) => dir.path === normalizedPath || dir.path.startsWith(normalizedPath + '/')
-    );
-  }
+    const db = await this.getDB();
 
-  // ============ Tree Operations ============
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([FILES_STORE, DIRECTORIES_STORE], 'readwrite');
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(new Error('Failed to delete directory recursively'));
+
+      const deleteFromStore = <T extends { path: string }>(
+        storeName: string,
+        predicate: (value: T) => boolean
+      ) => {
+        const request = transaction.objectStore(storeName).openCursor();
+        request.onsuccess = (event) => {
+          const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+          if (cursor) {
+            if (predicate(cursor.value as T)) cursor.delete();
+            cursor.continue();
+          }
+        };
+        request.onerror = () => transaction.abort();
+      };
+
+      deleteFromStore<StoredFile>(FILES_STORE, (file) => file.path.startsWith(normalizedPath));
+      deleteFromStore<StoredDirectory>(
+        DIRECTORIES_STORE,
+        (dir) => dir.path === normalizedPath || dir.path.startsWith(normalizedPath + '/')
+      );
+    });
+  }
 
   async buildFileTree(): Promise<FileTreeNode[]> {
     const files = await this.getAllFiles();
