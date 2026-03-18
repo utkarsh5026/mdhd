@@ -3,6 +3,9 @@ import { useShallow } from 'zustand/react/shallow';
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 import type { FontFamily } from '@/lib/font';
 import { loadFont } from '@/lib/font-loader';
+import type { TextSizeScale } from '@/components/features/markdown-render/utils/text-size-classes';
+
+export type { TextSizeScale };
 
 export interface ReadingSettings {
   fontFamily: FontFamily;
@@ -12,6 +15,7 @@ export interface ReadingSettings {
   contentWidth: number; // 500-900px
   bionicReading: boolean;
   sentenceFocusOnHover: boolean;
+  textSizeScale: TextSizeScale;
 }
 
 interface ReadingSettingsState {
@@ -22,6 +26,7 @@ interface ReadingSettingsState {
   setContentWidth: (width: number) => void;
   toggleBionicReading: () => void;
   toggleSentenceFocusOnHover: () => void;
+  setTextSizeScale: (scale: TextSizeScale) => void;
   resetSettings: () => void;
 }
 
@@ -34,6 +39,7 @@ const DEFAULT_SETTINGS: ReadingSettings = {
   contentWidth: 700,
   bionicReading: false,
   sentenceFocusOnHover: false,
+  textSizeScale: 'base',
 };
 
 const loadInitialSettings = (): ReadingSettings => {
@@ -110,6 +116,13 @@ export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
       return { settings: newSettings };
     }),
 
+  setTextSizeScale: (scale: TextSizeScale) =>
+    set((state) => {
+      const newSettings = { ...state.settings, textSizeScale: scale };
+      saveSettings(newSettings);
+      return { settings: newSettings };
+    }),
+
   resetSettings: () =>
     set(() => {
       localStorage.removeItem('reading-settings');
@@ -131,6 +144,7 @@ export const useReadingSettings = () => {
       setContentWidth: state.setContentWidth,
       toggleBionicReading: state.toggleBionicReading,
       toggleSentenceFocusOnHover: state.toggleSentenceFocusOnHover,
+      setTextSizeScale: state.setTextSizeScale,
       resetSettings: state.resetSettings,
     }))
   );

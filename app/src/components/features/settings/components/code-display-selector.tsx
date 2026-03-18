@@ -3,7 +3,9 @@ import { Settings2, Hash, Braces, WrapText, LucideIcon } from 'lucide-react';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
 import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
 import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
-import { SettingsHeader, SettingToggle } from './settings-commons';
+import { SettingsHeader } from './settings-commons';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 const sampleCode = `function greet(name: string) {
   const message = \`Hello, \${name}!\`;
@@ -52,33 +54,49 @@ const CodeDisplaySelector: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 min-w-0 overflow-hidden">
+    <div className="space-y-5 min-w-0 overflow-hidden">
       <SettingsHeader
         icon={<Settings2 className="h-4 w-4 text-primary" />}
-        title="Code Display Options"
+        title="Code Display"
         description="Customize how code blocks appear"
       />
 
-      {/* Settings Toggles */}
-      <div className="space-y-3">
-        {settingOptions.map(({ icon: Icon, title, description, settingKey, setter }) => (
-          <SettingToggle
-            key={settingKey}
-            icon={<Icon className="h-4 w-4" />}
-            title={title}
-            description={description}
-            checked={settings[settingKey]}
-            onCheckedChange={setter}
-          />
-        ))}
+      {/* Toggles */}
+      <div className="-mx-2">
+        {settingOptions.map(({ icon: Icon, title, description, settingKey, setter }) => {
+          const checked = settings[settingKey];
+          return (
+            <div
+              key={settingKey}
+              className="flex items-center justify-between px-2 py-2.5 rounded-xl hover:bg-accent/50 transition-colors cursor-pointer group"
+              onClick={() => setter(!checked)}
+            >
+              <div className="flex items-center gap-3">
+                <Icon
+                  className={cn(
+                    'h-4 w-4 transition-colors',
+                    checked ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                  )}
+                />
+                <div>
+                  <div className="text-sm font-medium leading-none mb-0.5">{title}</div>
+                  <div className="text-xs text-muted-foreground">{description}</div>
+                </div>
+              </div>
+              <Switch
+                checked={checked}
+                onCheckedChange={setter}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* Live Preview */}
-      <div className="space-y-3 w-0 min-w-full overflow-hidden">
-        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Live Preview
-        </div>
-        <div className="border-8 border-border/30 rounded-2xl overflow-hidden w-full">
+      <div className="space-y-2 w-0 min-w-full overflow-hidden">
+        <div className="text-xs text-muted-foreground px-1">Live Preview</div>
+        <div className="rounded-xl overflow-hidden w-full border border-border/20">
           <CodeMirrorDisplay
             code={sampleCode}
             language="typescript"

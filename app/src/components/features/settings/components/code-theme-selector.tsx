@@ -1,9 +1,8 @@
 import React, { memo, useRef, useState, useEffect } from 'react';
 import { useCodeThemeStore, type ThemeKey } from '@/components/features/settings/store/code-theme';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
-import { Code } from 'lucide-react';
+import { Check, Code } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
 import { SettingsHeader, ExpandableCategory } from './settings-commons';
@@ -67,19 +66,12 @@ const CodePreview = memo<CodePreviewProps>(
       <div
         ref={containerRef}
         className={cn(
-          'border rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer group p-2',
-          isSelected ? 'border-primary/50 bg-primary/5 shadow-md' : 'border-none rounded-2xl'
+          'rounded-xl overflow-hidden cursor-pointer transition-all duration-150',
+          isSelected ? 'ring-1 ring-primary/50 shadow-sm' : 'opacity-80 hover:opacity-100'
         )}
         onClick={onClick}
       >
-        {/* Theme Header */}
-        <div className="px-4 py-3 border-b border-border/20 bg-card/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-sm">{theme.name}</div>
-          </div>
-        </div>
-
-        <div className="relative max-h-30 overflow-hidden [&_.cm-scroller]:overflow-hidden!">
+        <div className="relative max-h-28 overflow-hidden [&_.cm-scroller]:overflow-hidden!">
           {hasBeenVisible ? (
             <CodeMirrorDisplay
               code={sampleCode}
@@ -92,11 +84,15 @@ const CodePreview = memo<CodePreviewProps>(
             />
           ) : (
             <div className="h-24 flex items-center justify-center bg-muted/20 animate-pulse">
-              <span className="text-xs text-muted-foreground">Loading preview...</span>
+              <span className="text-xs text-muted-foreground">Loading…</span>
             </div>
           )}
+          <div className="absolute bottom-0 left-0 right-0 h-6 bg-linear-to-t from-black/20 to-transparent pointer-events-none" />
+        </div>
 
-          <div className="absolute bottom-0 left-0 right-0 h-4 bg-linear-to-t from-card/80 to-transparent pointer-events-none" />
+        <div className="flex items-center justify-between px-2.5 py-1.5 bg-muted/20">
+          <span className="text-xs text-muted-foreground truncate">{theme.name}</span>
+          {isSelected && <Check className="h-3 w-3 text-primary shrink-0" />}
         </div>
       </div>
     );
@@ -127,14 +123,9 @@ const CodeThemeSelector: React.FC = () => {
       <SettingsHeader
         icon={<Code className="h-4 w-4 text-primary" />}
         title="Code Syntax Theme"
-        description="Choose how code blocks are highlighted and styled"
+        description="Choose how code blocks are highlighted"
         rightContent={
-          <div className="text-right">
-            <div className="text-xs text-muted-foreground mb-1">Currently Active</div>
-            <Badge variant="outline" className="text-xs px-3 py-1 bg-primary/10 border-none">
-              {getCurrentThemeName()}
-            </Badge>
-          </div>
+          <span className="text-xs text-muted-foreground">{getCurrentThemeName()}</span>
         }
       />
 

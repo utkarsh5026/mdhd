@@ -9,12 +9,12 @@ import {
   getFontCss,
 } from '@/lib/font';
 import { loadFont, isFontLoaded } from '@/lib/font-loader';
-import { Type } from 'lucide-react';
+import { Check, Type } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { SettingsHeader, SelectableOption } from './settings-commons';
+import { SettingsHeader } from './settings-commons';
+import { cn } from '@/lib/utils';
 
-const sampleText =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
+const sampleText = 'The quick brown fox jumps over the lazy dog.';
 
 const FontFamilySelector: React.FC = () => {
   const { settings, setFontFamily } = useReadingSettings();
@@ -35,7 +35,7 @@ const FontFamilySelector: React.FC = () => {
   const previewStyle = useMemo(() => getFontCss(fontFamily), [fontFamily]);
 
   return (
-    <div className="space-y-3 flex flex-col gap-4 max-h-full">
+    <div className="space-y-4 flex flex-col max-h-full">
       <SettingsHeader
         icon={<Type className="h-4 w-4 text-primary" />}
         title="Font Family"
@@ -44,22 +44,22 @@ const FontFamilySelector: React.FC = () => {
         className="pb-0 border-b-0"
       />
 
-      <div className="sticky top-0 z-10 p-6 border rounded-2xl mb-2 bg-background/50 backdrop-blur-3xl shadow-sm shadow-primary/10">
-        <p className="text-sm text-card-foreground" style={previewStyle}>
+      {/* Preview */}
+      <div className="px-3 py-3 rounded-xl bg-muted/30">
+        <p className="text-sm text-foreground/80 leading-relaxed" style={previewStyle}>
           {sampleText}
         </p>
-        <p className="text-xs text-muted-foreground mt-1">Sample text preview</p>
       </div>
 
-      <ScrollArea className="h-80 scrollbar-hide flex-1">
+      <ScrollArea className="h-80 flex-1">
         {(['sans-serif', 'serif'] as const).map((category, index) => (
           <div key={category} className={index === 0 ? 'mb-4' : undefined}>
-            <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 px-1">
+            <div className="text-xs text-muted-foreground px-2 mb-1">
               {category === 'sans-serif' ? 'Sans-serif' : 'Serif'}
-            </h4>
-            <div className="flex flex-col gap-4">
+            </div>
+            <div className="-mx-2">
               {fontCategories[category].map((font) => (
-                <FontFamilySelectItem
+                <FontRow
                   key={font.value}
                   font={font}
                   isSelected={fontFamily === font.value}
@@ -80,7 +80,7 @@ interface FontFamilyItemProps {
   onSelect: (font: FontFamily) => void;
 }
 
-const FontFamilySelectItem = memo<FontFamilyItemProps>(({ font, isSelected, onSelect }) => {
+const FontRow = memo<FontFamilyItemProps>(({ font, isSelected, onSelect }) => {
   const fontStyle = FONT_CSS_MAP[font.value];
 
   const handleClick = useCallback(() => {
@@ -96,17 +96,27 @@ const FontFamilySelectItem = memo<FontFamilyItemProps>(({ font, isSelected, onSe
   }, [font.value]);
 
   return (
-    <SelectableOption
-      title={font.label}
-      description={font.description}
-      isSelected={isSelected}
+    <button
+      className={cn(
+        'w-full text-left px-3 py-2.5 rounded-xl transition-colors hover:bg-accent/50',
+        isSelected && 'bg-primary/5'
+      )}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
-      style={fontStyle}
-    />
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-sm font-medium leading-none mb-0.5 truncate" style={fontStyle}>
+            {font.label}
+          </div>
+          <div className="text-xs text-muted-foreground truncate">{font.description}</div>
+        </div>
+        {isSelected && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+      </div>
+    </button>
   );
 });
 
-FontFamilySelectItem.displayName = 'FontFamilySelectItem';
+FontRow.displayName = 'FontRow';
 
 export default FontFamilySelector;

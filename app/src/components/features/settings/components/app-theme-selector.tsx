@@ -4,7 +4,6 @@ import { type ThemeOption } from '@/theme/themes';
 import { Palette, Check, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SettingsHeader, ExpandableCategory } from './settings-commons';
 
@@ -156,14 +155,7 @@ const AppThemeSelector: React.FC<AppThemeSelectorProps> = ({ onRequestCloseSheet
         icon={<Palette className="h-4 w-4 text-primary" />}
         title="App Theme"
         description="Choose your reading environment"
-        rightContent={
-          <div className="text-right">
-            <div className="text-xs text-muted-foreground mb-1">Currently Active</div>
-            <Badge variant="outline" className="text-xs px-3 py-1 bg-primary/10 border-primary/20">
-              {currentTheme.name}
-            </Badge>
-          </div>
-        }
+        rightContent={<span className="text-xs text-muted-foreground">{currentTheme.name}</span>}
       />
 
       <Button
