@@ -18,11 +18,12 @@ export const hashString = (str: string): string => {
 };
 
 /**
- * Generate a unique tab ID
+ * Generate a unique tab ID using the Web Crypto API.
+ * crypto.randomUUID() is available in all modern browsers and produces a
+ * cryptographically unique value, eliminating the collision risk from
+ * Date.now() + Math.random() combinations.
  */
-const generateTabId = (): string => {
-  return `tab-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-};
+const generateTabId = (): string => `tab-${crypto.randomUUID()}`;
 
 /**
  * Extract title from markdown content (first heading or truncated content)
