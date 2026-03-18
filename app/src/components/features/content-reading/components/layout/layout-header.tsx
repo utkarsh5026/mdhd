@@ -78,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({
             {breadcrumb && (
               <>
                 <div className="hidden sm:block w-px h-4 bg-border/40 shrink-0" aria-hidden />
-                <div className="hidden sm:block min-w-0 overflow-hidden flex-1">{breadcrumb}</div>
+                <div className="hidden sm:block min-w-0 overflow-x-auto flex-1">{breadcrumb}</div>
               </>
             )}
           </div>

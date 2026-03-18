@@ -11,6 +11,7 @@ export const useActiveTab = () =>
 export const useShowEmptyState = () => useTabsStore((state) => state.showEmptyState);
 export const useTabsHasHydrated = () => useTabsStore((state) => state._hasHydrated);
 export const useHeaderVisible = () => useTabsStore((state) => state.isHeaderVisible);
+export const useStatusBarVisible = () => useTabsStore((state) => state.isStatusBarVisible);
 
 export const useTabsActions = () =>
   useTabsStore(
@@ -27,6 +28,7 @@ export const useTabsActions = () =>
       findTabByFileId: state.findTabByFileId,
       closeTabsBySourceType: state.closeTabsBySourceType,
       toggleHeaderVisibility: state.toggleHeaderVisibility,
+      toggleStatusBarVisibility: state.toggleStatusBarVisibility,
       clearPersistedTabs: state.clearPersistedTabs,
     }))
   );

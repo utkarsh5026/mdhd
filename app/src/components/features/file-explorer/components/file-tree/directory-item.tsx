@@ -24,25 +24,28 @@ export const DirectoryItem: React.FC<DirectoryItemProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-accent/50 rounded-sm transition-colors'
+        'group flex items-center gap-1 px-2 py-0.5 cursor-pointer rounded-md transition-all duration-150',
+        'hover:bg-accent/40'
       )}
-      style={{ paddingLeft: `${depth * 12 + 8}px` }}
+      style={{ paddingLeft: `${depth * 14 + 10}px` }}
       onClick={onToggle}
       onContextMenu={onContextMenu}
     >
       <ChevronRight
         className={cn(
-          'h-4 w-4 text-muted-foreground shrink-0 transition-transform',
+          'h-3 w-3 text-muted-foreground/50 shrink-0 transition-transform duration-200',
           isExpanded && 'rotate-90',
           !hasChildren && 'opacity-0'
         )}
       />
       {isExpanded ? (
-        <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+        <FolderOpen className="h-3.5 w-3.5 text-amber-500/70 shrink-0" />
       ) : (
-        <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
+        <Folder className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-amber-500/60 shrink-0 transition-colors" />
       )}
-      <span className="text-sm truncate flex-1 text-muted-foreground">{node.name}</span>
+      <span className="text-xs truncate flex-1 text-foreground/70 group-hover:text-foreground/90 font-medium transition-colors">
+        {node.name}
+      </span>
     </div>
   );
 };

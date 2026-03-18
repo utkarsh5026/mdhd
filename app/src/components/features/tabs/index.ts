@@ -7,6 +7,7 @@ export {
   useActiveTabSections,
   useHeaderVisible,
   useShowEmptyState,
+  useStatusBarVisible,
   useTabs,
   useTabsActions,
   useTabsHasHydrated,

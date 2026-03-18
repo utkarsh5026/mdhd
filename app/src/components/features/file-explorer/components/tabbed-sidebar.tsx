@@ -27,14 +27,14 @@ export const TabbedSidebar: React.FC<TabbedSidebarProps> = memo(
         defaultValue="files"
         className={cn('flex flex-col h-full', className)}
       >
-        <TabsList className="w-full h-8 rounded-md bg-muted/50 mx-2 mt-2 mb-1">
-          <TabsTrigger value="files" className="text-xs px-3 gap-1.5">
-            <FolderTree className="h-3.5 w-3.5" />
-            <span>Files</span>
+        <TabsList className="w-[calc(100%-16px)] h-7 rounded bg-muted/30 mx-2 mt-2 mb-1">
+          <TabsTrigger value="files" className="text-[11px] px-3 gap-1.5 rounded-md">
+            <FolderTree className="h-3 w-3" />
+            <span className="uppercase tracking-wider font-medium">Files</span>
           </TabsTrigger>
-          <TabsTrigger value="outline" className="text-xs px-3 gap-1.5">
-            <List className="h-3.5 w-3.5" />
-            <span>Outline</span>
+          <TabsTrigger value="outline" className="text-[11px] px-3 gap-1.5 rounded-md">
+            <List className="h-3 w-3" />
+            <span className="uppercase tracking-wider font-medium">Outline</span>
           </TabsTrigger>
         </TabsList>
 

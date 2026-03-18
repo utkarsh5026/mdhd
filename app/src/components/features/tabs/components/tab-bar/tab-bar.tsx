@@ -82,6 +82,7 @@ interface TabBarProps {
   onTabClose: (tabId: string) => void;
   onNewTab: () => void;
   onToggleHeaderVisibility: () => void;
+  onToggleStatusBarVisibility: () => void;
 }
 
 const TabBar: React.FC<TabBarProps> = memo(
@@ -94,6 +95,7 @@ const TabBar: React.FC<TabBarProps> = memo(
     onTabClose,
     onNewTab,
     onToggleHeaderVisibility,
+    onToggleStatusBarVisibility,
   }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const tabDisplayMap = useMemo(() => generateTabDisplayNames(tabs), [tabs]);
@@ -191,7 +193,10 @@ const TabBar: React.FC<TabBarProps> = memo(
         </Button>
         {/* View mode toggle */}
         <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} disabled={!activeTabId} />
-        <TabManagementMenu onToggleHeaderVisibility={onToggleHeaderVisibility} />
+        <TabManagementMenu
+          onToggleHeaderVisibility={onToggleHeaderVisibility}
+          onToggleStatusBarVisibility={onToggleStatusBarVisibility}
+        />
       </div>
     );
   }

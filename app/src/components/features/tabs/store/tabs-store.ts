@@ -28,6 +28,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         _hasHydrated: false,
         untitledCounter: 0,
         isHeaderVisible: true,
+        isStatusBarVisible: true,
 
         addTab: (newTab: Tab, options?: { incrementCounter?: boolean }) => {
           set((state) => ({
@@ -264,6 +265,12 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           }));
         },
 
+        toggleStatusBarVisibility: () => {
+          set((state) => ({
+            isStatusBarVisible: !state.isStatusBarVisible,
+          }));
+        },
+
         clearPersistedTabs: () => {
           localStorage.removeItem(STORAGE_KEY);
           set({
@@ -303,6 +310,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           version,
           untitledCounter,
           isHeaderVisible,
+          isStatusBarVisible,
         }) =>
           ({
             tabs,
@@ -311,6 +319,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             version,
             untitledCounter,
             isHeaderVisible,
+            isStatusBarVisible,
           }) as unknown as PersistedTabsState,
         version: STORAGE_VERSION,
         onRehydrateStorage: () => (state, error) => {

@@ -62,7 +62,7 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
     return (
       <div
         className={cn(
-          'h-full overflow-y-auto bg-background',
+          'h-full overflow-y-auto bg-card',
           isTransitioning ? 'opacity-0' : 'opacity-100',
           'transition-opacity duration-200'
         )}

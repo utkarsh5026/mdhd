@@ -62,10 +62,6 @@ export interface ReadingCoreProps {
   isDialogOpen?: boolean;
   onZenTap?: () => void;
   onZenDoubleTap?: () => void;
-
-  // When true, breadcrumb is passed into headerSlot instead of rendered standalone
-  // Use this in fullscreen mode where the header spans full-width and would overlap the breadcrumb
-  headerContainsBreadcrumb?: boolean;
 }
 
 /**
@@ -108,7 +104,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     isDialogOpen = false,
     onZenTap,
     onZenDoubleTap,
-    headerContainsBreadcrumb = false,
   }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -197,7 +192,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     const shouldShowControls = !isDialogOpen && (!isZenMode || zenControlsVisible);
 
     return (
-      <div className="h-full relative bg-background text-foreground" onClick={handleContentClick}>
+      <div className="h-full relative bg-card text-foreground" onClick={handleContentClick}>
         {/* Content Container - Card Mode or Scroll Mode */}
         {readingMode === 'card' ? (
           <ContentReader
@@ -222,8 +217,8 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
           />
         )}
 
-        {/* Breadcrumb - standalone top-left overlay when header does not contain it */}
-        {shouldShowControls && readingMode === 'card' && !headerContainsBreadcrumb && (
+        {/* Breadcrumb - standalone overlay when there is no header to contain it */}
+        {shouldShowControls && readingMode === 'card' && !headerSlot && (
           <div className="absolute top-0 left-0 z-50 p-2">
             <SectionBreadcrumb
               sections={sections}
@@ -233,7 +228,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
           </div>
         )}
 
-        {/* Header - passed from parent; breadcrumb is injected when headerContainsBreadcrumb */}
+        {/* Header - breadcrumb is always injected into the header when one exists */}
         {shouldShowControls && headerSlot && (
           <div className="absolute top-0 left-0 right-0 z-50">
             {headerSlot({
@@ -241,7 +236,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
               onMenu: handleMenuOpen,
               isVisible: isControlsVisible || zenControlsVisible,
               breadcrumb:
-                headerContainsBreadcrumb && readingMode === 'card' ? (
+                readingMode === 'card' ? (
                   <SectionBreadcrumb
                     sections={sections}
                     currentIndex={currentIndex}
@@ -250,7 +245,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
                   />
                 ) : undefined,
               mobileBreadcrumb:
-                headerContainsBreadcrumb && readingMode === 'card' ? (
+                readingMode === 'card' ? (
                   <SectionBreadcrumb
                     sections={sections}
                     currentIndex={currentIndex}
@@ -262,23 +257,20 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
           </div>
         )}
 
-        {/* Navigation Controls - hidden in zen mode and scroll mode */}
+        {/* Navigation Controls - side arrows, hidden in zen mode and scroll mode */}
         {shouldShowControls && readingMode === 'card' && (
-          <div className="absolute bottom-0 left-0 right-0 z-50">
-            <NavigationControls
-              currentIndex={currentIndex}
-              total={sections.length}
-              onPrevious={() => {
-                goToPrevious();
-                handleInteraction();
-              }}
-              onNext={() => {
-                goToNext();
-                handleInteraction();
-              }}
-              isVisible={isControlsVisible || zenControlsVisible}
-            />
-          </div>
+          <NavigationControls
+            currentIndex={currentIndex}
+            total={sections.length}
+            onPrevious={() => {
+              goToPrevious();
+              handleInteraction();
+            }}
+            onNext={() => {
+              goToNext();
+              handleInteraction();
+            }}
+          />
         )}
 
         {/* Sections Sheet */}
