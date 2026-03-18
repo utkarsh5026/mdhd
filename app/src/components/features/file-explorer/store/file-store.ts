@@ -1,16 +1,17 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
+
+import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
 import {
   fileStorageDB,
-  processFileUpload,
+  type FileTreeNode,
   processDirectoryUpload,
   processDroppedItems,
-  type FileTreeNode,
+  processFileUpload,
   type StoredFile,
   type UploadProgress,
 } from '@/services/indexeddb';
-import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
 
 interface FileStoreState {
   // Data

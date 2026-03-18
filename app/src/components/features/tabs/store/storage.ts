@@ -1,4 +1,5 @@
 import { attempt } from '@/utils/functions/error';
+
 import type { Tab, TabReadingState, ViewMode } from './types';
 
 export interface PersistedTabsState {

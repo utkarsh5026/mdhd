@@ -1,6 +1,7 @@
-import React, { useCallback, useState } from 'react';
-import { cn } from '@/lib/utils';
 import { Upload } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
+
+import { cn } from '@/lib/utils';
 
 interface DropZoneProps {
   onDrop: (items: DataTransferItemList) => void;

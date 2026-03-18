@@ -1,11 +1,13 @@
+import { Braces, Hash, LucideIcon, Settings2, WrapText } from 'lucide-react';
 import React from 'react';
-import { Settings2, Hash, Braces, WrapText, LucideIcon } from 'lucide-react';
+
+import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
 import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
-import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
-import { SettingsHeader } from './settings-commons';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+
+import { SettingsHeader } from './settings-commons';
 
 const sampleCode = `function greet(name: string) {
   const message = \`Hello, \${name}!\`;

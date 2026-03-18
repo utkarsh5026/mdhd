@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+
 import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
 
 const MIN_WORD_LENGTH = 4;

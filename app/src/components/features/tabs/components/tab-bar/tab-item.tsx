@@ -1,7 +1,9 @@
-import React, { useCallback, memo } from 'react';
-import { X, Eye, Pencil, Columns2, type LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Columns2, Eye, type LucideIcon, Pencil, X } from 'lucide-react';
+import React, { memo, useCallback } from 'react';
+
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import { cn } from '@/lib/utils';
+
 import type { ViewMode } from '../../store';
 
 const VIEW_MODE_CONFIG: Record<ViewMode, { Icon: LucideIcon; color: string; label: string }> = {

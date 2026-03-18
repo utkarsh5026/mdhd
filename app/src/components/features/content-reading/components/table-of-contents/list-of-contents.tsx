@@ -1,5 +1,6 @@
-import { cn } from '@/lib/utils';
 import { memo } from 'react';
+
+import { cn } from '@/lib/utils';
 
 type Section = { id: number; title: string; level?: 0 | 1 | 2 | 3 | 4 | 5 | 6 };
 

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import styles from './loading-state.module.css';
 
 const LoadingState: React.FC = () => {

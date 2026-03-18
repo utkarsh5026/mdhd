@@ -1,8 +1,9 @@
 import { Star } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/hooks';
 
 import ThemeSelector from '../shared/theme/components/theme-selector';
-import { useTheme } from '@/hooks';
 import styles from './header.module.css';
 
 const Header = () => {

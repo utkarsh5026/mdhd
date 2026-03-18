@@ -1,6 +1,7 @@
-import React, { memo } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/fast-tabs';
 import { FolderTree, List } from 'lucide-react';
+import React, { memo } from 'react';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/fast-tabs';
 import { useLocalStorage } from '@/hooks';
 import { cn } from '@/lib/utils';
 

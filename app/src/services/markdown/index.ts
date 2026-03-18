@@ -1,11 +1,11 @@
-import { parseMarkdownIntoSections, slugify, countWords } from './parsing';
-import { estimateReadingTime, estimateWordsRead, estimateReadingProgress } from './estimate';
+import { estimateReadingProgress, estimateReadingTime, estimateWordsRead } from './estimate';
+import { countWords, parseMarkdownIntoSections, slugify } from './parsing';
 
 export {
-  parseMarkdownIntoSections,
-  slugify,
+  countWords,
+  estimateReadingProgress,
   estimateReadingTime,
   estimateWordsRead,
-  estimateReadingProgress,
-  countWords,
+  parseMarkdownIntoSections,
+  slugify,
 };

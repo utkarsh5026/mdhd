@@ -1,7 +1,8 @@
-import { EditorView } from '@codemirror/view';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
-import { tags } from '@lezer/highlight';
 import { Extension } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
+import { tags } from '@lezer/highlight';
+
 import type { ThemeKey } from './code-theme';
 
 interface ThemeColors {

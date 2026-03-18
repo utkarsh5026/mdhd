@@ -1,8 +1,10 @@
-import React, { useState, useCallback } from 'react';
-import { TreeNode } from './tree-node';
-import { TreeContextMenu } from './tree-context-menu';
+import React, { useCallback, useState } from 'react';
+
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
+
+import { TreeContextMenu } from './tree-context-menu';
+import { TreeNode } from './tree-node';
 
 interface FileTreeProps {
   nodes: FileTreeNode[];

@@ -1,8 +1,9 @@
-import React, { memo, useCallback, useMemo } from 'react';
-import type { ThemeOption as ThemeTypeOption } from '@/theme/themes';
-import { cn } from '@/lib/utils';
 import { Check, Star } from 'lucide-react';
+import React, { memo, useCallback, useMemo } from 'react';
+
 import { useBookmarkedThemes } from '@/components/shared/theme/store/theme-store';
+import { cn } from '@/lib/utils';
+import type { ThemeOption as ThemeTypeOption } from '@/theme/themes';
 
 interface ThemeOptionProps {
   theme: ThemeTypeOption;

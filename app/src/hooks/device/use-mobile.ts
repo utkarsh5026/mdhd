@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+
 import useResize from '../utils/use-resize';
 
 interface UseMobileOptions {

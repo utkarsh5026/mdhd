@@ -57,6 +57,11 @@ const tasks = {
     category: "Quality",
     action: () => runNpmCommand("lint"),
   },
+  "lint-fix": {
+    description: "Run ESLint with auto-fix (sorts imports)",
+    category: "Quality",
+    action: () => runLintFix(),
+  },
   typecheck: {
     description: "Run TypeScript type checking",
     category: "Quality",
@@ -175,6 +180,21 @@ async function runNpmInstall() {
     console.log(chalk.green("✓ Dependencies installed!"));
   } catch (error) {
     throw new Error("bun install failed");
+  }
+}
+
+// Run ESLint with auto-fix
+async function runLintFix() {
+  try {
+    console.log(chalk.cyan("Running: eslint --fix..."));
+    console.log();
+
+    await runCommand("bunx", ["eslint", ".", "--fix"]);
+
+    console.log();
+    console.log(chalk.green("✓ Imports sorted and lint issues fixed!"));
+  } catch (error) {
+    throw new Error("ESLint fix failed");
   }
 }
 

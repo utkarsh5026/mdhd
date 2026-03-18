@@ -1,5 +1,6 @@
-import { useTabsStore } from './tabs-store';
 import { useShallow } from 'zustand/react/shallow';
+
+import { useTabsStore } from './tabs-store';
 
 export { useActiveTabSections } from '../hooks/use-active-tab-sections';
 

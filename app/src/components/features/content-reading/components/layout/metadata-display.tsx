@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
-import type { MarkdownMetadata } from '@/services/section/parsing';
+
 import { cn } from '@/lib/utils';
+import type { MarkdownMetadata } from '@/services/section/parsing';
 
 interface MetadataDisplayProps {
   metadata: MarkdownMetadata;

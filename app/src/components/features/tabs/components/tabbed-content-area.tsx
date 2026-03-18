@@ -1,18 +1,20 @@
-import React, { useCallback, memo, useState } from 'react';
-import TabBar from './tab-bar/tab-bar';
+import React, { memo, useCallback, useState } from 'react';
+
 import HeroMain from '@/components/layout/hero-section';
 import MarkdownEditor from '@/components/layout/markdown-editor';
+
+import { useSaveShortcut } from '../hooks/use-save-shortcut';
 import {
-  useTabs,
-  useActiveTabId,
   useActiveTab,
+  useActiveTabId,
   useShowEmptyState,
+  useTabs,
   useTabsActions,
   type ViewMode,
 } from '../store';
 import InlineMarkdownViewer from './markdown/inline-markdown-viewer';
 import { SaveFileDialog } from './save-file-dialog';
-import { useSaveShortcut } from '../hooks/use-save-shortcut';
+import TabBar from './tab-bar/tab-bar';
 
 interface TabbedContentAreaProps {
   onEnterFullscreen: (tabId: string) => void;

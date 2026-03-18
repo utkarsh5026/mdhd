@@ -1,8 +1,9 @@
-import React, { useState, useCallback, memo } from 'react';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Switch } from '@/components/ui/switch';
+import React, { memo, useCallback, useState } from 'react';
+
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 /**
  * Common settings UI components used across the settings feature.

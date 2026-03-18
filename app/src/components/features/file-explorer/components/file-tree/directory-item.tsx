@@ -1,5 +1,6 @@
-import React from 'react';
 import { ChevronRight, Folder, FolderOpen } from 'lucide-react';
+import React from 'react';
+
 import { cn } from '@/lib/utils';
 import type { FileTreeNode } from '@/services/indexeddb';
 

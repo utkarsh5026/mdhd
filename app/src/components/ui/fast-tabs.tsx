@@ -1,12 +1,13 @@
 import React, {
   createContext,
-  useContext,
-  useState,
+  memo,
   startTransition,
   useCallback,
-  memo,
+  useContext,
   useMemo,
+  useState,
 } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface TabsContextValue {
@@ -165,12 +166,12 @@ const FastTabsContent = memo(function FastTabsContent({
 
 export {
   FastTabs,
+  FastTabsContent,
   FastTabsList,
   FastTabsTrigger,
-  FastTabsContent,
   // Also export with original names for easier migration
   FastTabs as Tabs,
+  FastTabsContent as TabsContent,
   FastTabsList as TabsList,
   FastTabsTrigger as TabsTrigger,
-  FastTabsContent as TabsContent,
 };

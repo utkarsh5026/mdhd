@@ -1,11 +1,12 @@
-import React, { memo, useCallback, useMemo } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useActiveTabSections } from '@/components/features/tabs/hooks/use-active-tab-sections';
-import { useTabNavigation } from '@/components/features/tabs/hooks/use-tab-navigation';
 import { FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { memo, useCallback, useMemo } from 'react';
+
 import TreeOfContents from '@/components/features/content-reading/components/table-of-contents/tree-of-contents';
 import type { FlatSection } from '@/components/features/content-reading/components/table-of-contents/types';
+import { useActiveTabSections } from '@/components/features/tabs/hooks/use-active-tab-sections';
+import { useTabNavigation } from '@/components/features/tabs/hooks/use-tab-navigation';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface SidebarTocProps {
   className?: string;

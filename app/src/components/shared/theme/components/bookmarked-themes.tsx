@@ -1,9 +1,11 @@
+import { Star } from 'lucide-react';
 import { memo, useCallback } from 'react';
+
+import { useBookmarkedThemes, useCurrentTheme } from '@/components/shared/theme/store/theme-store';
 import { cn } from '@/lib/utils';
 import { ThemeOption as ThemeTypeOption } from '@/theme/themes';
-import { Star } from 'lucide-react';
+
 import ThemeOption from './theme-option';
-import { useBookmarkedThemes, useCurrentTheme } from '@/components/shared/theme/store/theme-store';
 
 interface BookmarkedThemesProps {
   onThemeChange: (theme: ThemeTypeOption) => void;

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
+
 import { ErrorBoundary, LoadingFallback } from '@/components/utils';
 
 const App = lazy(() => import('./App'));

@@ -1,17 +1,19 @@
-import React, { useMemo, memo, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
+import React, { memo, useMemo, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuSub,
-  DropdownMenuSubTrigger,
   DropdownMenuSubContent,
-  DropdownMenuLabel,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
 import { useActiveTabId, useHeaderVisible, useTabClose, useTabs } from '../../store';
 
 interface MenuItemProps {

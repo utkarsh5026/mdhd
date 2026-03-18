@@ -1,6 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
-import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
 
 export const useReading = (markdownInput: string) => {
   const [sections, setSections] = useState<MarkdownSection[]>([]);

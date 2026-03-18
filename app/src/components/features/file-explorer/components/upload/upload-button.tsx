@@ -1,7 +1,8 @@
+import { FilePlus2, FolderUp } from 'lucide-react';
 import React, { useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { FolderUp, FilePlus2 } from 'lucide-react';
+
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import { Button } from '@/components/ui/button';
 
 interface UploadButtonProps {
   variant: 'files' | 'directory';

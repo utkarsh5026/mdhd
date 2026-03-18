@@ -1,11 +1,14 @@
-import React, { useMemo, memo, useCallback, useEffect } from 'react';
+import { Check, Palette, Star } from 'lucide-react';
+import React, { memo, useCallback, useEffect, useMemo } from 'react';
+
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
-import { type ThemeOption } from '@/theme/themes';
-import { Palette, Check, Star } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { SettingsHeader, ExpandableCategory } from './settings-commons';
+import { type ThemeOption } from '@/theme/themes';
+
+import { ExpandableCategory, SettingsHeader } from './settings-commons';
 
 const categoryOrder = [
   'Modern Dark',

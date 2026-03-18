@@ -1,10 +1,12 @@
-import { cn } from '@/lib/utils';
+import { memo, type RefObject } from 'react';
 import { useSwipeable } from 'react-swipeable';
+
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
-import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
 import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
-import { memo, type RefObject } from 'react';
+import { cn } from '@/lib/utils';
+import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
+
 import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
 

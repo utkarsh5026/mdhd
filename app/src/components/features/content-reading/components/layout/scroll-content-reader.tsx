@@ -1,9 +1,11 @@
-import { cn } from '@/lib/utils';
+import { RefObject, useCallback, useEffect, useRef, useState } from 'react';
+
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
-import type { MarkdownSection, MarkdownMetadata } from '@/services/section/parsing';
 import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
-import { RefObject, useEffect, useCallback, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
+
 import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
 
