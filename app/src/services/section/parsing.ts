@@ -17,12 +17,13 @@ export type ParseResult = {
 function extractFrontmatter(markdown: string): {
   content: string;
   metadata: MarkdownMetadata | null;
+  frontmatterLineCount: number;
 } {
   const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
   const match = frontmatterRegex.exec(markdown);
 
   if (!match) {
-    return { content: markdown, metadata: null };
+    return { content: markdown, metadata: null, frontmatterLineCount: 0 };
   }
 
   try {
@@ -30,14 +31,16 @@ function extractFrontmatter(markdown: string): {
     const data = parseYaml(yamlContent) as MarkdownMetadata;
     const content = markdown.slice(match[0].length);
     const hasMetadata = data && typeof data === 'object' && Object.keys(data).length > 0;
+    const frontmatterLineCount = match[0].split('\n').length - (match[0].endsWith('\n') ? 1 : 0);
 
     return {
       content,
       metadata: hasMetadata ? data : null,
+      frontmatterLineCount,
     };
   } catch (e) {
     console.error('Failed to parse frontmatter YAML:', e);
-    return { content: markdown, metadata: null };
+    return { content: markdown, metadata: null, frontmatterLineCount: 0 };
   }
 }
 
@@ -103,6 +106,8 @@ export type MarkdownSection = {
   content: string;
   level: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   wordCount: number;
+  startLine: number;
+  endLine: number;
 };
 
 /**
@@ -117,40 +122,36 @@ export type MarkdownSection = {
  * 🧩 Perfect for creating a table of contents or a sectioned reading experience!
  */
 export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
-  const { content, metadata } = extractFrontmatter(markdown);
+  const { content, metadata, frontmatterLineCount } = extractFrontmatter(markdown);
   const lines = content.split('\n');
+  const totalLines = markdown.split('\n').length;
   const sections: MarkdownSection[] = [];
 
   let currentSection: MarkdownSection | null = null;
   let inCodeBlock = false;
   let introContent = '';
+  const introStartLine = frontmatterLineCount;
 
-  /**
-   * 🏷️ Creates a special introduction section!
-   *
-   * Turns any content before the first heading into a nice introduction section.
-   */
-  const pushIntroContent = () => {
+  const pushIntroContent = (endLine: number) => {
     if (introContent.trim()) {
       sections.push({
         id: 'introduction',
         title: 'Introduction',
         content: introContent,
         level: 0,
-        wordCount: countWords(introContent),
+        wordCount: 0,
+        startLine: introStartLine,
+        endLine,
       });
       introContent = '';
     }
   };
 
-  /**
-   * 🎨 Creates a fresh new section with the right formatting!
-   *
-   * Sets up a section with proper ID, title, and initial content.
-   * wordCount is intentionally 0 here; the final map below computes it
-   * once over the fully-assembled content, avoiding a double pass.
-   */
-  const initializeSection = (title: string, level: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
+  const initializeSection = (
+    title: string,
+    level: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    startLine: number
+  ): MarkdownSection => {
     const pounds = '#'.repeat(level);
     return {
       id: slugify(title),
@@ -158,22 +159,24 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
       content: pounds + ' ' + title + '\n',
       level,
       wordCount: 0,
+      startLine,
+      endLine: 0,
     };
   };
 
-  /**
-   * 📝 Manages section transitions when a new heading is found!
-   *
-   * Saves the current section and prepares a new one.
-   */
-  const handleHeading = (title: string, level: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
-    if (currentSection) sections.push(currentSection);
-    else if (introContent.trim()) pushIntroContent();
-    currentSection = initializeSection(title, level);
+  const handleHeading = (title: string, level: 0 | 1 | 2 | 3 | 4 | 5 | 6, absoluteLine: number) => {
+    if (currentSection) {
+      currentSection.endLine = absoluteLine;
+      sections.push(currentSection);
+    } else if (introContent.trim()) {
+      pushIntroContent(absoluteLine);
+    }
+    currentSection = initializeSection(title, level, absoluteLine);
   };
 
-  for (const markdownLine of lines) {
-    const line = markdownLine.trimEnd();
+  for (let i = 0; i < lines.length; i++) {
+    const absoluteLine = i + frontmatterLineCount;
+    const line = lines[i].trimEnd();
 
     if (line.trim().startsWith('```')) {
       inCodeBlock = !inCodeBlock;
@@ -195,7 +198,7 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
       if (headingMatch) {
         const depth = headingMatch[1].length as 1 | 2 | 3;
         const title = headingMatch[2].trim();
-        handleHeading(title, depth);
+        handleHeading(title, depth, absoluteLine);
         continue;
       }
     }
@@ -207,15 +210,20 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
     }
   }
 
-  if (currentSection) sections.push(currentSection);
-  else if (introContent.trim())
+  if (currentSection) {
+    (currentSection as MarkdownSection).endLine = totalLines;
+    sections.push(currentSection);
+  } else if (introContent.trim()) {
     sections.push({
       id: 'introduction',
       title: 'Introduction',
       content: introContent,
       level: 0,
-      wordCount: countWords(introContent),
+      wordCount: 0,
+      startLine: introStartLine,
+      endLine: totalLines,
     });
+  }
 
   const finalSections = sections.map((section) => ({
     ...section,
