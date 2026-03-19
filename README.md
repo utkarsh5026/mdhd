@@ -89,6 +89,12 @@ Every heading becomes a boundary. Instead of rendering the whole document at onc
 - ⌨️ **Keyboard & Touch** — Full keyboard navigation on desktop, native swipe gestures on mobile
 - 🔬 **Bionic Reading** — Optional bold-prefix mode for improved focus and reduced mind-wandering
 - 🎯 **Sentence Focus** — Hover-activated sentence isolation that dims surrounding text for precision reading
+- 🖼️ **Code Image Export** — Export any code block as a styled image with OS window chrome, language icons, syntax themes, watermarks, and one-click presets
+- 📷 **Photo Image Export** — Export document images with filters, frames, captions, and custom styling options
+- 🎬 **Rich Media Rendering** — Images render with shimmer loading and inline captions; videos play natively; both support a bottom-sheet gallery view
+- 📋 **Snippets Sheet** — Browse all code snippets and media (images, videos) in a document from a single side panel
+- ✏️ **Section Editor** — Edit any markdown section in-place with live editor-preview sync
+- 📤 **Context Menu Exports** — Right-click code blocks, tables, or images to export as image, CSV, Excel, or copy with line numbers
 
 ---
 
@@ -213,9 +219,11 @@ File Upload → IndexedDB → File Explorer (useFileStore)
 
 Three Zustand stores power the app, all persisted to `localStorage`:
 
-- **`useTabsStore`** — Open documents, active tab, reading mode, per-tab progress
+- **`useTabsStore`** — Open documents, active tab, reading mode, per-tab progress, editor-preview sync state
 - **`useReadingSettingsStore`** — Font family, size, line height, content width
 - **`useThemeStore`** — Active color theme, syntax theme, bookmarked themes
+- **`useCodeImageExportStore`** — Code image export settings (theme, padding, OS chrome, watermark, presets)
+- **`usePhotoImageExportStore`** — Photo export settings (filters, frames, captions)
 
 ### File Storage
 
@@ -260,6 +268,12 @@ The card format creates natural checkpoints — finishing a section feels like p
 - [x] Multi-tab document system
 - [x] Bionic Reading mode
 - [x] Sentence Focus on Hover
+- [x] Code Image Export — styled snapshots with OS chrome, language icons, and presets
+- [x] Photo Image Export — export images with filters, frames, and captions
+- [x] Context Menu Exports — right-click code, tables, and images to export as image/CSV/Excel
+- [x] Snippets Sheet — browse all code and media in a document from one panel
+- [x] Section Editor with live editor-preview sync
+- [x] Rich Media Rendering — video support, shimmer loading, gallery view, inline captions
 - [ ] Scan Mode — collapse paragraphs to first-sentence previews
 - [ ] First Sentence Highlight — auto-emphasize the lead sentence of every paragraph
 - [ ] Dense Paragraph Indicator — visual cues for content-heavy blocks
