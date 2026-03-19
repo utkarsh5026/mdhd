@@ -2,10 +2,12 @@ import { toPng } from 'html-to-image';
 import React, { useRef } from 'react';
 import * as XLSX from 'xlsx';
 
-import { download, toFilename } from '@/components/features/markdown-render/utils/file';
+import {
+  download,
+  getNearestHeading,
+  toFilename,
+} from '@/components/features/markdown-render/utils/file';
 import ExportContextMenu from '@/components/ui/export-context-menu';
-
-import { useNearestHeading } from '../../hooks/use-nearest-heading';
 
 /** Props accepted by any of the six HTML table elements rendered by this module. */
 type TableElementProps = React.ComponentPropsWithoutRef<
@@ -39,7 +41,6 @@ function extractRows(container: HTMLElement): string[][] {
  */
 const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const getBaseName = useNearestHeading(wrapperRef);
 
   const exportItems = [
     {
@@ -50,7 +51,7 @@ const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) 
         if (!el) return;
         try {
           const dataUrl = await toPng(el, { pixelRatio: 2 });
-          download(dataUrl, toFilename(getBaseName(), 'png', 'table'));
+          download(dataUrl, toFilename(getNearestHeading(wrapperRef.current), 'png', 'table'));
         } catch (err) {
           console.error('[TableRender] image export failed', err);
         }
@@ -74,7 +75,11 @@ const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) 
           )
           .join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        download(URL.createObjectURL(blob), toFilename(getBaseName(), 'csv', 'table'), true);
+        download(
+          URL.createObjectURL(blob),
+          toFilename(getNearestHeading(wrapperRef.current), 'csv', 'table'),
+          true
+        );
       },
     },
     {
@@ -87,7 +92,7 @@ const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) 
         const ws = XLSX.utils.aoa_to_sheet(rows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Table');
-        XLSX.writeFile(wb, toFilename(getBaseName(), 'xlsx', 'table'));
+        XLSX.writeFile(wb, toFilename(getNearestHeading(wrapperRef.current), 'xlsx', 'table'));
       },
     },
   ];

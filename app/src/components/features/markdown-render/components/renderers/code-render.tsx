@@ -2,7 +2,11 @@ import { toPng } from 'html-to-image';
 import { Check, Copy } from 'lucide-react';
 import React, { useMemo, useRef } from 'react';
 
-import { download, toFilename } from '@/components/features/markdown-render/utils/file';
+import {
+  download,
+  getNearestHeading,
+  toFilename,
+} from '@/components/features/markdown-render/utils/file';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
 import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
 import { getThemeBackground } from '@/components/features/settings/store/codemirror-themes';
@@ -11,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import ExportContextMenu from '@/components/ui/export-context-menu';
 import { cn } from '@/lib/utils';
 
-import { useNearestHeading } from '../../hooks/use-nearest-heading';
 import type { TextSizeScale } from '../../utils/text-size-classes';
 import CodeMirrorDisplay from './codemirror-display';
 
@@ -57,8 +60,6 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
       : React.Children.toArray(children).join('');
   }, [children]);
 
-  const getBaseName = useNearestHeading(wrapperRef);
-
   const ext = LANGUAGE_TO_EXT[language.toLowerCase()] ?? (language || 'txt');
 
   const exportItems = [
@@ -67,7 +68,11 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
       description: `.${ext} file`,
       onSelect: () => {
         const blob = new Blob([codeContent], { type: 'text/plain;charset=utf-8;' });
-        download(URL.createObjectURL(blob), toFilename(getBaseName(), ext, 'code'), true);
+        download(
+          URL.createObjectURL(blob),
+          toFilename(getNearestHeading(wrapperRef.current), ext, 'code'),
+          true
+        );
       },
     },
     {
@@ -78,7 +83,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
         if (!el) return;
         try {
           const dataUrl = await toPng(el, { pixelRatio: 2 });
-          download(dataUrl, toFilename(getBaseName(), 'png', 'code'));
+          download(dataUrl, toFilename(getNearestHeading(wrapperRef.current), 'png', 'code'));
         } catch (err) {
           console.error('[CodeRender] image export failed', err);
         }

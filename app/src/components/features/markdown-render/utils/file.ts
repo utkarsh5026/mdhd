@@ -1,4 +1,25 @@
 /**
+ * Walks the DOM upward from `el` to find the nearest preceding heading.
+ *
+ * @param el - The starting DOM element.
+ * @returns The trimmed text content of the nearest `<h1>`–`<h6>`, or `''`.
+ */
+export function getNearestHeading(el: HTMLElement | null): string {
+  let node = el;
+  while (node) {
+    let sibling = node.previousElementSibling as HTMLElement | null;
+    while (sibling) {
+      if (/^H[1-6]$/.test(sibling.tagName)) return sibling.textContent?.trim() ?? '';
+      const headings = sibling.querySelectorAll('h1,h2,h3,h4,h5,h6');
+      if (headings.length) return headings[headings.length - 1].textContent?.trim() ?? '';
+      sibling = sibling.previousElementSibling as HTMLElement | null;
+    }
+    node = node.parentElement;
+  }
+  return '';
+}
+
+/**
  * Converts a heading string into a URL-safe filename with the given extension.
  *
  * Non-alphanumeric characters are replaced with hyphens and leading/trailing
