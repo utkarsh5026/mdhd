@@ -9,8 +9,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
-import type { CodeImageExportSettings } from '../store/code-image-export-store';
+import { type CodeImageExportSettings, defaultSettings } from '../store/code-image-export-store';
 import type { SavedPreset, SharedExportSettings } from '../store/types';
+import {
+  BACKGROUND_KEYS,
+  CODE_KEYS,
+  EXPORT_KEYS,
+  LAYOUT_KEYS,
+  LINE_HIGHLIGHT_KEYS,
+  pickKeys,
+  WATERMARK_KEYS,
+  WINDOW_KEYS,
+} from '../store/types';
 import {
   ASPECT_RATIOS,
   FONT_FAMILIES,
@@ -100,7 +110,8 @@ export const PresetsSection: React.FC<{
 export const BackgroundSection: React.FC<{
   settings: SharedExportSettings;
   updateSettings: (partial: Partial<SharedExportSettings>) => void;
-}> = ({ settings, updateSettings }) => {
+  onReset?: () => void;
+}> = ({ settings, updateSettings, onReset }) => {
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = useCallback(
@@ -121,7 +132,7 @@ export const BackgroundSection: React.FC<{
   );
 
   return (
-    <CollapsibleSection title="Background">
+    <CollapsibleSection title="Background" onReset={onReset}>
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs text-muted-foreground">Transparent</span>
         <Switch
@@ -315,7 +326,10 @@ const WindowSection: React.FC<{
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
   language: string;
 }> = ({ settings, updateSettings, language }) => (
-  <CollapsibleSection title="Window">
+  <CollapsibleSection
+    title="Window"
+    onReset={() => updateSettings(pickKeys(defaultSettings, WINDOW_KEYS))}
+  >
     <div className="mb-4">
       <ToggleGroup
         options={[
@@ -455,7 +469,10 @@ const CodeSection: React.FC<{
   settings: CodeImageExportSettings;
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <CollapsibleSection title="Code">
+  <CollapsibleSection
+    title="Code"
+    onReset={() => updateSettings(pickKeys(defaultSettings, CODE_KEYS))}
+  >
     <div className="space-y-4">
       <SelectRow
         label="Theme"
@@ -533,7 +550,10 @@ const LineHighlightSection: React.FC<{
   settings: CodeImageExportSettings;
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <CollapsibleSection title="Line Highlight">
+  <CollapsibleSection
+    title="Line Highlight"
+    onReset={() => updateSettings(pickKeys(defaultSettings, LINE_HIGHLIGHT_KEYS))}
+  >
     <div className="space-y-4">
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">Lines (e.g. 1,3-5,8)</div>
@@ -591,8 +611,9 @@ const LineHighlightSection: React.FC<{
 export const LayoutSection: React.FC<{
   settings: SharedExportSettings;
   updateSettings: (partial: Partial<SharedExportSettings>) => void;
-}> = ({ settings, updateSettings }) => (
-  <CollapsibleSection title="Layout">
+  onReset?: () => void;
+}> = ({ settings, updateSettings, onReset }) => (
+  <CollapsibleSection title="Layout" onReset={onReset}>
     <div className="space-y-4">
       <SliderRow
         label="Padding"
@@ -636,8 +657,9 @@ export const LayoutSection: React.FC<{
 export const WatermarkSection: React.FC<{
   settings: SharedExportSettings;
   updateSettings: (partial: Partial<SharedExportSettings>) => void;
-}> = ({ settings, updateSettings }) => (
-  <CollapsibleSection title="Watermark">
+  onReset?: () => void;
+}> = ({ settings, updateSettings, onReset }) => (
+  <CollapsibleSection title="Watermark" onReset={onReset}>
     <div className="space-y-4">
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">Text</div>
@@ -709,8 +731,9 @@ export const WatermarkSection: React.FC<{
 export const ExportScaleSection: React.FC<{
   settings: SharedExportSettings;
   updateSettings: (partial: Partial<SharedExportSettings>) => void;
-}> = ({ settings, updateSettings }) => (
-  <CollapsibleSection title="Export">
+  onReset?: () => void;
+}> = ({ settings, updateSettings, onReset }) => (
+  <CollapsibleSection title="Export" onReset={onReset}>
     <div className="space-y-4">
       <SliderRow
         label="Scale"
@@ -755,6 +778,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       <BackgroundSection
         settings={settings}
         updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+        onReset={() => updateSettings(pickKeys(defaultSettings, BACKGROUND_KEYS))}
       />
       <WindowSection settings={settings} updateSettings={updateSettings} language={language} />
       <CodeSection settings={settings} updateSettings={updateSettings} />
@@ -762,14 +786,17 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       <LayoutSection
         settings={settings}
         updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+        onReset={() => updateSettings(pickKeys(defaultSettings, LAYOUT_KEYS))}
       />
       <WatermarkSection
         settings={settings}
         updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+        onReset={() => updateSettings(pickKeys(defaultSettings, WATERMARK_KEYS))}
       />
       <ExportScaleSection
         settings={settings}
         updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+        onReset={() => updateSettings(pickKeys(defaultSettings, EXPORT_KEYS))}
       />
       <div className="h-4" />
     </div>

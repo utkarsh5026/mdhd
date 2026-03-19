@@ -1,13 +1,21 @@
-import { RotateCcw } from 'lucide-react';
 import React from 'react';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 import type { PhotoImageExportSettings } from '../store/photo-image-export-store';
 import { defaultPhotoSettings } from '../store/photo-image-export-store';
 import type { SavedPreset, SharedExportSettings } from '../store/types';
+import {
+  BACKGROUND_KEYS,
+  CAPTION_KEYS,
+  EXPORT_KEYS,
+  FILTER_KEYS,
+  FRAME_KEYS,
+  LAYOUT_KEYS,
+  pickKeys,
+  WATERMARK_KEYS,
+} from '../store/types';
 import { BORDER_STYLES, CAPTION_POSITIONS, FILTER_PRESETS } from './constants';
 import {
   BackgroundSection,
@@ -22,7 +30,10 @@ const FiltersSection: React.FC<{
   settings: PhotoImageExportSettings;
   updateSettings: (partial: Partial<PhotoImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <CollapsibleSection title="Filters">
+  <CollapsibleSection
+    title="Filters"
+    onReset={() => updateSettings(pickKeys(defaultPhotoSettings, FILTER_KEYS))}
+  >
     <div className="space-y-4">
       {/* Filter presets */}
       <div className="flex flex-wrap gap-1.5">
@@ -117,27 +128,6 @@ const FiltersSection: React.FC<{
         step={5}
         unit="%"
       />
-
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full gap-1.5 text-xs cursor-pointer"
-        onClick={() =>
-          updateSettings({
-            brightness: defaultPhotoSettings.brightness,
-            contrast: defaultPhotoSettings.contrast,
-            saturation: defaultPhotoSettings.saturation,
-            blur: defaultPhotoSettings.blur,
-            grayscale: defaultPhotoSettings.grayscale,
-            sepia: defaultPhotoSettings.sepia,
-            hueRotate: defaultPhotoSettings.hueRotate,
-            invert: defaultPhotoSettings.invert,
-          })
-        }
-      >
-        <RotateCcw className="w-3 h-3" />
-        Reset Filters
-      </Button>
     </div>
   </CollapsibleSection>
 );
@@ -146,7 +136,10 @@ const FrameSection: React.FC<{
   settings: PhotoImageExportSettings;
   updateSettings: (partial: Partial<PhotoImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <CollapsibleSection title="Frame">
+  <CollapsibleSection
+    title="Frame"
+    onReset={() => updateSettings(pickKeys(defaultPhotoSettings, FRAME_KEYS))}
+  >
     <div className="space-y-4">
       <SliderRow
         label="Border width"
@@ -220,7 +213,10 @@ const CaptionSection: React.FC<{
   updateSettings: (partial: Partial<PhotoImageExportSettings>) => void;
   alt: string;
 }> = ({ settings, updateSettings, alt }) => (
-  <CollapsibleSection title="Caption">
+  <CollapsibleSection
+    title="Caption"
+    onReset={() => updateSettings(pickKeys(defaultPhotoSettings, CAPTION_KEYS))}
+  >
     <div className="space-y-4">
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">Text</div>
@@ -306,6 +302,7 @@ const PhotoSettingsSidebar: React.FC<PhotoSettingsSidebarProps> = ({
       <BackgroundSection
         settings={settings}
         updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+        onReset={() => updateSettings(pickKeys(defaultPhotoSettings, BACKGROUND_KEYS))}
       />
       <FiltersSection settings={settings} updateSettings={updateSettings} />
       <FrameSection settings={settings} updateSettings={updateSettings} />
@@ -313,14 +310,17 @@ const PhotoSettingsSidebar: React.FC<PhotoSettingsSidebarProps> = ({
       <LayoutSection
         settings={settings}
         updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+        onReset={() => updateSettings(pickKeys(defaultPhotoSettings, LAYOUT_KEYS))}
       />
       <WatermarkSection
         settings={settings}
         updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+        onReset={() => updateSettings(pickKeys(defaultPhotoSettings, WATERMARK_KEYS))}
       />
       <ExportScaleSection
         settings={settings}
         updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+        onReset={() => updateSettings(pickKeys(defaultPhotoSettings, EXPORT_KEYS))}
       />
       <div className="h-4" />
     </div>

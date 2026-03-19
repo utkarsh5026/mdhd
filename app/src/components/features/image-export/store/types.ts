@@ -35,3 +35,108 @@ export interface SavedPreset<T = unknown> {
   name: string;
   settings: T;
 }
+
+// --- Section key groups ---
+
+export const BACKGROUND_KEYS = [
+  'backgroundType',
+  'backgroundColor',
+  'backgroundColorEnd',
+  'gradientAngle',
+  'backgroundImage',
+  'backgroundImageOpacity',
+  'backgroundImageOverlay',
+  'backgroundImageOverlayOpacity',
+  'backgroundImageFit',
+  'transparentBackground',
+] as const satisfies readonly (keyof SharedExportSettings)[];
+
+export const LAYOUT_KEYS = [
+  'padding',
+  'customWidth',
+  'aspectRatio',
+] as const satisfies readonly (keyof SharedExportSettings)[];
+
+export const WATERMARK_KEYS = [
+  'watermarkText',
+  'watermarkPosition',
+  'watermarkOpacity',
+  'watermarkColor',
+  'watermarkSize',
+  'watermarkFontFamily',
+] as const satisfies readonly (keyof SharedExportSettings)[];
+
+export const EXPORT_KEYS = [
+  'exportScale',
+] as const satisfies readonly (keyof SharedExportSettings)[];
+
+export const WINDOW_KEYS = [
+  'windowStyle',
+  'windowFocused',
+  'titleText',
+  'titlePosition',
+  'showTitleIcon',
+  'titleBarFrosted',
+  'windowAccentColor',
+  'showMenuBar',
+  'showDock',
+  'showTaskbar',
+  'borderRadius',
+  'shadowSize',
+] as const;
+
+export const CODE_KEYS = [
+  'themeKey',
+  'fontFamily',
+  'fontSize',
+  'lineHeight',
+  'letterSpacing',
+  'fontLigatures',
+  'showLineNumbers',
+] as const;
+
+export const LINE_HIGHLIGHT_KEYS = [
+  'highlightedLines',
+  'highlightColor',
+  'dimUnhighlighted',
+  'dimOpacity',
+] as const;
+
+export const FILTER_KEYS = [
+  'brightness',
+  'contrast',
+  'saturation',
+  'blur',
+  'grayscale',
+  'sepia',
+  'hueRotate',
+  'invert',
+] as const;
+
+export const FRAME_KEYS = [
+  'frameBorderWidth',
+  'frameBorderColor',
+  'frameBorderStyle',
+  'innerBorderRadius',
+  'shadowSize',
+] as const;
+
+export const CAPTION_KEYS = [
+  'captionText',
+  'captionPosition',
+  'captionFontSize',
+  'captionColor',
+  'captionBackground',
+] as const;
+
+/** Pick a subset of keys from an object. */
+export function pickKeys<T extends Record<string, unknown>>(
+  obj: T,
+  keys: readonly (keyof T)[]
+): Partial<T> {
+  const result = {} as Partial<T>;
+  for (const key of keys) {
+    result[key] = obj[key];
+  }
+  return result;
+}
