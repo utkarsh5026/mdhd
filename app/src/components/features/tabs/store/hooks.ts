@@ -22,6 +22,7 @@ export const useTabsActions = () =>
       setActiveTab: state.setActiveTab,
       updateTabReadingState: state.updateTabReadingState,
       updateTabContent: state.updateTabContent,
+      updateTabContentPreservePosition: state.updateTabContentPreservePosition,
       updateTabSource: state.updateTabSource,
       getTabById: state.getTabById,
       setShowEmptyState: state.setShowEmptyState,

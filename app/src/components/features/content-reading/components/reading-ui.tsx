@@ -21,6 +21,7 @@ export interface ReadingUIProps {
   markSectionAsRead: (index: number) => void;
   updateCurrentIndex: (index: number) => void;
   onScrollProgressChange: (progress: number) => void;
+  sourcePath?: string;
   isZenMode: boolean;
   zenControlsVisible: boolean;
   isDialogOpen: boolean;
@@ -54,6 +55,7 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
     markSectionAsRead,
     updateCurrentIndex,
     onScrollProgressChange,
+    sourcePath,
     isZenMode,
     zenControlsVisible,
     isDialogOpen,
@@ -78,17 +80,26 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
         markSectionAsRead={markSectionAsRead}
         updateCurrentIndex={updateCurrentIndex}
         onScrollProgressChange={onScrollProgressChange}
+        sourcePath={sourcePath}
         viewMode="preview"
         isZenMode={isZenMode}
         zenControlsVisible={zenControlsVisible}
         isDialogOpen={isDialogOpen}
         onZenTap={onZenTap}
         onZenDoubleTap={onZenDoubleTap}
-        headerSlot={({ onSettings, onMenu, isVisible, breadcrumb, mobileBreadcrumb }) => (
+        headerSlot={({
+          onSettings,
+          onMenu,
+          onSnippets,
+          isVisible,
+          breadcrumb,
+          mobileBreadcrumb,
+        }) => (
           <Header
             onExit={onExit}
             onSettings={onSettings}
             onMenu={onMenu}
+            onSnippets={onSnippets}
             isVisible={isVisible}
             breadcrumb={breadcrumb}
             mobileBreadcrumb={mobileBreadcrumb}

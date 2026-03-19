@@ -170,6 +170,37 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           }));
         },
 
+        updateTabContentPreservePosition: (tabId: string, content: string) => {
+          set((state) => ({
+            tabs: state.tabs.map((t) => {
+              if (t.id !== tabId) return t;
+
+              const { metadata, sections } = content
+                ? parseMarkdownIntoSections(content)
+                : { metadata: null, sections: [] };
+
+              const clampedIndex = Math.min(
+                t.readingState.currentIndex,
+                Math.max(0, sections.length - 1)
+              );
+
+              return {
+                ...t,
+                content,
+                contentHash: hashString(content),
+                title: extractTitleFromMarkdown(content),
+                readingState: {
+                  ...t.readingState,
+                  sections,
+                  metadata,
+                  isInitialized: sections.length > 0,
+                  currentIndex: clampedIndex,
+                },
+              };
+            }),
+          }));
+        },
+
         updateTabSource: (
           tabId: string,
           sourceType: 'paste' | 'file',

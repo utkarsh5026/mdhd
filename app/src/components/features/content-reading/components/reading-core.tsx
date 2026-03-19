@@ -11,6 +11,7 @@ import {
   ScrollContentReader,
   SectionBreadcrumb,
 } from './layout';
+import SnippetsSheet from './snippets';
 import SectionsSheet from './table-of-contents/sections-sheet';
 
 const ReadingSettingsSheet = lazy(() =>
@@ -22,6 +23,7 @@ const ReadingSettingsSheet = lazy(() =>
 interface HeaderHandlers {
   onSettings: () => void;
   onMenu: () => void;
+  onSnippets: () => void;
   isVisible: boolean;
   breadcrumb?: React.ReactNode;
   mobileBreadcrumb?: React.ReactNode;
@@ -47,6 +49,9 @@ export interface ReadingCoreProps {
   updateCurrentIndex: (index: number) => void;
   onScrollProgressChange: (progress: number) => void;
 
+  // Source file path (for path breadcrumb)
+  sourcePath?: string;
+
   // View mode
   viewMode: 'preview' | 'edit';
 
@@ -55,6 +60,9 @@ export interface ReadingCoreProps {
 
   // Edit mode content (for inline viewer)
   editModeContent?: React.ReactNode;
+
+  // Click-to-edit: clicking a section in preview scrolls editor to source
+  onSectionClick?: (sectionIndex: number) => void;
 
   // Zen mode props (optional, for fullscreen only)
   isZenMode?: boolean;
@@ -96,9 +104,11 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     markSectionAsRead,
     updateCurrentIndex,
     onScrollProgressChange,
+    sourcePath,
     viewMode,
     headerSlot,
     editModeContent,
+    onSectionClick,
     isZenMode = false,
     zenControlsVisible = false,
     isDialogOpen = false,
@@ -107,6 +117,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
   }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [snippetsOpen, setSnippetsOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const { openFloatingPicker, pendingFloatingPickerOpen } = useThemeFloatingPicker();
@@ -183,6 +194,11 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
       handleInteraction();
     }, [handleInteraction]);
 
+    const handleSnippetsOpen = useCallback(() => {
+      setSnippetsOpen(true);
+      handleInteraction();
+    }, [handleInteraction]);
+
     // If in edit mode, show edit content
     if (viewMode === 'edit' && editModeContent) {
       return <div className="h-full relative bg-background text-foreground">{editModeContent}</div>;
@@ -205,6 +221,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
             scrollRef={scrollRef}
             handleDoubleClick={handleContentDoubleClick}
             currentSection={currentSection}
+            onSectionClick={onSectionClick}
           />
         ) : (
           <ScrollContentReader
@@ -214,6 +231,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
             handleDoubleClick={handleContentDoubleClick}
             onScrollProgress={onScrollProgressChange}
             onSectionVisible={handleSectionVisible}
+            onSectionClick={onSectionClick}
           />
         )}
 
@@ -224,6 +242,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
               sections={sections}
               currentIndex={currentIndex}
               onNavigate={handleSelectCard}
+              sourcePath={sourcePath}
             />
           </div>
         )}
@@ -234,6 +253,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
             {headerSlot({
               onSettings: handleSettingsOpen,
               onMenu: handleMenuOpen,
+              onSnippets: handleSnippetsOpen,
               isVisible: isControlsVisible || zenControlsVisible,
               breadcrumb:
                 readingMode === 'card' ? (
@@ -241,6 +261,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
                     sections={sections}
                     currentIndex={currentIndex}
                     onNavigate={handleSelectCard}
+                    sourcePath={sourcePath}
                     variant="inline"
                   />
                 ) : undefined,
@@ -250,6 +271,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
                     sections={sections}
                     currentIndex={currentIndex}
                     onNavigate={handleSelectCard}
+                    sourcePath={sourcePath}
                     variant="mobile"
                   />
                 ) : undefined,
@@ -272,6 +294,14 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
             }}
           />
         )}
+
+        {/* Snippets Sheet */}
+        <SnippetsSheet
+          open={snippetsOpen}
+          onOpenChange={setSnippetsOpen}
+          sections={sections}
+          onNavigateToSection={handleSelectCard}
+        />
 
         {/* Sections Sheet */}
         <SectionsSheet

@@ -68,6 +68,7 @@ export interface TabsActions {
   updateTabReadingState: (tabId: string, state: Partial<TabReadingState>) => void;
 
   updateTabContent: (tabId: string, content: string) => void;
+  updateTabContentPreservePosition: (tabId: string, content: string) => void;
   updateTabSource: (
     tabId: string,
     sourceType: 'paste' | 'file',

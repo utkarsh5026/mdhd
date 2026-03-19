@@ -16,6 +16,7 @@ interface ScrollContentReaderProps {
   handleDoubleClick: () => void;
   onScrollProgress: (progress: number) => void;
   onSectionVisible: (index: number) => void;
+  onSectionClick?: (sectionIndex: number) => void;
 }
 
 const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
@@ -25,6 +26,7 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
   handleDoubleClick,
   onScrollProgress,
   onSectionVisible,
+  onSectionClick,
 }) => {
   const { settings } = useReadingSettings();
   const fontFamily = fontFamilyMap[settings.fontFamily];
@@ -121,6 +123,11 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
               data-section-index={index}
               id={`section-${section.id}`}
               className={cn('scroll-section', index > 0 && 'pt-4 border-t border-border/30')}
+              onClick={(e) => {
+                if (onSectionClick && !(e.target instanceof HTMLAnchorElement)) {
+                  onSectionClick(index);
+                }
+              }}
             >
               <div
                 className="prose prose-lg prose-invert max-w-none"

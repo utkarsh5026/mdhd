@@ -32,6 +32,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     setActiveTab,
     setShowEmptyState,
     updateTabContent,
+    updateTabContentPreservePosition,
     updateTabReadingState,
     toggleHeaderVisibility,
     toggleStatusBarVisibility,
@@ -137,7 +138,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
             <InlineMarkdownViewer
               tabId={activeTab.id}
               viewMode={viewMode}
-              onContentChange={(content) => updateTabContent(activeTab.id, content)}
+              onContentChange={(content) => updateTabContentPreservePosition(activeTab.id, content)}
               onEnterFullscreen={() => onEnterFullscreen(activeTab.id)}
             />
           </div>

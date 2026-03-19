@@ -1,15 +1,17 @@
-import { ChevronLeft, ChevronRight, List, Maximize, Settings } from 'lucide-react';
-import React, { memo, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, Layers, List, Maximize, Pencil, Settings } from 'lucide-react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import ReadingCore from '@/components/features/content-reading/components/reading-core';
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 import { cn } from '@/lib/utils';
 
+import { useEditorPreviewSync } from '../../hooks/use-editor-preview-sync';
 import { useTabNavigation } from '../../hooks/use-tab-navigation';
 import { useTabsStore } from '../../store/tabs-store';
 import styles from './inline-markdown-viewer.module.css';
 import MarkdownCodeMirrorEditor from './markdown-codemirror-editor';
+import SectionEditorOverlay from './section-editor-overlay';
 
 interface InlineMarkdownViewerProps {
   tabId: string;
@@ -48,8 +50,10 @@ interface InlineHeaderProps {
   onFullscreen: () => void;
   onSettings: () => void;
   onMenu: () => void;
+  onSnippets: () => void;
   onPrevious: () => void;
   onNext: () => void;
+  onEditSection?: () => void;
   currentIndex: number;
   total: number;
   readingMode: 'card' | 'scroll';
@@ -62,8 +66,10 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
     onFullscreen,
     onSettings,
     onMenu,
+    onSnippets,
     onPrevious,
     onNext,
+    onEditSection,
     currentIndex,
     total,
     readingMode,
@@ -103,8 +109,15 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
                 <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
               </>
             )}
+            {onEditSection && readingMode === 'card' && (
+              <>
+                <HeaderBtn tooltip="Edit Section" icon={Pencil} onClick={onEditSection} />
+                <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
+              </>
+            )}
             <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
             <HeaderBtn tooltip="Reading Settings" icon={Settings} onClick={onSettings} />
+            <HeaderBtn tooltip="Snippets" icon={Layers} onClick={onSnippets} />
             <HeaderBtn tooltip="Table of Contents" icon={List} onClick={onMenu} />
           </div>
         </div>
@@ -151,6 +164,33 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
 
     const currentSection = getSection(currentIndex);
 
+    const [editingSectionIndex, setEditingSectionIndex] = useState<number | null>(null);
+    const editingSection = editingSectionIndex !== null ? getSection(editingSectionIndex) : null;
+
+    const handleSectionEditSave = useCallback(
+      (newContent: string) => {
+        if (!tab || editingSectionIndex === null) return;
+        const section = sections[editingSectionIndex];
+        if (!section) return;
+
+        const lines = tab.content.split('\n');
+        const newLines = newContent.split('\n');
+        lines.splice(section.startLine, section.endLine - section.startLine, ...newLines);
+        onContentChange(lines.join('\n'));
+        setEditingSectionIndex(null);
+      },
+      [tab, editingSectionIndex, sections, onContentChange]
+    );
+
+    const { editorViewRef, handleCursorActivity, handleEditorScroll, handlePreviewSectionClick } =
+      useEditorPreviewSync({
+        sections,
+        currentIndex,
+        readingMode,
+        changeSection,
+        viewMode,
+      });
+
     const PreviewPanel = useMemo(() => {
       if (!tab || sections.length === 0 || !currentSection) {
         return <LoadingState />;
@@ -173,14 +213,18 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
           markSectionAsRead={markSectionAsRead}
           updateCurrentIndex={updateCurrentIndex}
           onScrollProgressChange={handleScrollProgress}
+          sourcePath={tab.sourcePath}
           viewMode="preview"
-          headerSlot={({ onSettings, onMenu, breadcrumb, mobileBreadcrumb }) => (
+          onSectionClick={handlePreviewSectionClick}
+          headerSlot={({ onSettings, onMenu, onSnippets, breadcrumb, mobileBreadcrumb }) => (
             <InlineHeader
               onFullscreen={onEnterFullscreen}
               onSettings={onSettings}
               onMenu={onMenu}
+              onSnippets={onSnippets}
               onPrevious={goToPrevious}
               onNext={goToNext}
+              onEditSection={() => setEditingSectionIndex(currentIndex)}
               currentIndex={currentIndex}
               total={sections.length}
               readingMode={readingMode}
@@ -207,14 +251,23 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
       updateCurrentIndex,
       handleScrollProgress,
       onEnterFullscreen,
+      handlePreviewSectionClick,
     ]);
 
     const EditorPanel = useMemo(() => {
       if (!tab) {
         return <LoadingState />;
       }
-      return <MarkdownCodeMirrorEditor content={tab.content} onChange={onContentChange} />;
-    }, [tab, onContentChange]);
+      return (
+        <MarkdownCodeMirrorEditor
+          content={tab.content}
+          onChange={onContentChange}
+          editorViewRef={editorViewRef}
+          onCursorActivity={handleCursorActivity}
+          onScrollChange={handleEditorScroll}
+        />
+      );
+    }, [tab, onContentChange, editorViewRef, handleCursorActivity, handleEditorScroll]);
 
     if (!tab || sections.length === 0 || !currentSection) {
       return <LoadingState />;
@@ -251,7 +304,21 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
       );
     };
 
-    return <>{renderContent()}</>;
+    return (
+      <>
+        {renderContent()}
+        {editingSection && (
+          <SectionEditorOverlay
+            section={editingSection}
+            open={editingSectionIndex !== null}
+            onOpenChange={(open) => {
+              if (!open) setEditingSectionIndex(null);
+            }}
+            onSave={handleSectionEditSave}
+          />
+        )}
+      </>
+    );
   }
 );
 

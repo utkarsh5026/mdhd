@@ -1,4 +1,4 @@
-import { List, LucideIcon, Settings, X } from 'lucide-react';
+import { Layers, List, LucideIcon, Settings, X } from 'lucide-react';
 
 import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 import { cn } from '@/lib/utils';
@@ -7,6 +7,7 @@ interface HeaderProps {
   onExit: () => void;
   onSettings: () => void;
   onMenu: () => void;
+  onSnippets: () => void;
   isVisible: boolean;
   breadcrumb?: React.ReactNode;
   mobileBreadcrumb?: React.ReactNode;
@@ -54,6 +55,7 @@ const Header: React.FC<HeaderProps> = ({
   onExit,
   onSettings,
   onMenu,
+  onSnippets,
   isVisible,
   breadcrumb,
   mobileBreadcrumb,
@@ -83,9 +85,10 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Right: Settings + TOC */}
+          {/* Right: Settings + Snippets + TOC */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <BarButton onClick={onSettings} icon={Settings} tooltip="Reading Settings" />
+            <BarButton onClick={onSnippets} icon={Layers} tooltip="Snippets" />
             <BarButton onClick={onMenu} icon={List} tooltip="Table of Contents" />
           </div>
         </div>

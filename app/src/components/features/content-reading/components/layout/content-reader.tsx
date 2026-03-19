@@ -20,6 +20,7 @@ interface ContentReaderProps {
   scrollRef: RefObject<HTMLDivElement | null>;
   handleDoubleClick: () => void;
   currentSection: MarkdownSection;
+  onSectionClick?: (sectionIndex: number) => void;
 }
 
 const ContentReader: React.FC<ContentReaderProps> = memo(
@@ -32,6 +33,7 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
     scrollRef,
     handleDoubleClick,
     currentSection,
+    onSectionClick,
   }) => {
     const { settings } = useReadingSettings();
     const fontFamily = fontFamilyMap[settings.fontFamily];
@@ -75,10 +77,15 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
               {currentIndex === 0 && metadata && <MetadataDisplay metadata={metadata} />}
               <div
                 key={currentSection.id}
-                className="prose prose-lg prose-invert max-w-none"
+                className="prose prose-lg prose-invert max-w-none cursor-text"
                 style={{
                   fontSize: `${fontSize}px`,
                   lineHeight: lineHeight,
+                }}
+                onClick={(e) => {
+                  if (onSectionClick && !(e.target instanceof HTMLAnchorElement)) {
+                    onSectionClick(currentIndex);
+                  }
                 }}
               >
                 <CustomMarkdownRenderer

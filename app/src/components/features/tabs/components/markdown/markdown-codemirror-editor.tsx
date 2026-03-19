@@ -3,7 +3,7 @@ import { markdown } from '@codemirror/lang-markdown';
 import { foldGutter, foldKeymap, indentOnInput } from '@codemirror/language';
 import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers } from '@codemirror/view';
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { memo, type MutableRefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
 import {
@@ -16,17 +16,24 @@ interface MarkdownCodeMirrorEditorProps {
   content: string;
   onChange: (content: string) => void;
   className?: string;
+  editorViewRef?: MutableRefObject<EditorView | null>;
+  onCursorActivity?: (line: number) => void;
+  onScrollChange?: (firstVisibleLine: number) => void;
 }
 
 const themeCompartment = new Compartment();
 
 const MarkdownCodeMirrorEditor: React.FC<MarkdownCodeMirrorEditorProps> = memo(
-  ({ content, onChange, className = '' }) => {
+  ({ content, onChange, className = '', editorViewRef, onCursorActivity, onScrollChange }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const editorRef = useRef<EditorView | null>(null);
     const prevThemeKey = useRef<string | null>(null);
     const isInternalUpdate = useRef(false);
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const onCursorActivityRef = useRef(onCursorActivity);
+    const onScrollChangeRef = useRef(onScrollChange);
+    onCursorActivityRef.current = onCursorActivity;
+    onScrollChangeRef.current = onScrollChange;
 
     const selectedTheme = useCodeThemeStore((state) => state.selectedTheme);
 
@@ -128,6 +135,10 @@ const MarkdownCodeMirrorEditor: React.FC<MarkdownCodeMirrorEditorProps> = memo(
             const newContent = update.state.doc.toString();
             debouncedOnChange(newContent);
           }
+          if (update.selectionSet && onCursorActivityRef.current) {
+            const line = update.state.doc.lineAt(update.state.selection.main.head);
+            onCursorActivityRef.current(line.number - 1);
+          }
         }),
       ];
     }, [baseTheme, selectedTheme, debouncedOnChange]);
@@ -152,7 +163,22 @@ const MarkdownCodeMirrorEditor: React.FC<MarkdownCodeMirrorEditorProps> = memo(
       });
 
       editorRef.current = view;
+      if (editorViewRef) editorViewRef.current = view;
       prevThemeKey.current = selectedTheme;
+
+      // Scroll listener for sync
+      const scroller = view.scrollDOM;
+      let scrollTimer: ReturnType<typeof setTimeout> | null = null;
+      const handleScroll = () => {
+        if (!onScrollChangeRef.current) return;
+        if (scrollTimer) clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(() => {
+          const pos = view.lineBlockAtHeight(scroller.scrollTop + 1).from;
+          const line = view.state.doc.lineAt(pos);
+          onScrollChangeRef.current?.(line.number - 1);
+        }, 100);
+      };
+      scroller.addEventListener('scroll', handleScroll, { passive: true });
 
       // Focus the editor
       view.focus();
@@ -161,8 +187,11 @@ const MarkdownCodeMirrorEditor: React.FC<MarkdownCodeMirrorEditorProps> = memo(
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
         }
+        if (scrollTimer) clearTimeout(scrollTimer);
+        scroller.removeEventListener('scroll', handleScroll);
         view.destroy();
         editorRef.current = null;
+        if (editorViewRef) editorViewRef.current = null;
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

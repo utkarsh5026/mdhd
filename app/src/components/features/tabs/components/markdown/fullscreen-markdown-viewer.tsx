@@ -115,6 +115,7 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
           markSectionAsRead={markSectionAsRead}
           updateCurrentIndex={updateCurrentIndex}
           onScrollProgressChange={handleScrollProgress}
+          sourcePath={tab.sourcePath}
           isZenMode={isZenMode}
           zenControlsVisible={zenControlsVisible}
           isDialogOpen={isDialogOpen}
