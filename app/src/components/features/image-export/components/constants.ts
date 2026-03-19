@@ -130,6 +130,17 @@ export const TITLE_POSITIONS = [
   { value: 'right' as const, label: 'Right' },
 ];
 
+export const WINDOW_ACCENT_PRESETS = [
+  { name: 'Windows Blue', color: '#0078d4' },
+  { name: 'Orchid', color: '#8764b8' },
+  { name: 'Sea Green', color: '#00b294' },
+  { name: 'Turf Green', color: '#498205' },
+  { name: 'Camouflage', color: '#7e735f' },
+  { name: 'Sunset', color: '#e74856' },
+  { name: 'Storm', color: '#68768a' },
+  { name: 'Iris', color: '#7160e8' },
+] as const;
+
 export const HIGHLIGHT_COLOR_PRESETS = [
   { label: 'Yellow', value: 'rgba(255,255,100,0.15)' },
   { label: 'Green', value: 'rgba(100,255,100,0.15)' },

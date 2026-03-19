@@ -154,7 +154,7 @@ export const ColorSwatchGrid: React.FC<{
 };
 
 export const ToggleGroup: React.FC<{
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; icon?: React.ReactNode }[];
   value: string;
   onChange: (value: string) => void;
 }> = ({ options, value, onChange }) => (
@@ -164,12 +164,14 @@ export const ToggleGroup: React.FC<{
         key={opt.value}
         className={cn(
           'flex-1 text-xs py-1.5 rounded-md transition-all duration-200 cursor-pointer font-medium',
+          'flex items-center justify-center gap-1.5',
           value === opt.value
             ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground/80'
         )}
         onClick={() => onChange(opt.value)}
       >
+        {opt.icon}
         {opt.label}
       </button>
     ))}

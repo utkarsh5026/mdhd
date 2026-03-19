@@ -1,24 +1,24 @@
-import { Minus, Square, X } from 'lucide-react';
 import React, { forwardRef, useMemo } from 'react';
 
 import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
 import type { ThemeKey } from '@/components/features/settings/store/code-theme';
 import { getThemeBackground } from '@/components/features/settings/store/codemirror-themes';
-import { cn } from '@/lib/utils';
 
 import {
   type CodeImageExportSettings,
   parseHighlightedLines,
 } from '../store/code-image-export-store';
-import { LanguageIcon } from '../utils/language-icons';
-
-const SHADOW_MAP: Record<CodeImageExportSettings['shadowSize'], string> = {
-  none: '',
-  sm: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)',
-  md: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
-  lg: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-  xl: '0 25px 50px -12px rgba(0,0,0,0.25)',
-};
+import {
+  DOCK_HEIGHT,
+  MacOSDock,
+  MacOSMenuBar,
+  MacOSTitleBar,
+  MENU_BAR_HEIGHT,
+  TASKBAR_HEIGHT,
+  WindowFrame,
+  WindowsTaskbar,
+  WindowsTitleBar,
+} from './os-window-chrome';
 
 const ASPECT_RATIO_MAP: Record<string, string | undefined> = {
   auto: undefined,
@@ -43,37 +43,6 @@ interface CodeImagePreviewProps {
   language: string;
   settings: CodeImageExportSettings;
 }
-
-const MacOSControls = () => (
-  <div className="flex items-center gap-2">
-    <div
-      className="w-3 h-3 rounded-full"
-      style={{ backgroundColor: '#FF5F57', boxShadow: 'inset 0 -1px 1px rgba(0,0,0,0.15)' }}
-    />
-    <div
-      className="w-3 h-3 rounded-full"
-      style={{ backgroundColor: '#FEBC2E', boxShadow: 'inset 0 -1px 1px rgba(0,0,0,0.15)' }}
-    />
-    <div
-      className="w-3 h-3 rounded-full"
-      style={{ backgroundColor: '#28C840', boxShadow: 'inset 0 -1px 1px rgba(0,0,0,0.15)' }}
-    />
-  </div>
-);
-
-const WindowsControls = () => (
-  <div className="flex items-center ml-auto">
-    <div className="flex items-center justify-center w-8 h-6 hover:bg-white/10 transition-colors">
-      <Minus className="w-3 h-3 text-current opacity-50" />
-    </div>
-    <div className="flex items-center justify-center w-8 h-6 hover:bg-white/10 transition-colors">
-      <Square className="w-2.5 h-2.5 text-current opacity-50" />
-    </div>
-    <div className="flex items-center justify-center w-8 h-6 rounded-tr-[inherit] hover:bg-[#e81123]/80 hover:text-white transition-colors">
-      <X className="w-3 h-3 text-current opacity-50" />
-    </div>
-  </div>
-);
 
 const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
   ({ code, language, settings }, ref) => {
@@ -114,6 +83,12 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
       watermarkFontFamily,
       titlePosition,
       showTitleIcon,
+      windowFocused,
+      titleBarFrosted,
+      windowAccentColor,
+      showMenuBar,
+      showDock,
+      showTaskbar,
     } = settings;
 
     const themeBg = getThemeBackground(themeKey);
@@ -141,9 +116,17 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
       [highlightedLines]
     );
 
+    const menuBarExtra = showMenuBar && windowStyle === 'macos' ? MENU_BAR_HEIGHT : 0;
+    const dockExtra = showDock && windowStyle === 'macos' ? DOCK_HEIGHT : 0;
+    const taskbarExtra = showTaskbar && windowStyle === 'windows' ? TASKBAR_HEIGHT : 0;
+    const bottomExtra = Math.max(dockExtra, taskbarExtra);
+
     const outerStyle: React.CSSProperties = {
       background: outerBackground,
-      padding: `${padding}px`,
+      paddingTop: padding + menuBarExtra,
+      paddingBottom: padding + bottomExtra,
+      paddingLeft: padding,
+      paddingRight: padding,
       ...(customWidth > 0 ? { width: `${customWidth}px` } : { minWidth: '480px' }),
       ...(ASPECT_RATIO_MAP[aspectRatio]
         ? { aspectRatio: ASPECT_RATIO_MAP[aspectRatio], minHeight: 0 }
@@ -182,56 +165,42 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
           </>
         )}
 
+        {/* Desktop chrome */}
+        {showMenuBar && windowStyle === 'macos' && <MacOSMenuBar />}
+        {showDock && windowStyle === 'macos' && <MacOSDock />}
+        {showTaskbar && windowStyle === 'windows' && <WindowsTaskbar />}
+
         {/* Code window */}
-        <div
-          style={{
-            position: 'relative',
-            borderRadius: `${borderRadius}px`,
-            boxShadow: SHADOW_MAP[shadowSize],
-            backgroundColor: themeBg,
-            overflow: 'hidden',
-          }}
+        <WindowFrame
+          windowStyle={windowStyle}
+          borderRadius={borderRadius}
+          shadowSize={shadowSize}
+          themeBg={themeBg}
         >
-          <div
-            className={cn(
-              'flex items-center px-4 relative',
-              windowStyle === 'windows' ? 'flex-row-reverse py-0' : 'py-2.5'
-            )}
-            style={{
-              backgroundColor: themeBg,
-              borderBottom: '1px solid rgba(128,128,128,0.08)',
-            }}
-          >
-            {windowStyle === 'macos' && <MacOSControls />}
-            {windowStyle === 'windows' && <WindowsControls />}
-            {displayTitle && (
-              <span
-                className={cn(
-                  'text-xs select-none flex items-center gap-1.5',
-                  windowStyle === 'macos'
-                    ? titlePosition === 'center'
-                      ? 'absolute left-1/2 -translate-x-1/2'
-                      : titlePosition === 'left'
-                        ? 'ml-3'
-                        : 'ml-auto'
-                    : titlePosition === 'right'
-                      ? 'ml-auto py-1.5'
-                      : titlePosition === 'center'
-                        ? 'absolute left-1/2 -translate-x-1/2 py-1.5'
-                        : 'mr-auto py-1.5'
-                )}
-                style={{ color: '#9ca3af', opacity: 0.6, fontSize: '12px' }}
-              >
-                {showTitleIcon && (
-                  <LanguageIcon
-                    language={language}
-                    style={{ width: '12px', height: '12px', opacity: 0.8 }}
-                  />
-                )}
-                {displayTitle}
-              </span>
-            )}
-          </div>
+          {/* OS-specific title bar */}
+          {windowStyle === 'macos' && (
+            <MacOSTitleBar
+              focused={windowFocused}
+              frosted={titleBarFrosted}
+              title={displayTitle}
+              titlePosition={titlePosition}
+              showIcon={showTitleIcon}
+              language={language}
+              themeBg={themeBg}
+            />
+          )}
+
+          {windowStyle === 'windows' && (
+            <WindowsTitleBar
+              focused={windowFocused}
+              accentColor={windowAccentColor}
+              title={displayTitle}
+              titlePosition={titlePosition}
+              showIcon={showTitleIcon}
+              language={language}
+              themeBg={themeBg}
+            />
+          )}
 
           <CodeMirrorDisplay
             code={code}
@@ -250,7 +219,7 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
             dimUnhighlighted={dimUnhighlighted}
             dimOpacity={dimOpacity}
           />
-        </div>
+        </WindowFrame>
 
         {/* Watermark */}
         {watermarkText && (

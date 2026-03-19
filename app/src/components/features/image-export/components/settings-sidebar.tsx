@@ -1,5 +1,6 @@
-import { Bookmark, ImagePlus, Save, Trash2 } from 'lucide-react';
+import { Bookmark, ImagePlus, Minus, Save, Trash2 } from 'lucide-react';
 import React, { useCallback, useRef, useState } from 'react';
+import { FaApple, FaWindows } from 'react-icons/fa';
 
 import { codeThemes, type ThemeKey } from '@/components/features/settings/store/code-theme';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ import {
   IMAGE_FIT_OPTIONS,
   TITLE_POSITIONS,
   WATERMARK_POSITIONS,
-  WINDOW_STYLES,
+  WINDOW_ACCENT_PRESETS,
 } from './constants';
 import {
   ColorSwatchGrid,
@@ -321,13 +322,27 @@ const WindowSection: React.FC<{
 
     <div className="mb-4">
       <ToggleGroup
-        options={WINDOW_STYLES}
+        options={[
+          { value: 'macos', label: 'macOS', icon: <FaApple size={11} /> },
+          { value: 'windows', label: 'Windows', icon: <FaWindows size={11} /> },
+          { value: 'none', label: 'None', icon: <Minus size={11} /> },
+        ]}
         value={settings.windowStyle}
         onChange={(v) => updateSettings({ windowStyle: v as 'macos' | 'windows' | 'none' })}
       />
     </div>
 
     <div className="space-y-4">
+      {settings.windowStyle !== 'none' && (
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">Focused</span>
+          <Switch
+            checked={settings.windowFocused}
+            onCheckedChange={(v) => updateSettings({ windowFocused: v })}
+          />
+        </div>
+      )}
+
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">Title text</div>
         <Input
@@ -354,6 +369,63 @@ const WindowSection: React.FC<{
           onCheckedChange={(v) => updateSettings({ showTitleIcon: v })}
         />
       </div>
+
+      {settings.windowStyle === 'macos' && (
+        <>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Frosted title bar</span>
+            <Switch
+              checked={settings.titleBarFrosted}
+              onCheckedChange={(v) => updateSettings({ titleBarFrosted: v })}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Menu bar</span>
+            <Switch
+              checked={settings.showMenuBar}
+              onCheckedChange={(v) => updateSettings({ showMenuBar: v })}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Dock</span>
+            <Switch
+              checked={settings.showDock}
+              onCheckedChange={(v) => updateSettings({ showDock: v })}
+            />
+          </div>
+        </>
+      )}
+
+      {settings.windowStyle === 'windows' && (
+        <>
+          <div>
+            <div className="text-xs text-muted-foreground mb-1.5">Accent color</div>
+            <div className="flex flex-wrap gap-1.5">
+              {WINDOW_ACCENT_PRESETS.map((preset) => (
+                <button
+                  key={preset.color}
+                  className={cn(
+                    'w-6 h-6 rounded cursor-pointer transition-all duration-200 border-2 shadow-sm',
+                    settings.windowAccentColor === preset.color
+                      ? 'border-primary ring-2 ring-primary/25 scale-110'
+                      : 'border-transparent hover:scale-110 hover:shadow-md'
+                  )}
+                  style={{ backgroundColor: preset.color }}
+                  onClick={() => updateSettings({ windowAccentColor: preset.color })}
+                  title={preset.name}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Taskbar</span>
+            <Switch
+              checked={settings.showTaskbar}
+              onCheckedChange={(v) => updateSettings({ showTaskbar: v })}
+            />
+          </div>
+        </>
+      )}
 
       <SliderRow
         label="Border radius"

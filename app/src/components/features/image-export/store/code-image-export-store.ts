@@ -18,9 +18,17 @@ export interface CodeImageExportSettings {
 
   // Window
   windowStyle: 'macos' | 'windows' | 'none';
+  windowFocused: boolean;
   titleText: string;
   titlePosition: 'center' | 'left' | 'right';
   showTitleIcon: boolean;
+  titleBarFrosted: boolean;
+  windowAccentColor: string;
+
+  // Desktop Chrome
+  showMenuBar: boolean;
+  showDock: boolean;
+  showTaskbar: boolean;
 
   // Code
   themeKey: ThemeKey;
@@ -69,9 +77,16 @@ export const defaultSettings: CodeImageExportSettings = {
   transparentBackground: false,
 
   windowStyle: 'macos',
+  windowFocused: true,
   titleText: '',
   titlePosition: 'center',
   showTitleIcon: true,
+  titleBarFrosted: false,
+  windowAccentColor: '#0078d4',
+
+  showMenuBar: false,
+  showDock: false,
+  showTaskbar: false,
 
   themeKey: 'vscDarkPlus',
   fontFamily: 'Source Code Pro',
