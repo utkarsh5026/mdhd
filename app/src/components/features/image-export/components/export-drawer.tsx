@@ -1,7 +1,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { toJpeg, toPng, toSvg } from 'html-to-image';
 import { Redo2, Undo2, XIcon } from 'lucide-react';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import { download, toFilename } from '@/components/features/markdown-render/utils/file';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,161 @@ async function copyImageToClipboard(el: HTMLElement | null, options: ExportOptio
   const blob = await res.blob();
   await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
 }
+
+const GRID_BG = {
+  backgroundImage: `
+    linear-gradient(color-mix(in srgb, var(--color-foreground) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-foreground) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--color-foreground) 2.5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-foreground) 2.5%, transparent) 1px, transparent 1px)
+  `,
+  backgroundSize: '120px 120px, 120px 120px, 24px 24px, 24px 24px',
+};
+
+type ResizeEdge = 'right' | 'bottom' | 'bottom-right';
+
+const EDGE_CURSORS: Record<ResizeEdge, string> = {
+  right: 'ew-resize',
+  bottom: 'ns-resize',
+  'bottom-right': 'nwse-resize',
+};
+
+const MIN_SIZE = 120;
+const EDGE_THRESHOLD = 12;
+
+function getEdgeFromPoint(rect: DOMRect, clientX: number, clientY: number): ResizeEdge | null {
+  if (clientX < rect.left || clientY < rect.top) return null;
+  if (clientX > rect.right + EDGE_THRESHOLD || clientY > rect.bottom + EDGE_THRESHOLD) return null;
+
+  const nearRight = clientX >= rect.right - EDGE_THRESHOLD;
+  const nearBottom = clientY >= rect.bottom - EDGE_THRESHOLD;
+
+  if (nearRight && nearBottom) return 'bottom-right';
+  if (nearRight) return 'right';
+  if (nearBottom) return 'bottom';
+  return null;
+}
+
+const DraggablePreview: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // All interaction state in refs — no React state updates during pointer events
+  const dragState = useRef<{
+    startX: number;
+    startY: number;
+    scrollL: number;
+    scrollT: number;
+  } | null>(null);
+  const resizeState = useRef<{
+    edge: ResizeEdge;
+    startX: number;
+    startY: number;
+    startW: number;
+    startH: number;
+  } | null>(null);
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+
+    if (contentRef.current) {
+      const rect = contentRef.current.getBoundingClientRect();
+      const edge = getEdgeFromPoint(rect, e.clientX, e.clientY);
+      if (edge) {
+        resizeState.current = {
+          edge,
+          startX: e.clientX,
+          startY: e.clientY,
+          startW: rect.width,
+          startH: rect.height,
+        };
+        containerRef.current?.setPointerCapture(e.pointerId);
+        return;
+      }
+    }
+
+    if (!containerRef.current) return;
+    const el = containerRef.current;
+    dragState.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      scrollL: el.scrollLeft,
+      scrollT: el.scrollTop,
+    };
+    el.style.cursor = 'grabbing';
+    el.setPointerCapture(e.pointerId);
+  }, []);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    // Resize — mutate DOM directly, no React state
+    if (resizeState.current) {
+      const { edge, startX, startY, startW, startH } = resizeState.current;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const w = Math.max(MIN_SIZE, edge === 'bottom' ? startW : startW + dx);
+      const h = Math.max(MIN_SIZE, edge === 'right' ? startH : startH + dy);
+      if (contentRef.current) {
+        contentRef.current.style.width = `${w}px`;
+        contentRef.current.style.height = `${h}px`;
+      }
+      return;
+    }
+
+    // Pan — already direct DOM mutation
+    if (dragState.current && containerRef.current) {
+      containerRef.current.scrollLeft =
+        dragState.current.scrollL - (e.clientX - dragState.current.startX);
+      containerRef.current.scrollTop =
+        dragState.current.scrollT - (e.clientY - dragState.current.startY);
+      return;
+    }
+
+    // Idle: update cursor based on edge proximity
+    if (containerRef.current && contentRef.current) {
+      const edge = getEdgeFromPoint(
+        contentRef.current.getBoundingClientRect(),
+        e.clientX,
+        e.clientY
+      );
+      containerRef.current.style.cursor = edge ? EDGE_CURSORS[edge] : 'grab';
+    }
+  }, []);
+
+  const onPointerUp = useCallback(() => {
+    resizeState.current = null;
+    dragState.current = null;
+    if (containerRef.current) containerRef.current.style.cursor = 'grab';
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex-1 overflow-auto relative min-h-0 bg-zinc-100 dark:bg-zinc-950 select-none"
+      style={{ ...GRID_BG, cursor: 'grab' }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
+      <div className="grid place-items-center min-h-full min-w-full p-6 lg:p-10">
+        <div
+          ref={contentRef}
+          className="relative drop-shadow-2xl overflow-hidden"
+          style={{ maxWidth: '100%' }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            if (contentRef.current) {
+              contentRef.current.style.width = '';
+              contentRef.current.style.height = '';
+            }
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export interface ExportDrawerProps {
   open: boolean;
@@ -180,23 +335,8 @@ const ExportDrawer: React.FC<ExportDrawerProps> = ({
 
           {/* Content: Preview + Sidebar */}
           <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-            {/* Preview area */}
-            <div
-              className="flex-1 overflow-auto relative min-h-0 bg-zinc-100 dark:bg-zinc-950"
-              style={{
-                backgroundImage: `
-                  linear-gradient(color-mix(in srgb, var(--color-foreground) 5%, transparent) 1px, transparent 1px),
-                  linear-gradient(90deg, color-mix(in srgb, var(--color-foreground) 5%, transparent) 1px, transparent 1px),
-                  linear-gradient(color-mix(in srgb, var(--color-foreground) 2.5%, transparent) 1px, transparent 1px),
-                  linear-gradient(90deg, color-mix(in srgb, var(--color-foreground) 2.5%, transparent) 1px, transparent 1px)
-                `,
-                backgroundSize: '120px 120px, 120px 120px, 24px 24px, 24px 24px',
-              }}
-            >
-              <div className="grid place-items-center min-h-full min-w-full p-6 lg:p-10">
-                <div className="relative max-w-full drop-shadow-2xl">{previewContent}</div>
-              </div>
-            </div>
+            {/* Preview area — drag to pan */}
+            <DraggablePreview>{previewContent}</DraggablePreview>
 
             {/* Sidebar */}
             {sidebarContent}
