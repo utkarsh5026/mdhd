@@ -69,13 +69,10 @@ const ColorSwatch: React.FC<{
   />
 );
 
-const isValidHex = (v: string) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v);
-
 export const ColorSwatchGrid: React.FC<{
   selected: string;
   onSelect: (color: string) => void;
 }> = ({ selected, onSelect }) => {
-  const [customHex, setCustomHex] = useState(selected);
   const [open, setOpen] = useState(false);
 
   const isPresetSelected = COLOR_GROUPS.some((g) =>
@@ -124,40 +121,29 @@ export const ColorSwatchGrid: React.FC<{
             </div>
           ))}
 
-          {/* Custom hex input */}
+          {/* Custom color picker */}
           <div>
             <span className="text-[9px] font-medium text-muted-foreground/50 uppercase tracking-widest select-none">
               Custom
             </span>
             <div className="flex items-center gap-2 mt-1">
-              <div
+              <label
                 className={cn(
-                  'w-5.5 h-5.5 rounded-full border-2 shrink-0 transition-all duration-200',
+                  'relative w-5.5 h-5.5 rounded-full border-2 shrink-0 transition-all duration-200 cursor-pointer',
                   !isPresetSelected
                     ? 'border-primary ring-2 ring-primary/25 scale-110'
                     : 'border-border/40'
                 )}
-                style={{ backgroundColor: isValidHex(customHex) ? customHex : selected }}
-              />
-              <input
-                type="text"
-                value={customHex}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setCustomHex(v);
-                  if (isValidHex(v)) onSelect(v);
-                }}
-                onBlur={() => {
-                  if (!isValidHex(customHex)) setCustomHex(selected);
-                }}
-                placeholder="#A1B2C3"
-                spellCheck={false}
-                className={cn(
-                  'flex-1 h-6 px-2 rounded-md text-[11px] font-mono bg-muted/40 border border-border/30',
-                  'outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors',
-                  'text-foreground placeholder:text-muted-foreground/40'
-                )}
-              />
+                style={{ backgroundColor: selected }}
+              >
+                <input
+                  type="color"
+                  value={selected}
+                  onChange={(e) => onSelect(e.target.value)}
+                  className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                />
+              </label>
+              <span className="text-[11px] font-mono text-muted-foreground/70">{selected}</span>
             </div>
           </div>
         </div>
