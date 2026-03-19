@@ -137,18 +137,20 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
     );
 
     const outerStyle: React.CSSProperties = {
-      position: 'relative',
       background: outerBackground,
       padding: `${padding}px`,
-      overflow: 'hidden',
-      ...(customWidth > 0 ? { width: `${customWidth}px` } : {}),
+      ...(customWidth > 0 ? { width: `${customWidth}px` } : { minWidth: '480px' }),
       ...(ASPECT_RATIO_MAP[aspectRatio]
         ? { aspectRatio: ASPECT_RATIO_MAP[aspectRatio], minHeight: 0 }
         : {}),
     };
 
     return (
-      <div ref={ref} style={outerStyle} className="rounded-2xl">
+      <div
+        ref={ref}
+        style={outerStyle}
+        className="relative overflow-hidden flex flex-col items-center justify-center rounded-2xl"
+      >
         {/* Image background layers */}
         {isImageBg && !transparentBackground && (
           <>

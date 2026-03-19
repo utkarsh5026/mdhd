@@ -1,6 +1,6 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { toJpeg, toPng, toSvg } from 'html-to-image';
-import { Check, ClipboardCopy, Download, Redo2, RotateCcw, Undo2, XIcon } from 'lucide-react';
+import { Redo2, Undo2, XIcon } from 'lucide-react';
 import React, { useCallback, useRef, useState } from 'react';
 
 import { download, toFilename } from '@/components/features/markdown-render/utils/file';
@@ -133,28 +133,42 @@ const CodeImageExportDialog: React.FC<CodeImageExportDialogProps> = ({
                   Customize and export as PNG, SVG, or JPEG
                 </DialogPrimitive.Description>
               </div>
-              <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/30">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-7 h-7 cursor-pointer rounded-md hover:bg-muted"
-                  onClick={undo}
-                  disabled={!canUndo()}
-                  title="Undo (Ctrl+Z)"
-                >
-                  <Undo2 className="w-3.5 h-3.5" />
-                </Button>
-                <div className="w-px h-4 bg-border/40" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-7 h-7 cursor-pointer rounded-md hover:bg-muted"
-                  onClick={redo}
-                  disabled={!canRedo()}
-                  title="Redo (Ctrl+Y)"
-                >
-                  <Redo2 className="w-3.5 h-3.5" />
-                </Button>
+              <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/30">
+                  <ToolbarButton label="Reset" onClick={resetSettings} />
+                  <div className="w-px h-4 bg-border/40" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-7 h-7 cursor-pointer rounded-md hover:bg-muted"
+                    onClick={undo}
+                    disabled={!canUndo()}
+                    title="Undo (Ctrl+Z)"
+                  >
+                    <Undo2 className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-7 h-7 cursor-pointer rounded-md hover:bg-muted"
+                    onClick={redo}
+                    disabled={!canRedo()}
+                    title="Redo (Ctrl+Y)"
+                  >
+                    <Redo2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/30">
+                  <ToolbarButton
+                    label={copied ? 'Copied 😃' : 'Copy'}
+                    onClick={handleCopyToClipboard}
+                    className={cn(copied && 'text-green-600 bg-green-500/5')}
+                  />
+                  <div className="w-px h-4 bg-border/40" />
+                  <ToolbarButton label="SVG" onClick={handleExport('svg')} />
+                  <ToolbarButton label="JPEG" onClick={handleExport('jpg')} />
+                  <ToolbarButton label="PNG" onClick={handleExport('png')} />
+                </div>
               </div>
             </div>
             <div className="h-px bg-border/30" />
@@ -164,7 +178,7 @@ const CodeImageExportDialog: React.FC<CodeImageExportDialogProps> = ({
           <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
             {/* Preview area with subtle pattern */}
             <div
-              className="flex-1 flex items-center justify-center p-6 lg:p-10 overflow-hidden relative"
+              className="flex-1 overflow-auto relative min-h-0"
               style={{
                 backgroundImage:
                   'radial-gradient(circle at 1px 1px, var(--color-border) 0.5px, transparent 0)',
@@ -174,14 +188,16 @@ const CodeImageExportDialog: React.FC<CodeImageExportDialogProps> = ({
                 opacity: 1,
               }}
             >
-              <div className="absolute inset-0 bg-background/60" />
-              <div className="relative max-w-full drop-shadow-2xl">
-                <CodeImagePreview
-                  ref={captureRef}
-                  code={code}
-                  language={language}
-                  settings={settings}
-                />
+              <div className="absolute inset-0  pointer-events-none" />
+              <div className="grid place-items-center min-h-full min-w-full p-6 lg:p-10">
+                <div className="relative max-w-full drop-shadow-2xl">
+                  <CodeImagePreview
+                    ref={captureRef}
+                    code={code}
+                    language={language}
+                    settings={settings}
+                  />
+                </div>
               </div>
             </div>
 
@@ -195,45 +211,6 @@ const CodeImageExportDialog: React.FC<CodeImageExportDialogProps> = ({
               deletePreset={deletePreset}
               language={language}
             />
-          </div>
-
-          {/* Footer */}
-          <div className="shrink-0 border-t border-border/30 px-6 py-2.5 flex flex-wrap items-center gap-0.5 bg-muted/20">
-            <ToolbarButton
-              icon={<RotateCcw className="w-3 h-3" />}
-              label="Reset"
-              onClick={resetSettings}
-              className="text-muted-foreground hover:text-foreground"
-            />
-
-            <div className="flex-1" />
-
-            <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/30">
-              <ToolbarButton
-                icon={
-                  copied ? <Check className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />
-                }
-                label={copied ? 'Copied!' : 'Copy'}
-                onClick={handleCopyToClipboard}
-                className={cn(copied && 'text-green-600 bg-green-500/5')}
-              />
-              <div className="w-px h-4 bg-border/40" />
-              <ToolbarButton
-                icon={<Download className="w-3 h-3" />}
-                label="SVG"
-                onClick={handleExport('svg')}
-              />
-              <ToolbarButton
-                icon={<Download className="w-3 h-3" />}
-                label="JPEG"
-                onClick={handleExport('jpg')}
-              />
-              <ToolbarButton
-                icon={<Download className="w-3 h-3" />}
-                label="PNG"
-                onClick={handleExport('png')}
-              />
-            </div>
           </div>
         </DialogPrimitive.Content>
       </DialogPortal>

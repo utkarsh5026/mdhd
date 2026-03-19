@@ -26,8 +26,6 @@ import {
   ToggleGroup,
 } from './shared-controls';
 
-// ── Section Components ──────────────────────────────────────────────────────
-
 const PresetsSection: React.FC<{
   presets: SavedPreset[];
   onLoad: (name: string) => void;
@@ -44,7 +42,7 @@ const PresetsSection: React.FC<{
   }, [presetName, onSave]);
 
   return (
-    <div className="rounded-xl bg-muted/20 p-3">
+    <div className="rounded-2xl bg-muted/20 p-4">
       <SectionLabel>Presets</SectionLabel>
       <div className="space-y-2">
         {presets.length > 0 && (
@@ -121,10 +119,10 @@ const BackgroundSection: React.FC<{
   );
 
   return (
-    <div className="rounded-xl bg-muted/20 p-3">
+    <div className="rounded-2xl bg-muted/20 p-4">
       <SectionLabel>Background</SectionLabel>
 
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <span className="text-xs text-muted-foreground">Transparent</span>
         <Switch
           checked={settings.transparentBackground}
@@ -134,7 +132,7 @@ const BackgroundSection: React.FC<{
 
       {!settings.transparentBackground && (
         <>
-          <div className="flex flex-wrap gap-1.5 mb-3">
+          <div className="flex flex-wrap gap-1.5 mb-4">
             {GRADIENT_PRESETS.map((preset) => (
               <button
                 key={preset.name}
@@ -161,7 +159,7 @@ const BackgroundSection: React.FC<{
             ))}
           </div>
 
-          <div className="mb-3">
+          <div className="mb-4">
             <ToggleGroup
               options={[
                 { value: 'gradient', label: 'Gradient' },
@@ -191,7 +189,7 @@ const BackgroundSection: React.FC<{
 
               {settings.backgroundType === 'gradient' && (
                 <>
-                  <div className="space-y-2 mt-3">
+                  <div className="space-y-2 mt-4">
                     <div className="text-xs text-muted-foreground">End color</div>
                     <ColorSwatchGrid
                       selected={settings.backgroundColorEnd}
@@ -216,7 +214,7 @@ const BackgroundSection: React.FC<{
           )}
 
           {settings.backgroundType === 'image' && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <input
                 ref={imageInputRef}
                 type="file"
@@ -226,7 +224,7 @@ const BackgroundSection: React.FC<{
               />
 
               {settings.backgroundImage ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="relative rounded-lg overflow-hidden border border-border/50">
                     <img
                       src={settings.backgroundImage}
@@ -317,10 +315,10 @@ const WindowSection: React.FC<{
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
   language: string;
 }> = ({ settings, updateSettings, language }) => (
-  <div className="rounded-xl bg-muted/20 p-3">
+  <div className="rounded-2xl bg-muted/20 p-4">
     <SectionLabel>Window</SectionLabel>
 
-    <div className="mb-3">
+    <div className="mb-4">
       <ToggleGroup
         options={WINDOW_STYLES}
         value={settings.windowStyle}
@@ -328,7 +326,7 @@ const WindowSection: React.FC<{
       />
     </div>
 
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">Title text</div>
         <Input
@@ -371,10 +369,10 @@ const CodeSection: React.FC<{
   settings: CodeImageExportSettings;
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <div className="rounded-xl bg-muted/20 p-3">
+  <div className="rounded-2xl bg-muted/20 p-4">
     <SectionLabel>Code</SectionLabel>
 
-    <div className="space-y-3">
+    <div className="space-y-4">
       <SelectRow
         label="Theme"
         value={settings.themeKey}
@@ -451,10 +449,10 @@ const LineHighlightSection: React.FC<{
   settings: CodeImageExportSettings;
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <div className="rounded-xl bg-muted/20 p-3">
+  <div className="rounded-2xl bg-muted/20 p-4">
     <SectionLabel>Line Highlight</SectionLabel>
 
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">Lines (e.g. 1,3-5,8)</div>
         <Input
@@ -512,10 +510,10 @@ const LayoutSection: React.FC<{
   settings: CodeImageExportSettings;
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <div className="rounded-xl bg-muted/20 p-3">
+  <div className="rounded-2xl bg-muted/20 p-4">
     <SectionLabel>Layout</SectionLabel>
 
-    <div className="space-y-3">
+    <div className="space-y-4">
       <SliderRow
         label="Padding"
         value={settings.padding}
@@ -559,10 +557,10 @@ const WatermarkSection: React.FC<{
   settings: CodeImageExportSettings;
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <div className="rounded-xl bg-muted/20 p-3">
+  <div className="rounded-2xl bg-muted/20 p-4">
     <SectionLabel>Watermark</SectionLabel>
 
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">Text</div>
         <Input
@@ -605,10 +603,10 @@ const ExportScaleSection: React.FC<{
   settings: CodeImageExportSettings;
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <div className="rounded-xl bg-muted/20 p-3">
+  <div className="rounded-2xl bg-muted/20 p-4">
     <SectionLabel>Export</SectionLabel>
 
-    <div className="space-y-3">
+    <div className="space-y-4">
       <SliderRow
         label="Scale"
         value={settings.exportScale}
@@ -642,7 +640,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   language,
 }) => (
   <ScrollArea className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-border/30 bg-background/80">
-    <div className="p-4 space-y-1">
+    <div className="p-4 space-y-4">
       <PresetsSection
         presets={presets}
         onLoad={loadPreset}

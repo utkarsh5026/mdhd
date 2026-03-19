@@ -17,7 +17,7 @@ import { COLOR_GROUPS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 export const ToolbarButton: React.FC<{
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   label: string;
   onClick: () => void;
   disabled?: boolean;
@@ -205,12 +205,12 @@ export const SelectRow: React.FC<{
   renderItem?: (option: { value: string; label: string }) => React.ReactNode;
 }> = ({ label, value, onValueChange, options, groups, renderItem }) => (
   <div>
-    <div className="text-xs text-muted-foreground mb-1.5">{label}</div>
+    <div className="text-xs text-muted-foreground mb-1.5 ">{label}</div>
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-full h-8 text-xs rounded-lg">
+      <SelectTrigger className="w-full h-8 text-xs rounded">
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="font-cascadia-code rounded-2xl text-muted-foreground text-sm">
         {groups
           ? groups.map((group) => (
               <SelectGroup key={group.label}>
