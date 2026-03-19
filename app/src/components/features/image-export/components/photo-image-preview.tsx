@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 
 import { useImageDataUrl } from '../hooks/use-image-data-url';
 import type { PhotoImageExportSettings } from '../store/photo-image-export-store';
+import { buildPatternBackground } from './pattern-backgrounds';
 
 const ASPECT_RATIO_MAP: Record<string, string | undefined> = {
   auto: undefined,
@@ -31,6 +32,12 @@ const WATERMARK_POSITION_STYLES: Record<
   'top-left': { top: 12, left: 16 },
 };
 
+const FONT_WEIGHT_MAP: Record<string, number> = {
+  light: 300,
+  normal: 400,
+  bold: 700,
+};
+
 interface PhotoImagePreviewProps {
   src: string;
   alt: string;
@@ -49,6 +56,11 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
       backgroundImageOverlay,
       backgroundImageOverlayOpacity,
       backgroundImageFit,
+      backgroundPatternEnabled,
+      backgroundPattern,
+      backgroundPatternColor,
+      backgroundPatternOpacity,
+      backgroundPatternScale,
       transparentBackground,
       padding,
       shadowSize,
@@ -68,13 +80,23 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
       sepia,
       hueRotate,
       invert,
+      vignette,
+      sharpen,
+      noise,
+      tintColor,
+      tintOpacity,
       frameBorderWidth,
       frameBorderColor,
       frameBorderStyle,
       innerBorderRadius,
       captionText,
+      captionDescription,
       captionPosition,
+      captionFontFamily,
       captionFontSize,
+      captionFontWeight,
+      captionAlignment,
+      captionMaxWidth,
       captionColor,
       captionBackground,
     } = settings;
@@ -91,8 +113,13 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
       if (sepia > 0) parts.push(`sepia(${sepia}%)`);
       if (hueRotate > 0) parts.push(`hue-rotate(${hueRotate}deg)`);
       if (invert > 0) parts.push(`invert(${invert}%)`);
+      if (sharpen > 0) {
+        // Sharpen via contrast boost combined with a subtle SVG filter
+        const amount = 1 + sharpen / 200;
+        parts.push(`contrast(${amount * 100}%)`);
+      }
       return parts.join(' ') || 'none';
-    }, [brightness, contrast, saturation, blur, grayscale, sepia, hueRotate, invert]);
+    }, [brightness, contrast, saturation, blur, grayscale, sepia, hueRotate, invert, sharpen]);
 
     const isImageBg = backgroundType === 'image' && backgroundImage;
 
@@ -110,6 +137,26 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
         : { backgroundRepeat: 'no-repeat', backgroundSize: backgroundImageFit }
       : undefined;
 
+    const patternBgStyle = useMemo(
+      () =>
+        backgroundPatternEnabled && !transparentBackground
+          ? buildPatternBackground(
+              backgroundPattern,
+              backgroundPatternColor,
+              backgroundPatternOpacity,
+              backgroundPatternScale
+            )
+          : undefined,
+      [
+        backgroundPatternEnabled,
+        transparentBackground,
+        backgroundPattern,
+        backgroundPatternColor,
+        backgroundPatternOpacity,
+        backgroundPatternScale,
+      ]
+    );
+
     const outerStyle: React.CSSProperties = {
       background: outerBackground,
       padding,
@@ -120,8 +167,18 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
     };
 
     const displayCaption = captionText || alt;
+    const displayDescription = captionDescription;
     const showCaption = !!displayCaption;
     const isOverlayCaption = captionPosition !== 'below';
+
+    const captionStyle: React.CSSProperties = {
+      fontFamily: captionFontFamily,
+      fontSize: `${captionFontSize}px`,
+      fontWeight: FONT_WEIGHT_MAP[captionFontWeight] ?? 400,
+      textAlign: captionAlignment,
+      color: captionColor,
+      ...(captionMaxWidth > 0 ? { maxWidth: `${captionMaxWidth}px` } : {}),
+    };
 
     return (
       <div
@@ -155,6 +212,17 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
           </>
         )}
 
+        {/* Pattern background overlay */}
+        {patternBgStyle && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              ...patternBgStyle,
+            }}
+          />
+        )}
+
         {/* Photo frame */}
         <div
           className="relative overflow-hidden"
@@ -179,6 +247,50 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
             }}
           />
 
+          {/* Vignette overlay */}
+          {vignette > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
+                boxShadow: `inset 0 0 ${40 + vignette}px ${vignette / 2}px rgba(0,0,0,${vignette / 100})`,
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+
+          {/* Tint overlay */}
+          {tintOpacity > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundColor: tintColor,
+                opacity: tintOpacity / 100,
+                mixBlendMode: 'overlay',
+                borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+
+          {/* Noise/grain overlay */}
+          {noise > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
+                opacity: noise / 100,
+                pointerEvents: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'repeat',
+                mixBlendMode: 'overlay',
+              }}
+            />
+          )}
+
           {/* Overlay caption */}
           {showCaption && isOverlayCaption && (
             <div
@@ -188,25 +300,64 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
               )}
               style={{
                 background: captionBackground,
-                fontSize: `${captionFontSize}px`,
-                color: captionColor,
+                ...captionStyle,
               }}
             >
-              {displayCaption}
+              <div
+                style={
+                  captionMaxWidth > 0
+                    ? {
+                        maxWidth: `${captionMaxWidth}px`,
+                        margin: captionAlignment === 'center' ? '0 auto' : undefined,
+                        marginLeft: captionAlignment === 'right' ? 'auto' : undefined,
+                      }
+                    : undefined
+                }
+              >
+                {displayCaption}
+                {displayDescription && (
+                  <div
+                    style={{
+                      fontSize: `${Math.max(captionFontSize - 3, 9)}px`,
+                      opacity: 0.7,
+                      marginTop: '2px',
+                    }}
+                  >
+                    {displayDescription}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
 
         {/* Below caption */}
         {showCaption && !isOverlayCaption && (
-          <div
-            className="mt-2 text-center w-full px-2"
-            style={{
-              fontSize: `${captionFontSize}px`,
-              color: captionColor,
-            }}
-          >
-            {displayCaption}
+          <div className="mt-2 w-full px-2" style={captionStyle}>
+            <div
+              style={
+                captionMaxWidth > 0
+                  ? {
+                      maxWidth: `${captionMaxWidth}px`,
+                      margin: captionAlignment === 'center' ? '0 auto' : undefined,
+                      marginLeft: captionAlignment === 'right' ? 'auto' : undefined,
+                    }
+                  : undefined
+              }
+            >
+              {displayCaption}
+              {displayDescription && (
+                <div
+                  style={{
+                    fontSize: `${Math.max(captionFontSize - 3, 9)}px`,
+                    opacity: 0.7,
+                    marginTop: '2px',
+                  }}
+                >
+                  {displayDescription}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

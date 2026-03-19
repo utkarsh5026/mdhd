@@ -12,6 +12,23 @@ export interface SharedExportSettings {
   backgroundImageFit: 'cover' | 'contain' | 'fill' | 'tile';
   transparentBackground: boolean;
 
+  // Pattern overlay (applied on top of any background type)
+  backgroundPatternEnabled: boolean;
+  backgroundPattern:
+    | 'dots'
+    | 'polka'
+    | 'grid'
+    | 'diagonal'
+    | 'cross-hatch'
+    | 'hexagons'
+    | 'waves'
+    | 'checkerboard'
+    | 'circles'
+    | 'noise';
+  backgroundPatternColor: string;
+  backgroundPatternOpacity: number;
+  backgroundPatternScale: number;
+
   // Layout
   padding: number;
   borderRadius: number;
@@ -49,6 +66,11 @@ export const BACKGROUND_KEYS = [
   'backgroundImageOverlayOpacity',
   'backgroundImageFit',
   'transparentBackground',
+  'backgroundPatternEnabled',
+  'backgroundPattern',
+  'backgroundPatternColor',
+  'backgroundPatternOpacity',
+  'backgroundPatternScale',
 ] as const satisfies readonly (keyof SharedExportSettings)[];
 
 export const LAYOUT_KEYS = [
@@ -111,6 +133,11 @@ export const FILTER_KEYS = [
   'sepia',
   'hueRotate',
   'invert',
+  'vignette',
+  'sharpen',
+  'noise',
+  'tintColor',
+  'tintOpacity',
 ] as const;
 
 export const FRAME_KEYS = [
@@ -123,17 +150,19 @@ export const FRAME_KEYS = [
 
 export const CAPTION_KEYS = [
   'captionText',
+  'captionDescription',
   'captionPosition',
+  'captionFontFamily',
   'captionFontSize',
+  'captionFontWeight',
+  'captionAlignment',
+  'captionMaxWidth',
   'captionColor',
   'captionBackground',
 ] as const;
 
 /** Pick a subset of keys from an object. */
-export function pickKeys<T extends Record<string, unknown>>(
-  obj: T,
-  keys: readonly (keyof T)[]
-): Partial<T> {
+export function pickKeys<T extends object>(obj: T, keys: readonly (keyof T)[]): Partial<T> {
   const result = {} as Partial<T>;
   for (const key of keys) {
     result[key] = obj[key];

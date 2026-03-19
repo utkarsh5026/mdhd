@@ -19,6 +19,7 @@ import {
   WindowsTaskbar,
   WindowsTitleBar,
 } from './os-window-chrome';
+import { buildPatternBackground } from './pattern-backgrounds';
 
 const ASPECT_RATIO_MAP: Record<string, string | undefined> = {
   auto: undefined,
@@ -56,6 +57,11 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
       backgroundImageOverlay,
       backgroundImageOverlayOpacity,
       backgroundImageFit,
+      backgroundPatternEnabled,
+      backgroundPattern,
+      backgroundPatternColor,
+      backgroundPatternOpacity,
+      backgroundPatternScale,
       transparentBackground,
       windowStyle,
       titleText,
@@ -108,6 +114,26 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
         ? { backgroundRepeat: 'repeat', backgroundSize: 'auto' }
         : { backgroundRepeat: 'no-repeat', backgroundSize: backgroundImageFit }
       : undefined;
+
+    const patternBgStyle = useMemo(
+      () =>
+        backgroundPatternEnabled && !transparentBackground
+          ? buildPatternBackground(
+              backgroundPattern,
+              backgroundPatternColor,
+              backgroundPatternOpacity,
+              backgroundPatternScale
+            )
+          : undefined,
+      [
+        backgroundPatternEnabled,
+        transparentBackground,
+        backgroundPattern,
+        backgroundPatternColor,
+        backgroundPatternOpacity,
+        backgroundPatternScale,
+      ]
+    );
 
     const displayTitle = titleText || language;
 
@@ -163,6 +189,17 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
               />
             )}
           </>
+        )}
+
+        {/* Pattern background overlay */}
+        {patternBgStyle && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              ...patternBgStyle,
+            }}
+          />
         )}
 
         {/* Desktop chrome */}

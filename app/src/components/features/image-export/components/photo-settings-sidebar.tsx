@@ -16,7 +16,15 @@ import {
   pickKeys,
   WATERMARK_KEYS,
 } from '../store/types';
-import { BORDER_STYLES, CAPTION_POSITIONS, FILTER_PRESETS } from './constants';
+import {
+  BORDER_STYLES,
+  CAPTION_ALIGNMENTS,
+  CAPTION_FONT_FAMILIES,
+  CAPTION_FONT_WEIGHTS,
+  CAPTION_POSITIONS,
+  FILTER_PRESETS,
+  TINT_COLOR_PRESETS,
+} from './constants';
 import {
   BackgroundSection,
   ExportScaleSection,
@@ -24,7 +32,13 @@ import {
   PresetsSection,
   WatermarkSection,
 } from './settings-sidebar';
-import { CollapsibleSection, ColorSwatchGrid, SliderRow, ToggleGroup } from './shared-controls';
+import {
+  CollapsibleSection,
+  ColorSwatchGrid,
+  SelectRow,
+  SliderRow,
+  ToggleGroup,
+} from './shared-controls';
 
 const FiltersSection: React.FC<{
   settings: PhotoImageExportSettings;
@@ -128,6 +142,70 @@ const FiltersSection: React.FC<{
         step={5}
         unit="%"
       />
+
+      <SliderRow
+        label="Vignette"
+        value={settings.vignette}
+        onChange={(v) => updateSettings({ vignette: v })}
+        min={0}
+        max={100}
+        step={5}
+        unit="%"
+      />
+
+      <SliderRow
+        label="Sharpen"
+        value={settings.sharpen}
+        onChange={(v) => updateSettings({ sharpen: v })}
+        min={0}
+        max={100}
+        step={5}
+        unit="%"
+      />
+
+      <SliderRow
+        label="Noise / Grain"
+        value={settings.noise}
+        onChange={(v) => updateSettings({ noise: v })}
+        min={0}
+        max={100}
+        step={5}
+        unit="%"
+      />
+
+      <div>
+        <div className="text-xs text-muted-foreground mb-1.5">Color tint</div>
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {TINT_COLOR_PRESETS.map((preset) => (
+            <button
+              key={preset.label}
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-background/80 border border-border/40 text-muted-foreground hover:text-foreground hover:border-border/70 transition-colors cursor-pointer"
+              onClick={() =>
+                updateSettings({
+                  tintColor: preset.value,
+                  tintOpacity: Math.max(settings.tintOpacity, 15),
+                })
+              }
+              title={preset.label}
+            >
+              <span
+                className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle"
+                style={{ backgroundColor: preset.value }}
+              />
+              {preset.label}
+            </button>
+          ))}
+        </div>
+        <SliderRow
+          label="Tint opacity"
+          value={settings.tintOpacity}
+          onChange={(v) => updateSettings({ tintOpacity: v })}
+          min={0}
+          max={60}
+          step={5}
+          unit="%"
+        />
+      </div>
     </div>
   </CollapsibleSection>
 );
@@ -229,6 +307,16 @@ const CaptionSection: React.FC<{
       </div>
 
       <div>
+        <div className="text-xs text-muted-foreground mb-1.5">Description</div>
+        <Input
+          value={settings.captionDescription}
+          onChange={(e) => updateSettings({ captionDescription: e.target.value })}
+          placeholder="Optional secondary text..."
+          className="h-7 text-xs"
+        />
+      </div>
+
+      <div>
         <div className="text-xs text-muted-foreground mb-1.5">Position</div>
         <ToggleGroup
           options={CAPTION_POSITIONS}
@@ -241,6 +329,14 @@ const CaptionSection: React.FC<{
         />
       </div>
 
+      <SelectRow
+        label="Font family"
+        value={settings.captionFontFamily}
+        onValueChange={(v) => updateSettings({ captionFontFamily: v })}
+        options={CAPTION_FONT_FAMILIES.map((f) => ({ value: f, label: f.split(',')[0] }))}
+        renderItem={(opt) => <span style={{ fontFamily: opt.value }}>{opt.label}</span>}
+      />
+
       <SliderRow
         label="Font size"
         value={settings.captionFontSize}
@@ -250,6 +346,37 @@ const CaptionSection: React.FC<{
         step={1}
         unit="px"
       />
+
+      <div>
+        <div className="text-xs text-muted-foreground mb-1.5">Font weight</div>
+        <ToggleGroup
+          options={CAPTION_FONT_WEIGHTS}
+          value={settings.captionFontWeight}
+          onChange={(v) => updateSettings({ captionFontWeight: v as 'light' | 'normal' | 'bold' })}
+        />
+      </div>
+
+      <div>
+        <div className="text-xs text-muted-foreground mb-1.5">Alignment</div>
+        <ToggleGroup
+          options={CAPTION_ALIGNMENTS}
+          value={settings.captionAlignment}
+          onChange={(v) => updateSettings({ captionAlignment: v as 'left' | 'center' | 'right' })}
+        />
+      </div>
+
+      <SliderRow
+        label="Max width"
+        value={settings.captionMaxWidth}
+        onChange={(v) => updateSettings({ captionMaxWidth: v })}
+        min={0}
+        max={600}
+        step={20}
+        unit={settings.captionMaxWidth > 0 ? 'px' : ''}
+      />
+      {settings.captionMaxWidth === 0 && (
+        <div className="text-[10px] text-muted-foreground/50 -mt-1.5 italic">auto width</div>
+      )}
 
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">Text color</div>

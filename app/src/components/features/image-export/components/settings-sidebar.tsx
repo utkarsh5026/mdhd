@@ -23,6 +23,7 @@ import {
 } from '../store/types';
 import {
   ASPECT_RATIOS,
+  BACKGROUND_PATTERNS,
   FONT_FAMILIES,
   GRADIENT_PRESETS,
   HIGHLIGHT_COLOR_PRESETS,
@@ -316,6 +317,62 @@ export const BackgroundSection: React.FC<{
             </div>
           )}
         </>
+      )}
+
+      {/* Pattern overlay — works on top of any background type */}
+      {!settings.transparentBackground && (
+        <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Pattern overlay</span>
+            <Switch
+              checked={settings.backgroundPatternEnabled}
+              onCheckedChange={(v) => updateSettings({ backgroundPatternEnabled: v })}
+            />
+          </div>
+
+          {settings.backgroundPatternEnabled && (
+            <>
+              <SelectRow
+                label="Pattern"
+                value={settings.backgroundPattern}
+                onValueChange={(v) =>
+                  updateSettings({
+                    backgroundPattern: v as SharedExportSettings['backgroundPattern'],
+                  })
+                }
+                options={BACKGROUND_PATTERNS}
+              />
+
+              <div className="space-y-2">
+                <div className="text-xs text-muted-foreground">Pattern color</div>
+                <ColorSwatchGrid
+                  selected={settings.backgroundPatternColor}
+                  onSelect={(color) => updateSettings({ backgroundPatternColor: color })}
+                />
+              </div>
+
+              <SliderRow
+                label="Opacity"
+                value={settings.backgroundPatternOpacity}
+                onChange={(v) => updateSettings({ backgroundPatternOpacity: v })}
+                min={5}
+                max={100}
+                step={5}
+                unit="%"
+              />
+
+              <SliderRow
+                label="Scale"
+                value={settings.backgroundPatternScale}
+                onChange={(v) => updateSettings({ backgroundPatternScale: v })}
+                min={0.5}
+                max={3}
+                step={0.25}
+                unit="x"
+              />
+            </>
+          )}
+        </div>
       )}
     </CollapsibleSection>
   );

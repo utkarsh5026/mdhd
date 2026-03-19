@@ -163,6 +163,53 @@ export const CAPTION_POSITIONS = [
   { value: 'overlay-top' as const, label: 'Top' },
 ];
 
+export const CAPTION_FONT_FAMILIES = [
+  'system-ui, sans-serif',
+  'Georgia, serif',
+  'Palatino Linotype, serif',
+  'Garamond, serif',
+  'Inter, sans-serif',
+  'Helvetica Neue, sans-serif',
+  'Avenir, sans-serif',
+  'Futura, sans-serif',
+  'Source Code Pro, monospace',
+  'Playfair Display, serif',
+];
+
+export const CAPTION_FONT_WEIGHTS = [
+  { value: 'light' as const, label: 'Light' },
+  { value: 'normal' as const, label: 'Regular' },
+  { value: 'bold' as const, label: 'Bold' },
+];
+
+export const CAPTION_ALIGNMENTS = [
+  { value: 'left' as const, label: 'Left' },
+  { value: 'center' as const, label: 'Center' },
+  { value: 'right' as const, label: 'Right' },
+];
+
+export const BACKGROUND_PATTERNS = [
+  { value: 'dots' as const, label: 'Dots' },
+  { value: 'polka' as const, label: 'Polka' },
+  { value: 'grid' as const, label: 'Grid' },
+  { value: 'diagonal' as const, label: 'Diagonal' },
+  { value: 'cross-hatch' as const, label: 'Cross Hatch' },
+  { value: 'hexagons' as const, label: 'Hexagons' },
+  { value: 'waves' as const, label: 'Waves' },
+  { value: 'checkerboard' as const, label: 'Checkerboard' },
+  { value: 'circles' as const, label: 'Circles' },
+  { value: 'noise' as const, label: 'Noise' },
+];
+
+export const TINT_COLOR_PRESETS = [
+  { label: 'Warm', value: '#ff8800' },
+  { label: 'Cool', value: '#0088ff' },
+  { label: 'Rose', value: '#ff4488' },
+  { label: 'Green', value: '#00cc66' },
+  { label: 'Purple', value: '#8844ff' },
+  { label: 'Gold', value: '#ffcc00' },
+];
+
 export const FILTER_PRESETS = [
   {
     name: 'Vintage',

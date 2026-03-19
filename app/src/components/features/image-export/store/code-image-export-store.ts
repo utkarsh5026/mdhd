@@ -50,6 +50,12 @@ export const defaultSettings: CodeImageExportSettings = {
   backgroundImageFit: 'cover',
   transparentBackground: false,
 
+  backgroundPatternEnabled: false,
+  backgroundPattern: 'dots',
+  backgroundPatternColor: '#ffffff',
+  backgroundPatternOpacity: 20,
+  backgroundPatternScale: 1,
+
   windowStyle: 'macos',
   windowFocused: true,
   titleText: '',

@@ -14,6 +14,13 @@ export interface PhotoImageExportSettings extends SharedExportSettings {
   hueRotate: number;
   invert: number;
 
+  // Effects
+  vignette: number;
+  sharpen: number;
+  noise: number;
+  tintColor: string;
+  tintOpacity: number;
+
   // Frame / border
   frameBorderWidth: number;
   frameBorderColor: string;
@@ -22,8 +29,13 @@ export interface PhotoImageExportSettings extends SharedExportSettings {
 
   // Caption
   captionText: string;
+  captionDescription: string;
   captionPosition: 'below' | 'overlay-bottom' | 'overlay-top';
+  captionFontFamily: string;
   captionFontSize: number;
+  captionFontWeight: 'light' | 'normal' | 'bold';
+  captionAlignment: 'left' | 'center' | 'right';
+  captionMaxWidth: number;
   captionColor: string;
   captionBackground: string;
 }
@@ -40,6 +52,13 @@ export const defaultPhotoSettings: PhotoImageExportSettings = {
   backgroundImageOverlayOpacity: 0,
   backgroundImageFit: 'cover',
   transparentBackground: false,
+
+  // Shared — pattern overlay
+  backgroundPatternEnabled: false,
+  backgroundPattern: 'dots',
+  backgroundPatternColor: '#ffffff',
+  backgroundPatternOpacity: 20,
+  backgroundPatternScale: 1,
 
   // Shared — layout
   padding: 48,
@@ -69,6 +88,13 @@ export const defaultPhotoSettings: PhotoImageExportSettings = {
   hueRotate: 0,
   invert: 0,
 
+  // Effects
+  vignette: 0,
+  sharpen: 0,
+  noise: 0,
+  tintColor: '#ff8800',
+  tintOpacity: 0,
+
   // Frame
   frameBorderWidth: 0,
   frameBorderColor: '#ffffff',
@@ -77,8 +103,13 @@ export const defaultPhotoSettings: PhotoImageExportSettings = {
 
   // Caption
   captionText: '',
+  captionDescription: '',
   captionPosition: 'below',
+  captionFontFamily: 'system-ui, sans-serif',
   captionFontSize: 13,
+  captionFontWeight: 'normal',
+  captionAlignment: 'center',
+  captionMaxWidth: 0,
   captionColor: '#ffffff',
   captionBackground: 'rgba(0,0,0,0.6)',
 };
