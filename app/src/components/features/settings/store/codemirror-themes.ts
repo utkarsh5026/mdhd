@@ -239,7 +239,6 @@ function createTheme(colors: ThemeColors): Extension {
       },
       '.cm-content': {
         caretColor: colors.caret,
-        fontFamily: '"Source Code Pro", "Fira Code", monospace',
       },
       '.cm-cursor, .cm-dropCursor': {
         borderLeftColor: colors.caret,
