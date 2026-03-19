@@ -2,13 +2,10 @@ import { toPng } from 'html-to-image';
 import React, { useRef } from 'react';
 import * as XLSX from 'xlsx';
 
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+import { download, toFilename } from '@/components/features/markdown-render/utils/file';
+import ExportContextMenu from '@/components/ui/export-context-menu';
+
+import { useNearestHeading } from '../../hooks/use-nearest-heading';
 
 /** Props accepted by any of the six HTML table elements rendered by this module. */
 type TableElementProps = React.ComponentPropsWithoutRef<
@@ -26,58 +23,6 @@ interface TableRenderProps {
   props: TableElementProps;
 }
 
-/**
- * Walks the DOM upward and leftward from `el` to find the nearest preceding heading.
- *
- * Checks previous siblings at each ancestor level, including headings nested inside
- * sibling subtrees. Returns an empty string when no heading is found.
- *
- * @param el - The starting DOM element (typically the table wrapper).
- * @returns The trimmed text content of the nearest `<h1>`–`<h6>`, or `''`.
- */
-function getNearestHeading(el: HTMLElement): string {
-  let node: HTMLElement | null = el;
-  while (node) {
-    let sibling = node.previousElementSibling as HTMLElement | null;
-
-    while (sibling) {
-      if (/^H[1-6]$/.test(sibling.tagName)) return sibling.textContent?.trim() ?? '';
-      const headings = sibling.querySelectorAll('h1,h2,h3,h4,h5,h6');
-      if (headings.length) return headings[headings.length - 1].textContent?.trim() ?? '';
-      sibling = sibling.previousElementSibling as HTMLElement | null;
-    }
-    node = node.parentElement;
-  }
-  return '';
-}
-
-/**
- * Converts a heading string into a URL-safe filename with the given extension.
- *
- * Non-alphanumeric characters are replaced with hyphens and leading/trailing
- * hyphens are stripped. Falls back to `"table"` when the slug is empty.
- *
- * @param heading - The source heading text to slugify.
- * @param ext     - File extension without a leading dot (e.g. `'png'`, `'csv'`).
- * @returns A slugified filename such as `"my-table-heading.csv"`.
- */
-function toFilename(heading: string, ext: string): string {
-  const slug = heading
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-  return `${slug || 'table'}.${ext}`;
-}
-
-/**
- * Extracts all table rows from a container element as a 2-D array of cell strings.
- *
- * Queries every `<tr>` inside `container` and maps its `<th>` / `<td>` children to
- * their `textContent`. Used to build CSV and Excel exports.
- *
- * @param container - The DOM element wrapping the `<table>`.
- * @returns A 2-D array where each inner array represents one row of cell text values.
- */
 function extractRows(container: HTMLElement): string[][] {
   const rows = Array.from(container.querySelectorAll('tr'));
   return rows.map((row) =>
@@ -86,44 +31,18 @@ function extractRows(container: HTMLElement): string[][] {
 }
 
 /**
- * Triggers a browser file download by temporarily injecting an `<a>` element.
- *
- * When `isBlobUrl` is `true`, the object URL is revoked after the click to free memory.
- *
- * @param url       - The data URL or object URL pointing to the file content.
- * @param filename  - The suggested filename shown in the browser's save dialog.
- * @param isBlobUrl - Whether `url` is a `blob:` URL that should be revoked after use.
- */
-function triggerDownload(url: string, filename: string, isBlobUrl = false) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  if (isBlobUrl) URL.revokeObjectURL(url);
-}
-
-/**
  * Renders a `<table>` inside a horizontally-scrollable, rounded container with a
  * right-click context menu offering PNG, CSV, and Excel export actions.
- *
- * The export filename is derived from the nearest preceding heading in the DOM.
  *
  * @component
  * @param props - Standard HTML `<table>` props forwarded to the inner element.
  */
 const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const getBaseName = () => {
-    const el = wrapperRef.current;
-    return el ? getNearestHeading(el.parentElement ?? el) : '';
-  };
+  const getBaseName = useNearestHeading(wrapperRef);
 
   const exportItems = [
     {
-      emoji: '🖼️',
       label: 'Image',
       description: 'PNG · 2× resolution',
       onSelect: async () => {
@@ -131,14 +50,13 @@ const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) 
         if (!el) return;
         try {
           const dataUrl = await toPng(el, { pixelRatio: 2 });
-          triggerDownload(dataUrl, toFilename(getBaseName(), 'png'));
+          download(dataUrl, toFilename(getBaseName(), 'png', 'table'));
         } catch (err) {
           console.error('[TableRender] image export failed', err);
         }
       },
     },
     {
-      emoji: '📄',
       label: 'CSV',
       description: 'Comma-separated',
       onSelect: () => {
@@ -156,11 +74,10 @@ const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) 
           )
           .join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        triggerDownload(URL.createObjectURL(blob), toFilename(getBaseName(), 'csv'), true);
+        download(URL.createObjectURL(blob), toFilename(getBaseName(), 'csv', 'table'), true);
       },
     },
     {
-      emoji: '📊',
       label: 'Excel',
       description: '.xlsx spreadsheet',
       onSelect: () => {
@@ -170,44 +87,22 @@ const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) 
         const ws = XLSX.utils.aoa_to_sheet(rows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Table');
-        XLSX.writeFile(wb, toFilename(getBaseName(), 'xlsx'));
+        XLSX.writeFile(wb, toFilename(getBaseName(), 'xlsx', 'table'));
       },
     },
   ];
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <div className="my-4 sm:my-6 overflow-x-auto rounded-2xl border border-border no-swipe">
-          <div ref={wrapperRef} className="min-w-full overflow-hidden rounded-2xl shadow-sm">
-            <table
-              {...props}
-              className="min-w-full divide-y divide-border border-separate border-spacing-0 text-xs sm:text-base"
-            />
-          </div>
+    <ExportContextMenu title="Export table" items={exportItems}>
+      <div className="my-4 sm:my-6 overflow-x-auto rounded-2xl border border-border no-swipe">
+        <div ref={wrapperRef} className="min-w-full overflow-hidden rounded-2xl shadow-sm">
+          <table
+            {...props}
+            className="min-w-full divide-y divide-border border-separate border-spacing-0 text-xs sm:text-base"
+          />
         </div>
-      </ContextMenuTrigger>
-
-      <ContextMenuContent className="w-52 font-cascadia-code rounded-2xl">
-        <div className="px-2 pt-1 pb-0.5">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Export table
-          </p>
-        </div>
-        <ContextMenuSeparator />
-        {exportItems.map(({ emoji, label, description, onSelect }) => (
-          <ContextMenuItem key={label} onSelect={onSelect} className="gap-3 py-2">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-transparent text-base">
-              {emoji}
-            </span>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium leading-none">{label}</span>
-              <span className="text-[11px] leading-none text-muted-foreground">{description}</span>
-            </div>
-          </ContextMenuItem>
-        ))}
-      </ContextMenuContent>
-    </ContextMenu>
+      </div>
+    </ExportContextMenu>
   );
 };
 
