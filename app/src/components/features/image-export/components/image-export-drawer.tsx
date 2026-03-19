@@ -176,19 +176,19 @@ const CodeImageExportDialog: React.FC<CodeImageExportDialogProps> = ({
 
           {/* Content: Preview + Settings */}
           <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-            {/* Preview area with subtle pattern */}
+            {/* Preview area — image-editor canvas */}
             <div
-              className="flex-1 overflow-auto relative min-h-0"
+              className="flex-1 overflow-auto relative min-h-0 bg-zinc-100 dark:bg-zinc-950"
               style={{
-                backgroundImage:
-                  'radial-gradient(circle at 1px 1px, var(--color-border) 0.5px, transparent 0)',
-                backgroundSize: '24px 24px',
-                backgroundColor: 'var(--color-muted)',
-                backgroundBlendMode: 'multiply',
-                opacity: 1,
+                backgroundImage: `
+                  linear-gradient(color-mix(in srgb, var(--color-foreground) 5%, transparent) 1px, transparent 1px),
+                  linear-gradient(90deg, color-mix(in srgb, var(--color-foreground) 5%, transparent) 1px, transparent 1px),
+                  linear-gradient(color-mix(in srgb, var(--color-foreground) 2.5%, transparent) 1px, transparent 1px),
+                  linear-gradient(90deg, color-mix(in srgb, var(--color-foreground) 2.5%, transparent) 1px, transparent 1px)
+                `,
+                backgroundSize: '120px 120px, 120px 120px, 24px 24px, 24px 24px',
               }}
             >
-              <div className="absolute inset-0  pointer-events-none" />
               <div className="grid place-items-center min-h-full min-w-full p-6 lg:p-10">
                 <div className="relative max-w-full drop-shadow-2xl">
                   <CodeImagePreview

@@ -1,3 +1,76 @@
+export const COLOR_GROUPS = [
+  {
+    label: 'Blues & Teals',
+    colors: [
+      { hex: '#8BBEE8', name: 'Powder Blue' },
+      { hex: '#4A6FA5', name: 'Steel Blue' },
+      { hex: '#B5C7ED', name: 'Periwinkle' },
+      { hex: '#5BA4CF', name: 'Cerulean' },
+      { hex: '#7393B3', name: 'Dusty Blue' },
+      { hex: '#B0C4DE', name: 'Arctic Blue' },
+      { hex: '#5F9EA0', name: 'Teal' },
+      { hex: '#8FD8C5', name: 'Seafoam' },
+    ],
+  },
+  {
+    label: 'Greens',
+    colors: [
+      { hex: '#94B49F', name: 'Sage' },
+      { hex: '#9ED2BE', name: 'Mint' },
+      { hex: '#2D8A6F', name: 'Emerald' },
+      { hex: '#708238', name: 'Olive' },
+      { hex: '#2A7A4F', name: 'Pine' },
+      { hex: '#8A9A5B', name: 'Moss' },
+    ],
+  },
+  {
+    label: 'Purples & Pinks',
+    colors: [
+      { hex: '#A689E1', name: 'Lavender' },
+      { hex: '#C3A6E1', name: 'Mauve' },
+      { hex: '#9D7FBD', name: 'Amethyst' },
+      { hex: '#C8A2C8', name: 'Lilac' },
+      { hex: '#8E4585', name: 'Plum' },
+      { hex: '#D4A5A5', name: 'Dusty Rose' },
+      { hex: '#B29FD7', name: 'Orchid' },
+    ],
+  },
+  {
+    label: 'Warm & Browns',
+    colors: [
+      { hex: '#E8DACB', name: 'Sand' },
+      { hex: '#B8A99A', name: 'Taupe' },
+      { hex: '#D3A18C', name: 'Terracotta' },
+      { hex: '#C19A6B', name: 'Camel' },
+      { hex: '#8D6E63', name: 'Hickory' },
+      { hex: '#BE7F51', name: 'Cinnamon' },
+      { hex: '#6F4E37', name: 'Mocha' },
+    ],
+  },
+  {
+    label: 'Accents',
+    colors: [
+      { hex: '#F0A287', name: 'Coral' },
+      { hex: '#DFBC7A', name: 'Amber' },
+      { hex: '#FFDAB9', name: 'Peach' },
+      { hex: '#FBCEB1', name: 'Apricot' },
+      { hex: '#D4B95E', name: 'Mustard' },
+      { hex: '#B7410E', name: 'Rust' },
+    ],
+  },
+  {
+    label: 'Neutrals',
+    colors: [
+      { hex: '#36404A', name: 'Charcoal' },
+      { hex: '#64748B', name: 'Slate' },
+      { hex: '#E6E6E6', name: 'Pearl' },
+      { hex: '#474B4E', name: 'Graphite' },
+      { hex: '#C0C5C1', name: 'Silver Sage' },
+      { hex: '#848884', name: 'Smoke' },
+    ],
+  },
+] as const;
+
 export const GRADIENT_PRESETS = [
   { name: 'Sunset', from: '#F0A287', to: '#A689E1', angle: 135 },
   { name: 'Ocean', from: '#5BA4CF', to: '#2D8A6F', angle: 135 },

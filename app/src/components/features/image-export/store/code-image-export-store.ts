@@ -48,6 +48,9 @@ export interface CodeImageExportSettings {
   watermarkText: string;
   watermarkPosition: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   watermarkOpacity: number;
+  watermarkColor: string;
+  watermarkSize: number;
+  watermarkFontFamily: string;
 
   // Export
   exportScale: number;
@@ -92,6 +95,9 @@ export const defaultSettings: CodeImageExportSettings = {
   watermarkText: '',
   watermarkPosition: 'bottom-right',
   watermarkOpacity: 50,
+  watermarkColor: '#ffffff',
+  watermarkSize: 11,
+  watermarkFontFamily: 'system-ui, sans-serif',
 
   exportScale: 2,
 };
@@ -214,6 +220,14 @@ export const useCodeImageExportStore = create<CodeImageExportStore>()(
       partialize: (state) => ({
         settings: state.settings,
         presets: state.presets,
+      }),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as object),
+        settings: {
+          ...defaultSettings,
+          ...((persisted as { settings?: Partial<CodeImageExportSettings> })?.settings ?? {}),
+        },
       }),
     }
   )

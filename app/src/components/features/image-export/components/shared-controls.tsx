@@ -13,8 +13,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { COLOR_GROUPS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
+
+import { COLOR_GROUPS } from './constants';
 
 export const ToolbarButton: React.FC<{
   icon?: React.ReactNode;
