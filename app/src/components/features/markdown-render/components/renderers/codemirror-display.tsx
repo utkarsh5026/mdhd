@@ -1,6 +1,6 @@
 import { foldGutter, foldKeymap } from '@codemirror/language';
-import { Compartment, EditorState } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers } from '@codemirror/view';
+import { Compartment, EditorState, RangeSet } from '@codemirror/state';
+import { Decoration, EditorView, keymap, lineNumbers } from '@codemirror/view';
 import { forwardRef, useEffect, useMemo, useRef } from 'react';
 
 import type { ThemeKey } from '@/components/features/settings/store/code-theme';
@@ -21,6 +21,14 @@ interface CodeMirrorDisplayProps {
   enableCodeFolding?: boolean;
   enableWordWrap?: boolean;
   fontSize?: string;
+  fontFamily?: string;
+  fontLigatures?: boolean;
+  lineHeightValue?: number;
+  letterSpacing?: number;
+  highlightedLines?: number[];
+  highlightColor?: string;
+  dimUnhighlighted?: boolean;
+  dimOpacity?: number;
 }
 
 const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
@@ -35,6 +43,14 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
       enableCodeFolding = true,
       enableWordWrap = false,
       fontSize,
+      fontFamily,
+      fontLigatures,
+      lineHeightValue,
+      letterSpacing,
+      highlightedLines,
+      highlightColor = 'rgba(255,255,100,0.15)',
+      dimUnhighlighted = false,
+      dimOpacity = 40,
     },
     ref
   ) => {
@@ -48,6 +64,10 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
     const themeCompartment = useRef(new Compartment()).current;
 
     const resolvedFontSize = isDialog ? '1rem' : (fontSize ?? '0.875rem');
+    const resolvedFontFamily = fontFamily
+      ? `"${fontFamily}", monospace`
+      : '"Source Code Pro", "Fira Code", monospace';
+    const resolvedLineHeight = lineHeightValue ? String(lineHeightValue) : isDialog ? '1.8' : '1.6';
 
     const baseTheme = useMemo(
       () =>
@@ -58,11 +78,13 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
             maxWidth: '100%',
             overflow: 'hidden',
             fontSize: resolvedFontSize,
-            lineHeight: isDialog ? '1.8' : '1.6',
+            lineHeight: resolvedLineHeight,
           },
           '.cm-scroller': {
             overflow: 'auto',
-            fontFamily: '"Source Code Pro", "Fira Code", monospace',
+            fontFamily: resolvedFontFamily,
+            fontFeatureSettings: fontLigatures === false ? '"liga" 0' : '"liga" 1',
+            ...(letterSpacing ? { letterSpacing: `${letterSpacing}px` } : {}),
           },
           '.cm-content': {
             padding: isDialog ? '1.5rem' : '1rem',
@@ -92,8 +114,40 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
             padding: '0 0.5rem',
           },
         }),
-      [isDialog, resolvedFontSize]
+      [
+        isDialog,
+        resolvedFontSize,
+        resolvedFontFamily,
+        resolvedLineHeight,
+        fontLigatures,
+        letterSpacing,
+      ]
     );
+
+    const highlightExt = useMemo(() => {
+      if (!highlightedLines || highlightedLines.length === 0) return [];
+      const lineSet = new Set(highlightedLines);
+      const highlightDeco = Decoration.line({
+        attributes: { style: `background-color: ${highlightColor}` },
+      });
+      const dimDeco = Decoration.line({
+        attributes: { style: `opacity: ${dimOpacity / 100}` },
+      });
+      return [
+        EditorView.decorations.compute([], (state) => {
+          const decos: import('@codemirror/state').Range<Decoration>[] = [];
+          for (let i = 1; i <= state.doc.lines; i++) {
+            const line = state.doc.line(i);
+            if (lineSet.has(i)) {
+              decos.push(highlightDeco.range(line.from));
+            } else if (dimUnhighlighted) {
+              decos.push(dimDeco.range(line.from));
+            }
+          }
+          return RangeSet.of(decos);
+        }),
+      ];
+    }, [highlightedLines, highlightColor, dimUnhighlighted, dimOpacity]);
 
     const extensions = useMemo(() => {
       const exts = [
@@ -103,6 +157,7 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
         baseTheme,
         themeCompartment.of(getCodeMirrorTheme(themeKey)),
         languageCompartment.of([]),
+        ...highlightExt,
       ];
 
       if (showLineNumbers) {
@@ -131,6 +186,7 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
       enableWordWrap,
       themeCompartment,
       languageCompartment,
+      highlightExt,
     ]);
 
     useEffect(() => {

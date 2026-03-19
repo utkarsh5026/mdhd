@@ -1,7 +1,8 @@
 import { toPng } from 'html-to-image';
 import { Check, Copy } from 'lucide-react';
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 
+import { CodeImageExportDialog } from '@/components/features/image-export';
 import {
   download,
   getNearestHeading,
@@ -45,6 +46,7 @@ const LANGUAGE_TO_EXT: Record<string, string> = {
  */
 const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ className, children }) => {
   const [copied, setCopied] = React.useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const codeBlockRef = useRef<HTMLDivElement>(null);
 
@@ -105,6 +107,11 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
         }
       },
     },
+    {
+      label: 'Customize image',
+      description: 'Carbon-style export',
+      onSelect: () => setImageDialogOpen(true),
+    },
   ];
 
   const copyToClipboard = async () => {
@@ -120,55 +127,66 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
   const backgroundColor = getThemeBackground(selectedTheme);
 
   return (
-    <ExportContextMenu title={language ? `${language} block` : 'Code block'} items={exportItems}>
-      <div
-        ref={wrapperRef}
-        className="my-8 relative font-fira-code no-swipe shadow-background/50 rounded-2xl border-none"
-      >
-        {/* Copy Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={copyToClipboard}
-          className="absolute top-2 right-2 z-10 gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-xl cursor-pointer h-8 px-3"
+    <>
+      <ExportContextMenu title={language ? `${language} block` : 'Code block'} items={exportItems}>
+        <div
+          ref={wrapperRef}
+          className="my-8 relative font-fira-code no-swipe shadow-background/50 rounded-2xl border-none"
         >
-          <div className="relative">
-            <Copy
-              className={cn(
-                'w-4 h-4 transition-all duration-300 text-muted-foreground',
-                copied ? 'opacity-0 scale-0 rotate-90' : 'opacity-100 scale-100 rotate-0'
-              )}
-            />
-            <Check
-              className={cn(
-                'absolute inset-0 w-4 h-4 transition-all duration-300',
-                copied
-                  ? 'opacity-100 scale-100 rotate-0 text-green-600'
-                  : 'opacity-0 scale-0 -rotate-90'
-              )}
+          {/* Copy Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={copyToClipboard}
+            className="absolute top-2 right-2 z-10 gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-xl cursor-pointer h-8 px-3"
+          >
+            <div className="relative">
+              <Copy
+                className={cn(
+                  'w-4 h-4 transition-all duration-300 text-muted-foreground',
+                  copied ? 'opacity-0 scale-0 rotate-90' : 'opacity-100 scale-100 rotate-0'
+                )}
+              />
+              <Check
+                className={cn(
+                  'absolute inset-0 w-4 h-4 transition-all duration-300',
+                  copied
+                    ? 'opacity-100 scale-100 rotate-0 text-green-600'
+                    : 'opacity-0 scale-0 -rotate-90'
+                )}
+              />
+            </div>
+          </Button>
+
+          {/* Code Content */}
+          <div
+            ref={codeBlockRef}
+            className="rounded-2xl overflow-hidden p-2"
+            style={{ backgroundColor }}
+          >
+            <CodeMirrorDisplay
+              code={codeContent}
+              language={language}
+              themeKey={selectedTheme}
+              showLineNumbers={displaySettings.showLineNumbers}
+              enableCodeFolding={displaySettings.enableCodeFolding}
+              enableWordWrap={displaySettings.enableWordWrap}
+              fontSize={CODE_FONT_SIZES[textSizeScale]}
+              className="rounded-2xl"
             />
           </div>
-        </Button>
-
-        {/* Code Content */}
-        <div
-          ref={codeBlockRef}
-          className="rounded-2xl overflow-hidden p-2"
-          style={{ backgroundColor }}
-        >
-          <CodeMirrorDisplay
-            code={codeContent}
-            language={language}
-            themeKey={selectedTheme}
-            showLineNumbers={displaySettings.showLineNumbers}
-            enableCodeFolding={displaySettings.enableCodeFolding}
-            enableWordWrap={displaySettings.enableWordWrap}
-            fontSize={CODE_FONT_SIZES[textSizeScale]}
-            className="rounded-2xl"
-          />
         </div>
-      </div>
-    </ExportContextMenu>
+      </ExportContextMenu>
+
+      {imageDialogOpen && (
+        <CodeImageExportDialog
+          open={imageDialogOpen}
+          onOpenChange={setImageDialogOpen}
+          code={codeContent}
+          language={language}
+        />
+      )}
+    </>
   );
 };
 
