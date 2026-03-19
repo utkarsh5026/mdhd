@@ -149,3 +149,97 @@ export const HIGHLIGHT_COLOR_PRESETS = [
   { label: 'Purple', value: 'rgba(180,100,255,0.15)' },
   { label: 'Orange', value: 'rgba(255,180,50,0.15)' },
 ];
+
+export const BORDER_STYLES = [
+  { value: 'solid' as const, label: 'Solid' },
+  { value: 'double' as const, label: 'Double' },
+  { value: 'groove' as const, label: 'Groove' },
+  { value: 'ridge' as const, label: 'Ridge' },
+];
+
+export const CAPTION_POSITIONS = [
+  { value: 'below' as const, label: 'Below' },
+  { value: 'overlay-bottom' as const, label: 'Bottom' },
+  { value: 'overlay-top' as const, label: 'Top' },
+];
+
+export const FILTER_PRESETS = [
+  {
+    name: 'Vintage',
+    values: {
+      brightness: 110,
+      contrast: 85,
+      saturation: 70,
+      sepia: 30,
+      hueRotate: 0,
+      grayscale: 0,
+      blur: 0,
+      invert: 0,
+    },
+  },
+  {
+    name: 'Dramatic B&W',
+    values: {
+      brightness: 105,
+      contrast: 130,
+      saturation: 0,
+      sepia: 0,
+      hueRotate: 0,
+      grayscale: 100,
+      blur: 0,
+      invert: 0,
+    },
+  },
+  {
+    name: 'Warm Glow',
+    values: {
+      brightness: 108,
+      contrast: 105,
+      saturation: 120,
+      sepia: 15,
+      hueRotate: 0,
+      grayscale: 0,
+      blur: 0,
+      invert: 0,
+    },
+  },
+  {
+    name: 'Cool Tone',
+    values: {
+      brightness: 100,
+      contrast: 105,
+      saturation: 90,
+      sepia: 0,
+      hueRotate: 200,
+      grayscale: 0,
+      blur: 0,
+      invert: 0,
+    },
+  },
+  {
+    name: 'Faded',
+    values: {
+      brightness: 115,
+      contrast: 80,
+      saturation: 60,
+      sepia: 10,
+      hueRotate: 0,
+      grayscale: 0,
+      blur: 0,
+      invert: 0,
+    },
+  },
+  {
+    name: 'Vivid',
+    values: {
+      brightness: 105,
+      contrast: 115,
+      saturation: 150,
+      sepia: 0,
+      hueRotate: 0,
+      grayscale: 0,
+      blur: 0,
+      invert: 0,
+    },
+  },
+] as const;

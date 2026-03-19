@@ -50,6 +50,37 @@ export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children
   </div>
 );
 
+export const CollapsibleSection: React.FC<{
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}> = ({ title, children, defaultOpen = true }) => {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div className="rounded-2xl bg-muted/20 p-4">
+        <CollapsibleTrigger className="flex items-center gap-2 w-full cursor-pointer group">
+          <ChevronRight
+            className={cn(
+              'w-3.5 h-3.5 text-muted-foreground/50 transition-transform duration-200 shrink-0',
+              open && 'rotate-90'
+            )}
+          />
+          <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest select-none">
+            {title}
+          </span>
+          <div className="flex-1 h-px bg-border/40" />
+        </CollapsibleTrigger>
+
+        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-up-1 data-[state=open]:slide-down-1">
+          <div className="mt-3">{children}</div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+};
+
 const ColorSwatch: React.FC<{
   hex: string;
   name: string;

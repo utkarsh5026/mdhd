@@ -1,22 +1,22 @@
 import React, { useRef } from 'react';
 
-import { useCodeImageExportStore } from '../store/code-image-export-store';
-import CodeImagePreview from './code-image-preview';
+import { usePhotoImageExportStore } from '../store/photo-image-export-store';
 import ExportDrawer from './export-drawer';
-import SettingsSidebar from './settings-sidebar';
+import PhotoImagePreview from './photo-image-preview';
+import PhotoSettingsSidebar from './photo-settings-sidebar';
 
-interface CodeImageExportDialogProps {
+interface PhotoImageExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  code: string;
-  language: string;
+  src: string;
+  alt: string;
 }
 
-const CodeImageExportDialog: React.FC<CodeImageExportDialogProps> = ({
+const PhotoImageExportDialog: React.FC<PhotoImageExportDialogProps> = ({
   open,
   onOpenChange,
-  code,
-  language,
+  src,
+  alt,
 }) => {
   const captureRef = useRef<HTMLDivElement>(null);
   const {
@@ -31,39 +31,39 @@ const CodeImageExportDialog: React.FC<CodeImageExportDialogProps> = ({
     redo,
     canUndo,
     canRedo,
-  } = useCodeImageExportStore();
+  } = usePhotoImageExportStore();
 
   return (
     <ExportDrawer
       open={open}
       onOpenChange={onOpenChange}
-      title="Export Code Image"
+      title="Export Image"
       description="Customize and export as PNG, SVG, or JPEG"
       captureRef={captureRef}
       exportScale={settings.exportScale}
       transparentBackground={settings.transparentBackground}
-      filenameHint={language || 'code'}
+      filenameHint={alt || 'image'}
       onReset={resetSettings}
       onUndo={undo}
       onRedo={redo}
       canUndo={canUndo()}
       canRedo={canRedo()}
       previewContent={
-        <CodeImagePreview ref={captureRef} code={code} language={language} settings={settings} />
+        <PhotoImagePreview ref={captureRef} src={src} alt={alt} settings={settings} />
       }
       sidebarContent={
-        <SettingsSidebar
+        <PhotoSettingsSidebar
           settings={settings}
           updateSettings={updateSettings}
           presets={presets}
           savePreset={savePreset}
           loadPreset={loadPreset}
           deletePreset={deletePreset}
-          language={language}
+          alt={alt}
         />
       }
     />
   );
 };
 
-export default CodeImageExportDialog;
+export default PhotoImageExportDialog;

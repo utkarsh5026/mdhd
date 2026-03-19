@@ -9,7 +9,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
-import type { CodeImageExportSettings, SavedPreset } from '../store/code-image-export-store';
+import type { CodeImageExportSettings } from '../store/code-image-export-store';
+import type { SavedPreset, SharedExportSettings } from '../store/types';
 import {
   ASPECT_RATIOS,
   FONT_FAMILIES,
@@ -21,14 +22,14 @@ import {
   WINDOW_ACCENT_PRESETS,
 } from './constants';
 import {
+  CollapsibleSection,
   ColorSwatchGrid,
-  SectionLabel,
   SelectRow,
   SliderRow,
   ToggleGroup,
 } from './shared-controls';
 
-const PresetsSection: React.FC<{
+export const PresetsSection: React.FC<{
   presets: SavedPreset[];
   onLoad: (name: string) => void;
   onDelete: (name: string) => void;
@@ -44,8 +45,7 @@ const PresetsSection: React.FC<{
   }, [presetName, onSave]);
 
   return (
-    <div className="rounded-2xl bg-muted/20 p-4">
-      <SectionLabel>Presets</SectionLabel>
+    <CollapsibleSection title="Presets">
       <div className="space-y-2">
         {presets.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
@@ -93,13 +93,13 @@ const PresetsSection: React.FC<{
           </Button>
         </div>
       </div>
-    </div>
+    </CollapsibleSection>
   );
 };
 
-const BackgroundSection: React.FC<{
-  settings: CodeImageExportSettings;
-  updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
+export const BackgroundSection: React.FC<{
+  settings: SharedExportSettings;
+  updateSettings: (partial: Partial<SharedExportSettings>) => void;
 }> = ({ settings, updateSettings }) => {
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,9 +121,7 @@ const BackgroundSection: React.FC<{
   );
 
   return (
-    <div className="rounded-2xl bg-muted/20 p-4">
-      <SectionLabel>Background</SectionLabel>
-
+    <CollapsibleSection title="Background">
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs text-muted-foreground">Transparent</span>
         <Switch
@@ -308,7 +306,7 @@ const BackgroundSection: React.FC<{
           )}
         </>
       )}
-    </div>
+    </CollapsibleSection>
   );
 };
 
@@ -317,9 +315,7 @@ const WindowSection: React.FC<{
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
   language: string;
 }> = ({ settings, updateSettings, language }) => (
-  <div className="rounded-2xl bg-muted/20 p-4">
-    <SectionLabel>Window</SectionLabel>
-
+  <CollapsibleSection title="Window">
     <div className="mb-4">
       <ToggleGroup
         options={[
@@ -452,16 +448,14 @@ const WindowSection: React.FC<{
         ]}
       />
     </div>
-  </div>
+  </CollapsibleSection>
 );
 
 const CodeSection: React.FC<{
   settings: CodeImageExportSettings;
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <div className="rounded-2xl bg-muted/20 p-4">
-    <SectionLabel>Code</SectionLabel>
-
+  <CollapsibleSection title="Code">
     <div className="space-y-4">
       <SelectRow
         label="Theme"
@@ -532,16 +526,14 @@ const CodeSection: React.FC<{
         />
       </div>
     </div>
-  </div>
+  </CollapsibleSection>
 );
 
 const LineHighlightSection: React.FC<{
   settings: CodeImageExportSettings;
   updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <div className="rounded-2xl bg-muted/20 p-4">
-    <SectionLabel>Line Highlight</SectionLabel>
-
+  <CollapsibleSection title="Line Highlight">
     <div className="space-y-4">
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">Lines (e.g. 1,3-5,8)</div>
@@ -593,16 +585,14 @@ const LineHighlightSection: React.FC<{
         />
       )}
     </div>
-  </div>
+  </CollapsibleSection>
 );
 
-const LayoutSection: React.FC<{
-  settings: CodeImageExportSettings;
-  updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
+export const LayoutSection: React.FC<{
+  settings: SharedExportSettings;
+  updateSettings: (partial: Partial<SharedExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <div className="rounded-2xl bg-muted/20 p-4">
-    <SectionLabel>Layout</SectionLabel>
-
+  <CollapsibleSection title="Layout">
     <div className="space-y-4">
       <SliderRow
         label="Padding"
@@ -640,16 +630,14 @@ const LayoutSection: React.FC<{
         />
       </div>
     </div>
-  </div>
+  </CollapsibleSection>
 );
 
-const WatermarkSection: React.FC<{
-  settings: CodeImageExportSettings;
-  updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
+export const WatermarkSection: React.FC<{
+  settings: SharedExportSettings;
+  updateSettings: (partial: Partial<SharedExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <div className="rounded-2xl bg-muted/20 p-4">
-    <SectionLabel>Watermark</SectionLabel>
-
+  <CollapsibleSection title="Watermark">
     <div className="space-y-4">
       <div>
         <div className="text-xs text-muted-foreground mb-1.5">Text</div>
@@ -715,16 +703,14 @@ const WatermarkSection: React.FC<{
         </>
       )}
     </div>
-  </div>
+  </CollapsibleSection>
 );
 
-const ExportScaleSection: React.FC<{
-  settings: CodeImageExportSettings;
-  updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
+export const ExportScaleSection: React.FC<{
+  settings: SharedExportSettings;
+  updateSettings: (partial: Partial<SharedExportSettings>) => void;
 }> = ({ settings, updateSettings }) => (
-  <div className="rounded-2xl bg-muted/20 p-4">
-    <SectionLabel>Export</SectionLabel>
-
+  <CollapsibleSection title="Export">
     <div className="space-y-4">
       <SliderRow
         label="Scale"
@@ -736,7 +722,7 @@ const ExportScaleSection: React.FC<{
         unit="x"
       />
     </div>
-  </div>
+  </CollapsibleSection>
 );
 
 interface SettingsSidebarProps {
@@ -766,13 +752,25 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         onDelete={deletePreset}
         onSave={savePreset}
       />
-      <BackgroundSection settings={settings} updateSettings={updateSettings} />
+      <BackgroundSection
+        settings={settings}
+        updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+      />
       <WindowSection settings={settings} updateSettings={updateSettings} language={language} />
       <CodeSection settings={settings} updateSettings={updateSettings} />
       <LineHighlightSection settings={settings} updateSettings={updateSettings} />
-      <LayoutSection settings={settings} updateSettings={updateSettings} />
-      <WatermarkSection settings={settings} updateSettings={updateSettings} />
-      <ExportScaleSection settings={settings} updateSettings={updateSettings} />
+      <LayoutSection
+        settings={settings}
+        updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+      />
+      <WatermarkSection
+        settings={settings}
+        updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+      />
+      <ExportScaleSection
+        settings={settings}
+        updateSettings={updateSettings as (p: Partial<SharedExportSettings>) => void}
+      />
       <div className="h-4" />
     </div>
   </ScrollArea>

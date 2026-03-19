@@ -1,44 +1,35 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { ThemeKey } from '@/components/features/settings/store/code-theme';
-
 import type { SavedPreset, SharedExportSettings } from './types';
 
-export type { SavedPreset } from './types';
+export interface PhotoImageExportSettings extends SharedExportSettings {
+  // Filters
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  blur: number;
+  grayscale: number;
+  sepia: number;
+  hueRotate: number;
+  invert: number;
 
-export interface CodeImageExportSettings extends SharedExportSettings {
-  // Window
-  windowStyle: 'macos' | 'windows' | 'none';
-  windowFocused: boolean;
-  titleText: string;
-  titlePosition: 'center' | 'left' | 'right';
-  showTitleIcon: boolean;
-  titleBarFrosted: boolean;
-  windowAccentColor: string;
+  // Frame / border
+  frameBorderWidth: number;
+  frameBorderColor: string;
+  frameBorderStyle: 'solid' | 'double' | 'groove' | 'ridge';
+  innerBorderRadius: number;
 
-  // Desktop Chrome
-  showMenuBar: boolean;
-  showDock: boolean;
-  showTaskbar: boolean;
-
-  // Code
-  themeKey: ThemeKey;
-  fontFamily: string;
-  fontSize: number;
-  fontLigatures: boolean;
-  lineHeight: number;
-  letterSpacing: number;
-  showLineNumbers: boolean;
-
-  // Line highlight
-  highlightedLines: string;
-  highlightColor: string;
-  dimUnhighlighted: boolean;
-  dimOpacity: number;
+  // Caption
+  captionText: string;
+  captionPosition: 'below' | 'overlay-bottom' | 'overlay-top';
+  captionFontSize: number;
+  captionColor: string;
+  captionBackground: string;
 }
 
-export const defaultSettings: CodeImageExportSettings = {
+export const defaultPhotoSettings: PhotoImageExportSettings = {
+  // Shared — background
   backgroundType: 'gradient',
   backgroundColor: '#A689E1',
   backgroundColorEnd: '#5BA4CF',
@@ -50,37 +41,14 @@ export const defaultSettings: CodeImageExportSettings = {
   backgroundImageFit: 'cover',
   transparentBackground: false,
 
-  windowStyle: 'macos',
-  windowFocused: true,
-  titleText: '',
-  titlePosition: 'center',
-  showTitleIcon: true,
-  titleBarFrosted: false,
-  windowAccentColor: '#0078d4',
-
-  showMenuBar: false,
-  showDock: false,
-  showTaskbar: false,
-
-  themeKey: 'vscDarkPlus',
-  fontFamily: 'Source Code Pro',
-  fontSize: 16,
-  fontLigatures: true,
-  lineHeight: 1.6,
-  letterSpacing: 0,
-  showLineNumbers: true,
-
-  highlightedLines: '',
-  highlightColor: 'rgba(255,255,100,0.15)',
-  dimUnhighlighted: false,
-  dimOpacity: 40,
-
-  padding: 64,
+  // Shared — layout
+  padding: 48,
   borderRadius: 12,
   shadowSize: 'lg',
   customWidth: 0,
   aspectRatio: 'auto',
 
+  // Shared — watermark
   watermarkText: '',
   watermarkPosition: 'bottom-right',
   watermarkOpacity: 50,
@@ -88,24 +56,46 @@ export const defaultSettings: CodeImageExportSettings = {
   watermarkSize: 11,
   watermarkFontFamily: 'system-ui, sans-serif',
 
+  // Shared — export
   exportScale: 2,
+
+  // Filters
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
+  blur: 0,
+  grayscale: 0,
+  sepia: 0,
+  hueRotate: 0,
+  invert: 0,
+
+  // Frame
+  frameBorderWidth: 0,
+  frameBorderColor: '#ffffff',
+  frameBorderStyle: 'solid',
+  innerBorderRadius: 8,
+
+  // Caption
+  captionText: '',
+  captionPosition: 'below',
+  captionFontSize: 13,
+  captionColor: '#ffffff',
+  captionBackground: 'rgba(0,0,0,0.6)',
 };
 
 const MAX_HISTORY = 50;
 
-interface CodeImageExportStore {
-  settings: CodeImageExportSettings;
-  updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
+interface PhotoImageExportStore {
+  settings: PhotoImageExportSettings;
+  updateSettings: (partial: Partial<PhotoImageExportSettings>) => void;
   resetSettings: () => void;
 
-  // Presets
-  presets: SavedPreset<CodeImageExportSettings>[];
+  presets: SavedPreset<PhotoImageExportSettings>[];
   savePreset: (name: string) => void;
   loadPreset: (name: string) => void;
   deletePreset: (name: string) => void;
 
-  // Undo / Redo
-  history: CodeImageExportSettings[];
+  history: PhotoImageExportSettings[];
   historyIndex: number;
   undo: () => void;
   redo: () => void;
@@ -113,15 +103,15 @@ interface CodeImageExportStore {
   canRedo: () => boolean;
 }
 
-export const useCodeImageExportStore = create<CodeImageExportStore>()(
+export const usePhotoImageExportStore = create<PhotoImageExportStore>()(
   persist(
     (set, get) => ({
-      settings: defaultSettings,
-      history: [defaultSettings],
+      settings: defaultPhotoSettings,
+      history: [defaultPhotoSettings],
       historyIndex: 0,
       presets: [],
 
-      updateSettings: (partial: Partial<CodeImageExportSettings>) => {
+      updateSettings: (partial) => {
         set((state) => {
           const newSettings = { ...state.settings, ...partial };
           const newHistory = [...state.history.slice(0, state.historyIndex + 1), newSettings].slice(
@@ -139,24 +129,24 @@ export const useCodeImageExportStore = create<CodeImageExportStore>()(
         set((state) => {
           const newHistory = [
             ...state.history.slice(0, state.historyIndex + 1),
-            defaultSettings,
+            defaultPhotoSettings,
           ].slice(-MAX_HISTORY);
           return {
-            settings: defaultSettings,
+            settings: defaultPhotoSettings,
             history: newHistory,
             historyIndex: newHistory.length - 1,
           };
         });
       },
 
-      savePreset: (name: string) => {
+      savePreset: (name) => {
         set((state) => {
           const filtered = state.presets.filter((p) => p.name !== name);
           return { presets: [...filtered, { name, settings: { ...state.settings } }] };
         });
       },
 
-      loadPreset: (name: string) => {
+      loadPreset: (name) => {
         const preset = get().presets.find((p) => p.name === name);
         if (preset) {
           set((state) => {
@@ -173,7 +163,7 @@ export const useCodeImageExportStore = create<CodeImageExportStore>()(
         }
       },
 
-      deletePreset: (name: string) => {
+      deletePreset: (name) => {
         set((state) => ({
           presets: state.presets.filter((p) => p.name !== name),
         }));
@@ -199,7 +189,7 @@ export const useCodeImageExportStore = create<CodeImageExportStore>()(
       canRedo: () => get().historyIndex < get().history.length - 1,
     }),
     {
-      name: 'code-image-export-settings',
+      name: 'photo-image-export-settings',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         settings: state.settings,
@@ -209,33 +199,10 @@ export const useCodeImageExportStore = create<CodeImageExportStore>()(
         ...current,
         ...(persisted as object),
         settings: {
-          ...defaultSettings,
-          ...((persisted as { settings?: Partial<CodeImageExportSettings> })?.settings ?? {}),
+          ...defaultPhotoSettings,
+          ...((persisted as { settings?: Partial<PhotoImageExportSettings> })?.settings ?? {}),
         },
       }),
     }
   )
 );
-
-/**
- * Parses a line-range string like "1,3-5,8" into an array of 1-based line numbers.
- */
-export function parseHighlightedLines(input: string | undefined): number[] {
-  if (!input?.trim()) return [];
-  const lines: number[] = [];
-  for (const part of input.split(',')) {
-    const trimmed = part.trim();
-    const rangeMatch = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
-    if (rangeMatch) {
-      const start = parseInt(rangeMatch[1], 10);
-      const end = parseInt(rangeMatch[2], 10);
-      for (let i = Math.min(start, end); i <= Math.max(start, end); i++) {
-        lines.push(i);
-      }
-    } else {
-      const n = parseInt(trimmed, 10);
-      if (!isNaN(n)) lines.push(n);
-    }
-  }
-  return [...new Set(lines)].sort((a, b) => a - b);
-}
