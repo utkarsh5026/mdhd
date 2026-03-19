@@ -60,7 +60,6 @@ const EDGE_CURSORS: Record<ResizeEdge, string> = {
   'bottom-right': 'nwse-resize',
 };
 
-const MIN_SIZE = 120;
 const EDGE_THRESHOLD = 12;
 
 function getEdgeFromPoint(rect: DOMRect, clientX: number, clientY: number): ResizeEdge | null {
@@ -78,22 +77,24 @@ function getEdgeFromPoint(rect: DOMRect, clientX: number, clientY: number): Resi
 
 const DraggablePreview: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // All interaction state in refs — no React state updates during pointer events
+  const panOffset = useRef({ x: 0, y: 0 });
   const dragState = useRef<{
     startX: number;
     startY: number;
-    scrollL: number;
-    scrollT: number;
+    startPanX: number;
+    startPanY: number;
   } | null>(null);
   const resizeState = useRef<{
     edge: ResizeEdge;
     startX: number;
     startY: number;
-    startW: number;
-    startH: number;
+    startZoom: number;
   } | null>(null);
+  // Natural (unzoomed) width, captured once on first resize
+  const naturalWidth = useRef<number | null>(null);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return;
@@ -102,12 +103,15 @@ const DraggablePreview: React.FC<{ children: React.ReactNode }> = ({ children })
       const rect = contentRef.current.getBoundingClientRect();
       const edge = getEdgeFromPoint(rect, e.clientX, e.clientY);
       if (edge) {
+        if (naturalWidth.current === null) {
+          const currentZoom = parseFloat(contentRef.current.style.zoom || '1');
+          naturalWidth.current = rect.width / currentZoom;
+        }
         resizeState.current = {
           edge,
           startX: e.clientX,
           startY: e.clientY,
-          startW: rect.width,
-          startH: rect.height,
+          startZoom: parseFloat(contentRef.current.style.zoom || '1'),
         };
         containerRef.current?.setPointerCapture(e.pointerId);
         return;
@@ -115,42 +119,35 @@ const DraggablePreview: React.FC<{ children: React.ReactNode }> = ({ children })
     }
 
     if (!containerRef.current) return;
-    const el = containerRef.current;
     dragState.current = {
       startX: e.clientX,
       startY: e.clientY,
-      scrollL: el.scrollLeft,
-      scrollT: el.scrollTop,
+      startPanX: panOffset.current.x,
+      startPanY: panOffset.current.y,
     };
-    el.style.cursor = 'grabbing';
-    el.setPointerCapture(e.pointerId);
+    containerRef.current.style.cursor = 'grabbing';
+    containerRef.current.setPointerCapture(e.pointerId);
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
-    // Resize — mutate DOM directly, no React state
-    if (resizeState.current) {
-      const { edge, startX, startY, startW, startH } = resizeState.current;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      const w = Math.max(MIN_SIZE, edge === 'bottom' ? startW : startW + dx);
-      const h = Math.max(MIN_SIZE, edge === 'right' ? startH : startH + dy);
-      if (contentRef.current) {
-        contentRef.current.style.width = `${w}px`;
-        contentRef.current.style.height = `${h}px`;
-      }
+    if (resizeState.current && contentRef.current && naturalWidth.current) {
+      const { edge, startX, startY, startZoom } = resizeState.current;
+      const dx = edge === 'bottom' ? 0 : e.clientX - startX;
+      const dy = edge === 'right' ? 0 : e.clientY - startY;
+      const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+      const newZoom = Math.max(0.15, startZoom + delta / naturalWidth.current);
+      contentRef.current.style.zoom = `${newZoom}`;
       return;
     }
 
-    // Pan — already direct DOM mutation
-    if (dragState.current && containerRef.current) {
-      containerRef.current.scrollLeft =
-        dragState.current.scrollL - (e.clientX - dragState.current.startX);
-      containerRef.current.scrollTop =
-        dragState.current.scrollT - (e.clientY - dragState.current.startY);
+    if (dragState.current && wrapperRef.current) {
+      const newX = dragState.current.startPanX + (e.clientX - dragState.current.startX);
+      const newY = dragState.current.startPanY + (e.clientY - dragState.current.startY);
+      panOffset.current = { x: newX, y: newY };
+      wrapperRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
       return;
     }
 
-    // Idle: update cursor based on edge proximity
     if (containerRef.current && contentRef.current) {
       const edge = getEdgeFromPoint(
         contentRef.current.getBoundingClientRect(),
@@ -170,23 +167,26 @@ const DraggablePreview: React.FC<{ children: React.ReactNode }> = ({ children })
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-auto relative min-h-0 bg-zinc-100 dark:bg-zinc-950 select-none"
+      className="flex-1 overflow-hidden relative min-h-0 bg-zinc-100 dark:bg-zinc-950 select-none"
       style={{ ...GRID_BG, cursor: 'grab' }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      <div className="grid place-items-center min-h-full min-w-full p-6 lg:p-10">
+      <div ref={wrapperRef} className="grid place-items-center min-h-full min-w-full p-6 lg:p-10">
         <div
           ref={contentRef}
-          className="relative drop-shadow-2xl overflow-hidden"
-          style={{ maxWidth: '100%' }}
+          className="relative drop-shadow-2xl"
           onDoubleClick={(e) => {
             e.stopPropagation();
             if (contentRef.current) {
-              contentRef.current.style.width = '';
-              contentRef.current.style.height = '';
+              contentRef.current.style.zoom = '';
+              naturalWidth.current = null;
+            }
+            if (wrapperRef.current) {
+              wrapperRef.current.style.transform = '';
+              panOffset.current = { x: 0, y: 0 };
             }
           }}
         >
