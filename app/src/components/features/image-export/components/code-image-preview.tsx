@@ -10,6 +10,7 @@ import {
   type CodeImageExportSettings,
   parseHighlightedLines,
 } from '../store/code-image-export-store';
+import { LanguageIcon } from '../utils/language-icons';
 
 const SHADOW_MAP: Record<CodeImageExportSettings['shadowSize'], string> = {
   none: '',
@@ -108,6 +109,8 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
       watermarkText,
       watermarkPosition,
       watermarkOpacity,
+      titlePosition,
+      showTitleIcon,
     } = settings;
 
     const themeBg = getThemeBackground(themeKey);
@@ -128,7 +131,6 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
         : { backgroundRepeat: 'no-repeat', backgroundSize: backgroundImageFit }
       : undefined;
 
-    const hasTitleBar = windowStyle !== 'none';
     const displayTitle = titleText || language;
 
     const parsedHighlightedLines = useMemo(
@@ -187,34 +189,46 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
             overflow: 'hidden',
           }}
         >
-          {hasTitleBar && (
-            <div
-              className={cn(
-                'flex items-center px-4 relative',
-                windowStyle === 'windows' ? 'flex-row-reverse py-0' : 'py-2.5'
-              )}
-              style={{
-                backgroundColor: themeBg,
-                borderBottom: '1px solid rgba(128,128,128,0.08)',
-              }}
-            >
-              {windowStyle === 'macos' && <MacOSControls />}
-              {windowStyle === 'windows' && <WindowsControls />}
-              {displayTitle && (
-                <span
-                  className={cn(
-                    'text-xs select-none',
-                    windowStyle === 'macos'
+          <div
+            className={cn(
+              'flex items-center px-4 relative',
+              windowStyle === 'windows' ? 'flex-row-reverse py-0' : 'py-2.5'
+            )}
+            style={{
+              backgroundColor: themeBg,
+              borderBottom: '1px solid rgba(128,128,128,0.08)',
+            }}
+          >
+            {windowStyle === 'macos' && <MacOSControls />}
+            {windowStyle === 'windows' && <WindowsControls />}
+            {displayTitle && (
+              <span
+                className={cn(
+                  'text-xs select-none flex items-center gap-1.5',
+                  windowStyle === 'macos'
+                    ? titlePosition === 'center'
                       ? 'absolute left-1/2 -translate-x-1/2'
-                      : 'mr-auto py-1.5'
-                  )}
-                  style={{ color: '#9ca3af', opacity: 0.6, fontSize: '12px' }}
-                >
-                  {displayTitle}
-                </span>
-              )}
-            </div>
-          )}
+                      : titlePosition === 'left'
+                        ? 'ml-3'
+                        : 'ml-auto'
+                    : titlePosition === 'right'
+                      ? 'ml-auto py-1.5'
+                      : titlePosition === 'center'
+                        ? 'absolute left-1/2 -translate-x-1/2 py-1.5'
+                        : 'mr-auto py-1.5'
+                )}
+                style={{ color: '#9ca3af', opacity: 0.6, fontSize: '12px' }}
+              >
+                {showTitleIcon && (
+                  <LanguageIcon
+                    language={language}
+                    style={{ width: '12px', height: '12px', opacity: 0.8 }}
+                  />
+                )}
+                {displayTitle}
+              </span>
+            )}
+          </div>
 
           <CodeMirrorDisplay
             code={code}

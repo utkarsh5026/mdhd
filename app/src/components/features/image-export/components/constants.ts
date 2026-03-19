@@ -51,6 +51,12 @@ export const WATERMARK_POSITIONS = [
   { value: 'top-left' as const, label: 'Top Left' },
 ];
 
+export const TITLE_POSITIONS = [
+  { value: 'left' as const, label: 'Left' },
+  { value: 'center' as const, label: 'Center' },
+  { value: 'right' as const, label: 'Right' },
+];
+
 export const HIGHLIGHT_COLOR_PRESETS = [
   { label: 'Yellow', value: 'rgba(255,255,100,0.15)' },
   { label: 'Green', value: 'rgba(100,255,100,0.15)' },

@@ -15,6 +15,7 @@ import {
   GRADIENT_PRESETS,
   HIGHLIGHT_COLOR_PRESETS,
   IMAGE_FIT_OPTIONS,
+  TITLE_POSITIONS,
   WATERMARK_POSITIONS,
   WINDOW_STYLES,
 } from './constants';
@@ -334,6 +335,23 @@ const WindowSection: React.FC<{
           onChange={(e) => updateSettings({ titleText: e.target.value })}
           placeholder={language || 'filename.ts'}
           className="h-7 text-xs"
+        />
+      </div>
+
+      <div>
+        <div className="text-xs text-muted-foreground mb-1.5">Title position</div>
+        <ToggleGroup
+          options={TITLE_POSITIONS}
+          value={settings.titlePosition}
+          onChange={(v) => updateSettings({ titlePosition: v as 'center' | 'left' | 'right' })}
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">Language icon</span>
+        <Switch
+          checked={settings.showTitleIcon}
+          onCheckedChange={(v) => updateSettings({ showTitleIcon: v })}
         />
       </div>
 

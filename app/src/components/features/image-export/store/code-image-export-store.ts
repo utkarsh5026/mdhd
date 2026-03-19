@@ -19,6 +19,8 @@ export interface CodeImageExportSettings {
   // Window
   windowStyle: 'macos' | 'windows' | 'none';
   titleText: string;
+  titlePosition: 'center' | 'left' | 'right';
+  showTitleIcon: boolean;
 
   // Code
   themeKey: ThemeKey;
@@ -65,6 +67,8 @@ export const defaultSettings: CodeImageExportSettings = {
 
   windowStyle: 'macos',
   titleText: '',
+  titlePosition: 'center',
+  showTitleIcon: true,
 
   themeKey: 'vscDarkPlus',
   fontFamily: 'Source Code Pro',
