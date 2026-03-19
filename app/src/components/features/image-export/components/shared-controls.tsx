@@ -1,8 +1,19 @@
-import React from 'react';
+import { ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { COLORS } from '@/lib/constants';
+import { COLOR_GROUPS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 export const ToolbarButton: React.FC<{
@@ -31,35 +42,129 @@ export const ToolbarButton: React.FC<{
 
 export const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex items-center gap-2 mb-3">
-    <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.1em] select-none">
+    <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest select-none">
       {children}
     </span>
     <div className="flex-1 h-px bg-border/40" />
   </div>
 );
 
+const ColorSwatch: React.FC<{
+  hex: string;
+  name: string;
+  selected: boolean;
+  onSelect: () => void;
+}> = ({ hex, name, selected, onSelect }) => (
+  <button
+    className={cn(
+      'w-5.5 h-5.5 rounded-full transition-all duration-200 cursor-pointer',
+      'border-2 shadow-sm hover:shadow-md',
+      selected
+        ? 'border-primary scale-110 ring-2 ring-primary/25 shadow-primary/20'
+        : 'border-transparent hover:scale-110 hover:border-foreground/15'
+    )}
+    style={{ backgroundColor: hex }}
+    onClick={onSelect}
+    title={name}
+  />
+);
+
+const isValidHex = (v: string) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v);
+
 export const ColorSwatchGrid: React.FC<{
   selected: string;
   onSelect: (color: string) => void;
-}> = ({ selected, onSelect }) => (
-  <div className="grid grid-cols-8 gap-1.5">
-    {COLORS.map((color) => (
-      <button
-        key={color}
-        className={cn(
-          'w-6 h-6 rounded-full transition-all duration-200 cursor-pointer',
-          'border-2 shadow-sm hover:shadow-md',
-          selected.toLowerCase() === color.toLowerCase()
-            ? 'border-primary scale-110 ring-2 ring-primary/25 shadow-primary/20'
-            : 'border-transparent hover:scale-110 hover:border-foreground/15'
-        )}
-        style={{ backgroundColor: color }}
-        onClick={() => onSelect(color)}
-        title={color}
-      />
-    ))}
-  </div>
-);
+}> = ({ selected, onSelect }) => {
+  const [customHex, setCustomHex] = useState(selected);
+  const [open, setOpen] = useState(false);
+
+  const isPresetSelected = COLOR_GROUPS.some((g) =>
+    g.colors.some((c) => c.hex.toLowerCase() === selected.toLowerCase())
+  );
+
+  const selectedName =
+    COLOR_GROUPS.flatMap((g) => [...g.colors]).find(
+      (c) => c.hex.toLowerCase() === selected.toLowerCase()
+    )?.name ?? selected;
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-2.5 w-full py-1.5 px-1 -mx-1 rounded-md hover:bg-muted/50 transition-colors cursor-pointer group">
+        <div
+          className="w-5.5 h-5.5 rounded-full border-2 border-border/50 shadow-sm shrink-0"
+          style={{ backgroundColor: selected }}
+        />
+        <span className="text-xs text-muted-foreground truncate">{selectedName}</span>
+        <ChevronRight
+          className={cn(
+            'w-3.5 h-3.5 ml-auto text-muted-foreground/50 transition-transform duration-200',
+            open && 'rotate-90'
+          )}
+        />
+      </CollapsibleTrigger>
+
+      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-up-1 data-[state=open]:slide-down-1">
+        <div className="space-y-2.5 pt-2.5">
+          {COLOR_GROUPS.map((group) => (
+            <div key={group.label}>
+              <span className="text-[9px] font-medium text-muted-foreground/50 uppercase tracking-widest select-none">
+                {group.label}
+              </span>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {group.colors.map((color) => (
+                  <ColorSwatch
+                    key={color.hex}
+                    hex={color.hex}
+                    name={color.name}
+                    selected={selected.toLowerCase() === color.hex.toLowerCase()}
+                    onSelect={() => onSelect(color.hex)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Custom hex input */}
+          <div>
+            <span className="text-[9px] font-medium text-muted-foreground/50 uppercase tracking-widest select-none">
+              Custom
+            </span>
+            <div className="flex items-center gap-2 mt-1">
+              <div
+                className={cn(
+                  'w-5.5 h-5.5 rounded-full border-2 shrink-0 transition-all duration-200',
+                  !isPresetSelected
+                    ? 'border-primary ring-2 ring-primary/25 scale-110'
+                    : 'border-border/40'
+                )}
+                style={{ backgroundColor: isValidHex(customHex) ? customHex : selected }}
+              />
+              <input
+                type="text"
+                value={customHex}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCustomHex(v);
+                  if (isValidHex(v)) onSelect(v);
+                }}
+                onBlur={() => {
+                  if (!isValidHex(customHex)) setCustomHex(selected);
+                }}
+                placeholder="#A1B2C3"
+                spellCheck={false}
+                className={cn(
+                  'flex-1 h-6 px-2 rounded-md text-[11px] font-mono bg-muted/40 border border-border/30',
+                  'outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors',
+                  'text-foreground placeholder:text-muted-foreground/40'
+                )}
+              />
+            </div>
+          </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
 
 export const ToggleGroup: React.FC<{
   options: { value: string; label: string }[];
@@ -102,5 +207,41 @@ export const SliderRow: React.FC<{
       </span>
     </div>
     <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={min} max={max} step={step} />
+  </div>
+);
+
+export const SelectRow: React.FC<{
+  label: string;
+  value: string;
+  onValueChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  groups?: { label: string; options: { value: string; label: string }[] }[];
+  renderItem?: (option: { value: string; label: string }) => React.ReactNode;
+}> = ({ label, value, onValueChange, options, groups, renderItem }) => (
+  <div>
+    <div className="text-xs text-muted-foreground mb-1.5">{label}</div>
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger className="w-full h-8 text-xs rounded-lg">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {groups
+          ? groups.map((group) => (
+              <SelectGroup key={group.label}>
+                <SelectLabel>{group.label}</SelectLabel>
+                {group.options.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {renderItem ? renderItem(opt) : opt.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))
+          : options.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {renderItem ? renderItem(opt) : opt.label}
+              </SelectItem>
+            ))}
+      </SelectContent>
+    </Select>
   </div>
 );

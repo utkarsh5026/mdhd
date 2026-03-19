@@ -5,15 +5,6 @@ import { codeThemes, type ThemeKey } from '@/components/features/settings/store/
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +18,13 @@ import {
   WATERMARK_POSITIONS,
   WINDOW_STYLES,
 } from './constants';
-import { ColorSwatchGrid, SectionLabel, SliderRow, ToggleGroup } from './shared-controls';
+import {
+  ColorSwatchGrid,
+  SectionLabel,
+  SelectRow,
+  SliderRow,
+  ToggleGroup,
+} from './shared-controls';
 
 // ── Section Components ──────────────────────────────────────────────────────
 
@@ -142,7 +139,7 @@ const BackgroundSection: React.FC<{
               <button
                 key={preset.name}
                 className={cn(
-                  'w-8 h-8 rounded-lg cursor-pointer transition-all duration-200 border-2 shadow-sm',
+                  'w-6 h-6 rounded cursor-pointer transition-all duration-200 border-2 shadow-sm',
                   settings.backgroundColor === preset.from &&
                     settings.backgroundColorEnd === preset.to
                     ? 'border-primary ring-2 ring-primary/25 scale-110'
@@ -352,28 +349,20 @@ const WindowSection: React.FC<{
         unit="px"
       />
 
-      <div>
-        <div className="text-xs text-muted-foreground mb-1.5">Shadow</div>
-        <Select
-          value={settings.shadowSize}
-          onValueChange={(v) =>
-            updateSettings({
-              shadowSize: v as 'none' | 'sm' | 'md' | 'lg' | 'xl',
-            })
-          }
-        >
-          <SelectTrigger className="w-full h-8 text-xs rounded-lg">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">None</SelectItem>
-            <SelectItem value="sm">Small</SelectItem>
-            <SelectItem value="md">Medium</SelectItem>
-            <SelectItem value="lg">Large</SelectItem>
-            <SelectItem value="xl">Extra Large</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <SelectRow
+        label="Shadow"
+        value={settings.shadowSize}
+        onValueChange={(v) =>
+          updateSettings({ shadowSize: v as 'none' | 'sm' | 'md' | 'lg' | 'xl' })
+        }
+        options={[
+          { value: 'none', label: 'None' },
+          { value: 'sm', label: 'Small' },
+          { value: 'md', label: 'Medium' },
+          { value: 'lg', label: 'Large' },
+          { value: 'xl', label: 'Extra Large' },
+        ]}
+      />
     </div>
   </div>
 );
@@ -386,48 +375,29 @@ const CodeSection: React.FC<{
     <SectionLabel>Code</SectionLabel>
 
     <div className="space-y-3">
-      <div>
-        <div className="text-xs text-muted-foreground mb-1.5">Theme</div>
-        <Select
-          value={settings.themeKey}
-          onValueChange={(v) => updateSettings({ themeKey: v as ThemeKey })}
-        >
-          <SelectTrigger className="w-full h-8 text-xs rounded-lg">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(codeThemes).map(([category, themes]) => (
-              <SelectGroup key={category}>
-                <SelectLabel>{category}</SelectLabel>
-                {Object.entries(themes).map(([key, theme]) => (
-                  <SelectItem key={key} value={key}>
-                    {theme.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <SelectRow
+        label="Theme"
+        value={settings.themeKey}
+        onValueChange={(v) => updateSettings({ themeKey: v as ThemeKey })}
+        options={[]}
+        groups={Object.entries(codeThemes).map(([category, themes]) => ({
+          label: category,
+          options: Object.entries(themes).map(([key, theme]) => ({
+            value: key,
+            label: theme.name,
+          })),
+        }))}
+      />
 
-      <div>
-        <div className="text-xs text-muted-foreground mb-1.5">Font family</div>
-        <Select
-          value={settings.fontFamily}
-          onValueChange={(v) => updateSettings({ fontFamily: v })}
-        >
-          <SelectTrigger className="w-full h-8 text-xs rounded-lg">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FONT_FAMILIES.map((f) => (
-              <SelectItem key={f} value={f}>
-                <span style={{ fontFamily: `"${f}", monospace` }}>{f}</span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <SelectRow
+        label="Font family"
+        value={settings.fontFamily}
+        onValueChange={(v) => updateSettings({ fontFamily: v })}
+        options={FONT_FAMILIES.map((f) => ({ value: f, label: f }))}
+        renderItem={(opt) => (
+          <span style={{ fontFamily: `"${opt.value}", monospace` }}>{opt.label}</span>
+        )}
+      />
 
       <SliderRow
         label="Font size"
@@ -605,28 +575,16 @@ const WatermarkSection: React.FC<{
 
       {settings.watermarkText && (
         <>
-          <div>
-            <div className="text-xs text-muted-foreground mb-1.5">Position</div>
-            <Select
-              value={settings.watermarkPosition}
-              onValueChange={(v) =>
-                updateSettings({
-                  watermarkPosition: v as 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left',
-                })
-              }
-            >
-              <SelectTrigger className="w-full h-8 text-xs rounded-lg">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {WATERMARK_POSITIONS.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <SelectRow
+            label="Position"
+            value={settings.watermarkPosition}
+            onValueChange={(v) =>
+              updateSettings({
+                watermarkPosition: v as 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left',
+              })
+            }
+            options={WATERMARK_POSITIONS}
+          />
 
           <SliderRow
             label="Opacity"
@@ -663,8 +621,6 @@ const ExportScaleSection: React.FC<{
     </div>
   </div>
 );
-
-// ── Composed Sidebar ────────────────────────────────────────────────────────
 
 interface SettingsSidebarProps {
   settings: CodeImageExportSettings;
