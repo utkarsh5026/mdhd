@@ -1,18 +1,20 @@
 import { parse as parseYaml } from 'yaml';
 
+import type { HeadingLevel, MarkdownMetadata, MarkdownSection, ParseResult } from './types';
+
+export type { HeadingLevel, MarkdownMetadata, MarkdownSection, ParseResult } from './types';
+
 const AVERAGE_READING_SPEED_WPM = 250;
 
-export type MarkdownMetadata = Record<string, unknown>;
-
-export type ParseResult = {
-  sections: MarkdownSection[];
-  metadata: MarkdownMetadata | null;
-};
-
 /**
- * Extracts YAML frontmatter from markdown content
+ * Extracts YAML frontmatter from markdown content.
  *
- * Returns the metadata object and the content without frontmatter
+ * Parses the `---` delimited YAML block at the start of the document and
+ * returns both the parsed metadata and the remaining content without it.
+ *
+ * @param markdown - Raw markdown string potentially containing frontmatter.
+ * @returns An object with the stripped `content`, parsed `metadata` (or `null`),
+ *   and `frontmatterLineCount` for accurate line-number tracking.
  */
 function extractFrontmatter(markdown: string): {
   content: string;
@@ -45,8 +47,13 @@ function extractFrontmatter(markdown: string): {
 }
 
 /**
- * 📝 Cleans up Markdown text to make word counting more accurate
- * Strips away all the fancy formatting so we can just count the actual words!
+ * Strips markdown formatting to produce plain text for word counting.
+ *
+ * Removes code blocks, inline code, headings, links, images,
+ * bold/italic markers, and HTML tags.
+ *
+ * @param text - Raw markdown text to clean.
+ * @returns Plain text with all markdown syntax removed.
  */
 function removeMarkdownFormatting(text: string): string {
   let cleanText = text;
@@ -77,8 +84,12 @@ function removeMarkdownFormatting(text: string): string {
 }
 
 /**
- * 🔢 Counts the number of words in a text
- * First cleans up any Markdown formatting, then splits by spaces to count!
+ * Counts the number of words in a markdown string.
+ *
+ * Strips markdown formatting first, then splits on whitespace.
+ *
+ * @param text - Markdown text to count words in.
+ * @returns The number of words, or `0` if the input is empty/falsy.
  */
 export function countWords(text: string): number {
   if (!text) {
@@ -90,8 +101,11 @@ export function countWords(text: string): number {
 }
 
 /**
- * ⏱️ Figures out how long it would take to read something
- * Uses average reading speed to estimate how many milliseconds you'd need!
+ * Estimates reading time in milliseconds for a given word count.
+ *
+ * @param wordCount - Total number of words to read.
+ * @param readingSpeed - Words per minute (defaults to 250 WPM).
+ * @returns Estimated reading time in milliseconds (minimum 1 minute).
  */
 export function estimateReadingTime(
   wordCount: number,
@@ -100,26 +114,17 @@ export function estimateReadingTime(
   const minutes = Math.max(1, wordCount / readingSpeed);
   return minutes * 60 * 1000;
 }
-export type MarkdownSection = {
-  id: string;
-  title: string;
-  content: string;
-  level: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-  wordCount: number;
-  startLine: number;
-  endLine: number;
-};
-
 /**
- * 📚 Transforms Markdown content into navigable sections!
+ * Parses raw markdown into navigable sections split by headings (H1–H3).
  *
- * This function takes raw Markdown text and intelligently breaks it down into
- * structured sections based on headings. It preserves code blocks, handles
- * introduction content, and calculates word counts for each section.
+ * Splits the document at each heading boundary, preserving code blocks
+ * intact. Content before the first heading becomes an "Introduction" section.
+ * YAML frontmatter is extracted separately as metadata. Each section includes
+ * accurate `startLine`/`endLine` offsets and a computed `wordCount`.
  *
- * Also extracts YAML frontmatter metadata if present.
- *
- * 🧩 Perfect for creating a table of contents or a sectioned reading experience!
+ * @param markdown - The full raw markdown string to parse.
+ * @returns A `ParseResult` containing the ordered `sections` array and
+ *   optional `metadata` from frontmatter.
  */
 export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
   const { content, metadata, frontmatterLineCount } = extractFrontmatter(markdown);
@@ -149,7 +154,7 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
 
   const initializeSection = (
     title: string,
-    level: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    level: HeadingLevel,
     startLine: number
   ): MarkdownSection => {
     const pounds = '#'.repeat(level);
@@ -164,7 +169,7 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
     };
   };
 
-  const handleHeading = (title: string, level: 0 | 1 | 2 | 3 | 4 | 5 | 6, absoluteLine: number) => {
+  const handleHeading = (title: string, level: HeadingLevel, absoluteLine: number) => {
     if (currentSection) {
       currentSection.endLine = absoluteLine;
       sections.push(currentSection);
@@ -237,10 +242,17 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
 };
 
 /**
- * 🔤 Transforms text into URL-friendly slugs!
+ * Converts a heading string into a URL-friendly slug for use as a section ID.
  *
- * Takes headings and converts them into clean IDs for navigation and linking.
- * Perfect for creating anchor links that match your section titles.
+ * Lowercases the text, strips non-word characters, and replaces whitespace
+ * with hyphens.
+ *
+ * @param text - The heading text to slugify.
+ * @returns A lowercase, hyphen-separated slug string.
+ *
+ * @example
+ * slugify('Getting Started!') // => 'getting-started'
+ * slugify('API v2 — Overview') // => 'api-v2--overview'
  */
 export const slugify = (text: string): string => {
   return text

@@ -2,9 +2,12 @@ import { ChevronRight } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/lib/utils';
-
-import { buildSectionTree, findAncestorIds, getDefaultExpandedIds } from './tree-utils';
-import type { FlatSection, TreeSection } from './types';
+import {
+  buildSectionTree,
+  findAncestorIds,
+  getDefaultExpandedIds,
+} from '@/services/section/queries';
+import type { FlatSection, TreeSection } from '@/services/section/types';
 
 interface TreeOfContentsProps {
   sections: FlatSection[];
