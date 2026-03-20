@@ -62,6 +62,7 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
     // Per-instance compartments so multiple editors don't corrupt each other
     const languageCompartment = useRef(new Compartment()).current;
     const themeCompartment = useRef(new Compartment()).current;
+    const baseThemeCompartment = useRef(new Compartment()).current;
 
     const resolvedFontSize = isDialog ? '1rem' : (fontSize ?? '0.875rem');
     const resolvedFontFamily = fontFamily
@@ -78,11 +79,11 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
             maxWidth: '100%',
             overflow: 'hidden',
             fontSize: resolvedFontSize,
-            lineHeight: resolvedLineHeight,
           },
           '.cm-scroller': {
             overflow: 'auto',
             fontFamily: resolvedFontFamily,
+            lineHeight: resolvedLineHeight,
             fontFeatureSettings: fontLigatures === false ? '"liga" 0' : '"liga" 1',
             ...(letterSpacing ? { letterSpacing: `${letterSpacing}px` } : {}),
           },
@@ -154,7 +155,7 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
         EditorState.readOnly.of(true),
         EditorView.editable.of(false),
         keymap.of(foldKeymap),
-        baseTheme,
+        baseThemeCompartment.of(baseTheme),
         themeCompartment.of(getCodeMirrorTheme(themeKey)),
         languageCompartment.of([]),
         ...highlightExt,
@@ -178,12 +179,14 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
       }
 
       return exts;
+      // baseTheme intentionally excluded — reconfigured via baseThemeCompartment effect
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
-      baseTheme,
       themeKey,
       showLineNumbers,
       enableCodeFolding,
       enableWordWrap,
+      baseThemeCompartment,
       themeCompartment,
       languageCompartment,
       highlightExt,
@@ -228,6 +231,15 @@ const CodeMirrorDisplay = forwardRef<HTMLDivElement, CodeMirrorDisplayProps>(
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [code, extensions]);
+
+    // Update base theme (font/style changes) without full rebuild
+    useEffect(() => {
+      if (editorRef.current) {
+        editorRef.current.dispatch({
+          effects: baseThemeCompartment.reconfigure(baseTheme),
+        });
+      }
+    }, [baseTheme, baseThemeCompartment]);
 
     // Update theme when it changes
     useEffect(() => {
