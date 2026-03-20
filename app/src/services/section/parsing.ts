@@ -20,6 +20,7 @@ function extractFrontmatter(markdown: string): {
   content: string;
   metadata: MarkdownMetadata | null;
   frontmatterLineCount: number;
+  frontmatterError?: string;
 } {
   const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
   const match = frontmatterRegex.exec(markdown);
@@ -42,7 +43,12 @@ function extractFrontmatter(markdown: string): {
     };
   } catch (e) {
     console.error('Failed to parse frontmatter YAML:', e);
-    return { content: markdown, metadata: null, frontmatterLineCount: 0 };
+    return {
+      content: markdown,
+      metadata: null,
+      frontmatterLineCount: 0,
+      frontmatterError: e instanceof Error ? e.message : 'Invalid YAML frontmatter',
+    };
   }
 }
 
@@ -127,7 +133,8 @@ export function estimateReadingTime(
  *   optional `metadata` from frontmatter.
  */
 export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
-  const { content, metadata, frontmatterLineCount } = extractFrontmatter(markdown);
+  const { content, metadata, frontmatterLineCount, frontmatterError } =
+    extractFrontmatter(markdown);
   const lines = content.split('\n');
   const totalLines = markdown.split('\n').length;
   const sections: MarkdownSection[] = [];
@@ -136,6 +143,7 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
   let inCodeBlock = false;
   let introContent = '';
   const introStartLine = frontmatterLineCount;
+  const seenSlugs = new Map<string, number>();
 
   const pushIntroContent = (endLine: number) => {
     if (introContent.trim()) {
@@ -158,8 +166,14 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
     startLine: number
   ): MarkdownSection => {
     const pounds = '#'.repeat(level);
+    let slug = slugify(title);
+    const count = seenSlugs.get(slug) ?? 0;
+    seenSlugs.set(slug, count + 1);
+    if (count > 0) {
+      slug = `${slug}-${count}`;
+    }
     return {
-      id: slugify(title),
+      id: slug,
       title,
       content: pounds + ' ' + title + '\n',
       level,
@@ -238,6 +252,7 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
   return {
     sections: finalSections,
     metadata,
+    ...(frontmatterError && { frontmatterError }),
   };
 };
 

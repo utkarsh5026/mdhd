@@ -5,6 +5,7 @@ export type MarkdownMetadata = Record<string, unknown>;
 export type ParseResult = {
   sections: MarkdownSection[];
   metadata: MarkdownMetadata | null;
+  frontmatterError?: string;
 };
 
 export type MarkdownSection = {
