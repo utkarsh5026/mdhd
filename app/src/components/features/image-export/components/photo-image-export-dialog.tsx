@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
 import { usePhotoImageExportStore } from '../store/photo-image-export-store';
 import ExportDrawer from './export-drawer';
@@ -31,7 +32,21 @@ const PhotoImageExportDialog: React.FC<PhotoImageExportDialogProps> = ({
     redo,
     canUndo,
     canRedo,
-  } = usePhotoImageExportStore();
+  } = usePhotoImageExportStore(
+    useShallow((s) => ({
+      settings: s.settings,
+      updateSettings: s.updateSettings,
+      resetSettings: s.resetSettings,
+      presets: s.presets,
+      savePreset: s.savePreset,
+      loadPreset: s.loadPreset,
+      deletePreset: s.deletePreset,
+      undo: s.undo,
+      redo: s.redo,
+      canUndo: s.canUndo,
+      canRedo: s.canRedo,
+    }))
+  );
 
   return (
     <ExportDrawer
