@@ -15,6 +15,7 @@ import { useReadingSettingsStore } from '@/components/features/settings/store/re
 import { Button } from '@/components/ui/button';
 import ExportContextMenu from '@/components/ui/export-context-menu';
 import { cn } from '@/lib/utils';
+import { tryAsync } from '@/utils/functions/error';
 
 import type { TextSizeScale } from '../../utils/text-size-classes';
 import CodeMirrorDisplay from './codemirror-display';
@@ -83,12 +84,10 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
       onSelect: async () => {
         const el = codeBlockRef.current;
         if (!el) return;
-        try {
-          const dataUrl = await toPng(el, { pixelRatio: 2 });
+
+        const dataUrl = await tryAsync(() => toPng(el, { pixelRatio: 2 }), null);
+        if (dataUrl)
           download(dataUrl, toFilename(getNearestHeading(wrapperRef.current), 'png', 'code'));
-        } catch (err) {
-          console.error('[CodeRender] image export failed', err);
-        }
       },
     },
     {
@@ -100,11 +99,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
         const numbered = lines
           .map((line, i) => `${String(i + 1).padStart(pad, ' ')}  ${line}`)
           .join('\n');
-        try {
-          await navigator.clipboard.writeText(numbered);
-        } catch (err) {
-          console.error('[CodeRender] copy with line numbers failed', err);
-        }
+        await tryAsync(() => navigator.clipboard.writeText(numbered), undefined);
       },
     },
     {

@@ -1,6 +1,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { ImageIcon, ImageOffIcon, PlayCircleIcon, VideoOffIcon, XIcon } from 'lucide-react';
 import React, { useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import PhotoImageExportDialog from '@/components/features/image-export/components/photo-image-export-dialog';
 import {
@@ -92,6 +93,7 @@ const ImageRender: React.FC<React.ComponentPropsWithoutRef<'img'>> = ({
           await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
         } catch (err) {
           console.error('[ImageRender] copy image failed', err);
+          toast.error('Failed to copy image');
         }
       },
     },
@@ -104,6 +106,7 @@ const ImageRender: React.FC<React.ComponentPropsWithoutRef<'img'>> = ({
           await navigator.clipboard.writeText(src);
         } catch (err) {
           console.error('[ImageRender] copy URL failed', err);
+          toast.error('Failed to copy URL');
         }
       },
     },
