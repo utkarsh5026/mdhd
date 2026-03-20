@@ -4,14 +4,10 @@ import React, { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import PhotoImageExportDialog from '@/components/features/image-export/components/photo-image-export-dialog';
-import {
-  download,
-  getNearestHeading,
-  toFilename,
-} from '@/components/features/markdown-render/utils/file';
 import { DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import ExportContextMenu from '@/components/ui/export-context-menu';
 import { cn } from '@/lib/utils';
+import { download, getNearestHeading, toFilename } from '@/utils/download';
 
 import styles from './image-render.module.css';
 

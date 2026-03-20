@@ -3,11 +3,6 @@ import { Check, Copy } from 'lucide-react';
 import React, { useMemo, useRef, useState } from 'react';
 
 import { CodeImageExportDialog } from '@/components/features/image-export';
-import {
-  download,
-  getNearestHeading,
-  toFilename,
-} from '@/components/features/markdown-render/utils/file';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
 import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
 import { getThemeBackground } from '@/components/features/settings/store/codemirror-themes';
@@ -15,6 +10,7 @@ import { useReadingSettingsStore } from '@/components/features/settings/store/re
 import { Button } from '@/components/ui/button';
 import ExportContextMenu from '@/components/ui/export-context-menu';
 import { cn } from '@/lib/utils';
+import { download, getNearestHeading, toFilename } from '@/utils/download';
 import { tryAsync } from '@/utils/functions/error';
 
 import type { TextSizeScale } from '../../utils/text-size-classes';

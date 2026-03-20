@@ -2,12 +2,8 @@ import { toPng } from 'html-to-image';
 import React, { useRef } from 'react';
 import * as XLSX from 'xlsx';
 
-import {
-  download,
-  getNearestHeading,
-  toFilename,
-} from '@/components/features/markdown-render/utils/file';
 import ExportContextMenu from '@/components/ui/export-context-menu';
+import { download, getNearestHeading, toFilename } from '@/utils/download';
 
 /** Props accepted by any of the six HTML table elements rendered by this module. */
 type TableElementProps = React.ComponentPropsWithoutRef<
