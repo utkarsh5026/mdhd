@@ -13,7 +13,7 @@ import {
 } from '@/services/markdown/snippets';
 import type { MarkdownSection } from '@/services/section/parsing';
 
-import { type ActiveTab, SnippetDetail, SnippetRow } from './snippets-sheet';
+import { type ActiveTab, SectionDivider, SnippetDetail, SnippetRow } from './snippets-sheet';
 
 const TAB_CONFIG: Record<SnippetType, { label: string; Icon: React.FC<{ className?: string }> }> = {
   code: { label: 'Code', Icon: Code },
@@ -100,8 +100,25 @@ const SnippetsSheet: React.FC<SnippetsSheetProps> = ({
     if (first) setActiveTab(first);
   }, [groups]);
 
-  const activeSnippets: Snippet[] = groups[activeTab] ?? [];
+  const activeSnippets = useMemo(() => groups[activeTab] ?? [], [groups, activeTab]);
   const totalCount = snippets.length;
+
+  const sectionGroups = useMemo(() => {
+    const result: { sectionIndex: number; sectionTitle: string; items: Snippet[] }[] = [];
+    for (const snippet of activeSnippets) {
+      const last = result[result.length - 1];
+      if (last && last.sectionIndex === snippet.sectionIndex) {
+        last.items.push(snippet);
+      } else {
+        result.push({
+          sectionIndex: snippet.sectionIndex,
+          sectionTitle: snippet.sectionTitle,
+          items: [snippet],
+        });
+      }
+    }
+    return result;
+  }, [activeSnippets]);
 
   const handleClose = useCallback(() => onOpenChange(false), [onOpenChange]);
   const handleBack = useCallback(() => setSelectedSnippet(null), []);
@@ -160,14 +177,25 @@ const SnippetsSheet: React.FC<SnippetsSheetProps> = ({
                   No {TAB_CONFIG[activeTab].label.toLowerCase()} in this document.
                 </div>
               ) : (
-                <div className="py-0.5 overflow-hidden divide-y divide-border/10">
-                  {activeSnippets.map((snippet) => (
-                    <SnippetRow
-                      key={snippet.id}
-                      snippet={snippet}
-                      onClick={setSelectedSnippet}
-                      onNavigate={handleNavigate}
-                    />
+                <div className="py-0.5 overflow-hidden">
+                  {sectionGroups.map((group) => (
+                    <div key={group.sectionIndex}>
+                      <SectionDivider
+                        sectionTitle={group.sectionTitle}
+                        sectionIndex={group.sectionIndex}
+                        count={group.items.length}
+                        onNavigate={handleNavigate}
+                      />
+                      <div className="divide-y divide-border/10">
+                        {group.items.map((snippet) => (
+                          <SnippetRow
+                            key={snippet.id}
+                            snippet={snippet}
+                            onClick={setSelectedSnippet}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

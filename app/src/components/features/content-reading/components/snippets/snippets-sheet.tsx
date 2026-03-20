@@ -1,6 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
 import { ArrowRight, Braces, Check, Copy, ExternalLink, Image, Link, Play } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
+import { toast } from 'sonner';
 
 import {
   hasLanguageIcon,
@@ -15,7 +15,6 @@ import type {
   ImageSnippet,
   LinkSnippet,
   Snippet,
-  SnippetGroups,
   SnippetType,
   VideoSnippet,
 } from '@/services/markdown/snippets';
@@ -30,33 +29,36 @@ function domainOf(url: string): string {
   }
 }
 
-interface SectionChipProps {
+interface SectionDividerProps {
   sectionTitle: string;
   sectionIndex: number;
+  count: number;
   onNavigate: (index: number) => void;
 }
 
-const SectionChip: React.FC<SectionChipProps> = memo(
-  ({ sectionTitle, sectionIndex, onNavigate }) => (
+export const SectionDivider: React.FC<SectionDividerProps> = memo(
+  ({ sectionTitle, sectionIndex, count, onNavigate }) => (
     <button
-      onClick={(e) => {
-        e.stopPropagation();
-        onNavigate(sectionIndex);
-      }}
+      onClick={() => onNavigate(sectionIndex)}
       className={cn(
-        'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] shrink-0',
-        'text-muted-foreground/60',
-        'hover:text-primary hover:bg-primary/8',
-        'transition-colors duration-150 max-w-40'
+        'w-full flex items-center gap-2.5 px-3.5 py-2.5 mt-1 first:mt-0 text-left',
+        'bg-muted/15 hover:bg-accent/30 transition-colors duration-150 group/divider',
+        'border-t border-border/15'
       )}
-      title={`Go to "${sectionTitle}"`}
+      title={`Go to "${sectionTitle || 'Intro'}"`}
     >
-      <span className="truncate">{sectionTitle || 'Intro'}</span>
-      <ArrowRight className="w-2.5 h-2.5 shrink-0 opacity-60" />
+      <span className="text-[12px] font-semibold text-foreground/70 truncate group-hover/divider:text-foreground/90 transition-colors">
+        {sectionTitle || 'Intro'}
+      </span>
+      <span className="flex-1" />
+      <span className="text-[10px] text-muted-foreground/40 tabular-nums shrink-0 bg-muted/40 px-1.5 py-0.5 rounded-full">
+        {count}
+      </span>
+      <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/30 shrink-0 opacity-0 group-hover/divider:opacity-100 transition-opacity" />
     </button>
   )
 );
-SectionChip.displayName = 'SectionChip';
+SectionDivider.displayName = 'SectionDivider';
 
 const CodeLangIcon: React.FC<{ language: string; className?: string }> = ({
   language,
@@ -68,200 +70,215 @@ const CodeLangIcon: React.FC<{ language: string; className?: string }> = ({
   return <Braces className={className} />;
 };
 
+const SnippetRowWrapper: React.FC<{ onClick: () => void; children: React.ReactNode }> = ({
+  onClick,
+  children,
+}) => (
+  <button
+    className={cn(
+      'w-full min-w-0 text-left px-3 py-2.5 group',
+      'hover:bg-accent/30 transition-colors duration-200'
+    )}
+    onClick={onClick}
+  >
+    {children}
+  </button>
+);
+
+const DetailHeader: React.FC<{ snippet: Snippet; onNavigate: (i: number) => void }> = ({
+  snippet,
+  onNavigate,
+}) => (
+  <button
+    onClick={() => onNavigate(snippet.sectionIndex)}
+    className={cn(
+      'flex items-center gap-1.5 px-4 py-2.5 border-b border-border/10 min-w-0 bg-muted/5 w-full text-left',
+      'hover:bg-muted/15 transition-colors duration-150 group/detail-header'
+    )}
+    title={`Go to "${snippet.sectionTitle || 'Intro'}"`}
+  >
+    <span className="text-[10px] text-muted-foreground/35 shrink-0">in</span>
+    <span className="text-[11px] font-medium text-muted-foreground/60 truncate group-hover/detail-header:text-foreground/70 transition-colors">
+      {snippet.sectionTitle || 'Intro'}
+    </span>
+    <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/25 shrink-0 opacity-0 group-hover/detail-header:opacity-100 transition-opacity" />
+  </button>
+);
+
+const SnippetDetailWrapper: React.FC<{
+  snippet: Snippet;
+  onNavigate: (i: number) => void;
+  children: React.ReactNode;
+}> = ({ snippet, onNavigate, children }) => (
+  <div className="flex flex-col h-full min-w-0 overflow-hidden">
+    <DetailHeader snippet={snippet} onNavigate={onNavigate} />
+    {children}
+  </div>
+);
+
+const ExternalLinkButton: React.FC<{ href: string; label: string }> = ({ href, label }) => (
+  <a
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+    className={cn(
+      'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium',
+      'bg-accent/50 text-foreground/80 hover:bg-accent/70 hover:text-foreground',
+      'ring-1 ring-border/15 transition-all duration-200'
+    )}
+  >
+    <ExternalLink className="w-3 h-3" />
+    {label}
+  </a>
+);
+
 const CodeRow: React.FC<{
   snippet: CodeSnippet;
   onClick: (s: Snippet) => void;
-  onNavigate: (i: number) => void;
-}> = ({ snippet, onClick, onNavigate }) => {
+}> = ({ snippet, onClick }) => {
   const { selectedTheme } = useCodeThemeStore();
   const bg = getThemeBackground(selectedTheme);
+  const lineCount = snippet.code.split('\n').length;
 
   return (
-    <button
-      className={cn('w-full min-w-0 text-left px-3.5 py-3 group')}
-      onClick={() => onClick(snippet)}
-    >
-      {/* Code preview block */}
+    <SnippetRowWrapper onClick={() => onClick(snippet)}>
       <div
-        className="rounded-2xl overflow-hidden border border-border/30 text-[11px]  leading-relaxed min-w-0 group-hover:border-border/50 transition-colors"
+        className={cn(
+          'rounded-2xl overflow-hidden min-w-0',
+          'ring-1 ring-border/20 group-hover:ring-border/40',
+          'transition-all duration-200 relative'
+        )}
         style={{ backgroundColor: bg }}
       >
-        <pre className="px-3 py-2.5 text-foreground/70 whitespace-pre overflow-hidden max-w-full font-source-code-pro">
+        {/* Window-style header bar */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+          <div className="flex items-center gap-1.5 ml-1">
+            <CodeLangIcon
+              language={snippet.language}
+              className="w-3 h-3 text-muted-foreground/40 shrink-0"
+            />
+            <span className="text-[10px] font-medium text-muted-foreground/40 font-mono uppercase tracking-wide">
+              {snippet.language}
+            </span>
+          </div>
+          <span className="text-[10px] text-muted-foreground/25 tabular-nums ml-auto">
+            {lineCount} lines
+          </span>
+        </div>
+
+        {/* Code preview */}
+        <pre className="px-3 py-2.5 text-[11px] leading-relaxed text-foreground/70 whitespace-pre overflow-hidden max-w-full font-source-code-pro">
           {snippet.code
             .split('\n')
-            .slice(0, 3)
+            .slice(0, 4)
             .map((line, i) => (
               <div key={i} className="truncate">
-                <span className="inline-block w-5 text-right mr-2.5 text-muted-foreground/30 select-none text-[10px]">
+                <span className="inline-block w-5 text-right mr-2.5 text-muted-foreground/20 select-none text-[10px]">
                   {i + 1}
                 </span>
                 {line}
               </div>
             ))}
-          {snippet.code.split('\n').length > 3 && (
-            <div className="text-muted-foreground/30 pl-[1.9rem] text-[10px] mt-0.5">
-              +{snippet.code.split('\n').length - 3} more
-            </div>
-          )}
         </pre>
-      </div>
-
-      {/* Meta row below code */}
-      <div className="flex items-center gap-2 mt-2 px-0.5 min-w-0">
-        <CodeLangIcon
-          language={snippet.language}
-          className="w-3 h-3 text-muted-foreground/50 shrink-0"
-        />
-        <span className="text-[10px] font-medium text-muted-foreground/60 font-mono">
-          {snippet.language}
-        </span>
-        <span className="text-[10px] text-muted-foreground/30">
-          {snippet.code.split('\n').length}L
-        </span>
-        <div className="ml-auto">
-          <SectionChip
-            sectionTitle={snippet.sectionTitle}
-            sectionIndex={snippet.sectionIndex}
-            onNavigate={onNavigate}
+        {lineCount > 4 && (
+          <div
+            className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
+            style={{
+              background: `linear-gradient(to bottom, transparent, ${bg})`,
+            }}
           />
-        </div>
+        )}
       </div>
-    </button>
+    </SnippetRowWrapper>
   );
 };
 
 const ImageRow: React.FC<{
   snippet: ImageSnippet;
   onClick: (s: Snippet) => void;
-  onNavigate: (i: number) => void;
-}> = ({ snippet, onClick, onNavigate }) => (
-  <button
-    className={cn('w-full min-w-0 text-left px-3.5 py-3 transition-all group')}
-    onClick={() => onClick(snippet)}
-  >
-    {/* Image preview */}
-    <div className="w-full max-h-64 rounded-2xl overflow-hidden bg-muted/20 border border-border/30 group-hover:border-border/50 transition-colors flex items-center justify-center p-2 cursor-pointer">
+}> = ({ snippet, onClick }) => (
+  <SnippetRowWrapper onClick={() => onClick(snippet)}>
+    <div
+      className={cn(
+        'w-full rounded-xl overflow-hidden',
+        'ring-1 ring-border/20 group-hover:ring-border/40',
+        'bg-muted/10 transition-all duration-200',
+        'flex items-center justify-center'
+      )}
+    >
       <img
         src={snippet.src}
         alt={snippet.alt}
-        className="w-full max-h-44 object-contain"
+        className="w-full max-h-48 object-contain p-2"
         onError={(e) => {
           (e.currentTarget as HTMLImageElement).style.display = 'none';
           (e.currentTarget.nextElementSibling as HTMLElement | null)?.classList.remove('hidden');
         }}
       />
-      <div className="hidden w-full h-24 items-center justify-center">
-        <Image className="w-6 h-6 text-muted-foreground/20" />
+      <div className="hidden w-full h-28 items-center justify-center">
+        <Image className="w-6 h-6 text-muted-foreground/15" />
       </div>
     </div>
 
-    {/* Caption */}
     <div className="flex items-center gap-2 mt-1.5 px-0.5 min-w-0">
-      <p className="text-[11px] text-muted-foreground/50 truncate min-w-0">
+      <Image className="w-2.5 h-2.5 text-muted-foreground/30 shrink-0" />
+      <p className="text-[10px] text-muted-foreground/45 truncate min-w-0">
         {snippet.alt || domainOf(snippet.src)}
       </p>
-      <div className="ml-auto">
-        <SectionChip
-          sectionTitle={snippet.sectionTitle}
-          sectionIndex={snippet.sectionIndex}
-          onNavigate={onNavigate}
-        />
-      </div>
     </div>
-  </button>
+  </SnippetRowWrapper>
 );
 
 const VideoRow: React.FC<{
   snippet: VideoSnippet;
   onClick: (s: Snippet) => void;
-  onNavigate: (i: number) => void;
-}> = ({ snippet, onClick, onNavigate }) => (
-  <button
-    className={cn('w-full min-w-0 text-left px-3.5 py-3 group')}
-    onClick={() => onClick(snippet)}
-  >
+}> = ({ snippet, onClick }) => (
+  <SnippetRowWrapper onClick={() => onClick(snippet)}>
     <div className="flex items-center gap-3 min-w-0">
-      <div className="w-10 h-10 rounded-lg bg-muted/40 shrink-0 flex items-center justify-center border border-border/30 group-hover:border-border/50 transition-colors">
-        <Play className="w-3.5 h-3.5 text-muted-foreground/60 ml-0.5" />
+      <div
+        className={cn(
+          'w-10 h-10 rounded-xl shrink-0 flex items-center justify-center',
+          'bg-muted/25 ring-1 ring-border/20 group-hover:ring-border/40',
+          'transition-all duration-200'
+        )}
+      >
+        <Play className="w-3.5 h-3.5 text-muted-foreground/50 ml-0.5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] text-foreground/80 truncate">
+        <p className="text-[12px] text-foreground/75 truncate font-medium">
           {snippet.isEmbed ? 'Embedded Video' : 'Video'}
         </p>
-        <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">
+        <p className="text-[10px] text-muted-foreground/35 truncate mt-0.5">
           {domainOf(snippet.src)}
         </p>
       </div>
-      <SectionChip
-        sectionTitle={snippet.sectionTitle}
-        sectionIndex={snippet.sectionIndex}
-        onNavigate={onNavigate}
-      />
     </div>
-  </button>
+  </SnippetRowWrapper>
 );
 
 const LinkRow: React.FC<{
   snippet: LinkSnippet;
   onClick: (s: Snippet) => void;
-  onNavigate: (i: number) => void;
-}> = ({ snippet, onClick, onNavigate }) => (
-  <button
-    className={cn(
-      'w-full min-w-0 text-left px-3.5 py-3 transition-all group',
-      'hover:bg-accent/40'
-    )}
-    onClick={() => onClick(snippet)}
-  >
+}> = ({ snippet, onClick }) => (
+  <SnippetRowWrapper onClick={() => onClick(snippet)}>
     <div className="flex items-center gap-3 min-w-0">
-      <div className="w-8 h-8 rounded-2xl bg-muted/40 shrink-0 flex items-center justify-center border border-border/30 group-hover:border-border/50 transition-colors">
-        <Link className="w-3.5 h-3.5 text-muted-foreground/50" />
+      <div
+        className={cn(
+          'w-8 h-8 rounded-lg shrink-0 flex items-center justify-center',
+          'bg-muted/25 ring-1 ring-border/20 group-hover:ring-border/40',
+          'transition-all duration-200'
+        )}
+      >
+        <Link className="w-3.5 h-3.5 text-muted-foreground/45" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] text-foreground/80 truncate">{snippet.text}</p>
-        <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">
+        <p className="text-[12px] text-foreground/75 truncate font-medium">{snippet.text}</p>
+        <p className="text-[10px] text-muted-foreground/35 truncate mt-0.5">
           {domainOf(snippet.url)}
         </p>
       </div>
-      <SectionChip
-        sectionTitle={snippet.sectionTitle}
-        sectionIndex={snippet.sectionIndex}
-        onNavigate={onNavigate}
-      />
     </div>
-  </button>
-);
-
-interface SnippetRowProps {
-  snippet: Snippet;
-  onClick: (s: Snippet) => void;
-  onNavigate: (i: number) => void;
-}
-
-export const SnippetRow: React.FC<SnippetRowProps> = ({ snippet, onClick, onNavigate }) => {
-  if (snippet.type === 'code')
-    return <CodeRow snippet={snippet} onClick={onClick} onNavigate={onNavigate} />;
-  if (snippet.type === 'image')
-    return <ImageRow snippet={snippet} onClick={onClick} onNavigate={onNavigate} />;
-  if (snippet.type === 'video')
-    return <VideoRow snippet={snippet} onClick={onClick} onNavigate={onNavigate} />;
-  return <LinkRow snippet={snippet} onClick={onClick} onNavigate={onNavigate} />;
-};
-
-interface DetailHeaderProps {
-  snippet: Snippet;
-  onNavigate: (i: number) => void;
-}
-
-const DetailHeader: React.FC<DetailHeaderProps> = ({ snippet, onNavigate }) => (
-  <div className="flex items-center px-4 py-2 border-b border-border/15 min-w-0">
-    <span className="text-[10px] text-muted-foreground/40 shrink-0 mr-1.5">in</span>
-    <SectionChip
-      sectionTitle={snippet.sectionTitle}
-      sectionIndex={snippet.sectionIndex}
-      onNavigate={onNavigate}
-    />
-  </div>
+  </SnippetRowWrapper>
 );
 
 const CodeDetail: React.FC<{ snippet: CodeSnippet; onNavigate: (i: number) => void }> = ({
@@ -273,36 +290,45 @@ const CodeDetail: React.FC<{ snippet: CodeSnippet; onNavigate: (i: number) => vo
   const bg = getThemeBackground(selectedTheme);
 
   const handleCopy = useCallback(() => {
-    void navigator.clipboard.writeText(snippet.code).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard.writeText(snippet.code).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      () => {
+        toast.error('Failed to copy');
+      }
+    );
   }, [snippet.code]);
 
   return (
-    <div className="flex flex-col h-full min-w-0 overflow-hidden">
-      <DetailHeader snippet={snippet} onNavigate={onNavigate} />
-
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-1.5 border-b border-border/15 min-w-0">
+    <SnippetDetailWrapper snippet={snippet} onNavigate={onNavigate}>
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border/10 min-w-0">
         <div className="flex items-center gap-2">
           <CodeLangIcon
             language={snippet.language}
             className="w-3.5 h-3.5 text-muted-foreground/50"
           />
           <span className="text-[11px] text-muted-foreground/50 font-mono">{snippet.language}</span>
-          <span className="text-[10px] text-muted-foreground/30">
+          <span className="w-px h-3 bg-border/20" />
+          <span className="text-[10px] text-muted-foreground/30 tabular-nums">
             {snippet.code.split('\n').length} lines
           </span>
         </div>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-muted-foreground/50 hover:text-foreground hover:bg-accent/40 transition-colors"
+          className={cn(
+            'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px]',
+            'transition-all duration-200',
+            copied
+              ? 'text-green-500 bg-green-500/8'
+              : 'text-muted-foreground/50 hover:text-foreground hover:bg-accent/50'
+          )}
         >
           {copied ? (
             <>
-              <Check className="w-3 h-3 text-green-500" />
-              <span className="text-green-500">Copied</span>
+              <Check className="w-3 h-3" />
+              Copied
             </>
           ) : (
             <>
@@ -313,7 +339,6 @@ const CodeDetail: React.FC<{ snippet: CodeSnippet; onNavigate: (i: number) => vo
         </button>
       </div>
 
-      {/* CodeMirror rendered code */}
       <div className="flex-1 overflow-auto min-w-0" style={{ backgroundColor: bg }}>
         <CodeMirrorDisplay
           code={snippet.code}
@@ -325,7 +350,7 @@ const CodeDetail: React.FC<{ snippet: CodeSnippet; onNavigate: (i: number) => vo
           fontSize="0.8rem"
         />
       </div>
-    </div>
+    </SnippetDetailWrapper>
   );
 };
 
@@ -333,10 +358,9 @@ const ImageDetail: React.FC<{ snippet: ImageSnippet; onNavigate: (i: number) => 
   snippet,
   onNavigate,
 }) => (
-  <div className="flex flex-col h-full min-w-0 overflow-hidden">
-    <DetailHeader snippet={snippet} onNavigate={onNavigate} />
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6 overflow-auto min-w-0 w-full">
-      <div className="rounded-xl overflow-hidden border border-border/30 shadow-lg max-w-full min-w-0 w-full">
+  <SnippetDetailWrapper snippet={snippet} onNavigate={onNavigate}>
+    <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6 overflow-auto min-w-0 w-full">
+      <div className="rounded-xl overflow-hidden ring-1 ring-border/20 shadow-lg shadow-black/5 max-w-full min-w-0 w-full">
         <img
           src={snippet.src}
           alt={snippet.alt}
@@ -344,33 +368,23 @@ const ImageDetail: React.FC<{ snippet: ImageSnippet; onNavigate: (i: number) => 
         />
       </div>
       {snippet.alt && (
-        <p className="text-sm text-muted-foreground text-center max-w-xs">{snippet.alt}</p>
+        <p className="text-[13px] text-muted-foreground/60 text-center max-w-xs leading-relaxed">
+          {snippet.alt}
+        </p>
       )}
-      <a
-        href={snippet.src}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs',
-          'bg-accent/60 text-foreground hover:bg-accent transition-colors'
-        )}
-      >
-        <ExternalLink className="w-3 h-3" />
-        Open original
-      </a>
+      <ExternalLinkButton href={snippet.src} label="Open original" />
     </div>
-  </div>
+  </SnippetDetailWrapper>
 );
 
 const VideoDetail: React.FC<{ snippet: VideoSnippet; onNavigate: (i: number) => void }> = ({
   snippet,
   onNavigate,
 }) => (
-  <div className="flex flex-col h-full min-w-0 overflow-hidden">
-    <DetailHeader snippet={snippet} onNavigate={onNavigate} />
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-4 overflow-auto min-w-0">
+  <SnippetDetailWrapper snippet={snippet} onNavigate={onNavigate}>
+    <div className="flex-1 flex flex-col items-center justify-center gap-5 p-4 overflow-auto min-w-0">
       {snippet.isEmbed ? (
-        <div className="w-full rounded-xl overflow-hidden border border-border/30 shadow-lg">
+        <div className="w-full rounded-xl overflow-hidden ring-1 ring-border/20 shadow-lg shadow-black/5">
           <iframe
             src={snippet.src}
             className="w-full"
@@ -384,113 +398,70 @@ const VideoDetail: React.FC<{ snippet: VideoSnippet; onNavigate: (i: number) => 
         <video
           src={snippet.src}
           controls
-          className="max-w-full max-h-[55vh] rounded-xl border border-border/30 shadow-lg"
+          className="max-w-full max-h-[55vh] rounded-xl ring-1 ring-border/20 shadow-lg shadow-black/5"
         />
       )}
-      <a
-        href={snippet.src}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs',
-          'bg-accent/60 text-foreground hover:bg-accent transition-colors'
-        )}
-      >
-        <ExternalLink className="w-3 h-3" />
-        {domainOf(snippet.src)}
-      </a>
+      <ExternalLinkButton href={snippet.src} label={domainOf(snippet.src)} />
     </div>
-  </div>
+  </SnippetDetailWrapper>
 );
 
 const LinkDetail: React.FC<{ snippet: LinkSnippet; onNavigate: (i: number) => void }> = ({
   snippet,
   onNavigate,
 }) => (
-  <div className="flex flex-col h-full min-w-0 overflow-hidden">
-    <DetailHeader snippet={snippet} onNavigate={onNavigate} />
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6 min-w-0">
-      <div className="w-12 h-12 rounded-xl bg-muted/40 border border-border/30 flex items-center justify-center">
-        <Link className="w-5 h-5 text-muted-foreground/40" />
+  <SnippetDetailWrapper snippet={snippet} onNavigate={onNavigate}>
+    <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6 min-w-0">
+      <div
+        className={cn(
+          'w-14 h-14 rounded-2xl flex items-center justify-center',
+          'bg-muted/20 ring-1 ring-border/20'
+        )}
+      >
+        <Link className="w-5 h-5 text-muted-foreground/35" />
       </div>
-      <div className="text-center space-y-1.5 max-w-sm min-w-0">
-        <p className="text-sm text-foreground/80 leading-snug">{snippet.text}</p>
-        <p className="text-[11px] text-muted-foreground/40 break-all leading-relaxed">
+      <div className="text-center space-y-2 max-w-sm min-w-0">
+        <p className="text-sm text-foreground/80 leading-snug font-medium">{snippet.text}</p>
+        <p className="text-[11px] text-muted-foreground/35 break-all leading-relaxed">
           {snippet.url}
         </p>
       </div>
-      <a
-        href={snippet.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          'inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs',
-          'bg-accent/60 text-foreground hover:bg-accent',
-          'transition-colors duration-150'
-        )}
-      >
-        <ExternalLink className="w-3 h-3" />
-        Open link
-      </a>
+      <ExternalLinkButton href={snippet.url} label="Open link" />
     </div>
-  </div>
+  </SnippetDetailWrapper>
 );
+
+interface SnippetRowProps {
+  snippet: Snippet;
+  onClick: (s: Snippet) => void;
+}
+
+const ROW_REGISTRY = {
+  code: CodeRow,
+  image: ImageRow,
+  video: VideoRow,
+  link: LinkRow,
+} satisfies Record<SnippetType, React.FC<{ snippet: never; onClick: (s: Snippet) => void }>>;
+
+export const SnippetRow: React.FC<SnippetRowProps> = ({ snippet, onClick }) => {
+  const Row = ROW_REGISTRY[snippet.type] as React.FC<SnippetRowProps>;
+  return <Row snippet={snippet} onClick={onClick} />;
+};
+
+const DETAIL_REGISTRY = {
+  code: CodeDetail,
+  image: ImageDetail,
+  video: VideoDetail,
+  link: LinkDetail,
+} satisfies Record<SnippetType, React.FC<{ snippet: never; onNavigate: (i: number) => void }>>;
 
 export const SnippetDetail: React.FC<{ snippet: Snippet; onNavigate: (i: number) => void }> = ({
   snippet,
   onNavigate,
 }) => {
-  if (snippet.type === 'code') return <CodeDetail snippet={snippet} onNavigate={onNavigate} />;
-  if (snippet.type === 'image') return <ImageDetail snippet={snippet} onNavigate={onNavigate} />;
-  if (snippet.type === 'video') return <VideoDetail snippet={snippet} onNavigate={onNavigate} />;
-  return <LinkDetail snippet={snippet} onNavigate={onNavigate} />;
-};
-
-export const TAB_CONFIG: Record<
-  SnippetType,
-  { label: string; Icon: React.FC<{ className?: string }> }
-> = {
-  code: { label: 'Code', Icon: Braces },
-  image: { label: 'Images', Icon: Image },
-  video: { label: 'Videos', Icon: Play },
-  link: { label: 'Links', Icon: Link },
-};
-
-interface TypeTabsProps {
-  groups: SnippetGroups;
-  active: ActiveTab;
-  onChange: (t: ActiveTab) => void;
-}
-
-export const TypeTabs: React.FC<TypeTabsProps> = ({ groups, active, onChange }) => {
-  const visibleTabs = (Object.keys(TAB_CONFIG) as SnippetType[]).filter(
-    (t) => groups[t].length > 0
-  );
-
-  return (
-    <div className="flex gap-0.5 px-3 py-2 border-b border-border/15 overflow-x-auto shrink-0">
-      {visibleTabs.map((type) => {
-        const { label, Icon } = TAB_CONFIG[type];
-        const count = groups[type].length;
-        const isActive = active === type;
-        return (
-          <button
-            key={type}
-            onClick={() => onChange(type)}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs whitespace-nowrap',
-              'transition-colors duration-150',
-              isActive
-                ? 'text-foreground bg-accent/60'
-                : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/30'
-            )}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
-            <span className="text-[10px] opacity-50">{count}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
+  const Detail = DETAIL_REGISTRY[snippet.type] as React.FC<{
+    snippet: Snippet;
+    onNavigate: (i: number) => void;
+  }>;
+  return <Detail snippet={snippet} onNavigate={onNavigate} />;
 };
