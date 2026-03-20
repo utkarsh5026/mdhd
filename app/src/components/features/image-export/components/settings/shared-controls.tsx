@@ -15,7 +15,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
-import { COLOR_GROUPS } from './constants';
+import { COLOR_GROUPS } from '../constants';
 
 export const ToolbarButton: React.FC<{
   icon?: React.ReactNode;

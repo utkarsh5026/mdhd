@@ -4,33 +4,16 @@ import { cn } from '@/lib/utils';
 
 import { useImageDataUrl } from '../hooks/use-image-data-url';
 import type { PhotoImageExportSettings } from '../store/photo-image-export-store';
+import {
+  ASPECT_RATIO_MAP,
+  PHOTO_PREVIEW_MIN_WIDTH,
+  sanitizeBackgroundImageUrl,
+  SHADOW_MAP,
+  WATERMARK_POSITION_STYLES,
+} from '../utils/constants';
+import { AnnotationOverlay } from './annotation-overlay';
+import { DeviceFrameWrapper } from './device-frames';
 import { buildPatternBackground } from './pattern-backgrounds';
-
-const ASPECT_RATIO_MAP: Record<string, string | undefined> = {
-  auto: undefined,
-  '16:9': '16 / 9',
-  '4:3': '4 / 3',
-  '1:1': '1 / 1',
-  '9:16': '9 / 16',
-};
-
-const SHADOW_MAP: Record<string, string> = {
-  none: 'none',
-  sm: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
-  md: '0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)',
-  lg: '0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05)',
-  xl: '0 20px 25px rgba(0,0,0,0.15), 0 10px 10px rgba(0,0,0,0.04)',
-};
-
-const WATERMARK_POSITION_STYLES: Record<
-  PhotoImageExportSettings['watermarkPosition'],
-  React.CSSProperties
-> = {
-  'bottom-right': { bottom: 12, right: 16 },
-  'bottom-left': { bottom: 12, left: 16 },
-  'top-right': { top: 12, right: 16 },
-  'top-left': { top: 12, left: 16 },
-};
 
 const FONT_WEIGHT_MAP: Record<string, number> = {
   light: 300,
@@ -65,6 +48,7 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
       padding,
       shadowSize,
       customWidth,
+      customHeight,
       aspectRatio,
       watermarkText,
       watermarkPosition,
@@ -99,6 +83,17 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
       captionMaxWidth,
       captionColor,
       captionBackground,
+      perspectiveEnabled,
+      perspective,
+      rotateX,
+      rotateY,
+      gradientBorderEnabled,
+      gradientBorderWidth,
+      gradientBorderColorStart,
+      gradientBorderColorEnd,
+      gradientBorderAngle,
+      deviceFrame,
+      annotations,
     } = settings;
 
     const imageSrc = useImageDataUrl(src);
@@ -114,14 +109,14 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
       if (hueRotate > 0) parts.push(`hue-rotate(${hueRotate}deg)`);
       if (invert > 0) parts.push(`invert(${invert}%)`);
       if (sharpen > 0) {
-        // Sharpen via contrast boost combined with a subtle SVG filter
         const amount = 1 + sharpen / 200;
         parts.push(`contrast(${amount * 100}%)`);
       }
       return parts.join(' ') || 'none';
     }, [brightness, contrast, saturation, blur, grayscale, sepia, hueRotate, invert, sharpen]);
 
-    const isImageBg = backgroundType === 'image' && backgroundImage;
+    const safeBgImage = sanitizeBackgroundImageUrl(backgroundImage);
+    const isImageBg = backgroundType === 'image' && safeBgImage;
 
     const outerBackground = transparentBackground
       ? 'transparent'
@@ -160,9 +155,16 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
     const outerStyle: React.CSSProperties = {
       background: outerBackground,
       padding,
-      ...(customWidth > 0 ? { width: `${customWidth}px` } : { minWidth: '320px' }),
+      ...(customWidth > 0 ? { width: `${customWidth}px` } : { minWidth: PHOTO_PREVIEW_MIN_WIDTH }),
+      ...(customHeight > 0 ? { height: `${customHeight}px` } : {}),
       ...(ASPECT_RATIO_MAP[aspectRatio]
         ? { aspectRatio: ASPECT_RATIO_MAP[aspectRatio], minHeight: 0 }
+        : {}),
+      // 3D perspective transform
+      ...(perspectiveEnabled
+        ? {
+            transform: `perspective(${perspective}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+          }
         : {}),
     };
 
@@ -180,6 +182,124 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
       ...(captionMaxWidth > 0 ? { maxWidth: `${captionMaxWidth}px` } : {}),
     };
 
+    // Gradient border wrapper style
+    const gradientBorderStyle: React.CSSProperties | undefined = gradientBorderEnabled
+      ? {
+          background: `linear-gradient(${gradientBorderAngle}deg, ${gradientBorderColorStart}, ${gradientBorderColorEnd})`,
+          padding: `${gradientBorderWidth}px`,
+          borderRadius: `${innerBorderRadius + gradientBorderWidth}px`,
+        }
+      : undefined;
+
+    const photoFrame = (
+      <div
+        className="relative overflow-hidden"
+        style={{
+          borderRadius: `${innerBorderRadius}px`,
+          boxShadow: gradientBorderEnabled ? undefined : SHADOW_MAP[shadowSize],
+          ...(frameBorderWidth > 0
+            ? {
+                border: `${frameBorderWidth}px ${frameBorderStyle} ${frameBorderColor}`,
+              }
+            : {}),
+        }}
+      >
+        {/* Image with filters */}
+        <img
+          src={imageSrc}
+          alt={alt}
+          className="block max-w-full h-auto"
+          style={{
+            filter: filterStyle,
+            borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
+          }}
+        />
+
+        {/* Vignette overlay */}
+        {vignette > 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
+              boxShadow: `inset 0 0 ${40 + vignette}px ${vignette / 2}px rgba(0,0,0,${vignette / 100})`,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+
+        {/* Tint overlay */}
+        {tintOpacity > 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundColor: tintColor,
+              opacity: tintOpacity / 100,
+              mixBlendMode: 'overlay',
+              borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+
+        {/* Noise/grain overlay */}
+        {noise > 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
+              opacity: noise / 100,
+              pointerEvents: 'none',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'repeat',
+              mixBlendMode: 'overlay',
+            }}
+          />
+        )}
+
+        {/* Overlay caption */}
+        {showCaption && isOverlayCaption && (
+          <div
+            className={cn(
+              'absolute left-0 right-0 px-3 py-2',
+              captionPosition === 'overlay-top' ? 'top-0' : 'bottom-0'
+            )}
+            style={{
+              background: captionBackground,
+              ...captionStyle,
+            }}
+          >
+            <div
+              style={
+                captionMaxWidth > 0
+                  ? {
+                      maxWidth: `${captionMaxWidth}px`,
+                      margin: captionAlignment === 'center' ? '0 auto' : undefined,
+                      marginLeft: captionAlignment === 'right' ? 'auto' : undefined,
+                    }
+                  : undefined
+              }
+            >
+              {displayCaption}
+              {displayDescription && (
+                <div
+                  style={{
+                    fontSize: `${Math.max(captionFontSize - 3, 9)}px`,
+                    opacity: 0.7,
+                    marginTop: '2px',
+                  }}
+                >
+                  {displayDescription}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+
     return (
       <div
         ref={ref}
@@ -193,7 +313,7 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
               style={{
                 position: 'absolute',
                 inset: 0,
-                backgroundImage: `url(${backgroundImage})`,
+                backgroundImage: `url(${safeBgImage})`,
                 backgroundPosition: 'center',
                 opacity: backgroundImageOpacity / 100,
                 ...imageFitStyle,
@@ -223,113 +343,10 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
           />
         )}
 
-        {/* Photo frame */}
-        <div
-          className="relative overflow-hidden"
-          style={{
-            borderRadius: `${innerBorderRadius}px`,
-            boxShadow: SHADOW_MAP[shadowSize],
-            ...(frameBorderWidth > 0
-              ? {
-                  border: `${frameBorderWidth}px ${frameBorderStyle} ${frameBorderColor}`,
-                }
-              : {}),
-          }}
-        >
-          {/* Image with filters */}
-          <img
-            src={imageSrc}
-            alt={alt}
-            className="block max-w-full h-auto"
-            style={{
-              filter: filterStyle,
-              borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
-            }}
-          />
-
-          {/* Vignette overlay */}
-          {vignette > 0 && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
-                boxShadow: `inset 0 0 ${40 + vignette}px ${vignette / 2}px rgba(0,0,0,${vignette / 100})`,
-                pointerEvents: 'none',
-              }}
-            />
-          )}
-
-          {/* Tint overlay */}
-          {tintOpacity > 0 && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                backgroundColor: tintColor,
-                opacity: tintOpacity / 100,
-                mixBlendMode: 'overlay',
-                borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
-                pointerEvents: 'none',
-              }}
-            />
-          )}
-
-          {/* Noise/grain overlay */}
-          {noise > 0 && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
-                opacity: noise / 100,
-                pointerEvents: 'none',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'repeat',
-                mixBlendMode: 'overlay',
-              }}
-            />
-          )}
-
-          {/* Overlay caption */}
-          {showCaption && isOverlayCaption && (
-            <div
-              className={cn(
-                'absolute left-0 right-0 px-3 py-2',
-                captionPosition === 'overlay-top' ? 'top-0' : 'bottom-0'
-              )}
-              style={{
-                background: captionBackground,
-                ...captionStyle,
-              }}
-            >
-              <div
-                style={
-                  captionMaxWidth > 0
-                    ? {
-                        maxWidth: `${captionMaxWidth}px`,
-                        margin: captionAlignment === 'center' ? '0 auto' : undefined,
-                        marginLeft: captionAlignment === 'right' ? 'auto' : undefined,
-                      }
-                    : undefined
-                }
-              >
-                {displayCaption}
-                {displayDescription && (
-                  <div
-                    style={{
-                      fontSize: `${Math.max(captionFontSize - 3, 9)}px`,
-                      opacity: 0.7,
-                      marginTop: '2px',
-                    }}
-                  >
-                    {displayDescription}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Device frame wrapper + gradient border + photo frame */}
+        <DeviceFrameWrapper frame={deviceFrame}>
+          {gradientBorderStyle ? <div style={gradientBorderStyle}>{photoFrame}</div> : photoFrame}
+        </DeviceFrameWrapper>
 
         {/* Below caption */}
         {showCaption && !isOverlayCaption && (
@@ -360,6 +377,9 @@ const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
             </div>
           </div>
         )}
+
+        {/* Annotations */}
+        <AnnotationOverlay annotations={annotations} />
 
         {/* Watermark */}
         {watermarkText && (
