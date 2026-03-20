@@ -109,6 +109,35 @@ export const WindowSection: React.FC<{
         </>
       )}
 
+      {settings.windowStyle === 'linux-gnome' && (
+        <>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Top bar</span>
+            <Switch
+              checked={settings.showGnomeTopBar}
+              onCheckedChange={(v) => updateSettings({ showGnomeTopBar: v })}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Dash</span>
+            <Switch
+              checked={settings.showGnomeDash}
+              onCheckedChange={(v) => updateSettings({ showGnomeDash: v })}
+            />
+          </div>
+        </>
+      )}
+
+      {settings.windowStyle === 'linux-kde' && (
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">Panel</span>
+          <Switch
+            checked={settings.showKdePanel}
+            onCheckedChange={(v) => updateSettings({ showKdePanel: v })}
+          />
+        </div>
+      )}
+
       {settings.windowStyle === 'windows' && (
         <>
           <div>
