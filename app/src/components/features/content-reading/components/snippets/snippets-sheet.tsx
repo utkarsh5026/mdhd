@@ -18,16 +18,12 @@ import type {
   SnippetType,
   VideoSnippet,
 } from '@/services/markdown/snippets';
+import { tryCatch } from '@/utils/functions/error';
 
 export type ActiveTab = SnippetType;
 
-function domainOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-}
+const domainOf = (url: string): string =>
+  tryCatch(() => new URL(url).hostname.replace(/^www\./, ''), url);
 
 interface SectionDividerProps {
   sectionTitle: string;

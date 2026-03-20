@@ -175,3 +175,33 @@ export async function attemptAsync<T, E = Error>(fn: () => Promise<T>): Promise<
     .then((data) => [null, data] as SafeResult<T, E>)
     .catch((error) => [error as E, null] as SafeResult<T, E>);
 }
+
+/**
+ * Wraps a sync function call, returning the fallback value on error.
+ * Use when you just need a fallback and don't care about the error.
+ *
+ * @example
+ * const parsed = tryCatch(() => JSON.parse(raw), defaultValue);
+ */
+export const tryCatch = <T>(fn: () => T, fallback: T): T => {
+  try {
+    return fn();
+  } catch {
+    return fallback;
+  }
+};
+
+/**
+ * Wraps an async function call, returning the fallback value on error.
+ * Use when you just need a fallback and don't care about the error.
+ *
+ * @example
+ * const file = await tryAsync(() => loadFile(id), null);
+ */
+export const tryAsync = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+  try {
+    return await fn();
+  } catch {
+    return fallback;
+  }
+};

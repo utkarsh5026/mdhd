@@ -5,6 +5,7 @@ import type { TextSizeScale } from '@/components/features/markdown-render/utils/
 import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 import type { FontFamily } from '@/lib/font';
 import { loadFont } from '@/lib/font-loader';
+import { tryCatch } from '@/utils/functions/error';
 
 export type { TextSizeScale };
 
@@ -49,12 +50,8 @@ const loadInitialSettings = (): ReadingSettings => {
   const savedSettings = localStorage.getItem('reading-settings');
   if (!savedSettings) return DEFAULT_SETTINGS;
 
-  try {
-    const parsed = JSON.parse(savedSettings);
-    return { ...DEFAULT_SETTINGS, ...parsed };
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
+  const parsed = tryCatch(() => JSON.parse(savedSettings), null);
+  return parsed ? { ...DEFAULT_SETTINGS, ...parsed } : DEFAULT_SETTINGS;
 };
 
 const initialSettings = loadInitialSettings();

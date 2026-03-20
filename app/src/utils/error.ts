@@ -1,6 +1,1 @@
-export const parseError = (error: unknown, fallback?: string) => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return fallback ?? String(error);
-};
+export { attempt, attemptAsync, parseError, tryAsync, tryCatch } from '@/utils/functions/error';
