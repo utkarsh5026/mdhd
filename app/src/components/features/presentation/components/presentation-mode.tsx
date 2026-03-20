@@ -1,12 +1,23 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo } from 'react';
 import { useSwipeable } from 'react-swipeable';
 
 import type { MarkdownSection } from '@/services/section/parsing';
 
-import { usePresentationActions, usePresentationShowNotes } from '../store/presentation-store';
+import { useControlsVisibility } from '../hooks/use-controls-visibility';
+import { useSlideKeyboard } from '../hooks/use-slide-keyboard';
+import { useSlideNavigation } from '../hooks/use-slide-navigation';
+import {
+  usePresentationActions,
+  usePresentationShowFilmstrip,
+  usePresentationShowNotes,
+  usePresentationShowOverview,
+  usePresentationStartTime,
+} from '../store/presentation-store';
 import PresentationSlide from './presentation-slide';
 import PresenterNotesPanel from './presenter-notes-panel';
 import SlideControls from './slide-controls';
+import SlideFilmstrip from './slide-filmstrip';
+import SlideOverview from './slide-overview';
 
 interface PresentationModeProps {
   sections: MarkdownSection[];
@@ -16,80 +27,25 @@ interface PresentationModeProps {
 
 const PresentationMode: React.FC<PresentationModeProps> = memo(
   ({ sections, initialSlide = 0, onExit }) => {
-    const [currentSlide, setCurrentSlide] = useState(initialSlide);
-    const [isTransitioning, setIsTransitioning] = useState(false);
-    const transitionRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const {
+      currentSlide,
+      currentSection,
+      total,
+      isTransitioning,
+      direction,
+      goNext,
+      goPrev,
+      jumpToSlide,
+    } = useSlideNavigation({ sections, initialSlide });
+    const { controlsVisible } = useControlsVisibility(currentSlide);
+    const { handleExit } = useSlideKeyboard({ goNext, goPrev, onExit });
 
     const showNotes = usePresentationShowNotes();
-    const { toggleNotes, stopPresentation } = usePresentationActions();
+    const showOverview = usePresentationShowOverview();
+    const showFilmstrip = usePresentationShowFilmstrip();
+    const startTime = usePresentationStartTime();
+    const { toggleNotes, toggleOverview, toggleFilmstrip } = usePresentationActions();
 
-    const total = sections.length;
-    const currentSection = sections[currentSlide];
-
-    const navigateTo = useCallback(
-      (index: number) => {
-        if (index < 0 || index >= total || index === currentSlide) return;
-        setIsTransitioning(true);
-        if (transitionRef.current) clearTimeout(transitionRef.current);
-        transitionRef.current = setTimeout(() => {
-          setCurrentSlide(index);
-          setIsTransitioning(false);
-        }, 150);
-      },
-      [total, currentSlide]
-    );
-
-    const goNext = useCallback(() => navigateTo(currentSlide + 1), [navigateTo, currentSlide]);
-    const goPrev = useCallback(() => navigateTo(currentSlide - 1), [navigateTo, currentSlide]);
-
-    const handleExit = useCallback(() => {
-      stopPresentation();
-      onExit();
-    }, [stopPresentation, onExit]);
-
-    // Keyboard navigation
-    useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        // Don't capture if inside an input
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-          return;
-        }
-
-        switch (e.key) {
-          case 'ArrowRight':
-          case 'ArrowDown':
-          case ' ':
-            e.preventDefault();
-            goNext();
-            break;
-          case 'ArrowLeft':
-          case 'ArrowUp':
-            e.preventDefault();
-            goPrev();
-            break;
-          case 'Escape':
-            e.preventDefault();
-            handleExit();
-            break;
-          case 'n':
-          case 'N':
-            e.preventDefault();
-            toggleNotes();
-            break;
-        }
-      };
-
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [goNext, goPrev, handleExit, toggleNotes]);
-
-    useEffect(() => {
-      return () => {
-        if (transitionRef.current) clearTimeout(transitionRef.current);
-      };
-    }, []);
-
-    // Swipe support
     const swipeHandlers = useSwipeable({
       onSwipedLeft: goNext,
       onSwipedRight: goPrev,
@@ -106,22 +62,51 @@ const PresentationMode: React.FC<PresentationModeProps> = memo(
       <div className="fixed inset-0 z-60 flex flex-col bg-background text-foreground">
         {/* Slide area */}
         <div {...swipeHandlers} className="flex-1 min-h-0 overflow-hidden">
-          <PresentationSlide section={currentSection} isTransitioning={isTransitioning} />
+          <PresentationSlide
+            section={currentSection}
+            isTransitioning={isTransitioning}
+            direction={direction}
+          />
         </div>
 
         {/* Presenter notes */}
         <PresenterNotesPanel section={currentSection} visible={showNotes} />
 
-        {/* Controls bar */}
-        <SlideControls
+        {/* Slide filmstrip */}
+        <SlideFilmstrip
+          sections={sections}
           currentIndex={currentSlide}
-          total={total}
-          showNotes={showNotes}
-          onPrevious={goPrev}
-          onNext={goNext}
-          onToggleNotes={toggleNotes}
-          onExit={handleExit}
+          visible={controlsVisible && showFilmstrip}
+          onSelect={jumpToSlide}
         />
+
+        {/* Controls bar with progress — absolutely positioned so it doesn't reserve layout space when hidden */}
+        <div className="absolute bottom-0 left-0 right-0 z-10">
+          <SlideControls
+            currentIndex={currentSlide}
+            total={total}
+            showNotes={showNotes}
+            showFilmstrip={showFilmstrip}
+            startTime={startTime}
+            visible={controlsVisible}
+            onPrevious={goPrev}
+            onNext={goNext}
+            onToggleNotes={toggleNotes}
+            onToggleOverview={toggleOverview}
+            onToggleFilmstrip={toggleFilmstrip}
+            onExit={handleExit}
+          />
+        </div>
+
+        {/* Slide overview grid */}
+        {showOverview && (
+          <SlideOverview
+            sections={sections}
+            currentIndex={currentSlide}
+            onSelect={jumpToSlide}
+            onClose={toggleOverview}
+          />
+        )}
       </div>
     );
   }

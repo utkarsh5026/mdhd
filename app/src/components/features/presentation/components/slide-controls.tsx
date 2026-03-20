@@ -1,88 +1,184 @@
-import { ChevronLeft, ChevronRight, StickyNote, X } from 'lucide-react';
-import { memo } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  GalleryHorizontal,
+  Grid3X3,
+  StickyNote,
+  X,
+} from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
 
 import { cn } from '@/lib/utils';
+
+interface ControlButtonProps {
+  onClick: () => void;
+  icon: LucideIcon;
+  label?: string;
+  ariaLabel?: string;
+  disabled?: boolean;
+  active?: boolean;
+}
+
+const ControlButton: React.FC<ControlButtonProps> = ({
+  onClick,
+  icon: Icon,
+  label,
+  ariaLabel,
+  disabled,
+  active,
+}) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={ariaLabel}
+    className={cn(
+      'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors duration-200',
+      disabled
+        ? 'text-foreground/12 cursor-not-allowed'
+        : active
+          ? 'text-primary bg-primary/8'
+          : 'text-muted-foreground/60 hover:text-foreground hover:bg-foreground/6'
+    )}
+  >
+    <Icon className="h-3.5 w-3.5" />
+    {label && <span className="hidden sm:inline">{label}</span>}
+  </button>
+);
 
 interface SlideControlsProps {
   currentIndex: number;
   total: number;
   showNotes: boolean;
+  showFilmstrip: boolean;
+  startTime: number | null;
+  visible: boolean;
   onPrevious: () => void;
   onNext: () => void;
   onToggleNotes: () => void;
+  onToggleOverview: () => void;
+  onToggleFilmstrip: () => void;
   onExit: () => void;
 }
 
+function formatElapsed(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
 const SlideControls: React.FC<SlideControlsProps> = memo(
-  ({ currentIndex, total, showNotes, onPrevious, onNext, onToggleNotes, onExit }) => {
+  ({
+    currentIndex,
+    total,
+    showNotes,
+    showFilmstrip,
+    startTime,
+    visible,
+    onPrevious,
+    onNext,
+    onToggleNotes,
+    onToggleOverview,
+    onToggleFilmstrip,
+    onExit,
+  }) => {
     const canGoPrev = currentIndex > 0;
     const canGoNext = currentIndex < total - 1;
+    const progress = total > 1 ? ((currentIndex + 1) / total) * 100 : 100;
+
+    const [elapsed, setElapsed] = useState(0);
+    useEffect(() => {
+      if (!startTime) return;
+      setElapsed(Date.now() - startTime);
+      const interval = setInterval(() => setElapsed(Date.now() - startTime), 1000);
+      return () => clearInterval(interval);
+    }, [startTime]);
 
     return (
-      <div className="flex items-center justify-between px-6 py-3 bg-background/90 backdrop-blur-sm border-t border-border/20">
-        {/* Left: exit */}
-        <button
-          onClick={onExit}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm',
-            'text-muted-foreground hover:text-red-400 hover:bg-red-400/10',
-            'transition-colors duration-150'
-          )}
-        >
-          <X className="h-4 w-4" />
-          <span className="hidden sm:inline">Exit</span>
-        </button>
-
-        {/* Center: navigation + counter */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onPrevious}
-            disabled={!canGoPrev}
-            aria-label="Previous slide"
-            className={cn(
-              'p-1.5 rounded-lg transition-colors duration-150',
-              canGoPrev
-                ? 'text-foreground/60 hover:text-foreground hover:bg-foreground/8'
-                : 'text-foreground/20 cursor-not-allowed'
-            )}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-
-          <span className="text-sm font-medium text-foreground/70 tabular-nums min-w-[4rem] text-center">
-            {currentIndex + 1} / {total}
-          </span>
-
-          <button
-            onClick={onNext}
-            disabled={!canGoNext}
-            aria-label="Next slide"
-            className={cn(
-              'p-1.5 rounded-lg transition-colors duration-150',
-              canGoNext
-                ? 'text-foreground/60 hover:text-foreground hover:bg-foreground/8'
-                : 'text-foreground/20 cursor-not-allowed'
-            )}
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
+      <div
+        className={cn(
+          'transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'
+        )}
+      >
+        {/* Progress bar */}
+        <div className="h-0.5 bg-foreground/4">
+          <div
+            className="h-full bg-primary/50 transition-all duration-700 ease-out"
+            style={{ width: `${progress}%` }}
+          />
         </div>
 
-        {/* Right: notes toggle */}
-        <button
-          onClick={onToggleNotes}
-          aria-label="Toggle presenter notes"
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm',
-            'transition-colors duration-150',
-            showNotes
-              ? 'text-primary bg-primary/10'
-              : 'text-muted-foreground hover:text-foreground hover:bg-foreground/8'
-          )}
-        >
-          <StickyNote className="h-4 w-4" />
-          <span className="hidden sm:inline">Notes</span>
-        </button>
+        <div className="flex items-center justify-between px-5 py-2.5 bg-background/80 backdrop-blur-xl">
+          {/* Left: exit + timer */}
+          <div className="flex items-center gap-4 min-w-40">
+            <ControlButton onClick={onExit} icon={X} label="Exit" />
+
+            {startTime && (
+              <div className="flex items-center gap-1.5 text-muted-foreground/35">
+                <Clock className="h-3 w-3" />
+                <span className="text-xs tabular-nums font-mono">{formatElapsed(elapsed)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Center: navigation */}
+          <div className="flex items-center gap-1">
+            <ControlButton
+              onClick={onPrevious}
+              disabled={!canGoPrev}
+              icon={ChevronLeft}
+              ariaLabel="Previous slide"
+            />
+
+            <button
+              onClick={onToggleOverview}
+              className={cn(
+                'text-[13px] font-medium tabular-nums min-w-18 text-center',
+                'px-3 py-1.5 rounded-lg transition-colors duration-200',
+                'text-foreground/50 hover:text-foreground hover:bg-foreground/6'
+              )}
+              title="Slide overview (G)"
+            >
+              {currentIndex + 1}
+              <span className="text-foreground/20 mx-1">/</span>
+              {total}
+            </button>
+
+            <ControlButton
+              onClick={onNext}
+              disabled={!canGoNext}
+              icon={ChevronRight}
+              ariaLabel="Next slide"
+            />
+          </div>
+
+          {/* Right: grid + notes */}
+          <div className="flex items-center gap-1 min-w-40 justify-end">
+            <ControlButton
+              onClick={onToggleFilmstrip}
+              icon={GalleryHorizontal}
+              label="Slides"
+              ariaLabel="Toggle slide filmstrip"
+              active={showFilmstrip}
+            />
+            <ControlButton
+              onClick={onToggleOverview}
+              icon={Grid3X3}
+              label="Grid"
+              ariaLabel="Slide overview"
+            />
+            <ControlButton
+              onClick={onToggleNotes}
+              icon={StickyNote}
+              label="Notes"
+              ariaLabel="Toggle presenter notes"
+              active={showNotes}
+            />
+          </div>
+        </div>
       </div>
     );
   }
