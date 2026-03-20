@@ -1,4 +1,13 @@
-import { ChevronLeft, ChevronRight, Layers, List, Maximize, Pencil, Settings } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Layers,
+  List,
+  Maximize,
+  Pencil,
+  Settings,
+} from 'lucide-react';
 import React, { memo, useCallback, useMemo, useState } from 'react';
 
 import { LoadingState } from '@/components/features/content-reading/components/layout';
@@ -51,6 +60,7 @@ interface InlineHeaderProps {
   onSettings: () => void;
   onMenu: () => void;
   onSnippets: () => void;
+  onPdfExport: () => void;
   onPrevious: () => void;
   onNext: () => void;
   onEditSection?: () => void;
@@ -67,6 +77,7 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
     onSettings,
     onMenu,
     onSnippets,
+    onPdfExport,
     onPrevious,
     onNext,
     onEditSection,
@@ -115,6 +126,7 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
                 <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
               </>
             )}
+            <HeaderBtn tooltip="Export to PDF" icon={FileText} onClick={onPdfExport} />
             <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
             <HeaderBtn tooltip="Reading Settings" icon={Settings} onClick={onSettings} />
             <HeaderBtn tooltip="Snippets" icon={Layers} onClick={onSnippets} />
@@ -216,12 +228,20 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
           sourcePath={tab.sourcePath}
           viewMode="preview"
           onSectionClick={handlePreviewSectionClick}
-          headerSlot={({ onSettings, onMenu, onSnippets, breadcrumb, mobileBreadcrumb }) => (
+          headerSlot={({
+            onSettings,
+            onMenu,
+            onSnippets,
+            onPdfExport,
+            breadcrumb,
+            mobileBreadcrumb,
+          }) => (
             <InlineHeader
               onFullscreen={onEnterFullscreen}
               onSettings={onSettings}
               onMenu={onMenu}
               onSnippets={onSnippets}
+              onPdfExport={onPdfExport}
               onPrevious={goToPrevious}
               onNext={goToNext}
               onEditSection={() => setEditingSectionIndex(currentIndex)}

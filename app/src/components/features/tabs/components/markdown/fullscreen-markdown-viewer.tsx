@@ -3,6 +3,11 @@ import React, { memo, useCallback, useEffect } from 'react';
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import ReadingUI from '@/components/features/content-reading/components/reading-ui';
 import { useZenMode } from '@/components/features/content-reading/hooks/use-zen-mode';
+import {
+  PresentationMode,
+  usePresentationActions,
+  usePresentationActive,
+} from '@/components/features/presentation';
 
 import { useTabNavigation } from '../../hooks/use-tab-navigation';
 import { useTabsStore } from '../../store/tabs-store';
@@ -51,6 +56,13 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
       (v: boolean) => updateTabReadingState(tabId, { isZenMode: v, zenControlsVisible: false }),
       [tabId, updateTabReadingState]
     );
+
+    const isPresentationActive = usePresentationActive();
+    const { startPresentation } = usePresentationActions();
+
+    const handleStartPresentation = useCallback(() => {
+      startPresentation();
+    }, [startPresentation]);
 
     const { handleZenTap, handleZenDoubleTap } = useZenMode({
       isZenMode,
@@ -122,7 +134,12 @@ const FullscreenMarkdownViewer: React.FC<FullscreenMarkdownViewerProps> = memo(
           onZenTap={handleZenTap}
           onZenDoubleTap={handleZenDoubleTap}
           onExit={onExit}
+          onPresent={handleStartPresentation}
         />
+
+        {isPresentationActive && (
+          <PresentationMode sections={sections} initialSlide={currentIndex} onExit={onExit} />
+        )}
       </div>
     );
   }
