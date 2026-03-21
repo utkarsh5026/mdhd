@@ -4,8 +4,8 @@ import React, { memo, useCallback } from 'react';
 
 import FilesPanel from '@/components/features/file-explorer/components/files-panel';
 import OutlinePanel from '@/components/features/file-explorer/components/outline-panel';
-import { TooltipButton } from '@/components/shared/ui/tooltip-button';
 import { Button } from '@/components/ui/button';
+import { TooltipButton } from '@/components/ui/tooltip-button';
 import { useLocalStorage } from '@/hooks';
 import { cn } from '@/lib/utils';
 import type { StoredFile } from '@/services/indexeddb';
