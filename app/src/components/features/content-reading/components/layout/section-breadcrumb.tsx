@@ -1,10 +1,15 @@
-import * as Popover from '@radix-ui/react-popover';
 import { Check, ChevronDown, ChevronRight, File, Folder } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VscMarkdown, VscSymbolClass, VscSymbolMethod, VscSymbolNamespace } from 'react-icons/vsc';
 
 import { useFileTree } from '@/components/features/file-explorer/store/file-store';
 import { useTabsActions } from '@/components/features/tabs/store/hooks';
+import {
+  ListPopover,
+  ListPopoverContent,
+  ListPopoverItem,
+  ListPopoverTrigger,
+} from '@/components/ui/list-popover';
 import { cn } from '@/lib/utils';
 import { fileStorageDB, type FileTreeNode } from '@/services/indexeddb';
 import { getAncestors, getDirectChildren } from '@/services/section/queries';
@@ -88,19 +93,6 @@ interface PathNodeDropdownProps {
   variant?: 'standalone' | 'inline' | 'mobile';
 }
 
-/**
- * Renders a single file-system path segment as a breadcrumb button.
- *
- * Directories open a popover listing their children; files open a popover
- * listing their siblings. Clicking a file entry invokes `onOpenFile`.
- *
- * @component
- * @param props.segment      - The resolved path node and its sibling list.
- * @param props.onOpenFile   - Called with the selected `FileTreeNode` when a file is chosen.
- * @param props.isOpen       - Whether this segment's popover is currently open.
- * @param props.onOpenChange - Callback to open or close this segment's popover.
- * @param props.variant      - Visual/layout variant inherited from `SectionBreadcrumb`.
- */
 const PathNodeDropdown: React.FC<PathNodeDropdownProps> = memo(
   ({ segment, onOpenFile, isOpen, onOpenChange, variant = 'standalone' }) => {
     const { node, siblings } = segment;
@@ -122,8 +114,8 @@ const PathNodeDropdown: React.FC<PathNodeDropdownProps> = memo(
     const IconComp = isDir ? Folder : File;
 
     return (
-      <Popover.Root open={isOpen} onOpenChange={hasDropdown ? onOpenChange : undefined}>
-        <Popover.Trigger asChild>
+      <ListPopover open={isOpen} onOpenChange={hasDropdown ? onOpenChange : undefined}>
+        <ListPopoverTrigger asChild>
           <button
             className={cn(
               'flex items-center gap-1 rounded px-1 py-0.5 font-cascadia-code',
@@ -160,61 +152,38 @@ const PathNodeDropdown: React.FC<PathNodeDropdownProps> = memo(
               />
             )}
           </button>
-        </Popover.Trigger>
+        </ListPopoverTrigger>
 
         {hasDropdown && (
-          <Popover.Portal>
-            <Popover.Content
-              align="start"
-              sideOffset={6}
-              className={cn(
-                'z-200 min-w-52 max-w-72 rounded-2xl border border-border',
-                'bg-popover text-popover-foreground shadow-lg font-cascadia-code backdrop-blur-2xl',
-                'animate-in fade-in-0 zoom-in-95',
-                'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95'
-              )}
-            >
-              <div className="px-3 py-2 border-b border-border/50">
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                  {isDir ? 'Contents' : 'Siblings'}
-                </span>
-              </div>
+          <ListPopoverContent title={isDir ? 'Contents' : 'Siblings'}>
+            {dropdownItems.map((child) => {
+              const ChildIcon = child.type === 'directory' ? Folder : File;
+              const isActive = child.id === node.id;
+              const isClickable = child.type === 'file';
 
-              <div className="max-h-64 overflow-y-auto py-1 scrollbar-none">
-                {dropdownItems.map((child) => {
-                  const ChildIcon = child.type === 'directory' ? Folder : File;
-                  const isActive = child.id === node.id;
-                  const isClickable = child.type === 'file';
-
-                  return (
-                    <button
-                      key={child.id}
-                      onClick={() => handleSelect(child)}
-                      disabled={!isClickable}
+              return (
+                <ListPopoverItem
+                  key={child.id}
+                  isActive={isActive}
+                  disabled={!isClickable}
+                  onClick={() => handleSelect(child)}
+                  icon={
+                    <ChildIcon
                       className={cn(
-                        'w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left',
-                        isClickable
-                          ? 'transition-colors hover:bg-accent/50'
-                          : 'opacity-50 cursor-default',
-                        isActive ? 'bg-primary/10 text-primary font-medium' : 'text-foreground'
+                        'h-3.5 w-3.5 shrink-0',
+                        child.type === 'directory' ? 'text-muted-foreground' : 'text-primary'
                       )}
-                    >
-                      <ChildIcon
-                        className={cn(
-                          'h-3.5 w-3.5 shrink-0',
-                          child.type === 'directory' ? 'text-muted-foreground' : 'text-primary'
-                        )}
-                      />
-                      <span className="flex-1 truncate">{child.name}</span>
-                      {isActive && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </Popover.Content>
-          </Popover.Portal>
+                    />
+                  }
+                  suffix={isActive ? <Check className="h-3.5 w-3.5 shrink-0 text-primary" /> : null}
+                >
+                  {child.name}
+                </ListPopoverItem>
+              );
+            })}
+          </ListPopoverContent>
         )}
-      </Popover.Root>
+      </ListPopover>
     );
   }
 );
@@ -232,21 +201,6 @@ interface BreadcrumbDropdownProps {
   variant?: 'standalone' | 'inline' | 'mobile';
 }
 
-/**
- * Renders a single section-heading as a breadcrumb button with a subsection popover.
- *
- * When `children` is non-empty a chevron and popover list are shown. The active
- * section is highlighted. Selecting an entry calls `onNavigate` with its index.
- *
- * @component
- * @param props.item         - The section and its index to display as this crumb.
- * @param props.children     - Direct child sections shown in the dropdown.
- * @param props.currentIndex - The currently active section index (for highlight logic).
- * @param props.onNavigate   - Called with the target section index when a child is selected.
- * @param props.isOpen       - Whether this crumb's popover is currently open.
- * @param props.onOpenChange - Callback to open or close this crumb's popover.
- * @param props.variant      - Visual/layout variant inherited from `SectionBreadcrumb`.
- */
 const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
   ({ item, children, currentIndex, onNavigate, isOpen, onOpenChange, variant = 'standalone' }) => {
     const Icon = LEVEL_ICONS[item.section.level] ?? VscMarkdown;
@@ -266,8 +220,8 @@ const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
     const childLevelLabel = childLevel === 1 ? 'H1' : childLevel === 2 ? 'H2' : `H${childLevel}`;
 
     return (
-      <Popover.Root open={isOpen} onOpenChange={hasChildren ? onOpenChange : undefined}>
-        <Popover.Trigger asChild>
+      <ListPopover open={isOpen} onOpenChange={hasChildren ? onOpenChange : undefined}>
+        <ListPopoverTrigger asChild>
           <button
             className={cn(
               'flex items-center gap-1 rounded px-1 py-0.5 font-cascadia-code',
@@ -299,79 +253,36 @@ const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
               />
             )}
           </button>
-        </Popover.Trigger>
+        </ListPopoverTrigger>
 
         {hasChildren && (
-          <Popover.Portal>
-            <Popover.Content
-              align="start"
-              sideOffset={6}
-              className={cn(
-                'z-200 min-w-52 max-w-72 rounded-2xl border border-border',
-                'bg-popover text-popover-foreground shadow-lg font-cascadia-code backdrop-blur-2xl',
-                'animate-in fade-in-0 zoom-in-95',
-                'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95'
-              )}
-            >
-              <div className="px-3 py-2 border-b border-border/50">
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                  {childLevelLabel} subsections
-                </span>
-              </div>
+          <ListPopoverContent title={`${childLevelLabel} subsections`}>
+            {children.map((child) => {
+              const ChildIcon = LEVEL_ICONS[child.section.level] ?? VscMarkdown;
+              const childColor = LEVEL_COLORS[child.section.level] ?? 'text-muted-foreground';
+              const isActive = child.index === currentIndex;
 
-              <div className="max-h-64 overflow-y-auto py-1 scrollbar-none">
-                {children.map((child) => {
-                  const ChildIcon = LEVEL_ICONS[child.section.level] ?? VscMarkdown;
-                  const childColor = LEVEL_COLORS[child.section.level] ?? 'text-muted-foreground';
-                  const isActive = child.index === currentIndex;
-
-                  return (
-                    <button
-                      key={child.index}
-                      onClick={() => handleSelect(child.index)}
-                      className={cn(
-                        'w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left',
-                        'transition-colors',
-                        isActive
-                          ? 'bg-primary/10 text-primary font-medium'
-                          : 'text-foreground hover:bg-accent/50'
-                      )}
-                    >
-                      <ChildIcon className={cn('h-3.5 w-3.5 shrink-0', childColor)} />
-                      <span className="flex-1 truncate">{child.section.title}</span>
-                      {isActive && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </Popover.Content>
-          </Popover.Portal>
+              return (
+                <ListPopoverItem
+                  key={child.index}
+                  isActive={isActive}
+                  onClick={() => handleSelect(child.index)}
+                  icon={<ChildIcon className={cn('h-3.5 w-3.5 shrink-0', childColor)} />}
+                  suffix={isActive ? <Check className="h-3.5 w-3.5 shrink-0 text-primary" /> : null}
+                >
+                  {child.section.title}
+                </ListPopoverItem>
+              );
+            })}
+          </ListPopoverContent>
         )}
-      </Popover.Root>
+      </ListPopover>
     );
   }
 );
 
 BreadcrumbDropdown.displayName = 'BreadcrumbDropdown';
 
-/**
- * Compound breadcrumb navigation showing the file-system path and the heading
- * ancestor chain for the currently active section.
- *
- * File-path segments each open a popover for navigating to sibling files or
- * directory contents. Section segments open a popover listing direct child
- * subsections. Returns `null` when there is nothing meaningful to display.
- *
- * Scrolls to the trailing edge on breadcrumb change when `variant` is not
- * `'standalone'`.
- *
- * @component
- * @param props.sections      - Flat array of all parsed markdown sections.
- * @param props.currentIndex  - Index of the section currently in view.
- * @param props.onNavigate    - Called with a section index when the user selects one.
- * @param props.sourcePath    - Optional slash-separated path of the open file.
- * @param props.variant       - Visual/layout variant; defaults to `'standalone'`.
- */
 const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
   ({ sections, currentIndex, onNavigate, sourcePath, variant = 'standalone' }) => {
     const [openSectionIndex, setOpenSectionIndex] = useState<number | null>(null);
