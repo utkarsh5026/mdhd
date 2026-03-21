@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import PhotoImageExportDialog from '@/components/features/image-export/components/photo-image-export-dialog';
+import { useExportSnippets } from '@/components/features/image-export/context/export-snippets-context';
 import { DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import ExportContextMenu from '@/components/ui/export-context-menu';
 import { cn } from '@/lib/utils';
@@ -50,6 +51,7 @@ const ImageRender: React.FC<React.ComponentPropsWithoutRef<'img'>> = ({
   const figureRef = useRef<HTMLElement>(null);
 
   const altText = alt ?? 'Image';
+  const { imageSnippets } = useExportSnippets();
   const isVideo = isVideoSrc(src);
 
   const LoadingIcon = isVideo ? PlayCircleIcon : ImageIcon;
@@ -302,6 +304,7 @@ const ImageRender: React.FC<React.ComponentPropsWithoutRef<'img'>> = ({
           onOpenChange={setImageExportOpen}
           src={src}
           alt={altText}
+          imageSnippets={imageSnippets}
         />
       )}
     </>

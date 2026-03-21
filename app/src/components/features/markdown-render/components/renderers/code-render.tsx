@@ -3,10 +3,13 @@ import { Check, Copy } from 'lucide-react';
 import React, { useMemo, useRef, useState } from 'react';
 
 import { CodeImageExportDialog } from '@/components/features/image-export';
-import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
-import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
-import { getThemeBackground } from '@/components/features/settings/store/codemirror-themes';
-import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
+import { useExportSnippets } from '@/components/features/image-export/context/export-snippets-context';
+import {
+  getThemeBackground,
+  useCodeDisplaySettingsStore,
+  useCodeThemeStore,
+  useReadingSettingsStore,
+} from '@/components/features/settings';
 import { Button } from '@/components/ui/button';
 import ExportContextMenu from '@/components/ui/export-context-menu';
 import { cn } from '@/lib/utils';
@@ -52,6 +55,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
   const { selectedTheme } = useCodeThemeStore();
   const { settings: displaySettings } = useCodeDisplaySettingsStore();
   const textSizeScale = useReadingSettingsStore((s) => s.settings.textSizeScale);
+  const { codeSnippets } = useExportSnippets();
 
   const codeContent = useMemo(() => {
     return typeof children === 'string'
@@ -175,6 +179,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
           onOpenChange={setImageDialogOpen}
           code={codeContent}
           language={language}
+          codeSnippets={codeSnippets}
         />
       )}
     </>
