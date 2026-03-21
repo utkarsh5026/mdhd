@@ -1,6 +1,7 @@
 import ReadingSettingsSheet from './components/reading-settings-selector';
+import SettingsPanel from './components/settings-panel';
 
-export { ReadingSettingsSheet };
+export { ReadingSettingsSheet, SettingsPanel };
 
 export type { CodeDisplaySettings } from './store/code-display-settings';
 export { useCodeDisplaySettingsStore } from './store/code-display-settings';

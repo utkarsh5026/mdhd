@@ -76,7 +76,7 @@ const Homepage = () => {
         {sidebarPosition === 'left' && (
           <ReactErrorBoundary>
             <Sidebar
-              className="w-64 border-r border-border/40"
+              className="w-80 border-r border-border/40"
               onFileSelect={handleFileSelect}
               position={sidebarPosition}
               onPositionChange={setSidebarPosition}
@@ -92,7 +92,7 @@ const Homepage = () => {
         {sidebarPosition === 'right' && (
           <ReactErrorBoundary>
             <Sidebar
-              className="w-64 border-l border-border/40"
+              className="w-80 border-l border-border/40"
               onFileSelect={handleFileSelect}
               position={sidebarPosition}
               onPositionChange={setSidebarPosition}

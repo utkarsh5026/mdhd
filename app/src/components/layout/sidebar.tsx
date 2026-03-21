@@ -1,10 +1,13 @@
 import type { LucideIcon } from 'lucide-react';
-import { FolderTree, Layers, List } from 'lucide-react';
-import React, { memo, useCallback } from 'react';
+import { FolderTree, Layers, List, Search, Settings } from 'lucide-react';
+import React, { memo, useCallback, useEffect } from 'react';
+import { FaGithub } from 'react-icons/fa';
 
+import SearchPanel from '@/components/features/content-reading/components/search/search-panel';
 import SnippetsPanel from '@/components/features/content-reading/components/snippets/snippets-panel';
 import FilesPanel from '@/components/features/file-explorer/components/files-panel';
 import OutlinePanel from '@/components/features/file-explorer/components/outline-panel';
+import { SettingsPanel } from '@/components/features/settings';
 import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
@@ -39,6 +42,8 @@ const DEFAULT_PANELS: Panel[] = [
   { id: 'files', icon: FolderTree, tooltip: 'Files', content: <FilesPanel /> },
   { id: 'outline', icon: List, tooltip: 'Outline', content: <OutlinePanel /> },
   { id: 'snippets', icon: Layers, tooltip: 'Snippets', content: <SnippetsPanel /> },
+  { id: 'search', icon: Search, tooltip: 'Search', content: <SearchPanel /> },
+  { id: 'settings', icon: Settings, tooltip: 'Settings', content: <SettingsPanel /> },
 ];
 
 const Sidebar: React.FC<SidebarProps> = memo(
@@ -46,8 +51,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
     const panels = onFileSelect
       ? [
           { ...DEFAULT_PANELS[0], content: <FilesPanel onFileSelect={onFileSelect} /> },
-          DEFAULT_PANELS[1],
-          DEFAULT_PANELS[2],
+          ...DEFAULT_PANELS.slice(1),
         ]
       : DEFAULT_PANELS;
 
@@ -66,6 +70,16 @@ const Sidebar: React.FC<SidebarProps> = memo(
     const togglePosition = useCallback(() => {
       onPositionChange(position === 'left' ? 'right' : 'left');
     }, [position, onPositionChange]);
+
+    // Listen for external panel activation (e.g. Ctrl+F → search)
+    useEffect(() => {
+      const handleActivatePanel = (e: Event) => {
+        const panelId = (e as CustomEvent<string>).detail;
+        setActivePanel(panelId);
+      };
+      window.addEventListener('mdhd:activate-panel', handleActivatePanel);
+      return () => window.removeEventListener('mdhd:activate-panel', handleActivatePanel);
+    }, [setActivePanel]);
 
     const isPanelOpen = activePanel !== null;
     const activePanelDef = panels.find((p) => p.id === activePanel);
@@ -92,6 +106,22 @@ const Sidebar: React.FC<SidebarProps> = memo(
             />
           );
         })}
+
+        <div className="mt-auto flex flex-col items-center gap-1">
+          <TooltipButton
+            button={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => window.open('https://github.com/utkarsh5026/mdhd', '_blank')}
+              >
+                <FaGithub className="h-4 w-4" />
+              </Button>
+            }
+            tooltipText="GitHub"
+          />
+        </div>
       </div>
     );
 
