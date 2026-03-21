@@ -13,9 +13,18 @@ const clamp = (min: number, max: number, value: number) => Math.min(max, Math.ma
 
 export type { TextSizeScale };
 
+/** Controls which background source is active in reading mode. */
 export type ReadingBackgroundType = 'theme' | 'solid' | 'image';
+/** CSS `object-fit` mode (plus `tile`) used when a background image is active. */
 export type ReadingBackgroundFit = 'cover' | 'contain' | 'fill' | 'tile';
 
+/**
+ * All configurable background properties for reading mode.
+ *
+ * When `backgroundType` is `'theme'` the background color fields are ignored
+ * and the active app theme drives the canvas color. When `'solid'`, only
+ * `backgroundColor` applies. When `'image'`, the image fields take effect.
+ */
 export interface ReadingBackgroundSettings {
   backgroundType: ReadingBackgroundType;
   backgroundColor: string;
@@ -26,6 +35,7 @@ export interface ReadingBackgroundSettings {
   backgroundImageOverlayOpacity: number; // 0-80
 }
 
+/** The full set of user-configurable reading preferences persisted to localStorage. */
 export interface ReadingSettings {
   fontFamily: FontFamily;
   background: ReadingBackgroundSettings;
@@ -76,6 +86,15 @@ const DEFAULT_SETTINGS: ReadingSettings = {
   textSizeScale: 'base',
 };
 
+/**
+ * Loads reading settings from localStorage and merges them with `DEFAULT_SETTINGS`.
+ *
+ * Handles three edge cases: SSR (no `window`), missing key, and invalid JSON.
+ * Also deep-merges `background` so new fields added to `DEFAULT_BACKGROUND` are
+ * always present, and strips the legacy `customBackground` field.
+ *
+ * @returns The merged `ReadingSettings` to use as the store's initial state.
+ */
 const loadInitialSettings = (): ReadingSettings => {
   if (typeof window === 'undefined') return DEFAULT_SETTINGS;
 
@@ -103,6 +122,13 @@ if (typeof window !== 'undefined') {
   });
 }
 
+/**
+ * Applies a partial patch to `settings`, persists the result to localStorage,
+ * and returns the new store slice — eliminating the boilerplate repeated in every action.
+ *
+ * @param set - The Zustand `setState` function from the store creator.
+ * @param patch - A function that receives the current settings and returns the fields to update.
+ */
 const patchSettings = (
   set: StoreApi<ReadingSettingsState>['setState'],
   patch: (s: ReadingSettings) => Partial<ReadingSettings>

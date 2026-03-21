@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+/** User-configurable display toggles applied to all code blocks. */
 export interface CodeDisplaySettings {
   showLineNumbers: boolean;
   enableCodeFolding: boolean;
@@ -21,6 +22,12 @@ interface CodeDisplaySettingsStore {
   resetCodeDisplaySettings: () => void;
 }
 
+/**
+ * Zustand store for code block display preferences.
+ *
+ * Persists `settings` to localStorage under `'code-display-settings'`.
+ * Controls line numbers, code folding, and word wrap across all rendered code blocks.
+ */
 export const useCodeDisplaySettingsStore = create<CodeDisplaySettingsStore>()(
   persist(
     (set) => ({

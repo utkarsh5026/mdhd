@@ -18,6 +18,7 @@ export const codeThemes = {
   },
 } as const;
 
+/** Union of every valid code-theme identifier across all categories. */
 export type ThemeKey = {
   [K in keyof typeof codeThemes]: keyof (typeof codeThemes)[K];
 }[keyof typeof codeThemes];
@@ -30,6 +31,13 @@ interface CodeThemeStore {
   getThemeBackground: () => string;
 }
 
+/**
+ * Zustand store for the active code-block syntax theme.
+ *
+ * Persists `selectedTheme` to localStorage under `'code-theme-storage'`.
+ * Use the `setTheme` action to change the active theme; read `selectedTheme`
+ * to drive CodeMirror via `getCodeMirrorTheme`.
+ */
 export const useCodeThemeStore = create<CodeThemeStore>()(
   persist(
     (set, get) => ({
@@ -39,6 +47,7 @@ export const useCodeThemeStore = create<CodeThemeStore>()(
         set({ selectedTheme: theme });
       },
 
+      /** Returns the human-readable display name of the currently selected theme. */
       getCurrentThemeName: () => {
         const { selectedTheme } = get();
 
@@ -58,6 +67,7 @@ export const useCodeThemeStore = create<CodeThemeStore>()(
 
       getThemesByCategory: () => codeThemes,
 
+      /** Returns the background hex color of the currently selected code theme. */
       getThemeBackground: () => {
         const { selectedTheme } = get();
         return getCodeMirrorThemeBackground(selectedTheme);

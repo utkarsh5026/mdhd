@@ -5,6 +5,12 @@ import { tags } from '@lezer/highlight';
 
 import type { ThemeKey } from './code-theme';
 
+/**
+ * Full color palette used to style a CodeMirror editor instance.
+ *
+ * Covers both the editor chrome (background, gutter, selection, caret) and
+ * syntax token categories (keywords, strings, comments, etc.).
+ */
 interface ThemeColors {
   background: string;
   foreground: string;
@@ -228,6 +234,16 @@ const themeColors: Record<string, ThemeColors> = {
   },
 };
 
+/**
+ * Builds a CodeMirror `Extension` from a `ThemeColors` palette.
+ *
+ * Combines an `EditorView.theme` (chrome styling) with a `HighlightStyle`
+ * (syntax token colouring). The `dark` flag is derived automatically from
+ * the background luminance so CodeMirror picks the correct base styles.
+ *
+ * @param colors - The palette to apply.
+ * @returns A CodeMirror `Extension` array containing the editor theme and syntax highlighting.
+ */
 function createTheme(colors: ThemeColors): Extension {
   const isDark = isThemeDark(colors.background);
 
@@ -322,6 +338,15 @@ function createTheme(colors: ThemeColors): Extension {
   return [editorTheme, syntaxHighlighting(highlightStyle)];
 }
 
+/**
+ * Returns `true` if a hex background color is perceptually dark.
+ *
+ * Uses the ITU-R BT.601 luminance formula (weighted RGB coefficients).
+ * A luminance below 0.5 is considered dark.
+ *
+ * @param backgroundColor - A 6-digit hex color string (e.g. `'#1e1e1e'`).
+ * @returns `true` when the color is dark, `false` when light.
+ */
 function isThemeDark(backgroundColor: string): boolean {
   const hex = backgroundColor.replace('#', '');
   const r = parseInt(hex.substring(0, 2), 16);
@@ -333,6 +358,15 @@ function isThemeDark(backgroundColor: string): boolean {
 
 const themeExtensionCache = new Map<string, Extension>();
 
+/**
+ * Returns the CodeMirror `Extension` for the given theme key.
+ *
+ * Results are memoized in `themeExtensionCache` so the extension object is
+ * stable across re-renders. Falls back to `vscDarkPlus` for unknown keys.
+ *
+ * @param themeKey - A valid `ThemeKey` identifying the desired theme.
+ * @returns A cached CodeMirror `Extension` combining editor chrome and syntax highlighting.
+ */
 export function getCodeMirrorTheme(themeKey: ThemeKey): Extension {
   if (themeExtensionCache.has(themeKey)) {
     return themeExtensionCache.get(themeKey)!;
@@ -344,10 +378,26 @@ export function getCodeMirrorTheme(themeKey: ThemeKey): Extension {
   return extension;
 }
 
+/**
+ * Returns the background hex color for the given theme key.
+ *
+ * Falls back to the `vscDarkPlus` background if the key is not found.
+ *
+ * @param themeKey - A valid `ThemeKey` identifying the desired theme.
+ * @returns A hex color string (e.g. `'#1e1e1e'`).
+ */
 export function getThemeBackground(themeKey: ThemeKey): string {
   return themeColors[themeKey]?.background || themeColors.vscDarkPlus.background;
 }
 
+/**
+ * Returns `true` if the given theme key resolves to a dark theme.
+ *
+ * Falls back to `vscDarkPlus` for unknown keys.
+ *
+ * @param themeKey - A valid `ThemeKey` identifying the desired theme.
+ * @returns `true` when the theme's background is perceptually dark.
+ */
 export function isThemeKeyDark(themeKey: ThemeKey): boolean {
   const colors = themeColors[themeKey] || themeColors.vscDarkPlus;
   return isThemeDark(colors.background);

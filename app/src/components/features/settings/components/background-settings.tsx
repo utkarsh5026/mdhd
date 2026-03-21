@@ -88,6 +88,7 @@ const ThemeColorSwatch: React.FC<{
 const BackgroundSettings: React.FC = () => {
   const { background, backgroundImageDataUrl, updateBackground, uploadImage, removeImage } =
     useReadingBackground();
+  const currentTheme = useThemeStore((s) => s.currentTheme);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = useCallback(
@@ -111,7 +112,14 @@ const BackgroundSettings: React.FC = () => {
         <ToggleGroup
           options={BACKGROUND_TYPE_OPTIONS}
           value={background.backgroundType}
-          onChange={(v) => updateBackground({ backgroundType: v as ReadingBackgroundType })}
+          onChange={(v) => {
+            const type = v as ReadingBackgroundType;
+            const patch: Parameters<typeof updateBackground>[0] = { backgroundType: type };
+            if (type === 'solid' && !background.backgroundColor) {
+              patch.backgroundColor = currentTheme.background;
+            }
+            updateBackground(patch);
+          }}
         />
 
         {background.backgroundType === 'solid' && (

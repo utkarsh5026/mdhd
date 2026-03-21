@@ -6,8 +6,25 @@ import { backgroundImageDB } from '@/services/indexeddb/background-image-db';
 
 import { useReadingSettingsStore } from '../store/reading-settings-store';
 
+/** Maximum allowed background image size in bytes (5 MB). */
 const MAX_IMAGE_SIZE = 5_000_000;
 
+/**
+ * Hook that manages the reading-mode background image and color settings.
+ *
+ * Reads background configuration from `useReadingSettingsStore` and mirrors the
+ * active background image from IndexedDB into local React state as a data URL.
+ * Exposes helpers to upload a new image (with size/type validation) and to
+ * remove the current one.
+ *
+ * @hook
+ * @returns An object containing:
+ *   - `background` — the current `ReadingBackgroundSettings` slice
+ *   - `backgroundImageDataUrl` — the active image as a data URL, or `null`
+ *   - `updateBackground` — action to patch background settings
+ *   - `uploadImage` — validates and persists a new background image
+ *   - `removeImage` — deletes the stored image and resets the background
+ */
 export const useReadingBackground = () => {
   const background = useReadingSettingsStore((s) => s.settings.background);
   const backgroundImageId = useReadingSettingsStore((s) => s.settings.backgroundImageId);
@@ -29,6 +46,16 @@ export const useReadingBackground = () => {
       .catch(() => setBackgroundImageDataUrl(null));
   }, [backgroundImageId]);
 
+  /**
+   * Validates and saves a new background image to IndexedDB.
+   *
+   * Rejects non-image MIME types and files larger than `MAX_IMAGE_SIZE` with a
+   * toast error. On success, deletes any previously stored image, persists the
+   * new one under a fresh UUID, updates the store with `backgroundType: 'image'`,
+   * and sets `backgroundImageDataUrl` for immediate display.
+   *
+   * @param file - The image `File` selected by the user.
+   */
   const uploadImage = useCallback(
     (file: File) => {
       if (!file.type.startsWith('image/')) {
@@ -46,7 +73,6 @@ export const useReadingBackground = () => {
         const id = uuidv4();
 
         try {
-          // Delete old image if exists
           if (backgroundImageId) {
             await backgroundImageDB.delete(backgroundImageId);
           }
@@ -64,6 +90,12 @@ export const useReadingBackground = () => {
     [backgroundImageId, setBackgroundImageId, updateBackground]
   );
 
+  /**
+   * Removes the current background image.
+   *
+   * Deletes the stored entry from IndexedDB (errors silently ignored), calls
+   * `clearBackgroundImage` to reset the store, and clears `backgroundImageDataUrl`.
+   */
   const removeImage = useCallback(async () => {
     if (backgroundImageId) {
       await backgroundImageDB.delete(backgroundImageId).catch(() => {});
