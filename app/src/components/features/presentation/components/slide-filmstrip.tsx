@@ -1,4 +1,4 @@
-import { forwardRef, memo, useEffect, useMemo, useRef } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { cn } from '@/lib/utils';
 import type { MarkdownSection } from '@/services/section/parsing';
@@ -32,20 +32,22 @@ const SlideFilmstrip: React.FC<SlideFilmstripProps> = memo(
           visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'
         )}
       >
-        <div
-          ref={scrollRef}
-          className="flex items-center gap-2 px-5 py-2.5 overflow-x-auto scrollbar-none bg-background/60 backdrop-blur-xl border-t border-foreground/4"
-        >
-          {sections.map((section, i) => (
-            <FilmstripThumb
-              key={i}
-              ref={i === currentIndex ? activeRef : undefined}
-              section={section}
-              index={i}
-              isActive={i === currentIndex}
-              onSelect={() => onSelect(i)}
-            />
-          ))}
+        <div>
+          <div
+            ref={scrollRef}
+            className="flex items-center gap-1.5 px-4 py-2 overflow-x-auto scrollbar-none bg-background/70 backdrop-blur-xl border-t border-foreground/5"
+          >
+            {sections.map((section, i) => (
+              <FilmstripThumb
+                key={i}
+                ref={i === currentIndex ? activeRef : undefined}
+                section={section}
+                index={i}
+                isActive={i === currentIndex}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -58,7 +60,7 @@ interface FilmstripThumbProps {
   section: MarkdownSection;
   index: number;
   isActive: boolean;
-  onSelect: () => void;
+  onSelect: (index: number) => void;
 }
 
 const FilmstripThumb = memo(
@@ -71,31 +73,35 @@ const FilmstripThumb = memo(
         return match ? match[1] : `Slide ${index + 1}`;
       }, [section.content, index]);
 
+      const handleClick = useCallback(() => onSelect(index), [onSelect, index]);
+
       return (
         <button
           ref={ref}
-          onClick={onSelect}
+          onClick={handleClick}
           className={cn(
-            'group relative shrink-0 rounded-2xl text-left transition-all duration-200',
+            'group relative shrink-0 rounded text-left transition-all duration-200 font-source-code-pro',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
             isActive
-              ? 'bg-primary/10 ring-1 ring-primary/30'
-              : 'bg-foreground/3 ring-1 ring-foreground/6 hover:bg-foreground/6 hover:ring-foreground/12'
+              ? 'bg-primary/10 ring-1 ring-primary/25 shadow-sm shadow-primary/5'
+              : 'bg-foreground/3 ring-1 ring-foreground/6 hover:bg-foreground/6 hover:ring-foreground/10'
           )}
         >
-          <div className="w-32 h-16 px-2.5 py-2 flex flex-col justify-between overflow-hidden">
+          <div className="w-28 h-14 px-2 py-1.5 flex flex-col justify-between overflow-hidden">
             <p
               className={cn(
-                'text-[10px] font-medium leading-tight line-clamp-2',
-                isActive ? 'text-foreground' : 'text-foreground/60 group-hover:text-foreground/80'
+                'text-[9px] leading-tight line-clamp-2',
+                isActive
+                  ? 'text-foreground font-medium'
+                  : 'text-foreground/50 group-hover:text-foreground/70'
               )}
             >
               {heading}
             </p>
             <span
               className={cn(
-                'text-[9px] tabular-nums self-end',
-                isActive ? 'text-primary/70' : 'text-muted-foreground/30'
+                'text-[8px] tabular-nums self-end',
+                isActive ? 'text-primary/60' : 'text-muted-foreground/25'
               )}
             >
               {index + 1}

@@ -1,3 +1,5 @@
+export type SlideDirection = 'left' | 'right' | 'none';
+
 export interface PresentationState {
   isActive: boolean;
   showNotes: boolean;

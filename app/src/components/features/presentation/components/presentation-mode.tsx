@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { useSwipeable } from 'react-swipeable';
 
+import { cn } from '@/lib/utils';
 import type { MarkdownSection } from '@/services/section/parsing';
 
 import { useControlsVisibility } from '../hooks/use-controls-visibility';
@@ -37,7 +38,7 @@ const PresentationMode: React.FC<PresentationModeProps> = memo(
       goPrev,
       jumpToSlide,
     } = useSlideNavigation({ sections, initialSlide });
-    const { controlsVisible } = useControlsVisibility(currentSlide);
+    const { controlsVisible, cursorHidden } = useControlsVisibility(currentSlide);
     const { handleExit } = useSlideKeyboard({ goNext, goPrev, onExit });
 
     const showNotes = usePresentationShowNotes();
@@ -59,7 +60,12 @@ const PresentationMode: React.FC<PresentationModeProps> = memo(
     if (!currentSection) return null;
 
     return (
-      <div className="fixed inset-0 z-60 flex flex-col bg-background text-foreground">
+      <div
+        className={cn(
+          'fixed inset-0 z-60 flex flex-col bg-background text-foreground',
+          cursorHidden && 'cursor-none'
+        )}
+      >
         {/* Slide area */}
         <div {...swipeHandlers} className="flex-1 min-h-0 overflow-hidden">
           <PresentationSlide
@@ -72,16 +78,15 @@ const PresentationMode: React.FC<PresentationModeProps> = memo(
         {/* Presenter notes */}
         <PresenterNotesPanel section={currentSection} visible={showNotes} />
 
-        {/* Slide filmstrip */}
-        <SlideFilmstrip
-          sections={sections}
-          currentIndex={currentSlide}
-          visible={controlsVisible && showFilmstrip}
-          onSelect={jumpToSlide}
-        />
+        {/* Bottom bar: filmstrip + controls stacked, absolutely positioned to avoid taking layout space when hidden */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 flex flex-col">
+          <SlideFilmstrip
+            sections={sections}
+            currentIndex={currentSlide}
+            visible={controlsVisible && showFilmstrip}
+            onSelect={jumpToSlide}
+          />
 
-        {/* Controls bar with progress — absolutely positioned so it doesn't reserve layout space when hidden */}
-        <div className="absolute bottom-0 left-0 right-0 z-10">
           <SlideControls
             currentIndex={currentSlide}
             total={total}

@@ -20,18 +20,6 @@ const SlideOverview: React.FC<SlideOverviewProps> = memo(
       activeRef.current?.scrollIntoView({ block: 'center', behavior: 'instant' });
     }, []);
 
-    useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape' || e.key === 'g' || e.key === 'G') {
-          e.preventDefault();
-          e.stopPropagation();
-          onClose();
-        }
-      };
-      window.addEventListener('keydown', handleKeyDown, true);
-      return () => window.removeEventListener('keydown', handleKeyDown, true);
-    }, [onClose]);
-
     return (
       <div className="fixed inset-0 z-70 flex flex-col bg-background/97 backdrop-blur-2xl animate-in fade-in duration-300">
         {/* Header */}

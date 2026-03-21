@@ -6,9 +6,8 @@ import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
 import type { MarkdownSection } from '@/services/section/parsing';
 
+import type { SlideDirection } from '../store/types';
 import { parsePresenterNotes } from '../utils/parse-notes';
-
-export type SlideDirection = 'left' | 'right' | 'none';
 
 interface PresentationSlideProps {
   section: MarkdownSection;
@@ -60,7 +59,7 @@ const PresentationSlide: React.FC<PresentationSlideProps> = memo(
         ref={scrollRef}
         className={cn(
           'flex h-full w-full overflow-y-auto',
-          'transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]',
           isTransitioning ? 'opacity-0' : 'opacity-100',
           transitionTransform
         )}

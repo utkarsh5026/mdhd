@@ -40,8 +40,8 @@ export function useControlsVisibility(currentSlide: number) {
   }, [panelsOpen, resetHideTimer]);
 
   useEffect(() => {
-    resetHideTimer();
-  }, [currentSlide, resetHideTimer]);
+    if (!panelsOpen) resetHideTimer();
+  }, [currentSlide, resetHideTimer, panelsOpen]);
 
   useEffect(() => {
     const handleMouseMove = () => {

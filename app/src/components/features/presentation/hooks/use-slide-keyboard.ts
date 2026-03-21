@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 
-import { usePresentationActions } from '../store/presentation-store';
+import { usePresentationActions, usePresentationShowOverview } from '../store/presentation-store';
 
 interface UseSlideKeyboardOptions {
   goNext: () => void;
@@ -11,6 +11,7 @@ interface UseSlideKeyboardOptions {
 export function useSlideKeyboard({ goNext, goPrev, onExit }: UseSlideKeyboardOptions) {
   const { toggleNotes, toggleOverview, toggleFilmstrip, stopPresentation } =
     usePresentationActions();
+  const showOverview = usePresentationShowOverview();
 
   const handleExit = useCallback(() => {
     stopPresentation();
@@ -20,6 +21,14 @@ export function useSlideKeyboard({ goNext, goPrev, onExit }: UseSlideKeyboardOpt
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (showOverview) {
+        if (e.key === 'Escape' || e.key === 'g' || e.key === 'G') {
+          e.preventDefault();
+          toggleOverview();
+        }
         return;
       }
 
@@ -59,7 +68,7 @@ export function useSlideKeyboard({ goNext, goPrev, onExit }: UseSlideKeyboardOpt
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [goNext, goPrev, handleExit, toggleNotes, toggleOverview, toggleFilmstrip]);
+  }, [goNext, goPrev, handleExit, toggleNotes, toggleOverview, toggleFilmstrip, showOverview]);
 
   return { handleExit };
 }

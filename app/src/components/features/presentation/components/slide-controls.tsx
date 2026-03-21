@@ -21,31 +21,27 @@ interface ControlButtonProps {
   active?: boolean;
 }
 
-const ControlButton: React.FC<ControlButtonProps> = ({
-  onClick,
-  icon: Icon,
-  label,
-  ariaLabel,
-  disabled,
-  active,
-}) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    aria-label={ariaLabel}
-    className={cn(
-      'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors duration-200',
-      disabled
-        ? 'text-foreground/12 cursor-not-allowed'
-        : active
-          ? 'text-primary bg-primary/8'
-          : 'text-muted-foreground/60 hover:text-foreground hover:bg-foreground/6'
-    )}
-  >
-    <Icon className="h-3.5 w-3.5" />
-    {label && <span className="hidden sm:inline">{label}</span>}
-  </button>
+const ControlButton: React.FC<ControlButtonProps> = memo(
+  ({ onClick, icon: Icon, label, ariaLabel, disabled, active }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className={cn(
+        'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors duration-200',
+        disabled
+          ? 'text-foreground/12 cursor-not-allowed'
+          : active
+            ? 'text-primary bg-primary/8'
+            : 'text-muted-foreground/60 hover:text-foreground hover:bg-foreground/6'
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label && <span className="hidden sm:inline">{label}</span>}
+    </button>
+  )
 );
+ControlButton.displayName = 'ControlButton';
 
 interface SlideControlsProps {
   currentIndex: number;
@@ -103,80 +99,82 @@ const SlideControls: React.FC<SlideControlsProps> = memo(
           visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'
         )}
       >
-        {/* Progress bar */}
-        <div className="h-0.5 bg-foreground/4">
-          <div
-            className="h-full bg-primary/50 transition-all duration-700 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        <div className="flex items-center justify-between px-5 py-2.5 bg-background/80 backdrop-blur-xl">
-          {/* Left: exit + timer */}
-          <div className="flex items-center gap-4 min-w-40">
-            <ControlButton onClick={onExit} icon={X} label="Exit" />
-
-            {startTime && (
-              <div className="flex items-center gap-1.5 text-muted-foreground/35">
-                <Clock className="h-3 w-3" />
-                <span className="text-xs tabular-nums font-mono">{formatElapsed(elapsed)}</span>
-              </div>
-            )}
+        <div>
+          {/* Progress bar */}
+          <div className="h-0.5 bg-foreground/4">
+            <div
+              className="h-full bg-primary/50 transition-all duration-700 ease-out"
+              style={{ width: `${progress}%` }}
+            />
           </div>
 
-          {/* Center: navigation */}
-          <div className="flex items-center gap-1">
-            <ControlButton
-              onClick={onPrevious}
-              disabled={!canGoPrev}
-              icon={ChevronLeft}
-              ariaLabel="Previous slide"
-            />
+          <div className="flex items-center justify-between px-5 py-2.5 bg-background/80 backdrop-blur-xl">
+            {/* Left: exit + timer */}
+            <div className="flex items-center gap-4 min-w-40">
+              <ControlButton onClick={onExit} icon={X} label="Exit" />
 
-            <button
-              onClick={onToggleOverview}
-              className={cn(
-                'text-[13px] font-medium tabular-nums min-w-18 text-center',
-                'px-3 py-1.5 rounded-lg transition-colors duration-200',
-                'text-foreground/50 hover:text-foreground hover:bg-foreground/6'
+              {startTime && (
+                <div className="flex items-center gap-1.5 text-muted-foreground/35">
+                  <Clock className="h-3 w-3" />
+                  <span className="text-xs tabular-nums font-mono">{formatElapsed(elapsed)}</span>
+                </div>
               )}
-              title="Slide overview (G)"
-            >
-              {currentIndex + 1}
-              <span className="text-foreground/20 mx-1">/</span>
-              {total}
-            </button>
+            </div>
 
-            <ControlButton
-              onClick={onNext}
-              disabled={!canGoNext}
-              icon={ChevronRight}
-              ariaLabel="Next slide"
-            />
-          </div>
+            {/* Center: navigation */}
+            <div className="flex items-center gap-1">
+              <ControlButton
+                onClick={onPrevious}
+                disabled={!canGoPrev}
+                icon={ChevronLeft}
+                ariaLabel="Previous slide"
+              />
 
-          {/* Right: grid + notes */}
-          <div className="flex items-center gap-1 min-w-40 justify-end">
-            <ControlButton
-              onClick={onToggleFilmstrip}
-              icon={GalleryHorizontal}
-              label="Slides"
-              ariaLabel="Toggle slide filmstrip"
-              active={showFilmstrip}
-            />
-            <ControlButton
-              onClick={onToggleOverview}
-              icon={Grid3X3}
-              label="Grid"
-              ariaLabel="Slide overview"
-            />
-            <ControlButton
-              onClick={onToggleNotes}
-              icon={StickyNote}
-              label="Notes"
-              ariaLabel="Toggle presenter notes"
-              active={showNotes}
-            />
+              <button
+                onClick={onToggleOverview}
+                className={cn(
+                  'text-[13px] font-medium tabular-nums min-w-18 text-center',
+                  'px-3 py-1.5 rounded-lg transition-colors duration-200',
+                  'text-foreground/50 hover:text-foreground hover:bg-foreground/6'
+                )}
+                title="Slide overview (G)"
+              >
+                {currentIndex + 1}
+                <span className="text-foreground/20 mx-1">/</span>
+                {total}
+              </button>
+
+              <ControlButton
+                onClick={onNext}
+                disabled={!canGoNext}
+                icon={ChevronRight}
+                ariaLabel="Next slide"
+              />
+            </div>
+
+            {/* Right: grid + notes */}
+            <div className="flex items-center gap-1 min-w-40 justify-end">
+              <ControlButton
+                onClick={onToggleFilmstrip}
+                icon={GalleryHorizontal}
+                label="Slides"
+                ariaLabel="Toggle slide filmstrip"
+                active={showFilmstrip}
+              />
+              <ControlButton
+                onClick={onToggleOverview}
+                icon={Grid3X3}
+                label="Grid"
+                ariaLabel="Slide overview"
+              />
+              <ControlButton
+                onClick={onToggleNotes}
+                icon={StickyNote}
+                label="Notes"
+                ariaLabel="Toggle presenter notes"
+                active={showNotes}
+              />
+            </div>
           </div>
         </div>
       </div>
