@@ -1,7 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
-import { FolderTree, List } from 'lucide-react';
+import { FolderTree, Layers, List } from 'lucide-react';
 import React, { memo, useCallback } from 'react';
 
+import SnippetsPanel from '@/components/features/content-reading/components/snippets/snippets-panel';
 import FilesPanel from '@/components/features/file-explorer/components/files-panel';
 import OutlinePanel from '@/components/features/file-explorer/components/outline-panel';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ interface SidebarProps {
 const DEFAULT_PANELS: Panel[] = [
   { id: 'files', icon: FolderTree, tooltip: 'Files', content: <FilesPanel /> },
   { id: 'outline', icon: List, tooltip: 'Outline', content: <OutlinePanel /> },
+  { id: 'snippets', icon: Layers, tooltip: 'Snippets', content: <SnippetsPanel /> },
 ];
 
 const Sidebar: React.FC<SidebarProps> = memo(({ className, onFileSelect }) => {
@@ -34,6 +36,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ className, onFileSelect }) => {
     ? [
         { ...DEFAULT_PANELS[0], content: <FilesPanel onFileSelect={onFileSelect} /> },
         DEFAULT_PANELS[1],
+        DEFAULT_PANELS[2],
       ]
     : DEFAULT_PANELS;
 
@@ -78,7 +81,9 @@ const Sidebar: React.FC<SidebarProps> = memo(({ className, onFileSelect }) => {
       </div>
 
       {/* Active panel content */}
-      {activePanelDef && activePanelDef.content}
+      {activePanelDef && (
+        <div className="flex-1 min-w-0 min-h-0 overflow-auto">{activePanelDef.content}</div>
+      )}
     </div>
   );
 });

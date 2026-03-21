@@ -16,8 +16,6 @@ import {
 } from './layout';
 import ReadingBackground from './reading-background';
 import { SearchDialog } from './search';
-import SnippetsSheet from './snippets';
-import SectionsSheet from './table-of-contents/sections-sheet';
 
 const ReadingSettingsSheet = lazy(() =>
   import('@/components/features/settings').then((module) => ({
@@ -33,8 +31,6 @@ const PdfExportDialog = lazy(() =>
 
 interface HeaderHandlers {
   onSettings: () => void;
-  onMenu: () => void;
-  onSnippets: () => void;
   onSearch: () => void;
   onPresent?: () => void;
   onPdfExport: () => void;
@@ -103,7 +99,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     markdown,
     metadata,
     sections,
-    readSections,
     currentIndex,
     currentSection,
     isTransitioning,
@@ -127,8 +122,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     onPresent,
   }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [snippetsOpen, setSnippetsOpen] = useState(false);
     const [pdfExportOpen, setPdfExportOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -206,16 +199,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
       handleInteraction();
     }, [handleInteraction]);
 
-    const handleMenuOpen = useCallback(() => {
-      setMenuOpen(true);
-      handleInteraction();
-    }, [handleInteraction]);
-
-    const handleSnippetsOpen = useCallback(() => {
-      setSnippetsOpen(true);
-      handleInteraction();
-    }, [handleInteraction]);
-
     const handlePdfExportOpen = useCallback(() => {
       setPdfExportOpen(true);
       handleInteraction();
@@ -278,8 +261,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
             <div className="absolute top-0 left-0 right-0 z-50">
               {headerSlot({
                 onSettings: handleSettingsOpen,
-                onMenu: handleMenuOpen,
-                onSnippets: handleSnippetsOpen,
                 onSearch: () => setSearchOpen(true),
                 onPresent,
                 onPdfExport: handlePdfExportOpen,
@@ -323,24 +304,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
               }}
             />
           )}
-
-          {/* Snippets Sheet */}
-          <SnippetsSheet
-            open={snippetsOpen}
-            onOpenChange={setSnippetsOpen}
-            sections={sections}
-            onNavigateToSection={handleSelectCard}
-          />
-
-          {/* Sections Sheet */}
-          <SectionsSheet
-            currentIndex={currentIndex}
-            handleSelectCard={handleSelectCard}
-            menuOpen={menuOpen}
-            setMenuOpen={setMenuOpen}
-            sections={sections}
-            readSections={readSections}
-          />
 
           {/* Reading Settings Sheet - Lazy loaded */}
           {settingsOpen && (

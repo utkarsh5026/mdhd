@@ -1,22 +1,11 @@
-import {
-  FileText,
-  Layers,
-  List,
-  LucideIcon,
-  Presentation,
-  Search,
-  Settings,
-  X,
-} from 'lucide-react';
+import { FileText, LucideIcon, Presentation, Search, Settings, X } from 'lucide-react';
 
-import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import { TooltipButton } from '@/components/ui/tooltip-button';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   onExit: () => void;
   onSettings: () => void;
-  onMenu: () => void;
-  onSnippets: () => void;
   onSearch?: () => void;
   onPresent?: () => void;
   onPdfExport?: () => void;
@@ -66,8 +55,6 @@ const BarButton: React.FC<BarButtonProps> = ({
 const Header: React.FC<HeaderProps> = ({
   onExit,
   onSettings,
-  onMenu,
-  onSnippets,
   onSearch,
   onPresent,
   onPdfExport,
@@ -100,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Right: Present + Settings + Snippets + TOC */}
+          {/* Right: controls */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             {onSearch && <BarButton onClick={onSearch} icon={Search} tooltip="Search (Ctrl+F)" />}
             {onPdfExport && (
@@ -110,8 +97,6 @@ const Header: React.FC<HeaderProps> = ({
               <BarButton onClick={onPresent} icon={Presentation} tooltip="Presentation Mode" />
             )}
             <BarButton onClick={onSettings} icon={Settings} tooltip="Reading Settings" />
-            <BarButton onClick={onSnippets} icon={Layers} tooltip="Snippets" />
-            <BarButton onClick={onMenu} icon={List} tooltip="Table of Contents" />
           </div>
         </div>
 

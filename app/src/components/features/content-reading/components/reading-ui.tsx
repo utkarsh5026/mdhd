@@ -92,8 +92,6 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
         onPresent={onPresent}
         headerSlot={({
           onSettings,
-          onMenu,
-          onSnippets,
           onSearch,
           onPresent: handlePresent,
           onPdfExport,
@@ -104,8 +102,6 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
           <Header
             onExit={onExit}
             onSettings={onSettings}
-            onMenu={onMenu}
-            onSnippets={onSnippets}
             onSearch={onSearch}
             onPresent={handlePresent}
             onPdfExport={onPdfExport}
