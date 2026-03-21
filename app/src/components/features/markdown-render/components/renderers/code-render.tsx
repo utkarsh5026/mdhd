@@ -12,6 +12,7 @@ import {
   useCodeThemeStore,
   useReadingSettingsStore,
 } from '@/components/features/settings';
+import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import ExportContextMenu from '@/components/ui/export-context-menu';
 import { cn } from '@/lib/utils';
@@ -55,6 +56,7 @@ const LANGUAGE_TO_EXT: Record<string, string> = {
 const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ className, children }) => {
   const [copied, setCopied] = React.useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const codeBlockRef = useRef<HTMLDivElement>(null);
 
@@ -177,8 +179,14 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
           {/* Code Content */}
           <div
             ref={codeBlockRef}
-            className={cn('overflow-hidden p-4', containerClasses.inner)}
+            className={cn('overflow-hidden p-4 cursor-zoom-in', containerClasses.inner)}
             style={{ backgroundColor }}
+            onClick={() => setSheetOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') setSheetOpen(true);
+            }}
           >
             <CodeMirrorDisplay
               code={codeContent}
@@ -203,6 +211,39 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
           codeSnippets={codeSnippets}
         />
       )}
+
+      <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <BottomSheetContent>
+          <BottomSheetTitle>
+            {getNearestHeading(wrapperRef.current) || 'Code block'}
+          </BottomSheetTitle>
+
+          {language && (
+            <div className="flex items-center justify-center gap-1.5 text-muted-foreground mt-1">
+              <LanguageIcon language={language} className="w-4 h-4" />
+              <span className="text-sm font-medium lowercase tracking-wide">{language}</span>
+            </div>
+          )}
+
+          <div
+            className="mt-4 overflow-x-auto rounded-xl font-fira-code"
+            style={{ backgroundColor }}
+          >
+            <div className="p-5">
+              <CodeMirrorDisplay
+                code={codeContent}
+                language={language}
+                themeKey={selectedTheme}
+                showLineNumbers={displaySettings.showLineNumbers}
+                enableCodeFolding={displaySettings.enableCodeFolding}
+                enableWordWrap
+                fontSize="0.95rem"
+                className="rounded-xl"
+              />
+            </div>
+          </div>
+        </BottomSheetContent>
+      </BottomSheet>
     </>
   );
 };

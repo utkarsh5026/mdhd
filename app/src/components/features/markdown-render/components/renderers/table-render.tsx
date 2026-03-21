@@ -1,7 +1,8 @@
 import { toPng } from 'html-to-image';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 
+import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import ExportContextMenu from '@/components/ui/export-context-menu';
 import { download, getNearestHeading, toFilename } from '@/utils/download';
 
@@ -37,6 +38,7 @@ function extractRows(container: HTMLElement): string[][] {
  */
 const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const exportItems = [
     {
@@ -94,16 +96,39 @@ const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) 
   ];
 
   return (
-    <ExportContextMenu title="Export table" items={exportItems}>
-      <div className="my-4 sm:my-6 overflow-x-auto rounded-2xl border border-border no-swipe">
-        <div ref={wrapperRef} className="min-w-full overflow-hidden rounded-2xl shadow-sm">
-          <table
-            {...props}
-            className="min-w-full divide-y divide-border border-separate border-spacing-0 text-xs sm:text-base"
-          />
+    <>
+      <ExportContextMenu title="Export table" items={exportItems}>
+        <div
+          className="my-4 sm:my-6 overflow-x-auto rounded-2xl border border-border no-swipe cursor-zoom-in"
+          onClick={() => setSheetOpen(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') setSheetOpen(true);
+          }}
+        >
+          <div ref={wrapperRef} className="min-w-full overflow-hidden rounded-2xl shadow-sm">
+            <table
+              {...props}
+              className="min-w-full divide-y divide-border border-separate border-spacing-0 text-xs sm:text-base"
+            />
+          </div>
         </div>
-      </div>
-    </ExportContextMenu>
+      </ExportContextMenu>
+
+      <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <BottomSheetContent>
+          <BottomSheetTitle>{getNearestHeading(wrapperRef.current) || 'Table'}</BottomSheetTitle>
+
+          <div className="mt-4 overflow-x-auto rounded-xl">
+            <table
+              {...props}
+              className="min-w-full divide-y divide-border border-separate border-spacing-0 text-sm sm:text-lg"
+            />
+          </div>
+        </BottomSheetContent>
+      </BottomSheet>
+    </>
   );
 };
 

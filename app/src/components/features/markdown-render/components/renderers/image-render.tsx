@@ -1,11 +1,10 @@
-import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { ImageIcon, ImageOffIcon, PlayCircleIcon, VideoOffIcon, XIcon } from 'lucide-react';
+import { ImageIcon, ImageOffIcon, PlayCircleIcon, VideoOffIcon } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import PhotoImageExportDialog from '@/components/features/image-export/components/photo-image-export-dialog';
 import { useExportSnippets } from '@/components/features/image-export/context/export-snippets-context';
-import { DialogOverlay, DialogPortal } from '@/components/ui/dialog';
+import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import ExportContextMenu from '@/components/ui/export-context-menu';
 import { cn } from '@/lib/utils';
 import { download, getNearestHeading, toFilename } from '@/utils/download';
@@ -236,65 +235,42 @@ const ImageRender: React.FC<React.ComponentPropsWithoutRef<'img'>> = ({
           )}
 
           {/* Bottom sheet gallery view */}
-          <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
-            <DialogPortal>
-              <DialogOverlay />
-              <DialogPrimitive.Content
-                className={cn(
-                  'fixed bottom-0 left-0 right-0 z-50 max-h-[90vh] overflow-y-auto',
-                  'rounded-t-2xl bg-background border-t border-border p-4',
-                  'data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom-4 data-[state=open]:fade-in-0 data-[state=open]:duration-300',
-                  'data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom-4 data-[state=closed]:fade-out-0 data-[state=closed]:duration-200'
+          <BottomSheet open={open} onOpenChange={setOpen}>
+            <BottomSheetContent>
+              <BottomSheetTitle>{getNearestHeading(figureRef.current) || altText}</BottomSheetTitle>
+
+              {/* Full media or error state */}
+              <div className="flex items-center justify-center min-h-40 mt-4">
+                {error ? (
+                  <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground w-full min-h-40">
+                    <ErrorIcon size={32} />
+                    <span className="text-sm italic">{errorText}</span>
+                  </div>
+                ) : isVideo ? (
+                  <video
+                    src={src}
+                    controls
+                    playsInline
+                    className="max-h-[70vh] max-w-full rounded-md mx-auto"
+                  />
+                ) : (
+                  <img
+                    src={src}
+                    alt={altText}
+                    className="max-h-[70vh] max-w-full object-contain mx-auto rounded-md"
+                  />
                 )}
-              >
-                <DialogPrimitive.Title className="sr-only">
-                  {title ?? altText}
-                </DialogPrimitive.Title>
+              </div>
 
-                {/* Drag handle + close button row */}
-                <div className="relative py-2">
-                  <div className="w-10 h-1 rounded-full bg-muted mx-auto" />
-                  <DialogPrimitive.Close
-                    aria-label="Close"
-                    className="absolute top-0 right-0 p-1 rounded-full hover:bg-muted transition-colors cursor-pointer"
-                  >
-                    <XIcon className="size-5" />
-                  </DialogPrimitive.Close>
-                </div>
+              {/* Alt text */}
+              <p className="text-sm text-muted-foreground text-center mt-3">{altText}</p>
 
-                {/* Full media or error state */}
-                <div className="flex items-center justify-center min-h-40 mt-4">
-                  {error ? (
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground w-full min-h-40">
-                      <ErrorIcon size={32} />
-                      <span className="text-sm italic">{errorText}</span>
-                    </div>
-                  ) : isVideo ? (
-                    <video
-                      src={src}
-                      controls
-                      playsInline
-                      className="max-h-[70vh] max-w-full rounded-md mx-auto"
-                    />
-                  ) : (
-                    <img
-                      src={src}
-                      alt={altText}
-                      className="max-h-[70vh] max-w-full object-contain mx-auto rounded-md"
-                    />
-                  )}
-                </div>
-
-                {/* Alt text */}
-                <p className="text-xs text-muted-foreground text-center mt-2">{altText}</p>
-
-                {/* Caption */}
-                {title && (
-                  <p className="text-sm italic text-muted-foreground text-center mt-1">{title}</p>
-                )}
-              </DialogPrimitive.Content>
-            </DialogPortal>
-          </DialogPrimitive.Root>
+              {/* Caption */}
+              {title && (
+                <p className="text-base italic text-muted-foreground text-center mt-1">{title}</p>
+              )}
+            </BottomSheetContent>
+          </BottomSheet>
         </figure>
       </ExportContextMenu>
 
