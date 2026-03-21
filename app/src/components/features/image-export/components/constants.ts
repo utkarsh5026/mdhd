@@ -85,6 +85,9 @@ export const GRADIENT_PRESETS = [
 export const WINDOW_STYLES = [
   { value: 'macos' as const, label: 'macOS' },
   { value: 'windows' as const, label: 'Windows' },
+  { value: 'linux-gnome' as const, label: 'GNOME' },
+  { value: 'linux-kde' as const, label: 'KDE' },
+  { value: 'retro-terminal' as const, label: 'Retro' },
   { value: 'none' as const, label: 'None' },
 ];
 
@@ -186,6 +189,39 @@ export const CAPTION_ALIGNMENTS = [
   { value: 'left' as const, label: 'Left' },
   { value: 'center' as const, label: 'Center' },
   { value: 'right' as const, label: 'Right' },
+];
+
+export const SOCIAL_MEDIA_TEMPLATES = [
+  { name: 'Twitter / X', width: 1200, aspectRatio: '16:9' as const, padding: 48, exportScale: 2 },
+  { name: 'Instagram', width: 1080, aspectRatio: '1:1' as const, padding: 48, exportScale: 2 },
+  {
+    name: 'LinkedIn Banner',
+    width: 1200,
+    aspectRatio: '16:9' as const,
+    padding: 32,
+    exportScale: 2,
+  },
+  { name: 'GitHub README', width: 1280, aspectRatio: '16:9' as const, padding: 64, exportScale: 2 },
+  { name: 'Story / Reel', width: 1080, aspectRatio: '9:16' as const, padding: 48, exportScale: 2 },
+  { name: 'Presentation', width: 1920, aspectRatio: '16:9' as const, padding: 80, exportScale: 2 },
+];
+
+export const DEVICE_FRAME_OPTIONS = [
+  { value: 'none' as const, label: 'None' },
+  { value: 'browser-chrome' as const, label: 'Chrome' },
+  { value: 'browser-arc' as const, label: 'Arc' },
+  { value: 'iphone' as const, label: 'iPhone' },
+  { value: 'pixel' as const, label: 'Pixel' },
+  { value: 'macbook' as const, label: 'MacBook' },
+];
+
+export const GRADIENT_BORDER_PRESETS = [
+  { name: 'Coral ➜ Teal', start: '#ff6b6b', end: '#4ecdc4', angle: 135 },
+  { name: 'Purple ➜ Pink', start: '#a855f7', end: '#ec4899', angle: 135 },
+  { name: 'Blue ➜ Cyan', start: '#3b82f6', end: '#06b6d4', angle: 135 },
+  { name: 'Orange ➜ Yellow', start: '#f97316', end: '#eab308', angle: 135 },
+  { name: 'Green ➜ Emerald', start: '#22c55e', end: '#10b981', angle: 135 },
+  { name: 'Rose ➜ Violet', start: '#f43f5e', end: '#8b5cf6', angle: 45 },
 ];
 
 export const BACKGROUND_PATTERNS = [

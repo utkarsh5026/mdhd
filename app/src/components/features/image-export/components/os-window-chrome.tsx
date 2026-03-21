@@ -14,9 +14,8 @@ import {
 } from 'react-icons/io5';
 import { MdSearch, MdVolumeUp, MdWifi } from 'react-icons/md';
 
+import { SHADOW_MAP } from '../utils/constants';
 import { LanguageIcon } from '../utils/language-icons';
-
-// ── System status hooks ──────────────────────────────────────────────────────
 
 function useCurrentTime() {
   const [now, setNow] = useState(() => new Date());
@@ -37,21 +36,24 @@ function useBattery(): BatteryState {
   useEffect(() => {
     if (!('getBattery' in navigator)) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let bat: any;
+    const update = () => {
+      if (bat) setBattery({ level: bat.level, charging: bat.charging });
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (navigator as any).getBattery().then((b: any) => {
-      const update = () => setBattery({ level: b.level, charging: b.charging });
+      bat = b;
       update();
       b.addEventListener('levelchange', update);
       b.addEventListener('chargingchange', update);
-      return () => {
-        b.removeEventListener('levelchange', update);
-        b.removeEventListener('chargingchange', update);
-      };
     });
+    return () => {
+      bat?.removeEventListener('levelchange', update);
+      bat?.removeEventListener('chargingchange', update);
+    };
   }, []);
   return battery;
 }
-
-// ── Shared battery SVG ───────────────────────────────────────────────────────
 
 const BatterySvg: React.FC<{ level: number; charging: boolean }> = ({ level, charging }) => {
   const fillWidth = Math.max(1, Math.round(level * 14));
@@ -107,7 +109,7 @@ export const MacOSTitleBar: React.FC<MacOSTitleBarProps> = ({
   themeBg,
 }) => (
   <div
-    className="relative flex items-center px-4 h-13 border-b border-gray-500/12 font-cascadia-code"
+    className="relative flex items-center px-4 h-13 border-b border-gray-500/12 "
     style={{ backgroundColor: themeBg }}
   >
     {/* Frosted glass overlay — simulates vibrancy */}
@@ -257,7 +259,7 @@ export const MacOSMenuBar: React.FC<{ appName?: string }> = ({ appName = 'Code' 
   });
 
   return (
-    <div className="absolute top-0 left-0 right-0 h-6 bg-[rgba(30,30,30,0.82)] backdrop-blur-[20px] flex items-center pr-2 pl-2.5 z-5 font-cascadia-code">
+    <div className="absolute top-0 left-0 right-0 h-6 bg-[rgba(30,30,30,0.82)] backdrop-blur-[20px] flex items-center pr-2 pl-2.5 z-5 ">
       {/* Left: Apple logo + app name + menus */}
       <div className="flex items-center">
         <FaApple size={13} color="rgba(255,255,255,0.88)" style={{ marginRight: 18 }} />
@@ -298,29 +300,27 @@ export const MacOSMenuBar: React.FC<{ appName?: string }> = ({ appName = 'Code' 
   );
 };
 
-const DOCK_ICON_COLOR = 'rgba(255,255,255,0.7)';
-
-const DOCK_APPS: React.ReactNode[] = [
-  <IoCompass size={20} color={DOCK_ICON_COLOR} />,
-  <IoDocumentText size={20} color={DOCK_ICON_COLOR} />,
-  <IoChatbubble size={20} color={DOCK_ICON_COLOR} />,
-  <IoGrid size={20} color={DOCK_ICON_COLOR} />,
-  <IoMusicalNotes size={20} color={DOCK_ICON_COLOR} />,
-  <IoVideocam size={20} color={DOCK_ICON_COLOR} />,
-  <IoImage size={20} color={DOCK_ICON_COLOR} />,
-  <IoMail size={20} color={DOCK_ICON_COLOR} />,
-];
+const DOCK_APPS = [
+  IoCompass,
+  IoDocumentText,
+  IoChatbubble,
+  IoGrid,
+  IoMusicalNotes,
+  IoVideocam,
+  IoImage,
+  IoMail,
+] as const;
 
 export const DOCK_HEIGHT = 54;
 
 export const MacOSDock: React.FC = () => (
   <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-5 flex items-center gap-1.5 py-1 px-2 rounded-2xl bg-[rgba(40,40,40,0.45)] border-[0.5px] border-white/18">
-    {DOCK_APPS.map((icon, i) => (
+    {DOCK_APPS.map((Icon, i) => (
       <div
         key={i}
         className="w-9 h-9 rounded-lg bg-white/8 border-[0.5px] border-white/12 flex items-center justify-center"
       >
-        {icon}
+        <Icon size={20} color="rgba(255,255,255,0.7)" />
       </div>
     ))}
   </div>
@@ -384,21 +384,320 @@ export const WindowsTaskbar: React.FC = () => {
   );
 };
 
+export const GNOME_TOP_BAR_HEIGHT = 28;
+
+const GNOME_FONT = '"Ubuntu", "Cantarell", system-ui, sans-serif';
+
+export const GnomeTopBar: React.FC<{ appName?: string }> = ({ appName = 'Files' }) => {
+  const now = useCurrentTime();
+  const battery = useBattery();
+  const timeStr = now.toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  return (
+    <div
+      className="absolute top-0 left-0 right-0 z-5 flex items-center px-3"
+      style={{ height: GNOME_TOP_BAR_HEIGHT, backgroundColor: 'rgba(24,24,24,0.97)' }}
+    >
+      {/* Left: Activities */}
+      <span
+        className="text-[12.5px] text-white/90 select-none whitespace-nowrap font-medium"
+        style={{ fontFamily: GNOME_FONT }}
+      >
+        Activities
+      </span>
+
+      {/* Center: app name + clock */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+        <span
+          className="text-[12.5px] text-white/70 select-none whitespace-nowrap"
+          style={{ fontFamily: GNOME_FONT }}
+        >
+          {appName}
+        </span>
+        <span
+          className="text-[12.5px] text-white/90 select-none whitespace-nowrap"
+          style={{ fontFamily: GNOME_FONT }}
+        >
+          {timeStr}
+        </span>
+      </div>
+
+      {/* Right: system tray */}
+      <div className="ml-auto flex items-center gap-1.5">
+        <MdWifi size={13} color="rgba(255,255,255,0.75)" />
+        <MdVolumeUp size={13} color="rgba(255,255,255,0.7)" />
+        <BatterySvg level={battery.level} charging={battery.charging} />
+        {/* User avatar circle */}
+        <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center ml-0.5">
+          <div className="w-2 h-2 rounded-full bg-white/70" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const GNOME_DASH_WIDTH = 58;
+
+const DASH_APPS = [
+  IoCompass,
+  IoDocumentText,
+  IoChatbubble,
+  IoGrid,
+  IoMusicalNotes,
+  IoVideocam,
+  IoImage,
+  IoMail,
+] as const;
+
+export const GnomeDash: React.FC = () => (
+  <div
+    className="absolute left-1.5 top-1/2 -translate-y-1/2 z-5 flex flex-col items-center gap-1.5 py-2 px-1.5 rounded-2xl border-[0.5px] border-white/12"
+    style={{ backgroundColor: 'rgba(38,38,38,0.55)' }}
+  >
+    {DASH_APPS.map((Icon, i) => (
+      <div
+        key={i}
+        className="w-9 h-9 rounded-lg bg-white/8 border-[0.5px] border-white/10 flex items-center justify-center"
+      >
+        <Icon size={20} color="rgba(255,255,255,0.7)" />
+      </div>
+    ))}
+  </div>
+);
+
+export interface LinuxTitleBarProps {
+  focused: boolean;
+  title: string;
+  titlePosition: 'left' | 'center' | 'right';
+  showIcon: boolean;
+  language: string;
+  themeBg: string;
+}
+
+export const LinuxGnomeTitleBar: React.FC<LinuxTitleBarProps> = ({
+  focused,
+  title,
+  titlePosition,
+  showIcon,
+  language,
+  themeBg,
+}) => (
+  <div
+    className="relative flex items-center px-3 h-10 border-b border-gray-500/10"
+    style={{ backgroundColor: themeBg }}
+  >
+    {/* GNOME header bar: title centered, close on the right */}
+    {title && (
+      <TitleLabel
+        title={title}
+        titlePosition={titlePosition}
+        showIcon={showIcon}
+        language={language}
+        focused={focused}
+        offset={0}
+      />
+    )}
+
+    {/* GNOME close button (right-aligned circle) */}
+    <div
+      className="ml-auto flex items-center gap-1.5 shrink-0"
+      style={{ opacity: focused ? 1 : 0.4 }}
+    >
+      <div
+        className="w-6 h-6 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+      >
+        <Minus className="w-3 h-3 opacity-50" />
+      </div>
+      <div
+        className="w-6 h-6 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+      >
+        <Square className="w-2.5 h-2.5 opacity-50" />
+      </div>
+      <div
+        className="w-6 h-6 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: focused ? '#e74c3c' : 'rgba(255,255,255,0.08)' }}
+      >
+        <X className="w-3 h-3" style={{ color: focused ? '#fff' : 'rgba(255,255,255,0.5)' }} />
+      </div>
+    </div>
+  </div>
+);
+
+export const LinuxKDETitleBar: React.FC<LinuxTitleBarProps> = ({
+  focused,
+  title,
+  titlePosition,
+  showIcon,
+  language,
+  themeBg,
+}) => (
+  <div
+    className="relative flex items-center px-3 h-9 border-b border-gray-500/8"
+    style={{ backgroundColor: themeBg }}
+  >
+    {/* KDE Breeze: title left-aligned, minimize/maximize/close on right */}
+    {title && (
+      <TitleLabel
+        title={title}
+        titlePosition={titlePosition}
+        showIcon={showIcon}
+        language={language}
+        focused={focused}
+        offset={0}
+      />
+    )}
+
+    <div className="ml-auto flex items-center shrink-0" style={{ opacity: focused ? 1 : 0.35 }}>
+      {/* KDE-style flat buttons */}
+      <div className="w-8 h-8 flex items-center justify-center hover:bg-white/5 rounded-sm">
+        <Minus className="w-3 h-3 opacity-50" />
+      </div>
+      <div className="w-8 h-8 flex items-center justify-center hover:bg-white/5 rounded-sm">
+        <Square className="w-2.5 h-2.5 opacity-50" />
+      </div>
+      <div className="w-8 h-8 flex items-center justify-center hover:bg-red-500/10 rounded-sm">
+        <X className="w-3 h-3 opacity-60" />
+      </div>
+    </div>
+  </div>
+);
+
+export const KDE_PANEL_HEIGHT = 40;
+
+const KDE_FONT = '"Noto Sans", system-ui, sans-serif';
+
+const KDE_LAUNCHER_ICON: React.FC = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <circle cx="9" cy="9" r="8" fill="rgba(53,132,228,0.9)" />
+    <text x="9" y="13" textAnchor="middle" fontSize="10" fill="white" fontWeight="bold">
+      K
+    </text>
+  </svg>
+);
+
+export const KDEPanel: React.FC = () => {
+  const now = useCurrentTime();
+  const battery = useBattery();
+  const timeStr = now.toLocaleString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  return (
+    <div
+      className="absolute bottom-0 left-0 right-0 z-5 flex items-center px-2 gap-1"
+      style={{
+        height: KDE_PANEL_HEIGHT,
+        backgroundColor: 'rgba(28,30,36,0.96)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+      }}
+    >
+      {/* App launcher */}
+      <div className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/8">
+        <KDE_LAUNCHER_ICON />
+      </div>
+
+      {/* Separator */}
+      <div className="w-px h-5 bg-white/10 mx-1" />
+
+      {/* Pinned app icons */}
+      {[IoCompass, IoDocumentText, IoChatbubble, IoMusicalNotes].map((Icon, i) => (
+        <div key={i} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/8">
+          <Icon size={17} color="rgba(255,255,255,0.65)" />
+        </div>
+      ))}
+
+      {/* Right: system tray + clock */}
+      <div className="ml-auto flex items-center gap-2">
+        <MdWifi size={14} color="rgba(255,255,255,0.6)" />
+        <MdVolumeUp size={14} color="rgba(255,255,255,0.6)" />
+        <BatterySvg level={battery.level} charging={battery.charging} />
+        <div className="flex flex-col items-end leading-tight ml-1">
+          <span
+            className="text-[11px] text-white/80 select-none whitespace-nowrap"
+            style={{ fontFamily: KDE_FONT }}
+          >
+            {timeStr}
+          </span>
+          <span
+            className="text-[10px] text-white/50 select-none whitespace-nowrap"
+            style={{ fontFamily: KDE_FONT }}
+          >
+            {dateStr}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RETRO_FONT = '"VT323", "Courier New", "Lucida Console", monospace';
+
+export const RetroTerminalTitleBar: React.FC<LinuxTitleBarProps> = ({ focused, title }) => (
+  <div
+    className="relative flex items-center px-4 h-8 border-b"
+    style={{
+      backgroundColor: '#0a0a0a',
+      borderColor: focused ? '#33ff33' : '#1a5c1a',
+      fontFamily: RETRO_FONT,
+    }}
+  >
+    {/* Green terminal prompt style */}
+    <span
+      className="text-[13px] select-none whitespace-nowrap tracking-wider"
+      style={{
+        color: focused ? '#33ff33' : '#1a5c1a',
+        textShadow: focused ? '0 0 4px rgba(51,255,51,0.4)' : 'none',
+      }}
+    >
+      {'> '}
+      {title || 'terminal'}
+      <span
+        className="inline-block w-2 h-3.5 ml-1 align-middle"
+        style={{
+          backgroundColor: focused ? '#33ff33' : '#1a5c1a',
+          animation: focused ? 'pulse 1s step-end infinite' : 'none',
+        }}
+      />
+    </span>
+
+    <div className="ml-auto flex items-center gap-2 shrink-0">
+      <span
+        className="text-[11px] select-none"
+        style={{ color: focused ? '#33ff33' : '#1a5c1a', opacity: 0.6 }}
+      >
+        [—][□][×]
+      </span>
+    </div>
+  </div>
+);
+
+export type WindowStyle =
+  | 'macos'
+  | 'windows'
+  | 'linux-gnome'
+  | 'linux-kde'
+  | 'retro-terminal'
+  | 'none';
+
 export interface WindowFrameProps {
-  windowStyle: 'macos' | 'windows' | 'none';
+  windowStyle: WindowStyle;
   borderRadius: number;
   shadowSize: string;
   themeBg: string;
   children: React.ReactNode;
 }
-
-const SHADOW_MAP: Record<string, string> = {
-  none: '',
-  sm: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)',
-  md: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
-  lg: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-  xl: '0 25px 50px -12px rgba(0,0,0,0.25)',
-};
 
 export const WindowFrame: React.FC<WindowFrameProps> = ({
   windowStyle,
@@ -407,13 +706,20 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
   themeBg,
   children,
 }) => {
-  // macOS: subtle semi-transparent border. Windows: thin solid border.
   const borderStyle =
     windowStyle === 'macos'
       ? '0.5px solid rgba(255,255,255,0.1)'
       : windowStyle === 'windows'
         ? '1px solid rgba(128,128,128,0.15)'
-        : 'none';
+        : windowStyle === 'linux-gnome'
+          ? '0.5px solid rgba(255,255,255,0.08)'
+          : windowStyle === 'linux-kde'
+            ? '1px solid rgba(100,100,120,0.12)'
+            : windowStyle === 'retro-terminal'
+              ? '1px solid #33ff33'
+              : 'none';
+
+  const bg = windowStyle === 'retro-terminal' ? '#0a0a0a' : themeBg;
 
   return (
     <div
@@ -421,7 +727,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
       style={{
         borderRadius: `${borderRadius}px`,
         boxShadow: SHADOW_MAP[shadowSize] || '',
-        backgroundColor: themeBg,
+        backgroundColor: bg,
         border: borderStyle,
       }}
     >
