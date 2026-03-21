@@ -6,8 +6,6 @@ import { cn } from '@/lib/utils';
 const ReadingModeSelector = lazy(() => import('./reading-mode-selector'));
 const AppThemeSelector = lazy(() => import('./app-theme-selector'));
 const FontFamilySelector = lazy(() => import('./font-family-selector'));
-const CodeThemeSelector = lazy(() => import('./code-theme-selector'));
-const CodeDisplaySelector = lazy(() => import('./code-display-selector'));
 const BackgroundSettings = lazy(() => import('./background-settings'));
 
 const TabLoader = () => (
@@ -16,7 +14,7 @@ const TabLoader = () => (
   </div>
 );
 
-type TabValue = 'reading' | 'theme' | 'font' | 'code';
+type TabValue = 'reading' | 'theme' | 'font';
 
 interface TabConfig {
   value: TabValue;
@@ -27,7 +25,6 @@ const TABS: TabConfig[] = [
   { value: 'reading', label: 'Reading' },
   { value: 'theme', label: 'Theme' },
   { value: 'font', label: 'Font' },
-  { value: 'code', label: 'Code' },
 ];
 
 const TabContent = memo(({ value, activeTab }: { value: TabValue; activeTab: TabValue }) => {
@@ -52,14 +49,6 @@ const TabContent = memo(({ value, activeTab }: { value: TabValue; activeTab: Tab
           </>
         )}
         {value === 'font' && <FontFamilySelector />}
-        {value === 'code' && (
-          <>
-            <CodeDisplaySelector />
-            <div className="border-t border-border/20 pt-4 mt-4">
-              <CodeThemeSelector />
-            </div>
-          </>
-        )}
       </Suspense>
     </div>
   );

@@ -4,6 +4,8 @@ import React, { useMemo, useRef, useState } from 'react';
 
 import { CodeImageExportDialog } from '@/components/features/image-export';
 import { useExportSnippets } from '@/components/features/image-export/context/export-snippets-context';
+import { LanguageIcon } from '@/components/features/image-export/utils/language-icons';
+import { useMarkdownStyleStore } from '@/components/features/markdown-style/store/markdown-style-store';
 import {
   getThemeBackground,
   useCodeDisplaySettingsStore,
@@ -18,6 +20,12 @@ import { tryAsync } from '@/utils/functions/error';
 
 import type { TextSizeScale } from '../../utils/text-size-classes';
 import CodeMirrorDisplay from './codemirror-display';
+
+const CODE_BLOCK_CONTAINER_CLASSES = {
+  rounded: { wrapper: 'rounded-2xl', inner: 'rounded-2xl' },
+  sharp: { wrapper: 'rounded-none', inner: 'rounded-none' },
+  bordered: { wrapper: 'rounded-xl border border-border/40', inner: 'rounded-xl' },
+} as const;
 
 const CODE_FONT_SIZES: Record<TextSizeScale, string> = {
   xs: '0.75rem',
@@ -55,7 +63,9 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
   const { selectedTheme } = useCodeThemeStore();
   const { settings: displaySettings } = useCodeDisplaySettingsStore();
   const textSizeScale = useReadingSettingsStore((s) => s.settings.textSizeScale);
+  const codeBlockContainerStyle = useMarkdownStyleStore((s) => s.settings.codeBlockContainerStyle);
   const { codeSnippets } = useExportSnippets();
+  const containerClasses = CODE_BLOCK_CONTAINER_CLASSES[codeBlockContainerStyle];
 
   const codeContent = useMemo(() => {
     return typeof children === 'string'
@@ -126,8 +136,19 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
       <ExportContextMenu title={language ? `${language} block` : 'Code block'} items={exportItems}>
         <div
           ref={wrapperRef}
-          className="my-8 relative font-fira-code no-swipe shadow-background/50 rounded-2xl border-none"
+          className={cn(
+            'my-8 relative font-fira-code no-swipe shadow-background/50 border-none',
+            containerClasses.wrapper
+          )}
         >
+          {/* Language Label */}
+          {displaySettings.showLanguageLabel && language && (
+            <div className="absolute top-2 left-3 z-10 flex items-center gap-1.5 text-muted-foreground/70 select-none">
+              <LanguageIcon language={language} className="w-3.5 h-3.5" />
+              <span className="text-[11px] font-medium lowercase tracking-wide">{language}</span>
+            </div>
+          )}
+
           {/* Copy Button */}
           <Button
             variant="ghost"
@@ -156,7 +177,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
           {/* Code Content */}
           <div
             ref={codeBlockRef}
-            className="rounded-2xl overflow-hidden p-2"
+            className={cn('overflow-hidden p-4', containerClasses.inner)}
             style={{ backgroundColor }}
           >
             <CodeMirrorDisplay
@@ -167,7 +188,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
               enableCodeFolding={displaySettings.enableCodeFolding}
               enableWordWrap={displaySettings.enableWordWrap}
               fontSize={CODE_FONT_SIZES[textSizeScale]}
-              className="rounded-2xl"
+              className={containerClasses.inner}
             />
           </div>
         </div>

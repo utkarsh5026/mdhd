@@ -6,6 +6,7 @@ import CodeRender from './code-render';
 import HeadingRender from './heading-render';
 import HorizontalRuleRender from './horizontal-rule-render';
 import ImageRender from './image-render';
+import InlineCodeRender from './inline-code-render';
 import LinkRender from './link-render';
 import ListRender from './list-render';
 import ParagraphRender from './paragraph-render';
@@ -31,11 +32,7 @@ export const markdownComponents: Components = {
     const isBlock = hasLanguageClass || isMultiline;
 
     if (!isBlock) {
-      return (
-        <code className="px-1.5 py-0.5 text-primary/95 font-cascadia-code wrap-break-word text-[0.9em] bg-primary/10 rounded-lg">
-          {children}
-        </code>
-      );
+      return <InlineCodeRender>{children}</InlineCodeRender>;
     }
     return (
       <CodeRender className={className} {...props}>

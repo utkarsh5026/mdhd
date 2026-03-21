@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { FolderTree, Layers, List, Search, Settings } from 'lucide-react';
+import { FolderTree, Layers, List, Palette, Search, Settings } from 'lucide-react';
 import React, { memo, useCallback, useEffect } from 'react';
 import { FaGithub } from 'react-icons/fa';
 
@@ -7,6 +7,7 @@ import SearchPanel from '@/components/features/content-reading/components/search
 import SnippetsPanel from '@/components/features/content-reading/components/snippets/snippets-panel';
 import FilesPanel from '@/components/features/file-explorer/components/files-panel';
 import OutlinePanel from '@/components/features/file-explorer/components/outline-panel';
+import { MarkdownStylePanel } from '@/components/features/markdown-style';
 import { SettingsPanel } from '@/components/features/settings';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,6 +44,7 @@ const DEFAULT_PANELS: Panel[] = [
   { id: 'outline', icon: List, tooltip: 'Outline', content: <OutlinePanel /> },
   { id: 'snippets', icon: Layers, tooltip: 'Snippets', content: <SnippetsPanel /> },
   { id: 'search', icon: Search, tooltip: 'Search', content: <SearchPanel /> },
+  { id: 'style', icon: Palette, tooltip: 'Style', content: <MarkdownStylePanel /> },
   { id: 'settings', icon: Settings, tooltip: 'Settings', content: <SettingsPanel /> },
 ];
 

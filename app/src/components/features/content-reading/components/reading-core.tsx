@@ -1,5 +1,6 @@
 import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
+import SearchDialog from '@/components/features/content-reading/components/search/search-dialog';
 import { useControls } from '@/components/features/content-reading/hooks';
 import { ExportSnippetsProvider } from '@/components/features/image-export/context/export-snippets-context';
 import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
@@ -15,7 +16,6 @@ import {
   SectionBreadcrumb,
 } from './layout';
 import ReadingBackground from './reading-background';
-import { SearchDialog } from './search';
 
 const ReadingSettingsSheet = lazy(() =>
   import('@/components/features/settings').then((module) => ({
@@ -326,14 +326,12 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
           )}
 
           {/* Search Dialog */}
-          {searchOpen && (
-            <SearchDialog
-              open={searchOpen}
-              onOpenChange={setSearchOpen}
-              sections={sections}
-              onSelectSection={handleSelectCard}
-            />
-          )}
+          <SearchDialog
+            open={searchOpen}
+            onOpenChange={setSearchOpen}
+            sections={sections}
+            onSelectSection={handleSelectCard}
+          />
 
           {/* Floating Theme Picker */}
           <FloatingThemePicker />

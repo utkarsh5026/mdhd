@@ -1,11 +1,10 @@
-import { Braces, Hash, LucideIcon, Settings2, WrapText } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 import React from 'react';
 
 import CodeMirrorDisplay from '@/components/features/markdown-render/components/renderers/codemirror-display';
 import { useCodeDisplaySettingsStore } from '@/components/features/settings/store/code-display-settings';
 import { useCodeThemeStore } from '@/components/features/settings/store/code-theme';
 import { Switch } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
 
 import { SettingsHeader } from './settings-commons';
 
@@ -19,39 +18,46 @@ const sampleCode = `function greet(name: string) {
 greet("World");`;
 
 interface SettingOption {
-  icon: LucideIcon;
   title: string;
   description: string;
-  settingKey: 'showLineNumbers' | 'enableCodeFolding' | 'enableWordWrap';
+  settingKey: 'showLineNumbers' | 'enableCodeFolding' | 'enableWordWrap' | 'showLanguageLabel';
   setter: (value: boolean) => void;
 }
 
 const CodeDisplaySelector: React.FC = () => {
-  const { settings, setShowLineNumbers, setEnableCodeFolding, setEnableWordWrap } =
-    useCodeDisplaySettingsStore();
+  const {
+    settings,
+    setShowLineNumbers,
+    setEnableCodeFolding,
+    setEnableWordWrap,
+    setShowLanguageLabel,
+  } = useCodeDisplaySettingsStore();
   const { selectedTheme } = useCodeThemeStore();
 
   const settingOptions: SettingOption[] = [
     {
-      icon: Hash,
       title: 'Line Numbers',
       description: 'Show line numbers in code blocks',
       settingKey: 'showLineNumbers',
       setter: setShowLineNumbers,
     },
     {
-      icon: Braces,
       title: 'Code Folding',
       description: 'Allow collapsing code sections',
       settingKey: 'enableCodeFolding',
       setter: setEnableCodeFolding,
     },
     {
-      icon: WrapText,
       title: 'Word Wrap',
       description: 'Wrap long lines instead of scrolling',
       settingKey: 'enableWordWrap',
       setter: setEnableWordWrap,
+    },
+    {
+      title: 'Language Label',
+      description: 'Show language name and icon',
+      settingKey: 'showLanguageLabel',
+      setter: setShowLanguageLabel,
     },
   ];
 
@@ -64,26 +70,18 @@ const CodeDisplaySelector: React.FC = () => {
       />
 
       {/* Toggles */}
-      <div className="-mx-2">
-        {settingOptions.map(({ icon: Icon, title, description, settingKey, setter }) => {
+      <div className="-mx-2 text-sm">
+        {settingOptions.map(({ title, description, settingKey, setter }) => {
           const checked = settings[settingKey];
           return (
             <div
               key={settingKey}
-              className="flex items-center justify-between px-2 py-2.5 rounded-xl hover:bg-accent/50 transition-colors cursor-pointer group"
+              className="flex items-center justify-between px-2 py-2.5 rounded-xl cursor-pointer"
               onClick={() => setter(!checked)}
             >
-              <div className="flex items-center gap-3">
-                <Icon
-                  className={cn(
-                    'h-4 w-4 transition-colors',
-                    checked ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-                  )}
-                />
-                <div>
-                  <div className="text-sm font-medium leading-none mb-0.5">{title}</div>
-                  <div className="text-xs text-muted-foreground">{description}</div>
-                </div>
+              <div>
+                <div className="text-sm font-medium leading-none mb-0.5">{title}</div>
+                <div className="text-xs text-muted-foreground">{description}</div>
               </div>
               <Switch
                 checked={checked}
@@ -98,7 +96,7 @@ const CodeDisplaySelector: React.FC = () => {
       {/* Live Preview */}
       <div className="space-y-2 w-0 min-w-full overflow-hidden">
         <div className="text-xs text-muted-foreground px-1">Live Preview</div>
-        <div className="rounded-xl overflow-hidden w-full border border-border/20">
+        <div className="rounded-2xl overflow-hidden w-full border border-border/20">
           <CodeMirrorDisplay
             code={sampleCode}
             language="typescript"
@@ -107,6 +105,7 @@ const CodeDisplaySelector: React.FC = () => {
             enableCodeFolding={settings.enableCodeFolding}
             enableWordWrap={settings.enableWordWrap}
             className="overflow-hidden"
+            fontSize="0.25 rem"
           />
         </div>
       </div>

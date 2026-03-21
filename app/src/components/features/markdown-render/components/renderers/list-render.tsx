@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { useMarkdownStyleStore } from '@/components/features/markdown-style/store/markdown-style-store';
 import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
 
 import { useBionicTransform } from '../../hooks/use-bionic-transform';
@@ -17,9 +18,24 @@ type ListProps =
  * Features responsive design, improved visual hierarchy, and better contrast.
  * Optimized for both mobile and desktop viewing experiences.
  */
+const UL_LIST_STYLE_TYPE: Record<string, string> = {
+  disc: 'disc',
+  dash: '"– "',
+  arrow: '"→ "',
+  none: 'none',
+};
+
+const OL_LIST_STYLE_TYPE: Record<string, string> = {
+  decimal: 'decimal',
+  roman: 'lower-roman',
+  alpha: 'lower-alpha',
+};
+
 const ListRender: React.FC<ListProps> = ({ type, props }) => {
   const bionicChildren = useBionicTransform(type === 'li' ? props.children : undefined);
   const textSizeScale = useReadingSettingsStore((s) => s.settings.textSizeScale);
+  const unorderedListMarker = useMarkdownStyleStore((s) => s.settings.unorderedListMarker);
+  const orderedListMarker = useMarkdownStyleStore((s) => s.settings.orderedListMarker);
 
   const baseListClasses = [
     'my-3 sm:my-5',
@@ -44,7 +60,8 @@ const ListRender: React.FC<ListProps> = ({ type, props }) => {
     return (
       <ul
         {...props}
-        className={`${baseListClasses} list-disc marker:text-primary/70 text-foreground/92`}
+        className={`${baseListClasses} marker:text-primary/70 text-foreground/92`}
+        style={{ listStyleType: UL_LIST_STYLE_TYPE[unorderedListMarker] }}
       />
     );
   }
@@ -53,7 +70,8 @@ const ListRender: React.FC<ListProps> = ({ type, props }) => {
     return (
       <ol
         {...props}
-        className={`${baseListClasses} list-decimal marker:text-primary/70 marker:font-medium text-foreground/92`}
+        className={`${baseListClasses} marker:text-primary/70 marker:font-medium text-foreground/92`}
+        style={{ listStyleType: OL_LIST_STYLE_TYPE[orderedListMarker] }}
       />
     );
   }

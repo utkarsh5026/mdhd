@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, FileText, Maximize, Pencil, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, Maximize, Pencil } from 'lucide-react';
 import React, { memo, useCallback, useMemo, useState } from 'react';
 
 import { LoadingState } from '@/components/features/content-reading/components/layout';
@@ -48,7 +48,6 @@ const HeaderBtn: React.FC<HeaderIconButtonProps> = ({ tooltip, icon: Icon, onCli
 
 interface InlineHeaderProps {
   onFullscreen: () => void;
-  onSettings: () => void;
   onPdfExport: () => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -63,7 +62,6 @@ interface InlineHeaderProps {
 const InlineHeader: React.FC<InlineHeaderProps> = memo(
   ({
     onFullscreen,
-    onSettings,
     onPdfExport,
     onPrevious,
     onNext,
@@ -115,7 +113,6 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
             )}
             <HeaderBtn tooltip="Export to PDF" icon={FileText} onClick={onPdfExport} />
             <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
-            <HeaderBtn tooltip="Reading Settings" icon={Settings} onClick={onSettings} />
           </div>
         </div>
 
@@ -213,10 +210,9 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
           sourcePath={tab.sourcePath}
           viewMode="preview"
           onSectionClick={handlePreviewSectionClick}
-          headerSlot={({ onSettings, onPdfExport, breadcrumb, mobileBreadcrumb }) => (
+          headerSlot={({ onPdfExport, breadcrumb, mobileBreadcrumb }) => (
             <InlineHeader
               onFullscreen={onEnterFullscreen}
-              onSettings={onSettings}
               onPdfExport={onPdfExport}
               onPrevious={goToPrevious}
               onNext={goToNext}
