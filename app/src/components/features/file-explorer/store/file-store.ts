@@ -95,14 +95,9 @@ function mergeExpandedPaths(fileTree: FileTreeNode[], current: Set<string>): Set
 /**
  * Wraps an async store operation with `isLoading` state and unified error handling.
  *
- * Sets `isLoading: true` before calling `fn`. On success, `fn` is responsible for
- * resetting `isLoading` itself (to allow setting other state atomically). On failure,
- * sets `error` to the caught message or `fallbackMsg` and clears `isLoading`.
- *
- * @async
- * @param set - The Zustand `setState` function for the file store.
- * @param fn - The async operation to execute.
- * @param fallbackMsg - Error message to use when the caught value is not an `Error` instance.
+ * Sets `isLoading: true` before calling `fn`, and `isLoading: false` in a `finally`
+ * block so callers don't need to reset it manually. On failure, sets `error` to the
+ * caught message or `fallbackMsg`.
  */
 async function withLoading(
   set: SetFn,
@@ -115,8 +110,9 @@ async function withLoading(
   } catch (error) {
     set({
       error: error instanceof Error ? error.message : fallbackMsg,
-      isLoading: false,
     });
+  } finally {
+    set({ isLoading: false });
   }
 }
 
@@ -207,9 +203,8 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
         await withLoading(
           set,
           async () => {
-            await fileStorageDB.init();
             const fileTree = await fileStorageDB.buildFileTree();
-            set({ fileTree, isInitialized: true, isLoading: false });
+            set({ fileTree, isInitialized: true });
           },
           'Failed to initialize'
         );
@@ -221,7 +216,7 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
           set,
           async () => {
             const fileTree = await fileStorageDB.buildFileTree();
-            set({ fileTree, isLoading: false });
+            set({ fileTree });
           },
           'Failed to refresh'
         );
@@ -345,7 +340,7 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
             }
 
             const fileTree = await fileStorageDB.buildFileTree();
-            set({ fileTree, isLoading: false });
+            set({ fileTree });
           },
           'Delete failed'
         );
@@ -379,7 +374,7 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
             }
 
             const fileTree = await fileStorageDB.buildFileTree();
-            set({ fileTree, expandedDirectories: newExpanded, isLoading: false });
+            set({ fileTree, expandedDirectories: newExpanded });
           },
           'Delete failed'
         );
@@ -401,7 +396,6 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
               fileTree: [],
               selectedFile: null,
               expandedDirectories: new Set(),
-              isLoading: false,
             });
           },
           'Clear failed'

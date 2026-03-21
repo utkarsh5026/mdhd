@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'sonner';
 
 import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
 import { fileStorageDB } from '@/services/indexeddb';
@@ -34,9 +35,15 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
 
   if (node.type === 'file') {
     const handleFileClick = async () => {
-      const file = await fileStorageDB.getFile(node.id);
-      if (file) {
-        onFileClick(file);
+      try {
+        const file = await fileStorageDB.getFile(node.id);
+        if (file) {
+          onFileClick(file);
+        } else {
+          toast.error(`File "${node.name}" not found — it may have been deleted`);
+        }
+      } catch {
+        toast.error(`Failed to open "${node.name}"`);
       }
     };
 
@@ -63,7 +70,11 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
         onContextMenu={handleContextMenu}
       />
       {isExpanded && node.children && (
-        <div>
+        <div className="relative">
+          <div
+            className="absolute top-0 bottom-0 w-px bg-border/30"
+            style={{ left: `${depth * 16 + 18}px` }}
+          />
           {node.children.map((child) => (
             <TreeNode
               key={child.id}

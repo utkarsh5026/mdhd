@@ -87,10 +87,13 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
   return createPortal(
     <div
       ref={menuRef}
+      role="menu"
       className="fixed z-50 min-w-40 rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
       style={{ left: position.x, top: position.y }}
     >
       <button
+        role="menuitem"
+        autoFocus
         className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none hover:bg-accent hover:text-destructive transition-colors font-cascadia-code"
         onClick={handleDelete}
       >

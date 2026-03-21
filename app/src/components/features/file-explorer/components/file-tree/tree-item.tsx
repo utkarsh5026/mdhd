@@ -25,6 +25,7 @@ type TreeItemProps =
 export const TreeItem: React.FC<TreeItemProps> = (props) => {
   const { type, node, depth, onContextMenu } = props;
   const isFile = type === 'file';
+  const isSelected = isFile && props.isSelected;
   const onClick = isFile ? props.onClick : props.onToggle;
 
   return (
@@ -32,11 +33,10 @@ export const TreeItem: React.FC<TreeItemProps> = (props) => {
       role="button"
       tabIndex={0}
       className={cn(
-        'group flex items-center gap-1.5 px-2 py-0.5 cursor-pointer rounded-md transition-all duration-150',
-        'hover:bg-accent/40',
-        isFile && props.isSelected && 'bg-primary/10 text-primary'
+        'group relative flex items-center gap-1.5 py-[3px] pr-3 cursor-pointer rounded-sm transition-colors duration-100',
+        isSelected ? 'bg-accent/70' : 'hover:bg-accent/40'
       )}
-      style={{ paddingLeft: `${depth * 14 + 10}px` }}
+      style={{ paddingLeft: `${depth * 16 + 8}px` }}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -46,39 +46,44 @@ export const TreeItem: React.FC<TreeItemProps> = (props) => {
       }}
       onContextMenu={onContextMenu}
     >
+      {isSelected && (
+        <div className="absolute left-0 inset-y-[3px] w-0.5 bg-primary rounded-r-full" />
+      )}
+
       {isFile ? (
         <FileText
           className={cn(
             'h-3.5 w-3.5 shrink-0 transition-colors',
-            props.isSelected
+            isSelected
               ? 'text-primary/70'
-              : 'text-muted-foreground/60 group-hover:text-muted-foreground'
+              : 'text-muted-foreground/45 group-hover:text-muted-foreground/70'
           )}
         />
       ) : (
         <>
           <ChevronRight
             className={cn(
-              'h-3 w-3 text-muted-foreground/50 shrink-0 transition-transform duration-200',
+              'h-3 w-3 shrink-0 transition-transform duration-150 text-muted-foreground/35',
               props.isExpanded && 'rotate-90',
-              !(node.children && node.children.length > 0) && 'opacity-0'
+              !(node.children && node.children.length > 0) && 'invisible'
             )}
           />
           {props.isExpanded ? (
-            <FolderOpen className="h-3.5 w-3.5 text-amber-500/70 shrink-0" />
+            <FolderOpen className="h-3.5 w-3.5 text-amber-400/75 shrink-0" />
           ) : (
-            <Folder className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-amber-500/60 shrink-0 transition-colors" />
+            <Folder className="h-3.5 w-3.5 text-muted-foreground/45 group-hover:text-amber-400/65 shrink-0 transition-colors" />
           )}
         </>
       )}
+
       <span
         className={cn(
-          'text-xs truncate flex-1 transition-colors',
+          'text-xs whitespace-nowrap transition-colors',
           isFile
-            ? props.isSelected
-              ? 'text-primary font-medium'
-              : 'text-muted-foreground group-hover:text-foreground/80'
-            : 'text-foreground/70 group-hover:text-foreground/90 font-medium'
+            ? isSelected
+              ? 'text-foreground font-medium'
+              : 'text-muted-foreground/75 group-hover:text-foreground/85'
+            : 'text-foreground/75 group-hover:text-foreground/95 font-medium'
         )}
       >
         {node.name}

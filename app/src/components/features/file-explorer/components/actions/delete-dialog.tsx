@@ -11,6 +11,11 @@ import {
 } from '@/components/ui/dialog';
 import type { FileTreeNode } from '@/services/indexeddb';
 
+function countDescendants(node: FileTreeNode): number {
+  if (!node.children) return 0;
+  return node.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0);
+}
+
 interface DeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -29,7 +34,7 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
   if (!node) return null;
 
   const isDirectory = node.type === 'directory';
-  const childCount = node.children?.length || 0;
+  const childCount = countDescendants(node);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

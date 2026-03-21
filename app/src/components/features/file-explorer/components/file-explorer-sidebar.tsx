@@ -10,6 +10,7 @@ import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
 import {
   useDirectory,
   useExpandedDirectories,
+  useFileError,
   useFileStoreActions,
   useFileTree,
   useFileUpload,
@@ -39,9 +40,10 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
   const expandedDirectories = useExpandedDirectories();
   const isInitialized = useIsFileStoreInitialized();
   const isLoading = useIsFileLoading();
+  const initError = useFileError();
   const { isUploading, uploadProgress, uploadDirectory, uploadFiles } = useFileUpload();
   const { toggleDirectory, deleteDirectory } = useDirectory();
-  const { initialize, selectFile, handleDrop, deleteFile } = useFileStoreActions();
+  const { initialize, selectFile, handleDrop, deleteFile, clearError } = useFileStoreActions();
 
   const [isOpen, setIsOpen] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -90,6 +92,25 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
   };
 
   if (!isInitialized) {
+    if (initError) {
+      return (
+        <div className={cn('flex flex-col bg-background', className)}>
+          <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
+            <p className="text-sm text-destructive">{initError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                clearError();
+                initialize();
+              }}
+            >
+              Retry
+            </Button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className={cn('flex flex-col bg-background', className)}>
         <div className="flex items-center justify-center h-full">
@@ -137,27 +158,32 @@ export const FileExplorerSidebar: React.FC<FileExplorerSidebarProps> = ({
     <>
       <div className={cn('flex flex-col overflow-hidden bg-background', className)}>
         {/* Header */}
-        <div className="px-2 py-1.5 border-b border-border/30">
-          <div className="flex items-center justify-end gap-0.5">
-            <UploadButton variant="files" onUpload={handleFilesUpload} disabled={isUploading} />
-            <UploadButton
-              variant="directory"
-              onUpload={handleDirectoryUpload}
-              disabled={isUploading}
-            />
-            <TooltipButton
-              button={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <PanelLeftClose className="h-4 w-4" />
-                </Button>
-              }
-              tooltipText="Close sidebar"
-            />
+        <div className="px-3 py-1.5 border-b border-border/30">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 select-none">
+              Explorer
+            </span>
+            <div className="flex items-center gap-0.5">
+              <UploadButton variant="files" onUpload={handleFilesUpload} disabled={isUploading} />
+              <UploadButton
+                variant="directory"
+                onUpload={handleDirectoryUpload}
+                disabled={isUploading}
+              />
+              <TooltipButton
+                button={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <PanelLeftClose className="h-4 w-4" />
+                  </Button>
+                }
+                tooltipText="Close sidebar"
+              />
+            </div>
           </div>
         </div>
 
