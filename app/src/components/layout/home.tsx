@@ -7,11 +7,14 @@ import {
   useTabsActions,
 } from '@/components/features/tabs';
 import { ReactErrorBoundary } from '@/components/utils';
+import { useLocalStorage } from '@/hooks';
 import type { StoredFile } from '@/services/indexeddb';
 
 import Header from './header';
-import Sidebar from './sidebar';
+import Sidebar, { type SidebarPosition } from './sidebar';
 import StatusBar from './status-bar';
+
+const SIDEBAR_POSITION_KEY = 'mdhd-sidebar-position';
 
 const FullscreenMarkdownViewer = lazy(
   () => import('@/components/features/tabs/components/markdown/fullscreen-markdown-viewer')
@@ -22,6 +25,8 @@ const Homepage = () => {
   const { createTab, setActiveTab, findTabByFileId, setShowEmptyState } = useTabsActions();
   const isHeaderVisible = useHeaderVisible();
   const isStatusBarVisible = useStatusBarVisible();
+  const { storedValue: sidebarPosition, setValue: setSidebarPosition } =
+    useLocalStorage<SidebarPosition>(SIDEBAR_POSITION_KEY, 'left');
 
   const handleEnterFullscreen = useCallback((tabId: string) => {
     setFullscreenTabId(tabId);
@@ -68,14 +73,32 @@ const Homepage = () => {
 
       {isHeaderVisible && <div className="shrink-0 h-12 border-b border-border/20" />}
       <div className="relative flex flex-1 min-h-0">
-        <ReactErrorBoundary>
-          <Sidebar className="w-64 border-r border-border/40" onFileSelect={handleFileSelect} />
-        </ReactErrorBoundary>
+        {sidebarPosition === 'left' && (
+          <ReactErrorBoundary>
+            <Sidebar
+              className="w-64 border-r border-border/40"
+              onFileSelect={handleFileSelect}
+              position={sidebarPosition}
+              onPositionChange={setSidebarPosition}
+            />
+          </ReactErrorBoundary>
+        )}
 
         {/* Main Content Area with Tabs */}
         <ReactErrorBoundary>
           <TabbedContentArea onEnterFullscreen={handleEnterFullscreen} />
         </ReactErrorBoundary>
+
+        {sidebarPosition === 'right' && (
+          <ReactErrorBoundary>
+            <Sidebar
+              className="w-64 border-l border-border/40"
+              onFileSelect={handleFileSelect}
+              position={sidebarPosition}
+              onPositionChange={setSidebarPosition}
+            />
+          </ReactErrorBoundary>
+        )}
       </div>
 
       {isStatusBarVisible && <StatusBar />}
