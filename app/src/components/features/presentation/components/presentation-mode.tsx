@@ -38,7 +38,7 @@ const PresentationMode: React.FC<PresentationModeProps> = memo(
       goPrev,
       jumpToSlide,
     } = useSlideNavigation({ sections, initialSlide });
-    const { controlsVisible, cursorHidden } = useControlsVisibility(currentSlide);
+    const { controlsVisible, cursorHidden, hideControls } = useControlsVisibility(currentSlide);
     const { handleExit } = useSlideKeyboard({ goNext, goPrev, onExit });
 
     const showNotes = usePresentationShowNotes();
@@ -66,8 +66,8 @@ const PresentationMode: React.FC<PresentationModeProps> = memo(
           cursorHidden && 'cursor-none'
         )}
       >
-        {/* Slide area */}
-        <div {...swipeHandlers} className="flex-1 min-h-0 overflow-hidden">
+        {/* Slide area — clicking here hides the controls bar */}
+        <div {...swipeHandlers} className="flex-1 min-h-0 overflow-hidden" onClick={hideControls}>
           <PresentationSlide
             section={currentSection}
             isTransitioning={isTransitioning}
@@ -78,8 +78,10 @@ const PresentationMode: React.FC<PresentationModeProps> = memo(
         {/* Presenter notes */}
         <PresenterNotesPanel section={currentSection} visible={showNotes} />
 
-        {/* Bottom bar: filmstrip + controls stacked, absolutely positioned to avoid taking layout space when hidden */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 flex flex-col">
+        <div
+          className="absolute bottom-0 left-0 right-0 z-10 flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
           <SlideFilmstrip
             sections={sections}
             currentIndex={currentSlide}

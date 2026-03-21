@@ -29,6 +29,13 @@ export function useControlsVisibility(currentSlide: number) {
     }, CONTROLS_HIDE_DELAY);
   }, []);
 
+  const hideControls = useCallback(() => {
+    if (panelsOpen) return;
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    setControlsVisible(false);
+    setCursorHidden(true);
+  }, [panelsOpen]);
+
   useEffect(() => {
     if (panelsOpen) {
       setControlsVisible(true);
@@ -57,5 +64,5 @@ export function useControlsVisibility(currentSlide: number) {
     };
   }, []);
 
-  return { controlsVisible, cursorHidden };
+  return { controlsVisible, cursorHidden, hideControls };
 }
