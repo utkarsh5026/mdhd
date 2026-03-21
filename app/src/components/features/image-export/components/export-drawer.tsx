@@ -2,13 +2,14 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { toJpeg, toPng, toSvg } from 'html-to-image';
 import { Redo2, Undo2, XIcon } from 'lucide-react';
 import React, { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
-import { download, toFilename } from '@/components/features/markdown-render/utils/file';
 import { Button } from '@/components/ui/button';
 import { DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { download, toFilename } from '@/utils/download';
 
-import { ToolbarButton } from './shared-controls';
+import { ToolbarButton } from './settings/shared-controls';
 
 type ImageFormat = 'png' | 'svg' | 'jpg';
 type ExportOptions = NonNullable<Parameters<typeof toPng>[1]>;
@@ -31,6 +32,7 @@ async function exportImage(
     download(dataUrl, toFilename(filenameHint || 'export', format, 'snippet'));
   } catch (err) {
     console.error(`[ImageExport] ${format.toUpperCase()} export failed`, err);
+    toast.error(`${format.toUpperCase()} export failed`);
   }
 }
 
@@ -87,14 +89,22 @@ const DraggablePreview: React.FC<{ children: React.ReactNode }> = ({ children })
     startPanX: number;
     startPanY: number;
   } | null>(null);
+  const scaleRef = useRef(1);
   const resizeState = useRef<{
     edge: ResizeEdge;
     startX: number;
     startY: number;
-    startZoom: number;
+    startScale: number;
   } | null>(null);
-  // Natural (unzoomed) width, captured once on first resize
+  // Natural (unscaled) width, captured once on first resize
   const naturalWidth = useRef<number | null>(null);
+
+  const applyScale = (scale: number) => {
+    scaleRef.current = scale;
+    if (contentRef.current) {
+      contentRef.current.style.transform = `scale(${scale})`;
+    }
+  };
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return;
@@ -104,14 +114,13 @@ const DraggablePreview: React.FC<{ children: React.ReactNode }> = ({ children })
       const edge = getEdgeFromPoint(rect, e.clientX, e.clientY);
       if (edge) {
         if (naturalWidth.current === null) {
-          const currentZoom = parseFloat(contentRef.current.style.zoom || '1');
-          naturalWidth.current = rect.width / currentZoom;
+          naturalWidth.current = rect.width / scaleRef.current;
         }
         resizeState.current = {
           edge,
           startX: e.clientX,
           startY: e.clientY,
-          startZoom: parseFloat(contentRef.current.style.zoom || '1'),
+          startScale: scaleRef.current,
         };
         containerRef.current?.setPointerCapture(e.pointerId);
         return;
@@ -131,12 +140,12 @@ const DraggablePreview: React.FC<{ children: React.ReactNode }> = ({ children })
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (resizeState.current && contentRef.current && naturalWidth.current) {
-      const { edge, startX, startY, startZoom } = resizeState.current;
+      const { edge, startX, startY, startScale } = resizeState.current;
       const dx = edge === 'bottom' ? 0 : e.clientX - startX;
       const dy = edge === 'right' ? 0 : e.clientY - startY;
       const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
-      const newZoom = Math.max(0.15, startZoom + delta / naturalWidth.current);
-      contentRef.current.style.zoom = `${newZoom}`;
+      const newScale = Math.max(0.15, startScale + delta / naturalWidth.current);
+      applyScale(newScale);
       return;
     }
 
@@ -167,7 +176,7 @@ const DraggablePreview: React.FC<{ children: React.ReactNode }> = ({ children })
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-hidden relative min-h-0 bg-zinc-100 dark:bg-zinc-950 select-none"
+      className="flex-1 overflow-hidden relative min-h-0 bg-muted/40 select-none"
       style={{ ...GRID_BG, cursor: 'grab' }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -178,10 +187,11 @@ const DraggablePreview: React.FC<{ children: React.ReactNode }> = ({ children })
         <div
           ref={contentRef}
           className="relative drop-shadow-2xl"
+          style={{ transformOrigin: 'center center' }}
           onDoubleClick={(e) => {
             e.stopPropagation();
             if (contentRef.current) {
-              contentRef.current.style.zoom = '';
+              applyScale(1);
               naturalWidth.current = null;
             }
             if (wrapperRef.current) {
@@ -213,6 +223,7 @@ export interface ExportDrawerProps {
   canRedo: boolean;
   previewContent: React.ReactNode;
   sidebarContent: React.ReactNode;
+  navigationContent?: React.ReactNode;
 }
 
 const ExportDrawer: React.FC<ExportDrawerProps> = ({
@@ -231,6 +242,7 @@ const ExportDrawer: React.FC<ExportDrawerProps> = ({
   canRedo,
   previewContent,
   sidebarContent,
+  navigationContent,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -255,6 +267,7 @@ const ExportDrawer: React.FC<ExportDrawerProps> = ({
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('[ImageExport] copy failed', err);
+      toast.error('Failed to copy image to clipboard');
     }
   }, [captureRef, getExportOptions]);
 
@@ -264,7 +277,7 @@ const ExportDrawer: React.FC<ExportDrawerProps> = ({
         <DialogOverlay />
         <DialogPrimitive.Content
           className={cn(
-            'fixed bottom-0 left-0 right-0 z-50 h-[90vh] overflow-hidden flex flex-col font-cascadia-code',
+            'fixed bottom-0 left-0 right-0 z-50 h-[90vh] overflow-hidden flex flex-col ',
             'rounded-t-2xl bg-background/95 backdrop-blur-xl border-t border-border/50 p-0',
             'shadow-[0_-8px_40px_rgba(0,0,0,0.12)]',
             'data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom-4 data-[state=open]:fade-in-0 data-[state=open]:duration-300',
@@ -284,13 +297,16 @@ const ExportDrawer: React.FC<ExportDrawerProps> = ({
             </div>
 
             <div className="px-6 pb-3 flex items-center justify-between">
-              <div>
-                <DialogPrimitive.Title className="text-sm font-semibold tracking-tight">
-                  {title}
-                </DialogPrimitive.Title>
-                <DialogPrimitive.Description className="text-[11px] text-muted-foreground/70 mt-0.5">
-                  {description}
-                </DialogPrimitive.Description>
+              <div className="flex items-center gap-3">
+                <div>
+                  <DialogPrimitive.Title className="text-sm font-semibold tracking-tight">
+                    {title}
+                  </DialogPrimitive.Title>
+                  <DialogPrimitive.Description className="text-[11px] text-muted-foreground/70 mt-0.5">
+                    {description}
+                  </DialogPrimitive.Description>
+                </div>
+                {navigationContent}
               </div>
               <div className="flex items-center gap-1">
                 <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/30">
