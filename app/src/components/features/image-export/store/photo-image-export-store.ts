@@ -1,7 +1,5 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-
-import type { SavedPreset, SharedExportSettings } from './types';
+import { createImageExportStore } from './create-image-export-store';
+import type { SharedExportSettings } from './types';
 
 export interface PhotoImageExportSettings extends SharedExportSettings {
   // Filters
@@ -65,7 +63,27 @@ export const defaultPhotoSettings: PhotoImageExportSettings = {
   borderRadius: 12,
   shadowSize: 'lg',
   customWidth: 0,
+  customHeight: 0,
   aspectRatio: 'auto',
+
+  // Shared — 3D perspective
+  perspectiveEnabled: false,
+  perspective: 1000,
+  rotateX: 0,
+  rotateY: 0,
+
+  // Shared — gradient border
+  gradientBorderEnabled: false,
+  gradientBorderWidth: 3,
+  gradientBorderColorStart: '#ff6b6b',
+  gradientBorderColorEnd: '#4ecdc4',
+  gradientBorderAngle: 135,
+
+  // Shared — device frame
+  deviceFrame: 'none',
+
+  // Shared — annotations
+  annotations: [],
 
   // Shared — watermark
   watermarkText: '',
@@ -74,6 +92,13 @@ export const defaultPhotoSettings: PhotoImageExportSettings = {
   watermarkColor: '#ffffff',
   watermarkSize: 11,
   watermarkFontFamily: 'system-ui, sans-serif',
+  watermarkX: -1,
+  watermarkY: -1,
+
+  // Shared — content positioning
+  contentOffsetX: 0,
+  contentOffsetY: 0,
+  contentScale: 1,
 
   // Shared — export
   exportScale: 2,
@@ -114,126 +139,7 @@ export const defaultPhotoSettings: PhotoImageExportSettings = {
   captionBackground: 'rgba(0,0,0,0.6)',
 };
 
-const MAX_HISTORY = 50;
-
-interface PhotoImageExportStore {
-  settings: PhotoImageExportSettings;
-  updateSettings: (partial: Partial<PhotoImageExportSettings>) => void;
-  resetSettings: () => void;
-
-  presets: SavedPreset<PhotoImageExportSettings>[];
-  savePreset: (name: string) => void;
-  loadPreset: (name: string) => void;
-  deletePreset: (name: string) => void;
-
-  history: PhotoImageExportSettings[];
-  historyIndex: number;
-  undo: () => void;
-  redo: () => void;
-  canUndo: () => boolean;
-  canRedo: () => boolean;
-}
-
-export const usePhotoImageExportStore = create<PhotoImageExportStore>()(
-  persist(
-    (set, get) => ({
-      settings: defaultPhotoSettings,
-      history: [defaultPhotoSettings],
-      historyIndex: 0,
-      presets: [],
-
-      updateSettings: (partial) => {
-        set((state) => {
-          const newSettings = { ...state.settings, ...partial };
-          const newHistory = [...state.history.slice(0, state.historyIndex + 1), newSettings].slice(
-            -MAX_HISTORY
-          );
-          return {
-            settings: newSettings,
-            history: newHistory,
-            historyIndex: newHistory.length - 1,
-          };
-        });
-      },
-
-      resetSettings: () => {
-        set((state) => {
-          const newHistory = [
-            ...state.history.slice(0, state.historyIndex + 1),
-            defaultPhotoSettings,
-          ].slice(-MAX_HISTORY);
-          return {
-            settings: defaultPhotoSettings,
-            history: newHistory,
-            historyIndex: newHistory.length - 1,
-          };
-        });
-      },
-
-      savePreset: (name) => {
-        set((state) => {
-          const filtered = state.presets.filter((p) => p.name !== name);
-          return { presets: [...filtered, { name, settings: { ...state.settings } }] };
-        });
-      },
-
-      loadPreset: (name) => {
-        const preset = get().presets.find((p) => p.name === name);
-        if (preset) {
-          set((state) => {
-            const newHistory = [
-              ...state.history.slice(0, state.historyIndex + 1),
-              preset.settings,
-            ].slice(-MAX_HISTORY);
-            return {
-              settings: { ...preset.settings },
-              history: newHistory,
-              historyIndex: newHistory.length - 1,
-            };
-          });
-        }
-      },
-
-      deletePreset: (name) => {
-        set((state) => ({
-          presets: state.presets.filter((p) => p.name !== name),
-        }));
-      },
-
-      undo: () => {
-        set((state) => {
-          if (state.historyIndex <= 0) return state;
-          const newIndex = state.historyIndex - 1;
-          return { settings: state.history[newIndex], historyIndex: newIndex };
-        });
-      },
-
-      redo: () => {
-        set((state) => {
-          if (state.historyIndex >= state.history.length - 1) return state;
-          const newIndex = state.historyIndex + 1;
-          return { settings: state.history[newIndex], historyIndex: newIndex };
-        });
-      },
-
-      canUndo: () => get().historyIndex > 0,
-      canRedo: () => get().historyIndex < get().history.length - 1,
-    }),
-    {
-      name: 'photo-image-export-settings',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        settings: state.settings,
-        presets: state.presets,
-      }),
-      merge: (persisted, current) => ({
-        ...current,
-        ...(persisted as object),
-        settings: {
-          ...defaultPhotoSettings,
-          ...((persisted as { settings?: Partial<PhotoImageExportSettings> })?.settings ?? {}),
-        },
-      }),
-    }
-  )
+export const usePhotoImageExportStore = createImageExportStore(
+  defaultPhotoSettings,
+  'photo-image-export-settings'
 );

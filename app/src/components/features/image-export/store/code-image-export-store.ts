@@ -1,15 +1,13 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-
 import type { ThemeKey } from '@/components/features/settings/store/code-theme';
 
-import type { SavedPreset, SharedExportSettings } from './types';
+import { createImageExportStore } from './create-image-export-store';
+import type { SharedExportSettings } from './types';
 
 export type { SavedPreset } from './types';
 
 export interface CodeImageExportSettings extends SharedExportSettings {
   // Window
-  windowStyle: 'macos' | 'windows' | 'none';
+  windowStyle: 'macos' | 'windows' | 'linux-gnome' | 'linux-kde' | 'retro-terminal' | 'none';
   windowFocused: boolean;
   titleText: string;
   titlePosition: 'center' | 'left' | 'right';
@@ -21,6 +19,9 @@ export interface CodeImageExportSettings extends SharedExportSettings {
   showMenuBar: boolean;
   showDock: boolean;
   showTaskbar: boolean;
+  showGnomeTopBar: boolean;
+  showGnomeDash: boolean;
+  showKdePanel: boolean;
 
   // Code
   themeKey: ThemeKey;
@@ -67,6 +68,9 @@ export const defaultSettings: CodeImageExportSettings = {
   showMenuBar: false,
   showDock: false,
   showTaskbar: false,
+  showGnomeTopBar: false,
+  showGnomeDash: false,
+  showKdePanel: false,
 
   themeKey: 'vscDarkPlus',
   fontFamily: 'Source Code Pro',
@@ -85,7 +89,23 @@ export const defaultSettings: CodeImageExportSettings = {
   borderRadius: 12,
   shadowSize: 'lg',
   customWidth: 0,
+  customHeight: 0,
   aspectRatio: 'auto',
+
+  perspectiveEnabled: false,
+  perspective: 1000,
+  rotateX: 0,
+  rotateY: 0,
+
+  gradientBorderEnabled: false,
+  gradientBorderWidth: 3,
+  gradientBorderColorStart: '#ff6b6b',
+  gradientBorderColorEnd: '#4ecdc4',
+  gradientBorderAngle: 135,
+
+  deviceFrame: 'none',
+
+  annotations: [],
 
   watermarkText: '',
   watermarkPosition: 'bottom-right',
@@ -93,134 +113,19 @@ export const defaultSettings: CodeImageExportSettings = {
   watermarkColor: '#ffffff',
   watermarkSize: 11,
   watermarkFontFamily: 'system-ui, sans-serif',
+  watermarkX: -1,
+  watermarkY: -1,
+
+  contentOffsetX: 0,
+  contentOffsetY: 0,
+  contentScale: 1,
 
   exportScale: 2,
 };
 
-const MAX_HISTORY = 50;
-
-interface CodeImageExportStore {
-  settings: CodeImageExportSettings;
-  updateSettings: (partial: Partial<CodeImageExportSettings>) => void;
-  resetSettings: () => void;
-
-  // Presets
-  presets: SavedPreset<CodeImageExportSettings>[];
-  savePreset: (name: string) => void;
-  loadPreset: (name: string) => void;
-  deletePreset: (name: string) => void;
-
-  // Undo / Redo
-  history: CodeImageExportSettings[];
-  historyIndex: number;
-  undo: () => void;
-  redo: () => void;
-  canUndo: () => boolean;
-  canRedo: () => boolean;
-}
-
-export const useCodeImageExportStore = create<CodeImageExportStore>()(
-  persist(
-    (set, get) => ({
-      settings: defaultSettings,
-      history: [defaultSettings],
-      historyIndex: 0,
-      presets: [],
-
-      updateSettings: (partial: Partial<CodeImageExportSettings>) => {
-        set((state) => {
-          const newSettings = { ...state.settings, ...partial };
-          const newHistory = [...state.history.slice(0, state.historyIndex + 1), newSettings].slice(
-            -MAX_HISTORY
-          );
-          return {
-            settings: newSettings,
-            history: newHistory,
-            historyIndex: newHistory.length - 1,
-          };
-        });
-      },
-
-      resetSettings: () => {
-        set((state) => {
-          const newHistory = [
-            ...state.history.slice(0, state.historyIndex + 1),
-            defaultSettings,
-          ].slice(-MAX_HISTORY);
-          return {
-            settings: defaultSettings,
-            history: newHistory,
-            historyIndex: newHistory.length - 1,
-          };
-        });
-      },
-
-      savePreset: (name: string) => {
-        set((state) => {
-          const filtered = state.presets.filter((p) => p.name !== name);
-          return { presets: [...filtered, { name, settings: { ...state.settings } }] };
-        });
-      },
-
-      loadPreset: (name: string) => {
-        const preset = get().presets.find((p) => p.name === name);
-        if (preset) {
-          set((state) => {
-            const newHistory = [
-              ...state.history.slice(0, state.historyIndex + 1),
-              preset.settings,
-            ].slice(-MAX_HISTORY);
-            return {
-              settings: { ...preset.settings },
-              history: newHistory,
-              historyIndex: newHistory.length - 1,
-            };
-          });
-        }
-      },
-
-      deletePreset: (name: string) => {
-        set((state) => ({
-          presets: state.presets.filter((p) => p.name !== name),
-        }));
-      },
-
-      undo: () => {
-        set((state) => {
-          if (state.historyIndex <= 0) return state;
-          const newIndex = state.historyIndex - 1;
-          return { settings: state.history[newIndex], historyIndex: newIndex };
-        });
-      },
-
-      redo: () => {
-        set((state) => {
-          if (state.historyIndex >= state.history.length - 1) return state;
-          const newIndex = state.historyIndex + 1;
-          return { settings: state.history[newIndex], historyIndex: newIndex };
-        });
-      },
-
-      canUndo: () => get().historyIndex > 0,
-      canRedo: () => get().historyIndex < get().history.length - 1,
-    }),
-    {
-      name: 'code-image-export-settings',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        settings: state.settings,
-        presets: state.presets,
-      }),
-      merge: (persisted, current) => ({
-        ...current,
-        ...(persisted as object),
-        settings: {
-          ...defaultSettings,
-          ...((persisted as { settings?: Partial<CodeImageExportSettings> })?.settings ?? {}),
-        },
-      }),
-    }
-  )
+export const useCodeImageExportStore = createImageExportStore(
+  defaultSettings,
+  'code-image-export-settings'
 );
 
 /**
@@ -235,6 +140,7 @@ export function parseHighlightedLines(input: string | undefined): number[] {
     if (rangeMatch) {
       const start = parseInt(rangeMatch[1], 10);
       const end = parseInt(rangeMatch[2], 10);
+      if (Math.abs(end - start) > 10000) continue;
       for (let i = Math.min(start, end); i <= Math.max(start, end); i++) {
         lines.push(i);
       }
