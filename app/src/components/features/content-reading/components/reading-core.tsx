@@ -1,16 +1,21 @@
 import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import { useControls } from '@/components/features/content-reading/hooks';
+import { ExportSnippetsProvider } from '@/components/features/image-export/context/export-snippets-context';
 import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
 import { useThemeFloatingPicker } from '@/components/shared/theme/store/theme-store';
+import { cn } from '@/lib/utils';
 import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 
+import { useReadingSettingsStore } from '../../settings/store/reading-settings-store';
 import {
   ContentReader,
   NavigationControls,
   ScrollContentReader,
   SectionBreadcrumb,
 } from './layout';
+import ReadingBackground from './reading-background';
+import { SearchDialog } from './search';
 import SnippetsSheet from './snippets';
 import SectionsSheet from './table-of-contents/sections-sheet';
 
@@ -20,17 +25,25 @@ const ReadingSettingsSheet = lazy(() =>
   }))
 );
 
+const PdfExportDialog = lazy(() =>
+  import('@/components/features/pdf-export').then((module) => ({
+    default: module.PdfExportDialog,
+  }))
+);
+
 interface HeaderHandlers {
   onSettings: () => void;
   onMenu: () => void;
   onSnippets: () => void;
+  onSearch: () => void;
+  onPresent?: () => void;
+  onPdfExport: () => void;
   isVisible: boolean;
   breadcrumb?: React.ReactNode;
   mobileBreadcrumb?: React.ReactNode;
 }
 
 export interface ReadingCoreProps {
-  // Content data
   markdown: string;
   metadata: MarkdownMetadata | null;
   sections: MarkdownSection[];
@@ -41,7 +54,6 @@ export interface ReadingCoreProps {
   readingMode: 'card' | 'scroll';
   scrollProgress: number;
 
-  // Navigation callbacks
   goToNext: () => void;
   goToPrevious: () => void;
   changeSection: (index: number) => void;
@@ -58,18 +70,16 @@ export interface ReadingCoreProps {
   // Header customization - render function that receives handlers
   headerSlot?: (handlers: HeaderHandlers) => React.ReactNode;
 
-  // Edit mode content (for inline viewer)
   editModeContent?: React.ReactNode;
-
-  // Click-to-edit: clicking a section in preview scrolls editor to source
   onSectionClick?: (sectionIndex: number) => void;
 
-  // Zen mode props (optional, for fullscreen only)
   isZenMode?: boolean;
   zenControlsVisible?: boolean;
   isDialogOpen?: boolean;
   onZenTap?: () => void;
   onZenDoubleTap?: () => void;
+
+  onPresent?: () => void;
 }
 
 /**
@@ -114,11 +124,17 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     isDialogOpen = false,
     onZenTap,
     onZenDoubleTap,
+    onPresent,
   }) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [snippetsOpen, setSnippetsOpen] = useState(false);
+    const [pdfExportOpen, setPdfExportOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    const backgroundType = useReadingSettingsStore((s) => s.settings.background.backgroundType);
+    const hasCustomBackground = backgroundType !== 'theme';
 
     const { openFloatingPicker, pendingFloatingPickerOpen } = useThemeFloatingPicker();
 
@@ -126,6 +142,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
       goToNext,
       goToPrevious,
       readingMode,
+      onSearch: () => setSearchOpen(true),
     });
 
     useEffect(() => {
@@ -199,7 +216,11 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
       handleInteraction();
     }, [handleInteraction]);
 
-    // If in edit mode, show edit content
+    const handlePdfExportOpen = useCallback(() => {
+      setPdfExportOpen(true);
+      handleInteraction();
+    }, [handleInteraction]);
+
     if (viewMode === 'edit' && editModeContent) {
       return <div className="h-full relative bg-background text-foreground">{editModeContent}</div>;
     }
@@ -208,121 +229,153 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     const shouldShowControls = !isDialogOpen && (!isZenMode || zenControlsVisible);
 
     return (
-      <div className="h-full relative bg-card text-foreground" onClick={handleContentClick}>
-        {/* Content Container - Card Mode or Scroll Mode */}
-        {readingMode === 'card' ? (
-          <ContentReader
-            markdown={markdown}
-            metadata={metadata}
-            currentIndex={currentIndex}
-            goToNext={goToNext}
-            goToPrevious={goToPrevious}
-            isTransitioning={isTransitioning}
-            scrollRef={scrollRef}
-            handleDoubleClick={handleContentDoubleClick}
-            currentSection={currentSection}
-            onSectionClick={onSectionClick}
-          />
-        ) : (
-          <ScrollContentReader
-            sections={sections}
-            metadata={metadata}
-            scrollRef={scrollRef}
-            handleDoubleClick={handleContentDoubleClick}
-            onScrollProgress={onScrollProgressChange}
-            onSectionVisible={handleSectionVisible}
-            onSectionClick={onSectionClick}
-          />
-        )}
-
-        {/* Breadcrumb - standalone overlay when there is no header to contain it */}
-        {shouldShowControls && readingMode === 'card' && !headerSlot && (
-          <div className="absolute top-0 left-0 z-50 p-2">
-            <SectionBreadcrumb
-              sections={sections}
+      <ExportSnippetsProvider sections={sections}>
+        <div
+          className={cn('h-full relative text-foreground', !hasCustomBackground && 'bg-card')}
+          onClick={handleContentClick}
+        >
+          <ReadingBackground />
+          {/* Content Container - Card Mode or Scroll Mode */}
+          {readingMode === 'card' ? (
+            <ContentReader
+              markdown={markdown}
+              metadata={metadata}
               currentIndex={currentIndex}
-              onNavigate={handleSelectCard}
-              sourcePath={sourcePath}
+              goToNext={goToNext}
+              goToPrevious={goToPrevious}
+              isTransitioning={isTransitioning}
+              scrollRef={scrollRef}
+              handleDoubleClick={handleContentDoubleClick}
+              currentSection={currentSection}
+              onSectionClick={onSectionClick}
             />
-          </div>
-        )}
+          ) : (
+            <ScrollContentReader
+              sections={sections}
+              metadata={metadata}
+              scrollRef={scrollRef}
+              handleDoubleClick={handleContentDoubleClick}
+              onScrollProgress={onScrollProgressChange}
+              onSectionVisible={handleSectionVisible}
+              onSectionClick={onSectionClick}
+            />
+          )}
 
-        {/* Header - breadcrumb is always injected into the header when one exists */}
-        {shouldShowControls && headerSlot && (
-          <div className="absolute top-0 left-0 right-0 z-50">
-            {headerSlot({
-              onSettings: handleSettingsOpen,
-              onMenu: handleMenuOpen,
-              onSnippets: handleSnippetsOpen,
-              isVisible: isControlsVisible || zenControlsVisible,
-              breadcrumb:
-                readingMode === 'card' ? (
-                  <SectionBreadcrumb
-                    sections={sections}
-                    currentIndex={currentIndex}
-                    onNavigate={handleSelectCard}
-                    sourcePath={sourcePath}
-                    variant="inline"
-                  />
-                ) : undefined,
-              mobileBreadcrumb:
-                readingMode === 'card' ? (
-                  <SectionBreadcrumb
-                    sections={sections}
-                    currentIndex={currentIndex}
-                    onNavigate={handleSelectCard}
-                    sourcePath={sourcePath}
-                    variant="mobile"
-                  />
-                ) : undefined,
-            })}
-          </div>
-        )}
+          {/* Breadcrumb - standalone overlay when there is no header to contain it */}
+          {shouldShowControls && readingMode === 'card' && !headerSlot && (
+            <div className="absolute top-0 left-0 z-50 p-2">
+              <SectionBreadcrumb
+                sections={sections}
+                currentIndex={currentIndex}
+                onNavigate={handleSelectCard}
+                sourcePath={sourcePath}
+              />
+            </div>
+          )}
 
-        {/* Navigation Controls - side arrows, hidden in zen mode and scroll mode */}
-        {shouldShowControls && readingMode === 'card' && (
-          <NavigationControls
-            currentIndex={currentIndex}
-            total={sections.length}
-            onPrevious={() => {
-              goToPrevious();
-              handleInteraction();
-            }}
-            onNext={() => {
-              goToNext();
-              handleInteraction();
-            }}
+          {/* Header - breadcrumb is always injected into the header when one exists */}
+          {shouldShowControls && headerSlot && (
+            <div className="absolute top-0 left-0 right-0 z-50">
+              {headerSlot({
+                onSettings: handleSettingsOpen,
+                onMenu: handleMenuOpen,
+                onSnippets: handleSnippetsOpen,
+                onSearch: () => setSearchOpen(true),
+                onPresent,
+                onPdfExport: handlePdfExportOpen,
+                isVisible: isControlsVisible || zenControlsVisible,
+                breadcrumb:
+                  readingMode === 'card' ? (
+                    <SectionBreadcrumb
+                      sections={sections}
+                      currentIndex={currentIndex}
+                      onNavigate={handleSelectCard}
+                      sourcePath={sourcePath}
+                      variant="inline"
+                    />
+                  ) : undefined,
+                mobileBreadcrumb:
+                  readingMode === 'card' ? (
+                    <SectionBreadcrumb
+                      sections={sections}
+                      currentIndex={currentIndex}
+                      onNavigate={handleSelectCard}
+                      sourcePath={sourcePath}
+                      variant="mobile"
+                    />
+                  ) : undefined,
+              })}
+            </div>
+          )}
+
+          {/* Navigation Controls - side arrows, hidden in zen mode and scroll mode */}
+          {shouldShowControls && readingMode === 'card' && (
+            <NavigationControls
+              currentIndex={currentIndex}
+              total={sections.length}
+              onPrevious={() => {
+                goToPrevious();
+                handleInteraction();
+              }}
+              onNext={() => {
+                goToNext();
+                handleInteraction();
+              }}
+            />
+          )}
+
+          {/* Snippets Sheet */}
+          <SnippetsSheet
+            open={snippetsOpen}
+            onOpenChange={setSnippetsOpen}
+            sections={sections}
+            onNavigateToSection={handleSelectCard}
           />
-        )}
 
-        {/* Snippets Sheet */}
-        <SnippetsSheet
-          open={snippetsOpen}
-          onOpenChange={setSnippetsOpen}
-          sections={sections}
-          onNavigateToSection={handleSelectCard}
-        />
+          {/* Sections Sheet */}
+          <SectionsSheet
+            currentIndex={currentIndex}
+            handleSelectCard={handleSelectCard}
+            menuOpen={menuOpen}
+            setMenuOpen={setMenuOpen}
+            sections={sections}
+            readSections={readSections}
+          />
 
-        {/* Sections Sheet */}
-        <SectionsSheet
-          currentIndex={currentIndex}
-          handleSelectCard={handleSelectCard}
-          menuOpen={menuOpen}
-          setMenuOpen={setMenuOpen}
-          sections={sections}
-          readSections={readSections}
-        />
+          {/* Reading Settings Sheet - Lazy loaded */}
+          {settingsOpen && (
+            <Suspense fallback={null}>
+              <ReadingSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+            </Suspense>
+          )}
 
-        {/* Reading Settings Sheet - Lazy loaded */}
-        {settingsOpen && (
-          <Suspense fallback={null}>
-            <ReadingSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
-          </Suspense>
-        )}
+          {/* PDF Export Dialog - Lazy loaded */}
+          {pdfExportOpen && (
+            <Suspense fallback={null}>
+              <PdfExportDialog
+                open={pdfExportOpen}
+                onOpenChange={setPdfExportOpen}
+                title={(metadata?.title as string) ?? sections[0]?.title ?? 'Document'}
+                sections={sections}
+                metadata={metadata}
+              />
+            </Suspense>
+          )}
 
-        {/* Floating Theme Picker */}
-        <FloatingThemePicker />
-      </div>
+          {/* Search Dialog */}
+          {searchOpen && (
+            <SearchDialog
+              open={searchOpen}
+              onOpenChange={setSearchOpen}
+              sections={sections}
+              onSelectSection={handleSelectCard}
+            />
+          )}
+
+          {/* Floating Theme Picker */}
+          <FloatingThemePicker />
+        </div>
+      </ExportSnippetsProvider>
     );
   }
 );
