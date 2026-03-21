@@ -33,7 +33,7 @@ export const TreeItem: React.FC<TreeItemProps> = (props) => {
       role="button"
       tabIndex={0}
       className={cn(
-        'group relative flex items-center gap-1.5 py-[3px] pr-3 cursor-pointer rounded-sm transition-colors duration-100',
+        'group relative flex items-center gap-1.5 py-0.75 pr-3 cursor-pointer rounded-sm transition-colors duration-100',
         isSelected ? 'bg-accent/70' : 'hover:bg-accent/40'
       )}
       style={{ paddingLeft: `${depth * 16 + 8}px` }}
@@ -47,7 +47,7 @@ export const TreeItem: React.FC<TreeItemProps> = (props) => {
       onContextMenu={onContextMenu}
     >
       {isSelected && (
-        <div className="absolute left-0 inset-y-[3px] w-0.5 bg-primary rounded-r-full" />
+        <div className="absolute left-0 inset-y-0.75 w-0.5 bg-primary rounded-r-full" />
       )}
 
       {isFile ? (

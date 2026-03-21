@@ -1,6 +1,5 @@
 import { lazy, Suspense, useCallback, useState } from 'react';
 
-import { FileExplorerSidebar } from '@/components/features/file-explorer';
 import {
   TabbedContentArea,
   useHeaderVisible,
@@ -11,6 +10,7 @@ import { ReactErrorBoundary } from '@/components/utils';
 import type { StoredFile } from '@/services/indexeddb';
 
 import Header from './header';
+import Sidebar from './sidebar';
 import StatusBar from './status-bar';
 
 const FullscreenMarkdownViewer = lazy(
@@ -69,10 +69,7 @@ const Homepage = () => {
       {isHeaderVisible && <div className="shrink-0 h-12 border-b border-border/20" />}
       <div className="relative flex flex-1 min-h-0">
         <ReactErrorBoundary>
-          <FileExplorerSidebar
-            className="w-64 border-r border-border/40"
-            onFileSelect={handleFileSelect}
-          />
+          <Sidebar className="w-64 border-r border-border/40" onFileSelect={handleFileSelect} />
         </ReactErrorBoundary>
 
         {/* Main Content Area with Tabs */}

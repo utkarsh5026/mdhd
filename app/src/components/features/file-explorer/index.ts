@@ -1,4 +1,3 @@
-export { FileExplorerSidebar } from './components/file-explorer-sidebar';
 export {
   useExpandedDirectories,
   useFileError,
