@@ -1,404 +1,207 @@
-import React, { forwardRef, useMemo } from 'react';
-
-import { cn } from '@/lib/utils';
+import React, { forwardRef, useCallback, useRef } from 'react';
 
 import { useImageDataUrl } from '../hooks/use-image-data-url';
+import { usePhotoImageStyles } from '../hooks/use-photo-image-styles';
 import type { PhotoImageExportSettings } from '../store/photo-image-export-store';
+import type { Annotation, SharedExportSettings } from '../store/types';
+import { WATERMARK_POSITION_STYLES } from '../utils/constants';
+import { DeviceFrameWrapper } from './device-frames/index';
 import {
-  ASPECT_RATIO_MAP,
-  PHOTO_PREVIEW_MIN_WIDTH,
-  sanitizeBackgroundImageUrl,
-  SHADOW_MAP,
-  WATERMARK_POSITION_STYLES,
-} from '../utils/constants';
-import { AnnotationOverlay } from './annotation-overlay';
-import { DeviceFrameWrapper } from './device-frames';
-import { buildPatternBackground } from './pattern-backgrounds';
-
-const FONT_WEIGHT_MAP: Record<string, number> = {
-  light: 300,
-  normal: 400,
-  bold: 700,
-};
+  BackgroundImageLayers,
+  ContentDragWrapper,
+  InteractiveOverlay,
+  NoiseOverlay,
+  OverlayCaption,
+  PatternBackgroundLayer,
+  StaticExportOverlay,
+  TintOverlay,
+  VignetteOverlay,
+} from './overlays';
 
 interface PhotoImagePreviewProps {
   src: string;
   alt: string;
   settings: PhotoImageExportSettings;
+  onAnnotationUpdate?: (id: string, partial: Partial<Annotation>) => void;
+  onSettingsUpdate?: (partial: Partial<SharedExportSettings>) => void;
 }
 
 const PhotoImagePreview = forwardRef<HTMLDivElement, PhotoImagePreviewProps>(
-  ({ src, alt, settings }, ref) => {
-    const {
-      backgroundType,
-      backgroundColor,
-      backgroundColorEnd,
-      gradientAngle,
-      backgroundImage,
-      backgroundImageOpacity,
-      backgroundImageOverlay,
-      backgroundImageOverlayOpacity,
-      backgroundImageFit,
-      backgroundPatternEnabled,
-      backgroundPattern,
-      backgroundPatternColor,
-      backgroundPatternOpacity,
-      backgroundPatternScale,
-      transparentBackground,
-      padding,
-      shadowSize,
-      customWidth,
-      customHeight,
-      aspectRatio,
-      watermarkText,
-      watermarkPosition,
-      watermarkOpacity,
-      watermarkColor,
-      watermarkSize,
-      watermarkFontFamily,
-      brightness,
-      contrast,
-      saturation,
-      blur,
-      grayscale,
-      sepia,
-      hueRotate,
-      invert,
-      vignette,
-      sharpen,
-      noise,
-      tintColor,
-      tintOpacity,
-      frameBorderWidth,
-      frameBorderColor,
-      frameBorderStyle,
-      innerBorderRadius,
-      captionText,
-      captionDescription,
-      captionPosition,
-      captionFontFamily,
-      captionFontSize,
-      captionFontWeight,
-      captionAlignment,
-      captionMaxWidth,
-      captionColor,
-      captionBackground,
-      perspectiveEnabled,
-      perspective,
-      rotateX,
-      rotateY,
-      gradientBorderEnabled,
-      gradientBorderWidth,
-      gradientBorderColorStart,
-      gradientBorderColorEnd,
-      gradientBorderAngle,
-      deviceFrame,
-      annotations,
-    } = settings;
+  ({ src, alt, settings, onAnnotationUpdate, onSettingsUpdate }, ref) => {
+    const localRef = useRef<HTMLDivElement>(null);
+    const interactive = !!onAnnotationUpdate && !!onSettingsUpdate;
+
+    const mergedRef = useCallback(
+      (node: HTMLDivElement | null) => {
+        localRef.current = node;
+        if (typeof ref === 'function') ref(node);
+        else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      },
+      [ref]
+    );
 
     const imageSrc = useImageDataUrl(src);
 
-    const filterStyle = useMemo(() => {
-      const parts: string[] = [];
-      if (brightness !== 100) parts.push(`brightness(${brightness}%)`);
-      if (contrast !== 100) parts.push(`contrast(${contrast}%)`);
-      if (saturation !== 100) parts.push(`saturate(${saturation}%)`);
-      if (blur > 0) parts.push(`blur(${blur}px)`);
-      if (grayscale > 0) parts.push(`grayscale(${grayscale}%)`);
-      if (sepia > 0) parts.push(`sepia(${sepia}%)`);
-      if (hueRotate > 0) parts.push(`hue-rotate(${hueRotate}deg)`);
-      if (invert > 0) parts.push(`invert(${invert}%)`);
-      if (sharpen > 0) {
-        const amount = 1 + sharpen / 200;
-        parts.push(`contrast(${amount * 100}%)`);
-      }
-      return parts.join(' ') || 'none';
-    }, [brightness, contrast, saturation, blur, grayscale, sepia, hueRotate, invert, sharpen]);
+    const {
+      safeBgImage,
+      isImageBg,
+      imageFitStyle,
+      patternBgStyle,
+      outerStyle,
+      isOverlayCaption,
+      captionStyle,
+      gradientBorderStyle,
+      photoFrameStyle,
+      imageStyle,
+      innerBorderRadiusResolved,
+      watermarkStyle,
+    } = usePhotoImageStyles(settings);
 
-    const safeBgImage = sanitizeBackgroundImageUrl(backgroundImage);
-    const isImageBg = backgroundType === 'image' && safeBgImage;
-
-    const outerBackground = transparentBackground
-      ? 'transparent'
-      : isImageBg
-        ? undefined
-        : backgroundType === 'gradient'
-          ? `linear-gradient(${gradientAngle}deg, ${backgroundColor}, ${backgroundColorEnd})`
-          : backgroundColor;
-
-    const imageFitStyle: React.CSSProperties | undefined = isImageBg
-      ? backgroundImageFit === 'tile'
-        ? { backgroundRepeat: 'repeat', backgroundSize: 'auto' }
-        : { backgroundRepeat: 'no-repeat', backgroundSize: backgroundImageFit }
-      : undefined;
-
-    const patternBgStyle = useMemo(
-      () =>
-        backgroundPatternEnabled && !transparentBackground
-          ? buildPatternBackground(
-              backgroundPattern,
-              backgroundPatternColor,
-              backgroundPatternOpacity,
-              backgroundPatternScale
-            )
-          : undefined,
-      [
-        backgroundPatternEnabled,
-        transparentBackground,
-        backgroundPattern,
-        backgroundPatternColor,
-        backgroundPatternOpacity,
-        backgroundPatternScale,
-      ]
-    );
-
-    const outerStyle: React.CSSProperties = {
-      background: outerBackground,
-      padding,
-      ...(customWidth > 0 ? { width: `${customWidth}px` } : { minWidth: PHOTO_PREVIEW_MIN_WIDTH }),
-      ...(customHeight > 0 ? { height: `${customHeight}px` } : {}),
-      ...(ASPECT_RATIO_MAP[aspectRatio]
-        ? { aspectRatio: ASPECT_RATIO_MAP[aspectRatio], minHeight: 0 }
-        : {}),
-      // 3D perspective transform
-      ...(perspectiveEnabled
-        ? {
-            transform: `perspective(${perspective}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
-          }
-        : {}),
-    };
-
-    const displayCaption = captionText || alt;
-    const displayDescription = captionDescription;
+    const displayCaption = settings.captionText || alt;
+    const displayDescription = settings.captionDescription;
     const showCaption = !!displayCaption;
-    const isOverlayCaption = captionPosition !== 'below';
 
-    const captionStyle: React.CSSProperties = {
-      fontFamily: captionFontFamily,
-      fontSize: `${captionFontSize}px`,
-      fontWeight: FONT_WEIGHT_MAP[captionFontWeight] ?? 400,
-      textAlign: captionAlignment,
-      color: captionColor,
-      ...(captionMaxWidth > 0 ? { maxWidth: `${captionMaxWidth}px` } : {}),
-    };
+    const captionMaxWidthStyle =
+      settings.captionMaxWidth > 0
+        ? {
+            maxWidth: `${settings.captionMaxWidth}px`,
+            margin: settings.captionAlignment === 'center' ? '0 auto' : undefined,
+            marginLeft: settings.captionAlignment === 'right' ? 'auto' : undefined,
+          }
+        : undefined;
 
-    // Gradient border wrapper style
-    const gradientBorderStyle: React.CSSProperties | undefined = gradientBorderEnabled
+    const descriptionStyle = displayDescription
       ? {
-          background: `linear-gradient(${gradientBorderAngle}deg, ${gradientBorderColorStart}, ${gradientBorderColorEnd})`,
-          padding: `${gradientBorderWidth}px`,
-          borderRadius: `${innerBorderRadius + gradientBorderWidth}px`,
+          fontSize: `${Math.max(settings.captionFontSize - 3, 9)}px`,
+          opacity: 0.7,
+          marginTop: '2px',
         }
       : undefined;
 
     const photoFrame = (
-      <div
-        className="relative overflow-hidden"
-        style={{
-          borderRadius: `${innerBorderRadius}px`,
-          boxShadow: gradientBorderEnabled ? undefined : SHADOW_MAP[shadowSize],
-          ...(frameBorderWidth > 0
-            ? {
-                border: `${frameBorderWidth}px ${frameBorderStyle} ${frameBorderColor}`,
-              }
-            : {}),
-        }}
-      >
+      <div className="relative overflow-hidden" style={photoFrameStyle}>
         {/* Image with filters */}
-        <img
-          src={imageSrc}
-          alt={alt}
-          className="block max-w-full h-auto"
-          style={{
-            filter: filterStyle,
-            borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
-          }}
-        />
+        <img src={imageSrc} alt={alt} className="block max-w-full h-auto" style={imageStyle} />
 
-        {/* Vignette overlay */}
-        {vignette > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
-              boxShadow: `inset 0 0 ${40 + vignette}px ${vignette / 2}px rgba(0,0,0,${vignette / 100})`,
-              pointerEvents: 'none',
-            }}
+        {settings.vignette > 0 && (
+          <VignetteOverlay vignette={settings.vignette} borderRadius={innerBorderRadiusResolved} />
+        )}
+        {settings.tintOpacity > 0 && (
+          <TintOverlay
+            tintOpacity={settings.tintOpacity}
+            tintColor={settings.tintColor}
+            borderRadius={innerBorderRadiusResolved}
           />
         )}
-
-        {/* Tint overlay */}
-        {tintOpacity > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundColor: tintColor,
-              opacity: tintOpacity / 100,
-              mixBlendMode: 'overlay',
-              borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
-              pointerEvents: 'none',
-            }}
-          />
+        {settings.noise > 0 && (
+          <NoiseOverlay noise={settings.noise} borderRadius={innerBorderRadiusResolved} />
         )}
-
-        {/* Noise/grain overlay */}
-        {noise > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: frameBorderWidth > 0 ? 0 : `${innerBorderRadius}px`,
-              opacity: noise / 100,
-              pointerEvents: 'none',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'repeat',
-              mixBlendMode: 'overlay',
-            }}
-          />
-        )}
-
-        {/* Overlay caption */}
         {showCaption && isOverlayCaption && (
-          <div
-            className={cn(
-              'absolute left-0 right-0 px-3 py-2',
-              captionPosition === 'overlay-top' ? 'top-0' : 'bottom-0'
-            )}
-            style={{
-              background: captionBackground,
-              ...captionStyle,
-            }}
-          >
-            <div
-              style={
-                captionMaxWidth > 0
-                  ? {
-                      maxWidth: `${captionMaxWidth}px`,
-                      margin: captionAlignment === 'center' ? '0 auto' : undefined,
-                      marginLeft: captionAlignment === 'right' ? 'auto' : undefined,
-                    }
-                  : undefined
-              }
-            >
-              {displayCaption}
-              {displayDescription && (
-                <div
-                  style={{
-                    fontSize: `${Math.max(captionFontSize - 3, 9)}px`,
-                    opacity: 0.7,
-                    marginTop: '2px',
-                  }}
-                >
-                  {displayDescription}
-                </div>
-              )}
-            </div>
-          </div>
+          <OverlayCaption
+            position={settings.captionPosition}
+            background={settings.captionBackground}
+            captionStyle={captionStyle}
+            captionMaxWidthStyle={captionMaxWidthStyle}
+            displayCaption={displayCaption}
+            displayDescription={displayDescription}
+            descriptionStyle={descriptionStyle}
+          />
         )}
       </div>
     );
 
     return (
       <div
-        ref={ref}
+        ref={mergedRef}
         style={outerStyle}
         className="relative overflow-hidden flex flex-col items-center justify-center rounded-2xl"
       >
         {/* Image background layers */}
-        {isImageBg && !transparentBackground && (
-          <>
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                backgroundImage: `url(${safeBgImage})`,
-                backgroundPosition: 'center',
-                opacity: backgroundImageOpacity / 100,
-                ...imageFitStyle,
-              }}
-            />
-            {backgroundImageOverlayOpacity > 0 && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backgroundColor: backgroundImageOverlay,
-                  opacity: backgroundImageOverlayOpacity / 100,
-                }}
-              />
-            )}
-          </>
-        )}
+        <BackgroundImageLayers
+          isImageBg={isImageBg}
+          transparentBackground={settings.transparentBackground}
+          safeBgImage={safeBgImage ?? ''}
+          backgroundImageOpacity={settings.backgroundImageOpacity}
+          imageFitStyle={imageFitStyle}
+          backgroundImageOverlay={settings.backgroundImageOverlay}
+          backgroundImageOverlayOpacity={settings.backgroundImageOverlayOpacity}
+        />
 
         {/* Pattern background overlay */}
-        {patternBgStyle && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              ...patternBgStyle,
-            }}
-          />
-        )}
+        <PatternBackgroundLayer patternBgStyle={patternBgStyle} />
 
         {/* Device frame wrapper + gradient border + photo frame */}
-        <DeviceFrameWrapper frame={deviceFrame}>
-          {gradientBorderStyle ? <div style={gradientBorderStyle}>{photoFrame}</div> : photoFrame}
-        </DeviceFrameWrapper>
+        {interactive ? (
+          <ContentDragWrapper
+            containerRef={localRef}
+            offsetX={settings.contentOffsetX}
+            offsetY={settings.contentOffsetY}
+            scaleX={settings.contentScaleX}
+            scaleY={settings.contentScaleY}
+            resizable
+            onUpdate={onSettingsUpdate}
+          >
+            <DeviceFrameWrapper frame={settings.deviceFrame}>
+              {gradientBorderStyle ? (
+                <div style={gradientBorderStyle}>{photoFrame}</div>
+              ) : (
+                photoFrame
+              )}
+            </DeviceFrameWrapper>
+          </ContentDragWrapper>
+        ) : (
+          <div
+            style={
+              settings.contentOffsetX ||
+              settings.contentOffsetY ||
+              settings.contentScaleX !== 1 ||
+              settings.contentScaleY !== 1
+                ? {
+                    transform: `translate(${settings.contentOffsetX}px, ${settings.contentOffsetY}px) scale(${settings.contentScaleX}, ${settings.contentScaleY})`,
+                    transformOrigin: 'center center',
+                  }
+                : undefined
+            }
+          >
+            <DeviceFrameWrapper frame={settings.deviceFrame}>
+              {gradientBorderStyle ? (
+                <div style={gradientBorderStyle}>{photoFrame}</div>
+              ) : (
+                photoFrame
+              )}
+            </DeviceFrameWrapper>
+          </div>
+        )}
 
         {/* Below caption */}
         {showCaption && !isOverlayCaption && (
           <div className="mt-2 w-full px-2" style={captionStyle}>
-            <div
-              style={
-                captionMaxWidth > 0
-                  ? {
-                      maxWidth: `${captionMaxWidth}px`,
-                      margin: captionAlignment === 'center' ? '0 auto' : undefined,
-                      marginLeft: captionAlignment === 'right' ? 'auto' : undefined,
-                    }
-                  : undefined
-              }
-            >
+            <div style={captionMaxWidthStyle}>
               {displayCaption}
-              {displayDescription && (
-                <div
-                  style={{
-                    fontSize: `${Math.max(captionFontSize - 3, 9)}px`,
-                    opacity: 0.7,
-                    marginTop: '2px',
-                  }}
-                >
-                  {displayDescription}
-                </div>
-              )}
+              {displayDescription && <div style={descriptionStyle}>{displayDescription}</div>}
             </div>
           </div>
         )}
 
-        {/* Annotations */}
-        <AnnotationOverlay annotations={annotations} />
-
-        {/* Watermark */}
-        {watermarkText && (
-          <div
-            style={{
-              position: 'absolute',
-              ...WATERMARK_POSITION_STYLES[watermarkPosition],
-              opacity: watermarkOpacity / 100,
-              fontSize: `${watermarkSize}px`,
-              color: watermarkColor,
-              fontFamily: watermarkFontFamily,
-              textShadow: '0 1px 3px rgba(0,0,0,0.4)',
-              pointerEvents: 'none',
-              userSelect: 'none',
-              zIndex: 10,
-            }}
-          >
-            {watermarkText}
-          </div>
+        {/* Annotations + Watermark: interactive or static */}
+        {interactive ? (
+          <InteractiveOverlay
+            containerRef={localRef}
+            annotations={settings.annotations}
+            settings={settings}
+            onAnnotationUpdate={onAnnotationUpdate}
+            onSettingsUpdate={onSettingsUpdate}
+          />
+        ) : (
+          <StaticExportOverlay
+            annotations={settings.annotations}
+            watermarkText={settings.watermarkText}
+            watermarkStyle={
+              settings.watermarkText
+                ? { ...watermarkStyle, ...WATERMARK_POSITION_STYLES[settings.watermarkPosition] }
+                : undefined
+            }
+          />
         )}
       </div>
     );

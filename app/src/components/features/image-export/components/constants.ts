@@ -213,6 +213,10 @@ export const DEVICE_FRAME_OPTIONS = [
   { value: 'iphone' as const, label: 'iPhone' },
   { value: 'pixel' as const, label: 'Pixel' },
   { value: 'macbook' as const, label: 'MacBook' },
+  { value: 'ipad' as const, label: 'iPad' },
+  { value: 'apple-watch' as const, label: 'Apple Watch' },
+  { value: 'gnome' as const, label: 'GNOME' },
+  { value: 'social-card' as const, label: 'Social Card' },
 ];
 
 export const GRADIENT_BORDER_PRESETS = [
