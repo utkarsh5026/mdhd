@@ -65,7 +65,17 @@ export interface SharedExportSettings {
   gradientBorderAngle: number;
 
   // Device Frame
-  deviceFrame: 'none' | 'browser-chrome' | 'browser-arc' | 'iphone' | 'pixel' | 'macbook';
+  deviceFrame:
+    | 'none'
+    | 'browser-chrome'
+    | 'browser-arc'
+    | 'iphone'
+    | 'pixel'
+    | 'macbook'
+    | 'ipad'
+    | 'apple-watch'
+    | 'gnome'
+    | 'social-card';
 
   // Annotations
   annotations: Annotation[];
