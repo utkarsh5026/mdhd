@@ -48,7 +48,10 @@ export const useTabNavigation = (tabId: string): UseTabNavigationReturn => {
       setIsTransitioning(true);
 
       setTimeout(() => {
-        const newReadSections = new Set(readSections);
+        const currentReadSections =
+          useTabsStore.getState().tabs.find((t) => t.id === tabId)?.readingState.readSections ??
+          new Set<number>();
+        const newReadSections = new Set(currentReadSections);
         newReadSections.add(newIndex);
 
         updateTabReadingState(tabId, {
@@ -58,7 +61,7 @@ export const useTabNavigation = (tabId: string): UseTabNavigationReturn => {
         setIsTransitioning(false);
       }, 200);
     },
-    [tab, tabId, sections.length, readSections, updateTabReadingState]
+    [tab, tabId, sections.length, updateTabReadingState]
   );
 
   const goToNext = useCallback(() => {
@@ -76,11 +79,14 @@ export const useTabNavigation = (tabId: string): UseTabNavigationReturn => {
   const markSectionAsRead = useCallback(
     (index: number) => {
       if (!tab) return;
-      const newReadSections = new Set(readSections);
+      const currentReadSections =
+        useTabsStore.getState().tabs.find((t) => t.id === tabId)?.readingState.readSections ??
+        new Set<number>();
+      const newReadSections = new Set(currentReadSections);
       newReadSections.add(index);
       updateTabReadingState(tabId, { readSections: newReadSections });
     },
-    [tab, tabId, readSections, updateTabReadingState]
+    [tab, tabId, updateTabReadingState]
   );
 
   const getSection = useCallback(

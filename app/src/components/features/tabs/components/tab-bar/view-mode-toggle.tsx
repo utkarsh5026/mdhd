@@ -1,7 +1,7 @@
 import { Code, Columns2, Eye } from 'lucide-react';
 import React, { memo } from 'react';
 
-import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import { TooltipButton } from '@/components/ui/tooltip-button';
 import { cn } from '@/lib/utils';
 
 import type { ViewMode } from '../../store';

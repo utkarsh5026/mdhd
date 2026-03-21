@@ -1,7 +1,7 @@
 import { Columns2, Eye, type LucideIcon, Pencil, X } from 'lucide-react';
 import React, { memo, useCallback } from 'react';
 
-import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import { TooltipButton } from '@/components/ui/tooltip-button';
 import { cn } from '@/lib/utils';
 
 import type { ViewMode } from '../../store';

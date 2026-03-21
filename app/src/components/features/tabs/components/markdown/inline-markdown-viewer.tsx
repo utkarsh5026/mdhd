@@ -1,18 +1,9 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  Layers,
-  List,
-  Maximize,
-  Pencil,
-  Settings,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, Maximize, Pencil, Settings } from 'lucide-react';
 import React, { memo, useCallback, useMemo, useState } from 'react';
 
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import ReadingCore from '@/components/features/content-reading/components/reading-core';
-import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import { TooltipButton } from '@/components/ui/tooltip-button';
 import { cn } from '@/lib/utils';
 
 import { useEditorPreviewSync } from '../../hooks/use-editor-preview-sync';
@@ -58,8 +49,6 @@ const HeaderBtn: React.FC<HeaderIconButtonProps> = ({ tooltip, icon: Icon, onCli
 interface InlineHeaderProps {
   onFullscreen: () => void;
   onSettings: () => void;
-  onMenu: () => void;
-  onSnippets: () => void;
   onPdfExport: () => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -75,8 +64,6 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
   ({
     onFullscreen,
     onSettings,
-    onMenu,
-    onSnippets,
     onPdfExport,
     onPrevious,
     onNext,
@@ -129,8 +116,6 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
             <HeaderBtn tooltip="Export to PDF" icon={FileText} onClick={onPdfExport} />
             <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
             <HeaderBtn tooltip="Reading Settings" icon={Settings} onClick={onSettings} />
-            <HeaderBtn tooltip="Snippets" icon={Layers} onClick={onSnippets} />
-            <HeaderBtn tooltip="Table of Contents" icon={List} onClick={onMenu} />
           </div>
         </div>
 
@@ -228,19 +213,10 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
           sourcePath={tab.sourcePath}
           viewMode="preview"
           onSectionClick={handlePreviewSectionClick}
-          headerSlot={({
-            onSettings,
-            onMenu,
-            onSnippets,
-            onPdfExport,
-            breadcrumb,
-            mobileBreadcrumb,
-          }) => (
+          headerSlot={({ onSettings, onPdfExport, breadcrumb, mobileBreadcrumb }) => (
             <InlineHeader
               onFullscreen={onEnterFullscreen}
               onSettings={onSettings}
-              onMenu={onMenu}
-              onSnippets={onSnippets}
               onPdfExport={onPdfExport}
               onPrevious={goToPrevious}
               onNext={goToNext}
