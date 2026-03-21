@@ -28,6 +28,7 @@ export interface ReadingUIProps {
   onZenTap: () => void;
   onZenDoubleTap: () => void;
   onExit: () => void;
+  onPresent?: () => void;
 }
 
 /**
@@ -62,6 +63,7 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
     onZenTap,
     onZenDoubleTap,
     onExit,
+    onPresent,
   }) => {
     return (
       <ReadingCore
@@ -87,10 +89,14 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
         isDialogOpen={isDialogOpen}
         onZenTap={onZenTap}
         onZenDoubleTap={onZenDoubleTap}
+        onPresent={onPresent}
         headerSlot={({
           onSettings,
           onMenu,
           onSnippets,
+          onSearch,
+          onPresent: handlePresent,
+          onPdfExport,
           isVisible,
           breadcrumb,
           mobileBreadcrumb,
@@ -100,6 +106,9 @@ const ReadingUI: React.FC<ReadingUIProps> = memo(
             onSettings={onSettings}
             onMenu={onMenu}
             onSnippets={onSnippets}
+            onSearch={onSearch}
+            onPresent={handlePresent}
+            onPdfExport={onPdfExport}
             isVisible={isVisible}
             breadcrumb={breadcrumb}
             mobileBreadcrumb={mobileBreadcrumb}
