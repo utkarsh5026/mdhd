@@ -9,6 +9,7 @@ const AppThemeSelector = lazy(() => import('./app-theme-selector'));
 const FontFamilySelector = lazy(() => import('./font-family-selector'));
 const CodeThemeSelector = lazy(() => import('./code-theme-selector'));
 const CodeDisplaySelector = lazy(() => import('./code-display-selector'));
+const BackgroundSettings = lazy(() => import('./background-settings'));
 
 const TabLoader = () => (
   <div className="flex items-center justify-center py-12">
@@ -54,7 +55,14 @@ const TabContent = memo(({ value, activeTab, onRequestCloseSheet }: TabContentPr
     >
       <Suspense fallback={<TabLoader />}>
         {value === 'reading' && <ReadingModeSelector />}
-        {value === 'theme' && <AppThemeSelector onRequestCloseSheet={onRequestCloseSheet} />}
+        {value === 'theme' && (
+          <>
+            <BackgroundSettings />
+            <div className="border-t border-border/20 pt-6 mt-6">
+              <AppThemeSelector onRequestCloseSheet={onRequestCloseSheet} />
+            </div>
+          </>
+        )}
         {value === 'font' && <FontFamilySelector />}
         {value === 'code' && (
           <>

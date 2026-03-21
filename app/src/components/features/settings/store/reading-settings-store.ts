@@ -1,17 +1,35 @@
+import type { StoreApi } from 'zustand';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 
 import type { TextSizeScale } from '@/components/features/markdown-render/utils/text-size-classes';
-import { useThemeStore } from '@/components/shared/theme/store/theme-store';
 import type { FontFamily } from '@/lib/font';
 import { loadFont } from '@/lib/font-loader';
 import { tryCatch } from '@/utils/functions/error';
 
+const STORAGE_KEY = 'reading-settings';
+
+const clamp = (min: number, max: number, value: number) => Math.min(max, Math.max(min, value));
+
 export type { TextSizeScale };
+
+export type ReadingBackgroundType = 'theme' | 'solid' | 'image';
+export type ReadingBackgroundFit = 'cover' | 'contain' | 'fill' | 'tile';
+
+export interface ReadingBackgroundSettings {
+  backgroundType: ReadingBackgroundType;
+  backgroundColor: string;
+  backgroundImageFit: ReadingBackgroundFit;
+  backgroundImageOpacity: number; // 10-100
+  backgroundImageBlur: number; // 0-20px
+  backgroundImageOverlay: string;
+  backgroundImageOverlayOpacity: number; // 0-80
+}
 
 export interface ReadingSettings {
   fontFamily: FontFamily;
-  customBackground: string | null;
+  background: ReadingBackgroundSettings;
+  backgroundImageId: string | null;
   fontSize: number; // 14-28px
   lineHeight: number; // 1.4-2.2
   contentWidth: number; // 500-900px
@@ -29,12 +47,26 @@ interface ReadingSettingsState {
   toggleBionicReading: () => void;
   toggleSentenceFocusOnHover: () => void;
   setTextSizeScale: (scale: TextSizeScale) => void;
+  updateBackground: (partial: Partial<ReadingBackgroundSettings>) => void;
+  setBackgroundImageId: (id: string | null) => void;
+  clearBackgroundImage: () => void;
   resetSettings: () => void;
 }
 
+const DEFAULT_BACKGROUND: ReadingBackgroundSettings = {
+  backgroundType: 'theme',
+  backgroundColor: '',
+  backgroundImageFit: 'cover',
+  backgroundImageOpacity: 100,
+  backgroundImageBlur: 0,
+  backgroundImageOverlay: '#000000',
+  backgroundImageOverlayOpacity: 0,
+};
+
 const DEFAULT_SETTINGS: ReadingSettings = {
   fontFamily: 'merriweather',
-  customBackground: useThemeStore.getState().currentTheme.background,
+  background: DEFAULT_BACKGROUND,
+  backgroundImageId: null,
   // Typography defaults
   fontSize: 18,
   lineHeight: 1.7,
@@ -47,11 +79,21 @@ const DEFAULT_SETTINGS: ReadingSettings = {
 const loadInitialSettings = (): ReadingSettings => {
   if (typeof window === 'undefined') return DEFAULT_SETTINGS;
 
-  const savedSettings = localStorage.getItem('reading-settings');
+  const savedSettings = localStorage.getItem(STORAGE_KEY);
   if (!savedSettings) return DEFAULT_SETTINGS;
 
   const parsed = tryCatch(() => JSON.parse(savedSettings), null);
-  return parsed ? { ...DEFAULT_SETTINGS, ...parsed } : DEFAULT_SETTINGS;
+  if (!parsed) return DEFAULT_SETTINGS;
+
+  const background = parsed.background
+    ? { ...DEFAULT_BACKGROUND, ...parsed.background }
+    : DEFAULT_BACKGROUND;
+
+  // Remove legacy field
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { customBackground, ...rest } = parsed;
+
+  return { ...DEFAULT_SETTINGS, ...rest, background };
 };
 
 const initialSettings = loadInitialSettings();
@@ -61,69 +103,55 @@ if (typeof window !== 'undefined') {
   });
 }
 
-const saveSettings = (settings: ReadingSettings) => {
-  localStorage.setItem('reading-settings', JSON.stringify(settings));
-};
+const patchSettings = (
+  set: StoreApi<ReadingSettingsState>['setState'],
+  patch: (s: ReadingSettings) => Partial<ReadingSettings>
+) =>
+  set((state) => {
+    const newSettings = { ...state.settings, ...patch(state.settings) };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+    return { settings: newSettings };
+  });
 
 export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
   settings: initialSettings,
 
   setFontFamily: (family: FontFamily) =>
-    set((state) => {
-      const newSettings = { ...state.settings, fontFamily: family };
-      saveSettings(newSettings);
+    patchSettings(set, () => {
       loadFont(family);
-      return { settings: newSettings };
+      return { fontFamily: family };
     }),
 
-  setFontSize: (size: number) =>
-    set((state) => {
-      const newSettings = { ...state.settings, fontSize: Math.min(28, Math.max(14, size)) };
-      saveSettings(newSettings);
-      return { settings: newSettings };
-    }),
+  setFontSize: (size: number) => patchSettings(set, () => ({ fontSize: clamp(14, 28, size) })),
 
   setLineHeight: (height: number) =>
-    set((state) => {
-      const newSettings = { ...state.settings, lineHeight: Math.min(2.2, Math.max(1.4, height)) };
-      saveSettings(newSettings);
-      return { settings: newSettings };
-    }),
+    patchSettings(set, () => ({ lineHeight: clamp(1.4, 2.2, height) })),
 
   setContentWidth: (width: number) =>
-    set((state) => {
-      const newSettings = { ...state.settings, contentWidth: Math.min(900, Math.max(500, width)) };
-      saveSettings(newSettings);
-      return { settings: newSettings };
-    }),
+    patchSettings(set, () => ({ contentWidth: clamp(500, 900, width) })),
 
-  toggleBionicReading: () =>
-    set((state) => {
-      const newSettings = { ...state.settings, bionicReading: !state.settings.bionicReading };
-      saveSettings(newSettings);
-      return { settings: newSettings };
-    }),
+  toggleBionicReading: () => patchSettings(set, (s) => ({ bionicReading: !s.bionicReading })),
 
   toggleSentenceFocusOnHover: () =>
-    set((state) => {
-      const newSettings = {
-        ...state.settings,
-        sentenceFocusOnHover: !state.settings.sentenceFocusOnHover,
-      };
-      saveSettings(newSettings);
-      return { settings: newSettings };
-    }),
+    patchSettings(set, (s) => ({ sentenceFocusOnHover: !s.sentenceFocusOnHover })),
 
-  setTextSizeScale: (scale: TextSizeScale) =>
-    set((state) => {
-      const newSettings = { ...state.settings, textSizeScale: scale };
-      saveSettings(newSettings);
-      return { settings: newSettings };
-    }),
+  setTextSizeScale: (scale: TextSizeScale) => patchSettings(set, () => ({ textSizeScale: scale })),
+
+  updateBackground: (partial: Partial<ReadingBackgroundSettings>) =>
+    patchSettings(set, (s) => ({ background: { ...s.background, ...partial } })),
+
+  setBackgroundImageId: (id: string | null) =>
+    patchSettings(set, () => ({ backgroundImageId: id })),
+
+  clearBackgroundImage: () =>
+    patchSettings(set, (s) => ({
+      backgroundImageId: null,
+      background: { ...s.background, backgroundType: 'theme' as const },
+    })),
 
   resetSettings: () =>
     set(() => {
-      localStorage.removeItem('reading-settings');
+      localStorage.removeItem(STORAGE_KEY);
       return { settings: DEFAULT_SETTINGS };
     }),
 }));
@@ -143,6 +171,9 @@ export const useReadingSettings = () => {
       toggleBionicReading: state.toggleBionicReading,
       toggleSentenceFocusOnHover: state.toggleSentenceFocusOnHover,
       setTextSizeScale: state.setTextSizeScale,
+      updateBackground: state.updateBackground,
+      setBackgroundImageId: state.setBackgroundImageId,
+      clearBackgroundImage: state.clearBackgroundImage,
       resetSettings: state.resetSettings,
     }))
   );
