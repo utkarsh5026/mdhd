@@ -63,14 +63,14 @@ const Homepage = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden font-cascadia-code bg-background">
+    <div className="h-screen flex flex-col overflow-hidden font-cascadia-code bg-card">
       {isHeaderVisible && <Header />}
 
-      {isHeaderVisible && <div className="shrink-0 h-15" />}
-      <div className="relative flex flex-1 min-h-0 p-2 gap-1">
+      {isHeaderVisible && <div className="shrink-0 h-12 border-b border-border/20" />}
+      <div className="relative flex flex-1 min-h-0">
         <ReactErrorBoundary>
           <FileExplorerSidebar
-            className="w-64 rounded-2xl border border-border/50"
+            className="w-64 border-r border-border/40"
             onFileSelect={handleFileSelect}
           />
         </ReactErrorBoundary>

@@ -10,16 +10,12 @@ const Header = () => {
   const { currentTheme, setTheme } = useTheme();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50">
-      <div className="absolute inset-0 bg-background/70 backdrop-blur-2xl" />
-      <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-border to-transparent" />
-
-      <div className="relative px-6 py-1 mx-auto">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-card">
+      <div className="px-6 py-1 mx-auto">
         <div className="flex items-center justify-between">
           <div className={`flex items-center gap-3 ${styles.slideInLeft}`}>
             <div className={`relative group ${styles.logoContainer}`}>
-              <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:bg-primary/30 transition-colors duration-300" />
-              <div className="relative w-7 h-7 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 overflow-hidden">
+              <div className="relative w-7 h-7 rounded-md flex items-center justify-center overflow-hidden">
                 <img
                   src="/apple-touch-icon.png"
                   alt="MDHD Logo"
@@ -29,9 +25,7 @@ const Header = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xl font-bold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                MDHD
-              </span>
+              <span className="text-base font-semibold text-foreground">MDHD</span>
             </div>
           </div>
 
@@ -58,7 +52,7 @@ const Header = () => {
               <span className="hidden sm:inline text-sm">Star</span>
             </Button>
 
-            <div className="w-px h-6 bg-border/50 mx-1" />
+            <div className="w-px h-5 bg-border/40 mx-1" />
 
             <ThemeSelector currentTheme={currentTheme.name} onThemeChange={setTheme} />
           </div>

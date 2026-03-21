@@ -68,7 +68,7 @@ const StatusBar: React.FC = memo(() => {
   if (!stats) return null;
 
   return (
-    <div className="shrink-0 flex items-center justify-between h-6 px-3 border-t border-border/20 bg-muted/10 text-[11px] text-muted-foreground font-cascadia-code select-none">
+    <div className="shrink-0 flex items-center justify-between h-6 px-3 border-t border-border/40 bg-muted/20 text-[11px] text-muted-foreground font-cascadia-code select-none">
       {/* Left: file info */}
       <div className="flex items-center gap-3 min-w-0">
         <Item icon={FileText} className="truncate max-w-48">

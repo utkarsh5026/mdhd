@@ -128,14 +128,14 @@ const TabBar: React.FC<TabBarProps> = memo(
     }, []);
 
     return (
-      <div className="flex items-center bg-muted/10 border-b border-border/20">
+      <div className="flex items-center bg-card/90 border-b border-border/40">
         {' '}
         {/* Scroll left button */}
         {tabs.length > 3 && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 rounded-none border-r border-border/10"
+            className="h-7 w-7 shrink-0 rounded-none border-r border-border/30"
             onClick={handleScrollLeft}
             aria-label="Scroll tabs left"
           >
@@ -174,7 +174,7 @@ const TabBar: React.FC<TabBarProps> = memo(
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 rounded-none border-l border-border/10"
+            className="h-7 w-7 shrink-0 rounded-none border-l border-border/30"
             onClick={handleScrollRight}
             aria-label="Scroll tabs right"
           >
@@ -185,7 +185,7 @@ const TabBar: React.FC<TabBarProps> = memo(
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 shrink-0 rounded-none border-l border-border/10 hover:bg-primary/10"
+          className="h-7 w-7 shrink-0 rounded-none border-l border-border/30 hover:bg-primary/10"
           onClick={onNewTab}
           aria-label="Create new tab"
         >
