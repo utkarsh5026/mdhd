@@ -1,7 +1,10 @@
-import { RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
-import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
+import {
+  useReadingSettings,
+  useReadingSettingsStore,
+} from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
 import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
@@ -31,11 +34,11 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
   const { settings } = useReadingSettings();
   const fontFamily = fontFamilyMap[settings.fontFamily];
   const { fontSize, lineHeight, contentWidth } = settings;
+  const hasCustomBackground =
+    useReadingSettingsStore((s) => s.settings.background.backgroundType) !== 'theme';
   const sectionRefs = useRef<Map<number, HTMLElement>>(new Map());
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Stable refs for callbacks — prevents the IntersectionObserver and scroll
-  // listener from being torn down and recreated on every parent re-render.
   const onSectionVisibleRef = useRef(onSectionVisible);
   const onScrollProgressRef = useRef(onScrollProgress);
   onSectionVisibleRef.current = onSectionVisible;
@@ -69,6 +72,8 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
     };
   }, [scrollRef, handleScroll]);
 
+  const sectionsCount = useMemo(() => sections.length, [sections]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -92,7 +97,7 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
     return () => {
       observer.disconnect();
     };
-  }, [sections, scrollRef]);
+  }, [sectionsCount, scrollRef]);
 
   const setSectionRef = useCallback((index: number, element: HTMLElement | null) => {
     if (element) {
@@ -105,7 +110,8 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
   return (
     <div
       className={cn(
-        'h-full overflow-y-auto bg-background',
+        'h-full overflow-y-auto',
+        !hasCustomBackground && 'bg-background',
         isLoaded ? 'opacity-100' : 'opacity-0',
         'transition-opacity duration-200'
       )}
@@ -113,7 +119,13 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
       onDoubleClick={handleDoubleClick}
     >
       <div className={READER_PADDING_CLASSES}>
-        <div className="mx-auto" style={{ maxWidth: `${contentWidth}px` }}>
+        <div
+          className={cn(
+            'mx-auto',
+            hasCustomBackground && 'bg-background/80 backdrop-blur-sm rounded-2xl p-6'
+          )}
+          style={{ maxWidth: `${contentWidth}px` }}
+        >
           {/* Show metadata at the top of the content */}
           {metadata && <MetadataDisplay metadata={metadata} />}
           {sections.map((section, index) => (
