@@ -162,7 +162,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
     >
       <div
         className={cn(
-          'max-w-xl mx-auto px-6 py-16 space-y-10 transition-all duration-150',
+          'max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-16 space-y-8 sm:space-y-10 transition-all duration-150',
           isDragging && 'opacity-50 scale-[0.99]'
         )}
       >
@@ -171,18 +171,22 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
           <p className="text-xs font-semibold tracking-widest uppercase text-muted-foreground/40 select-none">
             mdhd
           </p>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{greeting}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            {greeting}
+          </h1>
           <p className="text-sm tabular-nums text-muted-foreground/60">
             {timeString}
-            <span className="ml-2 text-muted-foreground/40">{dateString}</span>
+            <span className="block mt-0.5 sm:mt-0 sm:inline sm:ml-2 text-muted-foreground/40">
+              {dateString}
+            </span>
           </p>
         </div>
 
         {/* Drop overlay hint */}
         {isDragging && (
           <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-10">
-            <div className="rounded-2xl border-2 border-dashed border-primary px-12 py-8 bg-background/80 backdrop-blur-sm">
-              <p className="text-primary font-medium text-lg">Drop to open</p>
+            <div className="rounded-2xl border-2 border-dashed border-primary px-6 py-5 sm:px-12 sm:py-8 bg-background/80 backdrop-blur-sm">
+              <p className="text-primary font-medium text-base sm:text-lg">Drop to open</p>
             </div>
           </div>
         )}
@@ -194,7 +198,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
           </p>
 
           {!showPasteArea ? (
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="flex flex-col gap-2.5">
               {[
                 {
                   icon: Upload,
@@ -213,9 +217,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
                   key={label}
                   onClick={onClick}
                   className={cn(
-                    'group flex items-start gap-3 rounded-2xl border border-border/40 p-4 text-left',
+                    'group flex items-start gap-3 rounded-2xl border border-border/40 p-3 sm:p-4 text-left',
                     'bg-card/40 hover:bg-card/80 hover:border-border/70',
-                    'transition-all duration-150 cursor-pointer'
+                    'transition-all duration-150 cursor-pointer active:scale-[0.98]'
                   )}
                 >
                   <div className="mt-0.5 rounded-2xl bg-muted/60 p-2 group-hover:bg-primary/10 transition-colors">
@@ -237,7 +241,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
                 onKeyDown={handleKeyDown}
                 placeholder="Paste or type markdown here..."
                 className={cn(
-                  'w-full h-44 p-4 rounded-xl border border-border/40 resize-none',
+                  'w-full h-36 sm:h-44 p-4 rounded-xl border border-border/40 resize-none',
                   'bg-card/50 text-sm leading-relaxed placeholder:text-muted-foreground/40',
                   'focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40',
                   'transition-all duration-150'
@@ -268,7 +272,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
             </div>
           )}
 
-          <p className="text-[11px] text-muted-foreground/35 pt-1">
+          <p className="hidden sm:block text-[11px] text-muted-foreground/35 pt-1">
             Or drag a <span className="font-mono">.md</span> file anywhere · Press{' '}
             <kbd className="font-mono">Ctrl+V</kbd> to paste instantly
           </p>
@@ -286,8 +290,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
                   key={node.id}
                   onClick={() => onFileNodeOpen(node)}
                   className={cn(
-                    'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-left',
-                    'hover:bg-muted/50 transition-colors duration-100 group'
+                    'w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 sm:py-2 text-left',
+                    'hover:bg-muted/50 active:bg-muted/70 transition-colors duration-100 group'
                   )}
                 >
                   <FolderOpen className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 group-hover:text-muted-foreground/70 transition-colors" />
