@@ -61,7 +61,7 @@ function extractFrontmatter(markdown: string): {
  * @param text - Raw markdown text to clean.
  * @returns Plain text with all markdown syntax removed.
  */
-function removeMarkdownFormatting(text: string): string {
+export function removeMarkdownFormatting(text: string): string {
   let cleanText = text;
 
   // Remove code blocks

@@ -98,7 +98,8 @@ export const defaultPhotoSettings: PhotoImageExportSettings = {
   // Shared — content positioning
   contentOffsetX: 0,
   contentOffsetY: 0,
-  contentScale: 1,
+  contentScaleX: 1,
+  contentScaleY: 1,
 
   // Shared — export
   exportScale: 2,

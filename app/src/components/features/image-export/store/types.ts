@@ -97,8 +97,10 @@ export interface SharedExportSettings {
   contentOffsetX: number;
   /** Vertical offset of the content in pixels (0 = centered). */
   contentOffsetY: number;
-  /** Scale factor for the content (1 = original size). Used for photo resize. */
-  contentScale: number;
+  /** Horizontal scale factor for the content (1 = original size). */
+  contentScaleX: number;
+  /** Vertical scale factor for the content (1 = original size). */
+  contentScaleY: number;
 
   // Export
   exportScale: number;
@@ -137,7 +139,8 @@ export const LAYOUT_KEYS = [
   'deviceFrame',
   'contentOffsetX',
   'contentOffsetY',
-  'contentScale',
+  'contentScaleX',
+  'contentScaleY',
 ] as const satisfies readonly (keyof SharedExportSettings)[];
 
 export const PERSPECTIVE_KEYS = [

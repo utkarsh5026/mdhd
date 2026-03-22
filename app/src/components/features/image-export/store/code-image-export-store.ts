@@ -118,7 +118,8 @@ export const defaultSettings: CodeImageExportSettings = {
 
   contentOffsetX: 0,
   contentOffsetY: 0,
-  contentScale: 1,
+  contentScaleX: 1,
+  contentScaleY: 1,
 
   exportScale: 2,
 };
