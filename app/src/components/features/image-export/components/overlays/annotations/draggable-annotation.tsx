@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
 
+import { usePercentageDrag } from '../../../hooks/use-percentage-drag';
 import type { Annotation } from '../../../store/types';
 import { SELECTION_OUTLINE } from '../constants';
-import { usePercentageDrag } from '../hooks/use-percentage-drag';
 import ResizeHandles from '../resize-handles';
 import { resizeAnnotationFontSize } from '../resize-semantics';
 
