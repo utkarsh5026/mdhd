@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { FolderTree, Layers, List, Palette, Search, Settings } from 'lucide-react';
+import { Files, Layers, Palette, Search, Settings, TableOfContents } from 'lucide-react';
 import React, { memo, useCallback, useEffect } from 'react';
 import { FaGithub } from 'react-icons/fa';
 
@@ -37,11 +37,13 @@ interface SidebarProps {
   onFileSelect?: (file: StoredFile) => void;
   position: SidebarPosition;
   onPositionChange: (position: SidebarPosition) => void;
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 const DEFAULT_PANELS: Panel[] = [
-  { id: 'files', icon: FolderTree, tooltip: 'Files', content: <FilesPanel /> },
-  { id: 'outline', icon: List, tooltip: 'Outline', content: <OutlinePanel /> },
+  { id: 'files', icon: Files, tooltip: 'Files', content: <FilesPanel /> },
+  { id: 'outline', icon: TableOfContents, tooltip: 'Outline', content: <OutlinePanel /> },
   { id: 'snippets', icon: Layers, tooltip: 'Snippets', content: <SnippetsPanel /> },
   { id: 'search', icon: Search, tooltip: 'Search', content: <SearchPanel /> },
   { id: 'style', icon: Palette, tooltip: 'Style', content: <MarkdownStylePanel /> },
@@ -49,7 +51,14 @@ const DEFAULT_PANELS: Panel[] = [
 ];
 
 const Sidebar: React.FC<SidebarProps> = memo(
-  ({ className, onFileSelect, position, onPositionChange }) => {
+  ({
+    className,
+    onFileSelect,
+    position,
+    onPositionChange,
+    isMobileOpen = false,
+    onMobileClose,
+  }) => {
     const panels = onFileSelect
       ? [
           { ...DEFAULT_PANELS[0], content: <FilesPanel onFileSelect={onFileSelect} /> },
@@ -73,7 +82,6 @@ const Sidebar: React.FC<SidebarProps> = memo(
       onPositionChange(position === 'left' ? 'right' : 'left');
     }, [position, onPositionChange]);
 
-    // Listen for external panel activation (e.g. Ctrl+F → search)
     useEffect(() => {
       const handleActivatePanel = (e: Event) => {
         const panelId = (e as CustomEvent<string>).detail;
@@ -128,27 +136,50 @@ const Sidebar: React.FC<SidebarProps> = memo(
     );
 
     return (
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <div className={cn('flex overflow-hidden bg-card/80', className, !isPanelOpen && 'w-10')}>
-            {isRight && activePanelDef && (
-              <div className="flex-1 min-w-0 min-h-0 overflow-auto">{activePanelDef.content}</div>
-            )}
+      <>
+        {/* Mobile backdrop */}
+        <div
+          className={cn(
+            'fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden transition-opacity duration-300',
+            isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          )}
+          onClick={onMobileClose}
+        />
 
-            {activityBar}
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <div
+              className={cn(
+                'flex overflow-hidden bg-card/80 transition-transform duration-300 ease-in-out',
+                // Mobile: fixed overlay, slides in/out
+                'fixed inset-0 z-40 md:hidden',
+                isRight ? 'right-0' : 'left-0',
+                isMobileOpen ? 'translate-x-0' : isRight ? 'translate-x-full' : '-translate-x-full',
+                // Desktop: static in flow, restore className width/border
+                'md:relative md:inset-auto md:z-auto md:translate-x-0 md:flex',
+                !isPanelOpen ? 'md:w-10' : 'md:w-80',
+                className
+              )}
+            >
+              {isRight && activePanelDef && (
+                <div className="flex-1 min-w-0 min-h-0 overflow-auto">{activePanelDef.content}</div>
+              )}
 
-            {!isRight && activePanelDef && (
-              <div className="flex-1 min-w-0 min-h-0 overflow-auto">{activePanelDef.content}</div>
-            )}
-          </div>
-        </ContextMenuTrigger>
+              {activityBar}
 
-        <ContextMenuContent className="w-48 font-cascadia-code rounded-2xl">
-          <ContextMenuItem onSelect={togglePosition} className="py-2 px-3">
-            Move Sidebar to {isRight ? 'Left' : 'Right'}
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
+              {!isRight && activePanelDef && (
+                <div className="flex-1 min-w-0 min-h-0 overflow-auto">{activePanelDef.content}</div>
+              )}
+            </div>
+          </ContextMenuTrigger>
+
+          <ContextMenuContent className="w-48 font-cascadia-code rounded-2xl">
+            <ContextMenuItem onSelect={togglePosition} className="py-2 px-3">
+              Move Sidebar to {isRight ? 'Left' : 'Right'}
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </>
     );
   }
 );

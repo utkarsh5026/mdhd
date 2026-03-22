@@ -68,17 +68,19 @@ const StatusBar: React.FC = memo(() => {
   if (!stats) return null;
 
   return (
-    <div className="shrink-0 flex items-center justify-between h-6 px-3 border-t border-border/40 bg-muted/20 text-[11px] text-muted-foreground font-cascadia-code select-none">
+    <div className="shrink-0 flex items-center justify-between h-6 px-2 sm:px-3 border-t border-border/40 bg-muted/20 text-[11px] text-muted-foreground font-cascadia-code select-none">
       {/* Left: file info */}
-      <div className="flex items-center gap-3 min-w-0">
-        <Item icon={FileText} className="truncate max-w-48">
+      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+        <Item icon={FileText} className="truncate max-w-28 sm:max-w-48">
           {stats.title}
         </Item>
-        <span className="text-muted-foreground/40 uppercase text-[10px]">{stats.sourceType}</span>
+        <span className="hidden sm:inline text-muted-foreground/40 uppercase text-[10px]">
+          {stats.sourceType}
+        </span>
       </div>
 
       {/* Center: reading position */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3">
         <Item icon={Bookmark} className="tabular-nums">
           {stats.currentIndex + 1}/{stats.totalSections}
         </Item>
@@ -88,8 +90,8 @@ const StatusBar: React.FC = memo(() => {
         </Item>
       </div>
 
-      {/* Right: document stats */}
-      <div className="flex items-center gap-3">
+      {/* Right: document stats — hidden on mobile */}
+      <div className="hidden sm:flex items-center gap-3">
         <Item icon={LetterText} className="tabular-nums">
           {formatWordCount(stats.totalWords)} words
         </Item>

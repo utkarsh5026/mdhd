@@ -22,6 +22,7 @@ const FullscreenMarkdownViewer = lazy(
 
 const Homepage = () => {
   const [fullscreenTabId, setFullscreenTabId] = useState<string | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { createTab, setActiveTab, findTabByFileId, setShowEmptyState } = useTabsActions();
   const isHeaderVisible = useHeaderVisible();
   const isStatusBarVisible = useStatusBarVisible();
@@ -46,6 +47,8 @@ const Homepage = () => {
       } else {
         createTab(file.content, file.name, 'file', file.id, file.path);
       }
+
+      setMobileSidebarOpen(false);
     },
     [createTab, setActiveTab, findTabByFileId, setShowEmptyState]
   );
@@ -69,17 +72,19 @@ const Homepage = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden font-cascadia-code bg-card">
-      {isHeaderVisible && <Header />}
+      {isHeaderVisible && <Header onToggleSidebar={() => setMobileSidebarOpen((o) => !o)} />}
 
       {isHeaderVisible && <div className="shrink-0 h-12 border-b border-border/20" />}
       <div className="relative flex flex-1 min-h-0">
         {sidebarPosition === 'left' && (
           <ReactErrorBoundary>
             <Sidebar
-              className="w-80 border-r border-border/40"
+              className="border-r border-border/40"
               onFileSelect={handleFileSelect}
               position={sidebarPosition}
               onPositionChange={setSidebarPosition}
+              isMobileOpen={mobileSidebarOpen}
+              onMobileClose={() => setMobileSidebarOpen(false)}
             />
           </ReactErrorBoundary>
         )}
@@ -92,10 +97,12 @@ const Homepage = () => {
         {sidebarPosition === 'right' && (
           <ReactErrorBoundary>
             <Sidebar
-              className="w-80 border-l border-border/40"
+              className="border-l border-border/40"
               onFileSelect={handleFileSelect}
               position={sidebarPosition}
               onPositionChange={setSidebarPosition}
+              isMobileOpen={mobileSidebarOpen}
+              onMobileClose={() => setMobileSidebarOpen(false)}
             />
           </ReactErrorBoundary>
         )}
