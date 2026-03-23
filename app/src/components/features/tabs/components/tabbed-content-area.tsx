@@ -5,14 +5,7 @@ import WelcomeScreen from '@/components/layout/welcome-screen';
 import { fileStorageDB, type FileTreeNode } from '@/services/indexeddb';
 
 import { useSaveShortcut } from '../hooks/use-save-shortcut';
-import {
-  useActiveTab,
-  useActiveTabId,
-  useShowEmptyState,
-  useTabs,
-  useTabsActions,
-  type ViewMode,
-} from '../store';
+import { useActiveTab, useActiveTabId, useShowEmptyState, useTabs, useTabsActions } from '../store';
 import InlineMarkdownViewer from './markdown/inline-markdown-viewer';
 import { SaveFileDialog } from './save-file-dialog';
 import TabBar from './tab-bar/tab-bar';
@@ -35,21 +28,9 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     findTabByFileId,
     updateTabContent,
     updateTabContentPreservePosition,
-    updateTabReadingState,
     toggleHeaderVisibility,
     toggleStatusBarVisibility,
   } = useTabsActions();
-
-  const viewMode = activeTab?.readingState.viewMode ?? 'preview';
-
-  const handleViewModeToggle = useCallback(
-    (mode: ViewMode) => {
-      if (activeTab) {
-        updateTabReadingState(activeTab.id, { viewMode: mode });
-      }
-    },
-    [activeTab, updateTabReadingState]
-  );
 
   const { showSaveDialog, setShowSaveDialog, defaultFileName, handleSaveToFile, isSaving } =
     useSaveShortcut();
@@ -111,8 +92,6 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
         <TabBar
           tabs={tabs}
           activeTabId={activeTabId}
-          viewMode={viewMode}
-          onViewModeToggle={handleViewModeToggle}
           onTabSelect={handleTabSelect}
           onTabClose={handleTabClose}
           onNewTab={handleNewTab}
@@ -143,7 +122,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
           <div key={activeTab.id} className="h-full animate-fade-in-fast">
             <InlineMarkdownViewer
               tabId={activeTab.id}
-              viewMode={viewMode}
+              viewMode="preview"
               onContentChange={(content) => updateTabContentPreservePosition(activeTab.id, content)}
               onEnterFullscreen={() => onEnterFullscreen(activeTab.id)}
             />

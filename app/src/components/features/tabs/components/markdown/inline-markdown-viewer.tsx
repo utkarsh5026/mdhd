@@ -78,11 +78,14 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
         <div className="flex items-center gap-2 px-2 py-1">
           {/* Left: breadcrumb */}
           {breadcrumb && readingMode === 'card' && (
-            <div className="hidden sm:block relative min-w-0 flex-1 overflow-hidden">
-              <div className="overflow-x-auto">{breadcrumb}</div>
-              {/* Fade mask */}
-              <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-linear-to-l from-background/85 to-transparent" />
-            </div>
+            <>
+              <div className="sm:hidden flex-1" />
+              <div className="hidden sm:block relative min-w-0 flex-1 overflow-hidden">
+                <div className="overflow-x-auto">{breadcrumb}</div>
+                {/* Fade mask */}
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-linear-to-l from-background/85 to-transparent" />
+              </div>
+            </>
           )}
           {(!breadcrumb || readingMode !== 'card') && <div className="flex-1" />}
 
@@ -106,12 +109,14 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
               </>
             )}
             {onEditSection && readingMode === 'card' && (
-              <>
+              <div className="hidden sm:contents">
                 <HeaderBtn tooltip="Edit Section" icon={Pencil} onClick={onEditSection} />
                 <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
-              </>
+              </div>
             )}
-            <HeaderBtn tooltip="Export to PDF" icon={FileText} onClick={onPdfExport} />
+            <div className="hidden sm:contents">
+              <HeaderBtn tooltip="Export to PDF" icon={FileText} onClick={onPdfExport} />
+            </div>
             <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
           </div>
         </div>

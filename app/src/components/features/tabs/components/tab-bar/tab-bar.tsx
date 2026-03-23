@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import type { Tab } from '../../store';
 import TabItem from './tab-item';
 import TabManagementMenu from './tab-management-menu';
-import ViewModeToggle from './view-mode-toggle';
+
 /**
  * Information about how to display a tab
  */
@@ -76,8 +76,6 @@ function generateTabDisplayNames(tabs: Tab[]): Map<string, TabDisplayInfo> {
 interface TabBarProps {
   tabs: Tab[];
   activeTabId: string | null;
-  viewMode: 'preview' | 'edit' | 'dual';
-  onViewModeToggle: (mode: 'preview' | 'edit' | 'dual') => void;
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
   onNewTab: () => void;
@@ -89,8 +87,6 @@ const TabBar: React.FC<TabBarProps> = memo(
   ({
     tabs,
     activeTabId,
-    viewMode,
-    onViewModeToggle,
     onTabSelect,
     onTabClose,
     onNewTab,
@@ -191,8 +187,6 @@ const TabBar: React.FC<TabBarProps> = memo(
         >
           <Plus className="w-3.5 h-3.5" />
         </Button>
-        {/* View mode toggle */}
-        <ViewModeToggle viewMode={viewMode} onToggle={onViewModeToggle} disabled={!activeTabId} />
         <TabManagementMenu
           onToggleHeaderVisibility={onToggleHeaderVisibility}
           onToggleStatusBarVisibility={onToggleStatusBarVisibility}
