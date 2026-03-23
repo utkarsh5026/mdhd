@@ -1,4 +1,5 @@
-import React from 'react';
+import { MoreVertical } from 'lucide-react';
+import React, { useState } from 'react';
 
 import {
   ContextMenu,
@@ -7,6 +8,9 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import { useIsTouch } from '@/hooks';
+
+import { BottomSheet, BottomSheetContent, BottomSheetTitle } from './bottom-sheet';
 
 export interface ExportMenuItem {
   label: string;
@@ -21,13 +25,45 @@ export interface ExportContextMenuProps {
   children: React.ReactNode;
 }
 
-/**
- * A right-click context menu for export actions, shared by block-level renderers.
- *
- * Renders a titled, separated list of labelled actions. The caller supplies the
- * trigger content via `children` and the action list via `items`.
- */
-const ExportContextMenu: React.FC<ExportContextMenuProps> = ({ title, items, children }) => (
+const ExportBottomSheet: React.FC<ExportContextMenuProps> = ({ title, items, children }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative group/export">
+      {children}
+      <button
+        onClick={() => setOpen(true)}
+        className="absolute top-2 right-2 p-2 rounded-full bg-card/80 backdrop-blur-sm border border-border/30 shadow-sm opacity-0 group-hover/export:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
+        aria-label={title}
+      >
+        <MoreVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+
+      <BottomSheet open={open} onOpenChange={setOpen}>
+        <BottomSheetContent>
+          <BottomSheetTitle>{title}</BottomSheetTitle>
+          <div className="mt-4 space-y-1">
+            {items.map(({ label, description, onSelect }) => (
+              <button
+                key={label}
+                onClick={() => {
+                  onSelect();
+                  setOpen(false);
+                }}
+                className="w-full text-left px-4 py-3 rounded-xl hover:bg-muted/60 transition-colors cursor-pointer"
+              >
+                <div className="text-sm font-medium">{label}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{description}</div>
+              </button>
+            ))}
+          </div>
+        </BottomSheetContent>
+      </BottomSheet>
+    </div>
+  );
+};
+
+const ExportDesktopMenu: React.FC<ExportContextMenuProps> = ({ title, items, children }) => (
   <ContextMenu>
     <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
 
@@ -49,6 +85,19 @@ const ExportContextMenu: React.FC<ExportContextMenuProps> = ({ title, items, chi
     </ContextMenuContent>
   </ContextMenu>
 );
+
+/**
+ * Export actions menu — context menu on desktop, bottom sheet with "..." button on touch devices.
+ */
+const ExportContextMenu: React.FC<ExportContextMenuProps> = (props) => {
+  const isTouch = useIsTouch();
+
+  if (isTouch) {
+    return <ExportBottomSheet {...props} />;
+  }
+
+  return <ExportDesktopMenu {...props} />;
+};
 
 ExportContextMenu.displayName = 'ExportContextMenu';
 export default ExportContextMenu;

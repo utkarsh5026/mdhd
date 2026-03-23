@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useIsTouch } from '@/hooks';
 
 interface TooltipButtonProps {
   button: React.ReactNode;
@@ -9,6 +10,17 @@ interface TooltipButtonProps {
 }
 
 export const TooltipButton: React.FC<TooltipButtonProps> = ({ button, tooltipText, children }) => {
+  const isTouch = useIsTouch();
+
+  if (isTouch) {
+    return (
+      <>
+        {button}
+        {children}
+      </>
+    );
+  }
+
   return (
     <TooltipProvider>
       <Tooltip>
