@@ -1,7 +1,17 @@
 import type { LucideIcon } from 'lucide-react';
-import { Files, Layers, Palette, Search, Settings, TableOfContents } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  Files,
+  Layers,
+  Palette,
+  Search,
+  Settings,
+  TableOfContents,
+  X,
+} from 'lucide-react';
 import React, { memo, useCallback, useEffect } from 'react';
 import { FaGithub } from 'react-icons/fa';
+import { useSwipeable } from 'react-swipeable';
 
 import SearchPanel from '@/components/features/content-reading/components/search/search-panel';
 import SnippetsPanel from '@/components/features/content-reading/components/snippets/snippets-panel';
@@ -71,6 +81,13 @@ const Sidebar: React.FC<SidebarProps> = memo(
       panels[0]?.id ?? null
     );
 
+    // When mobile sidebar opens, ensure a panel is visible
+    useEffect(() => {
+      if (isMobileOpen && activePanel === null) {
+        setActivePanel('files');
+      }
+    }, [isMobileOpen, activePanel, setActivePanel]);
+
     const togglePanel = useCallback(
       (panelId: string) => {
         setActivePanel(activePanel === panelId ? null : panelId);
@@ -95,8 +112,20 @@ const Sidebar: React.FC<SidebarProps> = memo(
     const activePanelDef = panels.find((p) => p.id === activePanel);
     const isRight = position === 'right';
 
+    const swipeHandlers = useSwipeable({
+      onSwipedLeft: () => {
+        if (isMobileOpen && !isRight) onMobileClose?.();
+      },
+      onSwipedRight: () => {
+        if (isMobileOpen && isRight) onMobileClose?.();
+      },
+      delta: 50,
+      trackTouch: true,
+      trackMouse: false,
+    });
+
     const activityBar = (
-      <div className="flex flex-col items-center w-10 shrink-0 py-2 gap-1">
+      <div className="flex flex-col items-center w-12 sm:w-10 shrink-0 py-2 gap-1">
         {panels.map((panel) => {
           const Icon = panel.icon;
           return (
@@ -106,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={cn('h-7 w-7', activePanel === panel.id && 'bg-muted')}
+                  className={cn('h-9 w-9 sm:h-7 sm:w-7', activePanel === panel.id && 'bg-muted')}
                   onClick={() => togglePanel(panel.id)}
                 >
                   <Icon className="h-4 w-4" />
@@ -118,12 +147,30 @@ const Sidebar: React.FC<SidebarProps> = memo(
         })}
 
         <div className="mt-auto flex flex-col items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-9 w-9"
+            onClick={onMobileClose}
+            aria-label="Close sidebar"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-9 w-9"
+            onClick={togglePosition}
+            aria-label={`Move sidebar to ${isRight ? 'left' : 'right'}`}
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+          </Button>
           <TooltipButton
             button={
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7"
+                className="h-9 w-9 sm:h-7 sm:w-7"
                 onClick={() => window.open('https://github.com/utkarsh5026/mdhd', '_blank')}
               >
                 <FaGithub className="h-4 w-4" />
@@ -149,6 +196,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
         <ContextMenu>
           <ContextMenuTrigger asChild>
             <div
+              {...swipeHandlers}
               className={cn(
                 'flex overflow-hidden bg-card/80 transition-transform duration-300 ease-in-out',
                 // Mobile: fixed overlay, slides in/out

@@ -1,11 +1,14 @@
 import { lazy, Suspense, useCallback, useState } from 'react';
+import { useSwipeable } from 'react-swipeable';
 
+import { MobileOnboarding } from '@/components/features/content-reading/components/layout';
 import {
   TabbedContentArea,
   useHeaderVisible,
   useStatusBarVisible,
   useTabsActions,
 } from '@/components/features/tabs';
+import OfflineIndicator from '@/components/shared/offline-indicator';
 import { ReactErrorBoundary } from '@/components/utils';
 import { useLocalStorage } from '@/hooks';
 import type { StoredFile } from '@/services/indexeddb';
@@ -36,6 +39,18 @@ const Homepage = () => {
   const handleExitFullscreen = useCallback(() => {
     setFullscreenTabId(null);
   }, []);
+
+  const edgeSwipeHandlers = useSwipeable({
+    onSwipedRight: () => {
+      if (!mobileSidebarOpen && sidebarPosition === 'left') setMobileSidebarOpen(true);
+    },
+    onSwipedLeft: () => {
+      if (!mobileSidebarOpen && sidebarPosition === 'right') setMobileSidebarOpen(true);
+    },
+    delta: 30,
+    trackTouch: true,
+    trackMouse: false,
+  });
 
   const handleFileSelect = useCallback(
     (file: StoredFile) => {
@@ -72,10 +87,19 @@ const Homepage = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-card">
+      <OfflineIndicator />
       {isHeaderVisible && <Header onToggleSidebar={() => setMobileSidebarOpen((o) => !o)} />}
+      {isHeaderVisible && !mobileSidebarOpen && <MobileOnboarding />}
 
       {isHeaderVisible && <div className="shrink-0 h-12 border-b border-border/20" />}
       <div className="relative flex flex-1 min-h-0">
+        {/* Edge swipe detector for opening sidebar on mobile */}
+        {!mobileSidebarOpen && (
+          <div
+            {...edgeSwipeHandlers}
+            className={`fixed top-0 bottom-0 w-5 z-40 md:hidden ${sidebarPosition === 'left' ? 'left-0' : 'right-0'}`}
+          />
+        )}
         {sidebarPosition === 'left' && (
           <ReactErrorBoundary>
             <Sidebar

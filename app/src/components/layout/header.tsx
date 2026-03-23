@@ -22,7 +22,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden h-8 w-8 text-muted-foreground"
+                className="md:hidden h-10 w-10 sm:h-8 sm:w-8 text-muted-foreground"
                 onClick={onToggleSidebar}
               >
                 <Menu className="h-4 w-4" />
