@@ -16,6 +16,7 @@ declare module '@fontsource-variable/source-sans-3';
 declare module '@fontsource-variable/nunito-sans';
 declare module '@fontsource-variable/eb-garamond';
 declare module '@fontsource-variable/bitter';
+declare module '@fontsource-variable/jetbrains-mono';
 
 // Static fontsource packages
 declare module '@fontsource/merriweather/400.css';

@@ -6,6 +6,7 @@ import { defineConfig } from 'vite';
 import checker from 'vite-plugin-checker';
 import compression from 'vite-plugin-compression';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
+import { VitePWA } from 'vite-plugin-pwa';
 import svgr from 'vite-plugin-svgr';
 
 export default defineConfig(({ mode }) => {
@@ -39,6 +40,44 @@ export default defineConfig(({ mode }) => {
         jpeg: { quality: 80 },
         webp: { quality: 80 },
         avif: { quality: 70 },
+      }),
+
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png'],
+        manifest: {
+          name: 'MDHD - Markdown Reader',
+          short_name: 'MDHD',
+          description: 'Distraction-free markdown reading experience',
+          theme_color: '#000000',
+          background_color: '#000000',
+          display: 'standalone',
+          orientation: 'any',
+          start_url: '/',
+          icons: [
+            { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+            {
+              src: '/android-chrome-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+          ],
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts',
+                expiration: { maxEntries: 10, maxAgeSeconds: 365 * 24 * 60 * 60 },
+              },
+            },
+          ],
+        },
       }),
 
       ...(process.env.ANALYZE
