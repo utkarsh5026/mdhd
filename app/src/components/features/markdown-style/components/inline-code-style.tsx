@@ -5,18 +5,19 @@ import { cn } from '@/lib/utils';
 
 import type { InlineCodeShape, InlineCodeStyle } from '../store/markdown-style-store';
 import { useMarkdownStyleStore } from '../store/markdown-style-store';
+import { StyleOptionGroup, StyleSectionHeader } from './style-option-group';
 
-const STYLE_OPTIONS: { style: InlineCodeStyle; label: string; previewClass: string }[] = [
-  { style: 'primary', label: 'Primary', previewClass: 'bg-primary/10 text-primary/95' },
-  { style: 'muted', label: 'Muted', previewClass: 'bg-muted text-foreground/80' },
-  { style: 'bordered', label: 'Border', previewClass: 'border border-primary/30 text-primary/90' },
-  { style: 'ghost', label: 'Ghost', previewClass: 'text-primary font-semibold' },
+const STYLE_OPTIONS: { value: InlineCodeStyle; label: string; previewClass: string }[] = [
+  { value: 'primary', label: 'Primary', previewClass: 'bg-primary/10 text-primary/95' },
+  { value: 'muted', label: 'Muted', previewClass: 'bg-muted text-foreground/80' },
+  { value: 'bordered', label: 'Border', previewClass: 'border border-primary/30 text-primary/90' },
+  { value: 'ghost', label: 'Ghost', previewClass: 'text-primary font-semibold' },
 ];
 
-const SHAPE_OPTIONS: { shape: InlineCodeShape; label: string; radius: string }[] = [
-  { shape: 'rounded', label: 'Rounded', radius: 'rounded' },
-  { shape: 'pill', label: 'Pill', radius: 'rounded-full' },
-  { shape: 'sharp', label: 'Sharp', radius: 'rounded-none' },
+const SHAPE_OPTIONS: { value: InlineCodeShape; label: string; radius: string }[] = [
+  { value: 'rounded', label: 'Rounded', radius: 'rounded' },
+  { value: 'pill', label: 'Pill', radius: 'rounded-full' },
+  { value: 'sharp', label: 'Sharp', radius: 'rounded-none' },
 ];
 
 const SHAPE_PREVIEW_BASE: Record<InlineCodeStyle, string> = {
@@ -34,68 +35,61 @@ const InlineCodeStyleSettings: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <Code className="h-3.5 w-3.5" />
-        Inline Code
-      </div>
+      <StyleSectionHeader icon={Code} label="Inline Code" />
 
-      {/* Appearance — segmented control */}
+      {/* Appearance */}
       <div className="space-y-1.5">
         <div className="text-[10px] text-muted-foreground/60 px-0.5">Appearance</div>
-        <div className="flex bg-muted/40 rounded-xl p-1 gap-0.5">
-          {STYLE_OPTIONS.map(({ style, label, previewClass }) => (
-            <button
-              key={style}
-              onClick={() => setInlineCodeStyle(style)}
-              className={cn(
-                'flex-1 flex flex-col items-center gap-1.5 py-2 rounded transition-all duration-150',
-                inlineCodeStyle === style ? 'bg-background shadow-sm' : 'hover:bg-background/40'
-              )}
-            >
-              <span className={cn('px-1.5 py-0.5 text-[9px] font-mono rounded', previewClass)}>
-                x
-              </span>
-              <span
-                className={cn(
-                  'text-[10px] font-medium',
-                  inlineCodeStyle === style ? 'text-foreground' : 'text-muted-foreground'
-                )}
-              >
-                {label}
-              </span>
-            </button>
-          ))}
-        </div>
+        <StyleOptionGroup
+          options={STYLE_OPTIONS}
+          value={inlineCodeStyle}
+          onChange={setInlineCodeStyle}
+          renderOption={({ value, label }, isSelected) => {
+            const previewClass = STYLE_OPTIONS.find((o) => o.value === value)!.previewClass;
+            return (
+              <div className="flex flex-col items-center gap-1.5 py-2">
+                <span className={cn('px-1.5 py-0.5 text-[9px] font-mono rounded', previewClass)}>
+                  x
+                </span>
+                <span
+                  className={cn(
+                    'text-[10px] font-medium',
+                    isSelected ? 'text-foreground' : 'text-muted-foreground'
+                  )}
+                >
+                  {label}
+                </span>
+              </div>
+            );
+          }}
+        />
       </div>
 
-      {/* Shape — segmented control */}
+      {/* Shape */}
       <div className="space-y-1.5">
         <div className="text-[10px] text-muted-foreground/60 px-0.5">Shape</div>
-        <div className="flex bg-muted/40 rounded-xl p-1 gap-0.5">
-          {SHAPE_OPTIONS.map(({ shape, label, radius }) => (
-            <button
-              key={shape}
-              onClick={() => setInlineCodeShape(shape)}
-              className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-1.5 py-2 rounded text-xs font-medium transition-all duration-150',
-                inlineCodeShape === shape
-                  ? 'bg-background shadow-sm text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <span
-                className={cn(
-                  'px-1.5 py-0.5 text-[9px] font-mono',
-                  SHAPE_PREVIEW_BASE[inlineCodeStyle],
-                  radius
-                )}
-              >
-                abc
-              </span>
-              <span className="text-[10px]">{label}</span>
-            </button>
-          ))}
-        </div>
+        <StyleOptionGroup
+          options={SHAPE_OPTIONS}
+          value={inlineCodeShape}
+          onChange={setInlineCodeShape}
+          renderOption={({ value, label }) => {
+            const radius = SHAPE_OPTIONS.find((o) => o.value === value)!.radius;
+            return (
+              <div className="flex flex-col items-center gap-1.5 py-2 text-xs font-medium">
+                <span
+                  className={cn(
+                    'px-1.5 py-0.5 text-[9px] font-mono',
+                    SHAPE_PREVIEW_BASE[inlineCodeStyle],
+                    radius
+                  )}
+                >
+                  abc
+                </span>
+                <span className="text-[10px]">{label}</span>
+              </div>
+            );
+          }}
+        />
       </div>
     </div>
   );

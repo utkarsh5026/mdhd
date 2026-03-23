@@ -5,30 +5,18 @@ import { cn } from '@/lib/utils';
 
 import type { BlockquoteStyle } from '../store/markdown-style-store';
 import { useMarkdownStyleStore } from '../store/markdown-style-store';
+import { StyleOptionGroup, StyleSectionHeader } from './style-option-group';
 
-const OPTIONS: { style: BlockquoteStyle; label: string }[] = [
-  { style: 'border', label: 'Border' },
-  { style: 'card', label: 'Card' },
-  { style: 'minimal', label: 'Minimal' },
+const OPTIONS: { value: BlockquoteStyle; label: string }[] = [
+  { value: 'border', label: 'Border' },
+  { value: 'card', label: 'Card' },
+  { value: 'minimal', label: 'Minimal' },
 ];
 
-const BlockquotePreview: React.FC<{ style: BlockquoteStyle }> = ({ style }) => {
-  const styles: Record<BlockquoteStyle, string> = {
-    border: 'border-l-2 border-primary/50 bg-card/60 pl-2.5',
-    card: 'border border-primary/20 bg-primary/5 not-italic',
-    minimal: 'pl-3 text-foreground/50',
-  };
-
-  return (
-    <div
-      className={cn(
-        'text-[10px] italic py-1.5 px-2 transition-all duration-200 rounded-2xl',
-        styles[style]
-      )}
-    >
-      "Predict the future..."
-    </div>
-  );
+const PREVIEW_STYLES: Record<BlockquoteStyle, string> = {
+  border: 'border-l-2 border-primary/50 bg-card/60 pl-2.5',
+  card: 'border border-primary/20 bg-primary/5 not-italic',
+  minimal: 'pl-3 text-foreground/50',
 };
 
 const BlockquoteStyleSettings: React.FC = () => {
@@ -37,32 +25,33 @@ const BlockquoteStyleSettings: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <Quote className="h-3.5 w-3.5" />
-        Blockquote
-      </div>
-      <div className="flex bg-muted/40 rounded-xl p-1 gap-1">
-        {OPTIONS.map(({ style, label }) => (
-          <button
-            key={style}
-            onClick={() => setBlockquoteStyle(style)}
-            className={cn(
-              'flex-1 flex flex-col items-center gap-1 py-1.5 px-1 rounded transition-all duration-150',
-              blockquoteStyle === style ? 'bg-background shadow-sm' : 'hover:bg-background/40'
-            )}
-          >
-            <BlockquotePreview style={style} />
+      <StyleSectionHeader icon={Quote} label="Blockquote" />
+      <StyleOptionGroup
+        options={OPTIONS}
+        value={blockquoteStyle}
+        onChange={setBlockquoteStyle}
+        gap="gap-1"
+        renderOption={({ value, label }, isSelected) => (
+          <div className="flex flex-col items-center gap-1 py-1.5 px-1">
+            <div
+              className={cn(
+                'text-[10px] italic py-1.5 px-2 transition-all duration-200 rounded',
+                PREVIEW_STYLES[value]
+              )}
+            >
+              "Predict the future..."
+            </div>
             <span
               className={cn(
                 'text-[10px] font-medium',
-                blockquoteStyle === style ? 'text-foreground' : 'text-muted-foreground'
+                isSelected ? 'text-foreground' : 'text-muted-foreground'
               )}
             >
               {label}
             </span>
-          </button>
-        ))}
-      </div>
+          </div>
+        )}
+      />
     </div>
   );
 };
