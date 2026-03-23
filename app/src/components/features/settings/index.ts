@@ -1,7 +1,8 @@
 import ReadingSettingsSheet from './components/reading-settings-selector';
 import SettingsPanel from './components/settings-panel';
+import useInitialFontSetup from './hooks/use-initial-font-setup';
 
-export { ReadingSettingsSheet, SettingsPanel };
+export { ReadingSettingsSheet, SettingsPanel, useInitialFontSetup };
 
 export type { CodeDisplaySettings } from './store/code-display-settings';
 export { useCodeDisplaySettingsStore } from './store/code-display-settings';
