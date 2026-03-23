@@ -65,6 +65,7 @@ export const useReading = (markdownInput: string) => {
     const idx = currentIndexRef.current;
     if (idx < sectionsLengthRef.current - 1) {
       changeSection(idx + 1);
+      navigator.vibrate?.(10);
     }
   }, [changeSection]);
 
@@ -72,6 +73,7 @@ export const useReading = (markdownInput: string) => {
     const idx = currentIndexRef.current;
     if (idx > 0) {
       changeSection(idx - 1);
+      navigator.vibrate?.(10);
     }
   }, [changeSection]);
 

@@ -101,7 +101,7 @@ const ColorSwatch: React.FC<{
 }> = ({ hex, name, selected, onSelect }) => (
   <button
     className={cn(
-      'w-5.5 h-5.5 rounded-full transition-all duration-200 cursor-pointer',
+      'w-7 h-7 sm:w-5.5 sm:h-5.5 rounded-full transition-all duration-200 cursor-pointer',
       'border-2 shadow-sm hover:shadow-md',
       selected
         ? 'border-primary scale-110 ring-2 ring-primary/25 shadow-primary/20'
@@ -132,7 +132,7 @@ export const ColorSwatchGrid: React.FC<{
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger className="flex items-center gap-2.5 w-full py-1.5 px-1 -mx-1 rounded-md hover:bg-muted/50 transition-colors cursor-pointer group">
         <div
-          className="w-5.5 h-5.5 rounded-full border-2 border-border/50 shadow-sm shrink-0"
+          className="w-7 h-7 sm:w-5.5 sm:h-5.5 rounded-full border-2 border-border/50 shadow-sm shrink-0"
           style={{ backgroundColor: selected }}
         />
         <span className="text-xs text-muted-foreground truncate">{selectedName}</span>
@@ -173,7 +173,7 @@ export const ColorSwatchGrid: React.FC<{
             <div className="flex items-center gap-2 mt-1">
               <label
                 className={cn(
-                  'relative w-5.5 h-5.5 rounded-full border-2 shrink-0 transition-all duration-200 cursor-pointer',
+                  'relative w-7 h-7 sm:w-5.5 sm:h-5.5 rounded-full border-2 shrink-0 transition-all duration-200 cursor-pointer',
                   !isPresetSelected
                     ? 'border-primary ring-2 ring-primary/25 scale-110'
                     : 'border-border/40'

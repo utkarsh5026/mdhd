@@ -56,7 +56,7 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
                       e.stopPropagation();
                       onTabClose(tab.id);
                     }}
-                    className="p-0.5 rounded hover:bg-destructive/20 hover:text-destructive transition-colors"
+                    className="p-1.5 rounded hover:bg-destructive/20 hover:text-destructive transition-colors"
                     aria-label={`Close ${tab.title}`}
                   >
                     <X className="w-3 h-3" />
@@ -126,7 +126,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 rounded-none"
+            className="h-9 w-9 shrink-0 rounded-none"
             onClick={mobileNav.onPrevious}
             disabled={mobileNav.currentIndex === 0}
             aria-label="Previous section"
@@ -139,7 +139,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 rounded-none"
+            className="h-9 w-9 shrink-0 rounded-none"
             onClick={mobileNav.onNext}
             disabled={mobileNav.currentIndex === mobileNav.total - 1}
             aria-label="Next section"
@@ -152,7 +152,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
       <Button
         variant="ghost"
         size="icon"
-        className="h-7 w-7 shrink-0 rounded-none border-l border-border/30"
+        className="h-9 w-9 shrink-0 rounded-none border-l border-border/30"
         onClick={mobileNav?.onFullscreen}
         disabled={!mobileNav}
         aria-label="Enter fullscreen"

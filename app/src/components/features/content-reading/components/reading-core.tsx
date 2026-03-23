@@ -14,6 +14,7 @@ import {
   NavigationControls,
   ScrollContentReader,
   SectionBreadcrumb,
+  SwipeHint,
 } from './layout';
 import ReadingBackground from './reading-background';
 
@@ -290,6 +291,9 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
               })}
             </div>
           )}
+
+          {/* Swipe hint - shown once on touch devices in card mode */}
+          {readingMode === 'card' && <SwipeHint />}
 
           {/* Navigation Controls - side arrows, hidden in zen mode and scroll mode */}
           {shouldShowControls && readingMode === 'card' && (
