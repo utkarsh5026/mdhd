@@ -7,8 +7,8 @@ import {
   SnippetDetail,
   SnippetRow,
 } from '@/components/features/content-reading/components/snippets/snippets-sheet';
+import { useReadingActionsById } from '@/components/features/content-reading/hooks/use-reading-selectors';
 import { useActiveTabSections } from '@/components/features/tabs/hooks/use-active-tab-sections';
-import { useTabNavigation } from '@/components/features/tabs/hooks/use-tab-navigation';
 import {
   ListPopover,
   ListPopoverContent,
@@ -37,7 +37,7 @@ interface SnippetsPanelProps {
 
 const SnippetsPanel: React.FC<SnippetsPanelProps> = memo(({ className }) => {
   const { sections, tabId, hasActiveTab } = useActiveTabSections();
-  const { changeSection } = useTabNavigation(tabId ?? '');
+  const { changeSection } = useReadingActionsById(tabId ?? '');
 
   const [selectedSnippet, setSelectedSnippet] = useState<Snippet | null>(null);
 

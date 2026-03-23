@@ -1,8 +1,8 @@
 import { Search } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef } from 'react';
 
+import { useReadingActionsById } from '@/components/features/content-reading/hooks/use-reading-selectors';
 import { useActiveTabSections } from '@/components/features/tabs/hooks/use-active-tab-sections';
-import { useTabNavigation } from '@/components/features/tabs/hooks/use-tab-navigation';
 import { cn } from '@/lib/utils';
 
 import { useSearch } from '../../hooks/use-search';
@@ -14,7 +14,7 @@ interface SearchPanelProps {
 
 const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
   const { sections, tabId, hasActiveTab } = useActiveTabSections();
-  const { changeSection } = useTabNavigation(tabId ?? '');
+  const { changeSection } = useReadingActionsById(tabId ?? '');
   const { query, setQuery, results, reset } = useSearch(sections);
   const inputRef = useRef<HTMLInputElement>(null);
 

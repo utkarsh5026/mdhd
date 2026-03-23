@@ -62,6 +62,7 @@ export const createInitialReadingState = (content: string): TabReadingState => {
     isZenMode: false,
     zenControlsVisible: false,
     isDialogOpen: false,
+    isTransitioning: false,
   };
 };
 

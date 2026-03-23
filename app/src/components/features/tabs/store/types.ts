@@ -19,6 +19,8 @@ export interface TabReadingState {
   zenControlsVisible?: boolean;
   // Dialog state (per-tab, for code preview dialogs)
   isDialogOpen?: boolean;
+  // Transition state (for card mode fade animation)
+  isTransitioning?: boolean;
 }
 
 /**
