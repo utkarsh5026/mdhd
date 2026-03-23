@@ -33,7 +33,7 @@ const HeadingStyleSettings: React.FC = () => {
             onClick={() => setHeadingColorStyle(style)}
             title={label}
             className={cn(
-              'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all duration-150',
+              'flex-1 flex items-center justify-center gap-1.5 py-2 rounded text-xs font-medium transition-all duration-150',
               headingColorStyle === style
                 ? 'bg-background shadow-sm text-foreground'
                 : 'text-muted-foreground hover:text-foreground'

@@ -44,7 +44,7 @@ const ListStyleSettings: React.FC = () => {
               onClick={() => setUnorderedListMarker(marker)}
               title={label}
               className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg text-xs font-medium transition-all duration-150',
+                'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded text-xs font-medium transition-all duration-150',
                 unorderedListMarker === marker
                   ? 'bg-background shadow-sm text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -69,7 +69,7 @@ const ListStyleSettings: React.FC = () => {
               onClick={() => setOrderedListMarker(marker)}
               title={label}
               className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg text-xs font-medium transition-all duration-150',
+                'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded text-xs font-medium transition-all duration-150',
                 orderedListMarker === marker
                   ? 'bg-background shadow-sm text-foreground'
                   : 'text-muted-foreground hover:text-foreground'

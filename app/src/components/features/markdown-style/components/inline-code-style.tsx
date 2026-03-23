@@ -7,13 +7,9 @@ import type { InlineCodeShape, InlineCodeStyle } from '../store/markdown-style-s
 import { useMarkdownStyleStore } from '../store/markdown-style-store';
 
 const STYLE_OPTIONS: { style: InlineCodeStyle; label: string; previewClass: string }[] = [
-  { style: 'primary', label: 'Primary', previewClass: 'bg-primary/10 text-primary/95 rounded-lg' },
-  { style: 'muted', label: 'Muted', previewClass: 'bg-muted text-foreground/80 rounded-lg' },
-  {
-    style: 'bordered',
-    label: 'Bordered',
-    previewClass: 'border border-primary/30 text-primary/90 rounded-lg',
-  },
+  { style: 'primary', label: 'Primary', previewClass: 'bg-primary/10 text-primary/95' },
+  { style: 'muted', label: 'Muted', previewClass: 'bg-muted text-foreground/80' },
+  { style: 'bordered', label: 'Border', previewClass: 'border border-primary/30 text-primary/90' },
   { style: 'ghost', label: 'Ghost', previewClass: 'text-primary font-semibold' },
 ];
 
@@ -43,49 +39,45 @@ const InlineCodeStyleSettings: React.FC = () => {
         Inline Code
       </div>
 
-      {/* Appearance */}
+      {/* Appearance — segmented control */}
       <div className="space-y-1.5">
-        <div className="text-[10px] text-muted-foreground px-0.5 uppercase tracking-wide">
-          Appearance
-        </div>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="text-[10px] text-muted-foreground/60 px-0.5">Appearance</div>
+        <div className="flex bg-muted/40 rounded-xl p-1 gap-0.5">
           {STYLE_OPTIONS.map(({ style, label, previewClass }) => (
             <button
               key={style}
               onClick={() => setInlineCodeStyle(style)}
               className={cn(
-                'flex flex-col items-center gap-2 p-2 rounded-xl border text-left transition-all duration-150',
-                inlineCodeStyle === style
-                  ? 'border-primary/40 bg-primary/5'
-                  : 'border-border/30 bg-card/30 hover:border-border/50'
+                'flex-1 flex flex-col items-center gap-1.5 py-2 rounded transition-all duration-150',
+                inlineCodeStyle === style ? 'bg-background shadow-sm' : 'hover:bg-background/40'
               )}
             >
+              <span className={cn('px-1.5 py-0.5 text-[9px] font-mono rounded', previewClass)}>
+                x
+              </span>
               <span
                 className={cn(
-                  'px-1.5 py-0.5 text-[9px] font-mono w-full text-center',
-                  previewClass
+                  'text-[10px] font-medium',
+                  inlineCodeStyle === style ? 'text-foreground' : 'text-muted-foreground'
                 )}
               >
-                {'<x>'}
+                {label}
               </span>
-              <span className="text-[10px] font-medium text-center leading-tight">{label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Shape */}
+      {/* Shape — segmented control */}
       <div className="space-y-1.5">
-        <div className="text-[10px] text-muted-foreground px-0.5 uppercase tracking-wide">
-          Shape
-        </div>
+        <div className="text-[10px] text-muted-foreground/60 px-0.5">Shape</div>
         <div className="flex bg-muted/40 rounded-xl p-1 gap-0.5">
           {SHAPE_OPTIONS.map(({ shape, label, radius }) => (
             <button
               key={shape}
               onClick={() => setInlineCodeShape(shape)}
               className={cn(
-                'flex-1 flex flex-col items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all duration-150',
+                'flex-1 flex flex-col items-center justify-center gap-1.5 py-2 rounded text-xs font-medium transition-all duration-150',
                 inlineCodeShape === shape
                   ? 'bg-background shadow-sm text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -98,7 +90,7 @@ const InlineCodeStyleSettings: React.FC = () => {
                   radius
                 )}
               >
-                {'abc'}
+                abc
               </span>
               <span className="text-[10px]">{label}</span>
             </button>
