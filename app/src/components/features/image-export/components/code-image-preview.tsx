@@ -298,7 +298,8 @@ const CodeImagePreview = forwardRef<HTMLDivElement, CodeImagePreviewProps>(
             containerRef={localRef}
             offsetX={settings.contentOffsetX}
             offsetY={settings.contentOffsetY}
-            scale={1}
+            scaleX={1}
+            scaleY={1}
             onUpdate={onSettingsUpdate}
           >
             <DeviceFrameWrapper frame={deviceFrame}>
