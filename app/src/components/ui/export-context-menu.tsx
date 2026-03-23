@@ -31,7 +31,7 @@ const ExportContextMenu: React.FC<ExportContextMenuProps> = ({ title, items, chi
   <ContextMenu>
     <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
 
-    <ContextMenuContent className="w-52 font-cascadia-code rounded-2xl">
+    <ContextMenuContent className="w-52 rounded-2xl">
       <div className="px-2 pt-1 pb-0.5">
         <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           {title}

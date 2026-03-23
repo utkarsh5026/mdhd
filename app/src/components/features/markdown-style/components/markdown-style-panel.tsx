@@ -16,6 +16,9 @@ const CodeDisplaySelector = lazy(
 const CodeThemeSelector = lazy(
   () => import('@/components/features/settings/components/code-theme-selector')
 );
+const FontFamilySelector = lazy(
+  () => import('@/components/features/settings/components/font-family-selector')
+);
 
 const SectionLoader = () => (
   <div className="flex items-center justify-center py-6">
@@ -36,7 +39,7 @@ const MarkdownStylePanel: React.FC = memo(() => {
   const resetSettings = useMarkdownStyleStore((s) => s.resetSettings);
 
   return (
-    <div className="h-full flex flex-col font-cascadia-code">
+    <div className="h-full flex flex-col">
       {/* Header */}
       <div className="px-3 pt-3 pb-2 border-b border-border/50 shrink-0">
         <div className="flex items-center justify-between">
@@ -63,6 +66,14 @@ const MarkdownStylePanel: React.FC = memo(() => {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 text-xs">
+        <GroupLabel label="Typography" />
+
+        <Suspense fallback={<SectionLoader />}>
+          <div className="[&_h3]:text-sm [&_p]:text-xs [&_.text-base]:text-sm [&_.text-sm]:text-xs">
+            <FontFamilySelector />
+          </div>
+        </Suspense>
+
         <Suspense fallback={<SectionLoader />}>
           <HeadingStyleSettings />
         </Suspense>

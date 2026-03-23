@@ -38,7 +38,7 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="font-cascadia-code max-w-md rounded-2xl">
+      <DialogContent className="max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle>Delete {isDirectory ? 'folder' : 'file'}?</DialogTitle>
           <DialogDescription>

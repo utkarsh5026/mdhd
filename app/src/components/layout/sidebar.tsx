@@ -140,7 +140,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
         {/* Mobile backdrop */}
         <div
           className={cn(
-            'fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden transition-opacity duration-300',
+            'fixed inset-0 z-50 bg-background/50 backdrop-blur-sm md:hidden transition-opacity duration-300',
             isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
           )}
           onClick={onMobileClose}
@@ -152,7 +152,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
               className={cn(
                 'flex overflow-hidden bg-card/80 transition-transform duration-300 ease-in-out',
                 // Mobile: fixed overlay, slides in/out
-                'fixed inset-0 z-40 md:hidden',
+                'fixed inset-0 z-50 md:hidden',
                 isRight ? 'right-0' : 'left-0',
                 isMobileOpen ? 'translate-x-0' : isRight ? 'translate-x-full' : '-translate-x-full',
                 // Desktop: static in flow, restore className width/border
@@ -173,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
             </div>
           </ContextMenuTrigger>
 
-          <ContextMenuContent className="w-48 font-cascadia-code rounded-2xl">
+          <ContextMenuContent className="w-48 rounded-2xl">
             <ContextMenuItem onSelect={togglePosition} className="py-2 px-3">
               Move Sidebar to {isRight ? 'Left' : 'Right'}
             </ContextMenuItem>

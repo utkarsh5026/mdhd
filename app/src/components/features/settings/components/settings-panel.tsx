@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 
 const ReadingModeSelector = lazy(() => import('./reading-mode-selector'));
 const AppThemeSelector = lazy(() => import('./app-theme-selector'));
-const FontFamilySelector = lazy(() => import('./font-family-selector'));
+const AppFontSelector = lazy(() => import('./app-font-selector'));
 const BackgroundSettings = lazy(() => import('./background-settings'));
 
 const TabLoader = () => (
@@ -48,7 +48,7 @@ const TabContent = memo(({ value, activeTab }: { value: TabValue; activeTab: Tab
             </div>
           </>
         )}
-        {value === 'font' && <FontFamilySelector />}
+        {value === 'font' && <AppFontSelector />}
       </Suspense>
     </div>
   );
@@ -66,7 +66,7 @@ const SettingsPanel: React.FC = memo(() => {
   };
 
   return (
-    <div className="h-full flex flex-col font-cascadia-code">
+    <div className="h-full flex flex-col">
       <div className="px-3 pt-3 pb-2 border-b border-border/50 shrink-0">
         <div className="flex space-x-1 overflow-x-auto no-scrollbar pb-1">
           {TABS.map((tab) => (

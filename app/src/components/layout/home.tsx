@@ -71,7 +71,7 @@ const Homepage = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden font-cascadia-code bg-card">
+    <div className="h-screen flex flex-col overflow-hidden bg-card">
       {isHeaderVisible && <Header onToggleSidebar={() => setMobileSidebarOpen((o) => !o)} />}
 
       {isHeaderVisible && <div className="shrink-0 h-12 border-b border-border/20" />}

@@ -19,7 +19,7 @@ export const LoadingFallback: React.FC<LoadingFallbackProps> = ({ message = 'Loa
       {/* Wordmark */}
       <div className={cn('flex flex-col items-center gap-5', styles.appear)}>
         <span
-          className="font-cascadia-code text-5xl font-light tracking-[0.6em] text-foreground/60 select-none pl-[0.6em]"
+          className="text-5xl font-light tracking-[0.6em] text-foreground/60 select-none pl-[0.6em]"
           aria-hidden="true"
         >
           MDHD
@@ -42,7 +42,7 @@ export const LoadingFallback: React.FC<LoadingFallbackProps> = ({ message = 'Loa
             />
           ))}
         </div>
-        <span className="font-cascadia-code text-xs tracking-widest uppercase text-muted-foreground/40">
+        <span className="text-xs tracking-widest uppercase text-muted-foreground/40">
           {message}
         </span>
       </div>

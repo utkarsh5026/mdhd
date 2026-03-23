@@ -120,7 +120,7 @@ const PathNodeDropdown: React.FC<PathNodeDropdownProps> = memo(
         <ListPopoverTrigger asChild>
           <button
             className={cn(
-              'flex items-center gap-1 rounded-md px-1.5 py-0.5 font-cascadia-code',
+              'flex items-center gap-1 rounded-md px-1.5 py-0.5',
               'transition-colors',
               hasDropdown
                 ? 'hover:text-foreground hover:bg-accent/40 cursor-pointer'
@@ -226,7 +226,7 @@ const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
         <ListPopoverTrigger asChild>
           <button
             className={cn(
-              'flex items-center gap-1 rounded-md px-1.5 py-0.5 font-cascadia-code',
+              'flex items-center gap-1 rounded-md px-1.5 py-0.5',
               'transition-colors',
               hasChildren
                 ? 'hover:text-foreground hover:bg-accent/40 cursor-pointer'

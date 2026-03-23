@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 const ReadingModeSelector = lazy(() => import('./reading-mode-selector'));
 const AppThemeSelector = lazy(() => import('./app-theme-selector'));
-const FontFamilySelector = lazy(() => import('./font-family-selector'));
+const AppFontSelector = lazy(() => import('./app-font-selector'));
 const BackgroundSettings = lazy(() => import('./background-settings'));
 
 const TabLoader = () => (
@@ -60,7 +60,7 @@ const TabContent = memo(({ value, activeTab, onRequestCloseSheet }: TabContentPr
             </div>
           </>
         )}
-        {value === 'font' && <FontFamilySelector />}
+        {value === 'font' && <AppFontSelector />}
       </Suspense>
     </div>
   );
@@ -78,7 +78,7 @@ const ReadingSettingsSheet: React.FC<ReadingSettingsSheetProps> = ({ open, onOpe
   const handleClose = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   return (
-    <SideSheet open={open} onOpenChange={onOpenChange} size="lg" className="font-cascadia-code">
+    <SideSheet open={open} onOpenChange={onOpenChange} size="lg">
       <SideSheetHeader onClose={handleClose} className="px-6 py-4 bg-card">
         <div>
           <h2 className="text-lg font-semibold flex items-center gap-2">

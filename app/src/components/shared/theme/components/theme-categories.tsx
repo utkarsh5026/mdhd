@@ -51,7 +51,7 @@ const ThemeCategories: React.FC<ThemeCategoriesProps> = memo(
               onOpenChange={() => toggleCategory(category.name)}
             >
               <CollapsibleTrigger asChild>
-                <button className="flex items-center gap-2 sm:gap-3 w-full px-2 sm:px-3 py-2.5 sm:py-3 rounded-xl hover:bg-secondary/50 transition-colors duration-150 group font-cascadia-code">
+                <button className="flex items-center gap-2 sm:gap-3 w-full px-2 sm:px-3 py-2.5 sm:py-3 rounded-xl hover:bg-secondary/50 transition-colors duration-150 group">
                   <span className="text-base sm:text-lg">{category.icon}</span>
                   <div className="flex-1 text-left min-w-0">
                     <span className="text-xs sm:text-sm font-medium text-foreground block truncate">

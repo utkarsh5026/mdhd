@@ -256,7 +256,7 @@ export const SelectRow: React.FC<{
       <SelectTrigger className="w-full h-8 text-xs rounded">
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="font-cascadia-code rounded-2xl text-muted-foreground text-sm">
+      <SelectContent className="rounded-2xl text-muted-foreground text-sm">
         {groups
           ? groups.map((group) => (
               <SelectGroup key={group.label}>

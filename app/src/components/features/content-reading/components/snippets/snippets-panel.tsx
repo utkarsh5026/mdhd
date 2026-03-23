@@ -135,7 +135,7 @@ const SnippetsPanel: React.FC<SnippetsPanelProps> = memo(({ className }) => {
       </div>
 
       {selectedSnippet ? (
-        <div className="font-cascadia-code">
+        <div>
           <SnippetDetail snippet={selectedSnippet} onNavigate={handleNavigate} />
         </div>
       ) : totalCount === 0 ? (
@@ -202,7 +202,7 @@ const SnippetsPanel: React.FC<SnippetsPanelProps> = memo(({ className }) => {
               No items in this category.
             </div>
           ) : (
-            <div className="py-0.5 font-cascadia-code">
+            <div className="py-0.5">
               {sectionGroups.map((group) => (
                 <div key={group.sectionIndex}>
                   <SectionDivider

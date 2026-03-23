@@ -119,7 +119,7 @@ const TabManagementMenu: React.FC = memo(() => {
 
       <DropdownMenuContent
         align="end"
-        className="w-52 rounded-xl border-border/30 bg-background/95 p-1 font-cascadia-code shadow-xl backdrop-blur-xl"
+        className="w-52 rounded-xl border-border/30 bg-background/95 p-1 shadow-xl backdrop-blur-xl"
       >
         {/* View */}
         <MenuItem

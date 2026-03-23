@@ -34,7 +34,7 @@ export const TypeTabs: React.FC<TypeTabsProps> = ({ groups, active, onChange }) 
   );
 
   return (
-    <div className="flex gap-1 px-3 py-2.5 border-b border-border/10 overflow-x-auto shrink-0 font-cascadia-code">
+    <div className="flex gap-1 px-3 py-2.5 border-b border-border/10 overflow-x-auto shrink-0">
       {visibleTabs.map((type) => {
         const { label, Icon } = TAB_CONFIG[type];
         const count = groups[type].length;
@@ -138,7 +138,7 @@ const SnippetsSheet: React.FC<SnippetsSheetProps> = ({
           <button
             onClick={handleBack}
             className={cn(
-              'flex items-center gap-1 text-[13px] font-cascadia-code',
+              'flex items-center gap-1 text-[13px]',
               'text-muted-foreground hover:text-foreground',
               'transition-colors duration-150'
             )}
@@ -157,7 +157,7 @@ const SnippetsSheet: React.FC<SnippetsSheetProps> = ({
       </SideSheetHeader>
 
       {selectedSnippet ? (
-        <SideSheetBody className="font-cascadia-code">
+        <SideSheetBody>
           <SnippetDetail snippet={selectedSnippet} onNavigate={handleNavigate} />
         </SideSheetBody>
       ) : totalCount === 0 ? (
@@ -171,7 +171,7 @@ const SnippetsSheet: React.FC<SnippetsSheetProps> = ({
         <>
           <TypeTabs groups={groups} active={activeTab} onChange={setActiveTab} />
           <SideSheetBody>
-            <ScrollArea className="h-full **:data-[slot=scroll-area-viewport]:overflow-x-hidden! [&_[data-slot=scroll-area-viewport]>div]:block! font-cascadia-code">
+            <ScrollArea className="h-full **:data-[slot=scroll-area-viewport]:overflow-x-hidden! [&_[data-slot=scroll-area-viewport]>div]:block!">
               {activeSnippets.length === 0 ? (
                 <div className="p-8 text-center text-sm text-muted-foreground">
                   No {TAB_CONFIG[activeTab].label.toLowerCase()} in this document.

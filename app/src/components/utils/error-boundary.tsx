@@ -45,7 +45,7 @@ const ErrorBoundary: React.FC = () => {
     errorMessage.includes('Importing a module script failed');
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background font-cascadia-code">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       {/* Background decorative elements */}
       <div
         className="absolute top-0 right-0 w-72 h-72 rounded-full opacity-10 blur-3xl -z-10"

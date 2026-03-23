@@ -1,15 +1,15 @@
-import { Check, Type } from 'lucide-react';
+import { Check, Monitor } from 'lucide-react';
 import React, { memo, useCallback, useMemo } from 'react';
 
 import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import type { FontFamily } from '@/lib/font';
 import {
-  FONT_CSS_MAP,
-  fontCategories,
-  FontFamily,
-  FontOption,
-  fontOptions,
-  getFontCss,
+  APP_FONT_CSS_MAP,
+  APP_FONT_OPTIONS,
+  appFontCategories,
+  AppFontFamily,
+  AppFontOption,
 } from '@/lib/font';
 import { isFontLoaded, loadFont } from '@/lib/font-loader';
 import { cn } from '@/lib/utils';
@@ -18,30 +18,33 @@ import { SettingsHeader } from './settings-commons';
 
 const sampleText = 'The quick brown fox jumps over the lazy dog.';
 
-const FontFamilySelector: React.FC = () => {
-  const { settings, setFontFamily } = useReadingSettings();
-  const { fontFamily } = settings;
+const AppFontSelector: React.FC = () => {
+  const { settings, setAppFontFamily } = useReadingSettings();
+  const { appFontFamily } = settings;
 
   const handleSelectFont = useCallback(
-    (font: FontFamily) => {
-      setFontFamily(font);
+    (font: AppFontFamily) => {
+      setAppFontFamily(font);
     },
-    [setFontFamily]
+    [setAppFontFamily]
   );
 
   const currentFontLabel = useMemo(
-    () => fontOptions.find((f) => f.value === fontFamily)?.label ?? 'System UI',
-    [fontFamily]
+    () => APP_FONT_OPTIONS.find((f) => f.value === appFontFamily)?.label ?? 'Cascadia Code',
+    [appFontFamily]
   );
 
-  const previewStyle = useMemo(() => getFontCss(fontFamily), [fontFamily]);
+  const previewStyle = useMemo(
+    () => ({ fontFamily: APP_FONT_CSS_MAP[appFontFamily] }),
+    [appFontFamily]
+  );
 
   return (
     <div className="space-y-4 flex flex-col max-h-full">
       <SettingsHeader
-        icon={<Type className="h-4 w-4 text-primary" />}
-        title="Font Family"
-        description="Select your preferred reading font"
+        icon={<Monitor className="h-4 w-4 text-primary" />}
+        title="App Font"
+        description="Font for the app interface"
         rightContent={<span className="text-xs text-muted-foreground">{currentFontLabel}</span>}
         className="pb-0 border-b-0"
       />
@@ -64,11 +67,11 @@ const FontFamilySelector: React.FC = () => {
                   : 'Monospace'}
             </div>
             <div className="-mx-2">
-              {fontCategories[category].map((font) => (
-                <FontRow
+              {appFontCategories[category].map((font) => (
+                <AppFontRow
                   key={font.value}
                   font={font}
-                  isSelected={fontFamily === font.value}
+                  isSelected={appFontFamily === font.value}
                   onSelect={handleSelectFont}
                 />
               ))}
@@ -80,22 +83,22 @@ const FontFamilySelector: React.FC = () => {
   );
 };
 
-interface FontFamilyItemProps {
-  font: FontOption;
+interface AppFontRowProps {
+  font: AppFontOption;
   isSelected: boolean;
-  onSelect: (font: FontFamily) => void;
+  onSelect: (font: AppFontFamily) => void;
 }
 
-const FontRow = memo<FontFamilyItemProps>(({ font, isSelected, onSelect }) => {
-  const fontStyle = FONT_CSS_MAP[font.value];
+const AppFontRow = memo<AppFontRowProps>(({ font, isSelected, onSelect }) => {
+  const fontStyle = useMemo(() => ({ fontFamily: APP_FONT_CSS_MAP[font.value] }), [font.value]);
 
   const handleClick = useCallback(() => {
     onSelect(font.value);
   }, [onSelect, font.value]);
 
   const handleMouseEnter = useCallback(() => {
-    if (!isFontLoaded(font.value)) {
-      loadFont(font.value).catch((error) => {
+    if (font.value !== 'geist' && !isFontLoaded(font.value as FontFamily)) {
+      loadFont(font.value as FontFamily).catch((error) => {
         console.error('Failed to preload font on hover:', font.value, error);
       });
     }
@@ -123,6 +126,6 @@ const FontRow = memo<FontFamilyItemProps>(({ font, isSelected, onSelect }) => {
   );
 });
 
-FontRow.displayName = 'FontRow';
+AppFontRow.displayName = 'AppFontRow';
 
-export default FontFamilySelector;
+export default AppFontSelector;

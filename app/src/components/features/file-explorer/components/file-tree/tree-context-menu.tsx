@@ -94,7 +94,7 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
       <button
         role="menuitem"
         autoFocus
-        className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none hover:bg-accent hover:text-destructive transition-colors font-cascadia-code"
+        className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none hover:bg-accent hover:text-destructive transition-colors"
         onClick={handleDelete}
       >
         <Trash2 className="h-4 w-4" />

@@ -30,7 +30,7 @@ function ListPopoverContent({
         sideOffset={sideOffset}
         className={cn(
           'z-200 min-w-52 max-w-72 rounded-2xl border border-border',
-          'bg-popover text-popover-foreground shadow-lg font-cascadia-code backdrop-blur-2xl',
+          'bg-popover text-popover-foreground shadow-lg backdrop-blur-2xl',
           'animate-in fade-in-0 zoom-in-95',
           'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
           className

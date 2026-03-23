@@ -3,7 +3,8 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 
 import type { TextSizeScale } from '@/components/features/markdown-render/utils/text-size-classes';
-import type { FontFamily } from '@/lib/font';
+import type { AppFontFamily, FontFamily } from '@/lib/font';
+import { APP_FONT_CSS_MAP } from '@/lib/font';
 import { loadFont } from '@/lib/font-loader';
 import { tryCatch } from '@/utils/functions/error';
 
@@ -38,6 +39,7 @@ export interface ReadingBackgroundSettings {
 /** The full set of user-configurable reading preferences persisted to localStorage. */
 export interface ReadingSettings {
   fontFamily: FontFamily;
+  appFontFamily: AppFontFamily;
   background: ReadingBackgroundSettings;
   backgroundImageId: string | null;
   fontSize: number; // 14-28px
@@ -51,6 +53,7 @@ export interface ReadingSettings {
 interface ReadingSettingsState {
   settings: ReadingSettings;
   setFontFamily: (family: FontFamily) => void;
+  setAppFontFamily: (family: AppFontFamily) => void;
   setFontSize: (size: number) => void;
   setLineHeight: (height: number) => void;
   setContentWidth: (width: number) => void;
@@ -75,6 +78,7 @@ const DEFAULT_BACKGROUND: ReadingBackgroundSettings = {
 
 const DEFAULT_SETTINGS: ReadingSettings = {
   fontFamily: 'merriweather',
+  appFontFamily: 'cascadia-code',
   background: DEFAULT_BACKGROUND,
   backgroundImageId: null,
   // Typography defaults
@@ -120,6 +124,18 @@ if (typeof window !== 'undefined') {
   loadFont(initialSettings.fontFamily).catch((error) => {
     console.error('Failed to preload initial font:', error);
   });
+
+  // Apply initial app font to both html and body so all UI (including portals) uses it
+  const appFontCss = APP_FONT_CSS_MAP[initialSettings.appFontFamily];
+  if (appFontCss) {
+    document.documentElement.style.fontFamily = appFontCss;
+    document.body.style.fontFamily = appFontCss;
+  }
+
+  // Preload app font if it's in the font loader
+  if (initialSettings.appFontFamily !== 'geist' && initialSettings.appFontFamily !== 'system-ui') {
+    loadFont(initialSettings.appFontFamily as FontFamily).catch(() => {});
+  }
 }
 
 /**
@@ -146,6 +162,18 @@ export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
     patchSettings(set, () => {
       loadFont(family);
       return { fontFamily: family };
+    }),
+
+  setAppFontFamily: (family: AppFontFamily) =>
+    patchSettings(set, () => {
+      // Load the font if it's not a system/preloaded font
+      if (family !== 'geist' && family !== 'system-ui') {
+        loadFont(family as FontFamily);
+      }
+      // Apply to both html and body so portals also inherit
+      document.documentElement.style.fontFamily = APP_FONT_CSS_MAP[family];
+      document.body.style.fontFamily = APP_FONT_CSS_MAP[family];
+      return { appFontFamily: family };
     }),
 
   setFontSize: (size: number) => patchSettings(set, () => ({ fontSize: clamp(14, 28, size) })),
@@ -191,6 +219,7 @@ export const useReadingSettings = () => {
     useShallow((state) => ({
       settings: state.settings,
       setFontFamily: state.setFontFamily,
+      setAppFontFamily: state.setAppFontFamily,
       setFontSize: state.setFontSize,
       setLineHeight: state.setLineHeight,
       setContentWidth: state.setContentWidth,

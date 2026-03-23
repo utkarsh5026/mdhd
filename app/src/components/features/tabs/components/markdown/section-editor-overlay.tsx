@@ -46,7 +46,7 @@ const SectionEditorOverlay: React.FC<SectionEditorOverlayProps> = memo(
           className="max-w-4xl rounded-2xl h-[70vh] flex flex-col p-0 gap-0"
           onKeyDown={handleKeyDown}
         >
-          <DialogHeader className="px-4 py-3 border-b border-border/30 shrink-0 font-cascadia-code">
+          <DialogHeader className="px-4 py-3 border-b border-border/30 shrink-0">
             <div className="flex items-center justify-between pr-10">
               <div className="min-w-0">
                 <DialogTitle className="truncate text-sm">{section.title}</DialogTitle>
