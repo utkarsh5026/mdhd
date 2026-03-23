@@ -15,6 +15,8 @@ import { fileStorageDB, type FileTreeNode } from '@/services/indexeddb';
 import { getAncestors, getDirectChildren } from '@/services/section/queries';
 import type { IndexedSection, MarkdownSection } from '@/services/section/types';
 
+import styles from './section-breadcrumb.module.css';
+
 /** One resolved step in the file-system path shown before the section breadcrumbs. */
 interface PathSegment {
   node: FileTreeNode;
@@ -118,20 +120,20 @@ const PathNodeDropdown: React.FC<PathNodeDropdownProps> = memo(
         <ListPopoverTrigger asChild>
           <button
             className={cn(
-              'flex items-center gap-1 rounded px-1 py-0.5 font-cascadia-code',
+              'flex items-center gap-1 rounded-md px-1.5 py-0.5 font-cascadia-code',
               'transition-colors',
               hasDropdown
-                ? 'hover:text-foreground hover:bg-accent/50 cursor-pointer'
+                ? 'hover:text-foreground hover:bg-accent/40 cursor-pointer'
                 : 'cursor-default',
-              isDir ? 'text-muted-foreground' : 'text-foreground/80 font-medium'
+              isDir ? 'text-muted-foreground/60' : 'text-foreground/90 font-medium bg-accent/30'
             )}
             title={node.name}
             disabled={!hasDropdown}
           >
             <IconComp
               className={cn(
-                'h-3.5 w-3.5 shrink-0',
-                isDir ? 'text-muted-foreground' : 'text-primary'
+                'h-3 w-3 shrink-0',
+                isDir ? 'text-muted-foreground/60' : 'text-primary'
               )}
             />
             <span
@@ -146,7 +148,7 @@ const PathNodeDropdown: React.FC<PathNodeDropdownProps> = memo(
             {hasDropdown && (
               <ChevronDown
                 className={cn(
-                  'h-3 w-3 shrink-0 text-muted-foreground/50 transition-transform',
+                  'h-2.5 w-2.5 shrink-0 text-muted-foreground/40 transition-transform',
                   isOpen && 'rotate-180'
                 )}
               />
@@ -224,17 +226,19 @@ const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
         <ListPopoverTrigger asChild>
           <button
             className={cn(
-              'flex items-center gap-1 rounded px-1 py-0.5 font-cascadia-code',
+              'flex items-center gap-1 rounded-md px-1.5 py-0.5 font-cascadia-code',
               'transition-colors',
               hasChildren
-                ? 'hover:text-foreground hover:bg-accent/50 cursor-pointer'
+                ? 'hover:text-foreground hover:bg-accent/40 cursor-pointer'
                 : 'cursor-default',
-              isCurrent ? 'text-foreground/80 font-medium' : 'text-muted-foreground'
+              isCurrent ? 'text-foreground/90 font-medium bg-accent/30' : 'text-muted-foreground/60'
             )}
             title={item.section.title}
             disabled={!hasChildren}
           >
-            <Icon className={cn('h-3.5 w-3.5 shrink-0', iconColor)} />
+            <Icon
+              className={cn('h-3 w-3 shrink-0', isCurrent ? iconColor : 'text-muted-foreground/50')}
+            />
             <span
               className={cn(
                 variant === 'inline'
@@ -247,7 +251,7 @@ const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
             {hasChildren && (
               <ChevronDown
                 className={cn(
-                  'h-3 w-3 shrink-0 text-muted-foreground/50 transition-transform',
+                  'h-2.5 w-2.5 shrink-0 text-muted-foreground/40 transition-transform',
                   isOpen && 'rotate-180'
                 )}
               />
@@ -366,8 +370,12 @@ const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
       >
         {/* File path segments */}
         {pathSegments.map((segment, idx) => (
-          <span key={segment.node.id} className="flex items-center gap-0.5 shrink-0">
-            {idx > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />}
+          <span key={segment.node.id} className={cn('flex items-center shrink-0', styles.segment)}>
+            {idx > 0 && (
+              <ChevronRight
+                className={cn('h-3 w-3 text-muted-foreground/30 shrink-0', styles.separator)}
+              />
+            )}
             <PathNodeDropdown
               segment={segment}
               onOpenFile={handleOpenFile}
@@ -380,15 +388,24 @@ const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
 
         {/* Separator between path and section breadcrumbs */}
         {hasPathSegments && hasSectionBreadcrumbs && (
-          <span className="flex items-center shrink-0">
-            <ChevronRight className="h-3 w-3 text-muted-foreground/25 shrink-0" />
-          </span>
+          <ChevronRight
+            className={cn('h-3 w-3 text-muted-foreground/25 shrink-0', styles.separator)}
+          />
         )}
 
-        {/* Section breadcrumbs */}
+        {/* Section breadcrumbs — key includes position so trail changes trigger re-mount */}
         {breadcrumbs.map((item, idx) => (
-          <span key={item.index} className="flex items-center gap-0.5 shrink-0">
-            {idx > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground/40 shrink-0" />}
+          <span
+            key={`${item.index}-${idx}`}
+            className={cn('flex items-center shrink-0', styles.segment)}
+            style={{ animationDelay: `${idx * 40}ms` }}
+          >
+            {idx > 0 && (
+              <ChevronRight
+                className={cn('h-3 w-3 text-muted-foreground/30 shrink-0', styles.separator)}
+                style={{ animationDelay: `${idx * 40}ms` }}
+              />
+            )}
             <BreadcrumbDropdown
               item={item}
               children={siblingsMap.get(item.index) ?? []}
