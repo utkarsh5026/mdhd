@@ -5,7 +5,7 @@ import WelcomeScreen from '@/components/layout/welcome-screen';
 import { fileStorageDB, type FileTreeNode } from '@/services/indexeddb';
 
 import { useSaveShortcut } from '../hooks/use-save-shortcut';
-import { useActiveTab, useActiveTabId, useShowEmptyState, useTabs, useTabsActions } from '../store';
+import { useActiveTab, useShowEmptyState, useTabs, useTabsActions } from '../store';
 import InlineMarkdownViewer from './markdown/inline-markdown-viewer';
 import { SaveFileDialog } from './save-file-dialog';
 import TabBar from './tab-bar/tab-bar';
@@ -16,28 +16,20 @@ interface TabbedContentAreaProps {
 
 const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFullscreen }) => {
   const tabs = useTabs();
-  const activeTabId = useActiveTabId();
   const activeTab = useActiveTab();
   const showEmptyState = useShowEmptyState();
   const {
     createTab,
-    createUntitledTab,
-    closeTab,
     setActiveTab,
     setShowEmptyState,
     findTabByFileId,
     updateTabContent,
     updateTabContentPreservePosition,
-    toggleHeaderVisibility,
-    toggleStatusBarVisibility,
+    updateTabReadingState,
   } = useTabsActions();
 
   const { showSaveDialog, setShowSaveDialog, defaultFileName, handleSaveToFile, isSaving } =
     useSaveShortcut();
-
-  const handleNewTab = useCallback(() => {
-    createUntitledTab();
-  }, [createUntitledTab]);
 
   const handleStartReading = useCallback(
     (content: string) => {
@@ -65,20 +57,22 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     [findTabByFileId, setActiveTab, setShowEmptyState, createTab]
   );
 
-  const handleTabSelect = useCallback(
-    (tabId: string) => {
-      setActiveTab(tabId);
-      setShowEmptyState(false);
-    },
-    [setActiveTab, setShowEmptyState]
-  );
+  const activeReadingState = activeTab?.readingState;
+  const navCurrentIndex = activeReadingState?.currentIndex ?? 0;
+  const navTotal = activeReadingState?.sections.length ?? 0;
+  const navReadingMode = activeReadingState?.readingMode ?? 'card';
 
-  const handleTabClose = useCallback(
-    (tabId: string) => {
-      closeTab(tabId);
-    },
-    [closeTab]
-  );
+  const handleNavPrevious = useCallback(() => {
+    if (activeTab && navCurrentIndex > 0) {
+      updateTabReadingState(activeTab.id, { currentIndex: navCurrentIndex - 1 });
+    }
+  }, [activeTab, navCurrentIndex, updateTabReadingState]);
+
+  const handleNavNext = useCallback(() => {
+    if (activeTab && navCurrentIndex < navTotal - 1) {
+      updateTabReadingState(activeTab.id, { currentIndex: navCurrentIndex + 1 });
+    }
+  }, [activeTab, navCurrentIndex, navTotal, updateTabReadingState]);
 
   const isActiveTabEmpty = activeTab && activeTab.content === '' && activeTab.sourceType !== 'file';
 
@@ -90,13 +84,18 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
       {/* Tab Bar - only show if there are tabs */}
       {tabs.length > 0 && (
         <TabBar
-          tabs={tabs}
-          activeTabId={activeTabId}
-          onTabSelect={handleTabSelect}
-          onTabClose={handleTabClose}
-          onNewTab={handleNewTab}
-          onToggleHeaderVisibility={toggleHeaderVisibility}
-          onToggleStatusBarVisibility={toggleStatusBarVisibility}
+          mobileNav={
+            activeTab
+              ? {
+                  currentIndex: navCurrentIndex,
+                  total: navTotal,
+                  readingMode: navReadingMode,
+                  onPrevious: handleNavPrevious,
+                  onNext: handleNavNext,
+                  onFullscreen: () => onEnterFullscreen(activeTab.id),
+                }
+              : undefined
+          }
         />
       )}
 

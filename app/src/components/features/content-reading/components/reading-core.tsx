@@ -37,6 +37,7 @@ interface HeaderHandlers {
   isVisible: boolean;
   breadcrumb?: React.ReactNode;
   mobileBreadcrumb?: React.ReactNode;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export interface ReadingCoreProps {
@@ -285,6 +286,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
                       variant="mobile"
                     />
                   ) : undefined,
+                scrollRef,
               })}
             </div>
           )}

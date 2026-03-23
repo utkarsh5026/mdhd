@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, FileText, Maximize, Pencil } from 'lucide-react';
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import ReadingCore from '@/components/features/content-reading/components/reading-core';
@@ -57,6 +57,7 @@ interface InlineHeaderProps {
   readingMode: 'card' | 'scroll';
   breadcrumb?: React.ReactNode;
   mobileBreadcrumb?: React.ReactNode;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const InlineHeader: React.FC<InlineHeaderProps> = memo(
@@ -71,25 +72,44 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
     readingMode,
     breadcrumb,
     mobileBreadcrumb,
+    scrollRef,
   }) => {
+    const [isHidden, setIsHidden] = useState(false);
+    const lastScrollTop = useRef(0);
+
+    useEffect(() => {
+      const el = scrollRef?.current;
+      if (!el) return;
+
+      const handleScroll = () => {
+        const scrollTop = el.scrollTop;
+        const delta = scrollTop - lastScrollTop.current;
+
+        if (Math.abs(delta) < 8) return;
+
+        setIsHidden(delta > 0 && scrollTop > 40);
+        lastScrollTop.current = scrollTop;
+      };
+
+      el.addEventListener('scroll', handleScroll, { passive: true });
+      return () => el.removeEventListener('scroll', handleScroll);
+    }, [scrollRef]);
+
     return (
-      <div className="absolute top-0 left-0 right-0 z-50 bg-card/60 backdrop-blur-2xl border-b border-border/20 shadow-[0_1px_12px_rgba(0,0,0,0.08)]">
-        {/* Main row */}
-        <div className="flex items-center gap-2 px-2 py-1">
-          {/* Left: breadcrumb */}
+      <div
+        className={cn(
+          'absolute top-0 left-0 right-0 z-50 bg-card/60 backdrop-blur-2xl border-b border-border/20 shadow-[0_1px_12px_rgba(0,0,0,0.08)]',
+          'transition-transform duration-300 ease-out',
+          isHidden && '-translate-y-full'
+        )}
+      >
+        {/* Desktop: breadcrumb + controls */}
+        <div className="hidden sm:flex items-center gap-2 px-2 py-1">
           {breadcrumb && readingMode === 'card' && (
-            <>
-              <div className="sm:hidden flex-1" />
-              <div className="hidden sm:block relative min-w-0 flex-1 overflow-hidden">
-                <div className="overflow-x-auto">{breadcrumb}</div>
-                {/* Fade mask */}
-                <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-linear-to-l from-background/85 to-transparent" />
-              </div>
-            </>
+            <div className="min-w-0 flex-1 overflow-x-auto">{breadcrumb}</div>
           )}
           {(!breadcrumb || readingMode !== 'card') && <div className="flex-1" />}
 
-          {/* Right: controls */}
           <div className="flex items-center gap-1 shrink-0">
             {readingMode === 'card' && (
               <>
@@ -109,21 +129,19 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
               </>
             )}
             {onEditSection && readingMode === 'card' && (
-              <div className="hidden sm:contents">
+              <>
                 <HeaderBtn tooltip="Edit Section" icon={Pencil} onClick={onEditSection} />
                 <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
-              </div>
+              </>
             )}
-            <div className="hidden sm:contents">
-              <HeaderBtn tooltip="Export to PDF" icon={FileText} onClick={onPdfExport} />
-            </div>
+            <HeaderBtn tooltip="Export to PDF" icon={FileText} onClick={onPdfExport} />
             <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
           </div>
         </div>
 
-        {/* Mobile breadcrumb row */}
+        {/* Mobile: breadcrumb only (nav controls are in tab bar) */}
         {breadcrumb && readingMode === 'card' && (
-          <div className="sm:hidden px-2 pb-1.5 pt-0">{mobileBreadcrumb ?? breadcrumb}</div>
+          <div className="sm:hidden px-2 py-1.5">{mobileBreadcrumb ?? breadcrumb}</div>
         )}
       </div>
     );
@@ -215,7 +233,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
           sourcePath={tab.sourcePath}
           viewMode="preview"
           onSectionClick={handlePreviewSectionClick}
-          headerSlot={({ onPdfExport, breadcrumb, mobileBreadcrumb }) => (
+          headerSlot={({ onPdfExport, breadcrumb, mobileBreadcrumb, scrollRef }) => (
             <InlineHeader
               onFullscreen={onEnterFullscreen}
               onPdfExport={onPdfExport}
@@ -227,6 +245,7 @@ const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
               readingMode={readingMode}
               breadcrumb={breadcrumb}
               mobileBreadcrumb={mobileBreadcrumb}
+              scrollRef={scrollRef}
             />
           )}
         />
