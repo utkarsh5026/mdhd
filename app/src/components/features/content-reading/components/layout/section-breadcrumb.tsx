@@ -1,6 +1,7 @@
 import { Check, ChevronDown, ChevronRight, File, Folder } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VscMarkdown, VscSymbolClass, VscSymbolMethod, VscSymbolNamespace } from 'react-icons/vsc';
+import { toast } from 'sonner';
 
 import { useFileTree } from '@/components/features/file-explorer/store/file-store';
 import { useTabsActions } from '@/components/features/tabs/store/hooks';
@@ -13,8 +14,9 @@ import {
 import { cn } from '@/lib/utils';
 import { fileStorageDB, type FileTreeNode } from '@/services/indexeddb';
 import { getAncestors, getDirectChildren } from '@/services/section/queries';
-import type { IndexedSection, MarkdownSection } from '@/services/section/types';
+import type { IndexedSection } from '@/services/section/types';
 
+import { useReadingContent, useReadingNavigation, useReadingSections } from '../../hooks';
 import styles from './section-breadcrumb.module.css';
 
 /** One resolved step in the file-system path shown before the section breadcrumbs. */
@@ -26,11 +28,7 @@ interface PathSegment {
 
 /** Props for the `SectionBreadcrumb` compound navigation component. */
 interface SectionBreadcrumbProps {
-  sections: MarkdownSection[];
-  currentIndex: number;
   onNavigate?: (index: number) => void;
-  /** Full path of the current file, e.g. "/docs/guide/readme.md" */
-  sourcePath?: string;
   /** Controls visual style and scroll behavior:
    *  'standalone' — floating pill with background (default, used in inline reading mode)
    *  'inline'     — no background, no-wrap + hidden overflow scroll, for the desktop header row
@@ -288,7 +286,10 @@ const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = memo(
 BreadcrumbDropdown.displayName = 'BreadcrumbDropdown';
 
 const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
-  ({ sections, currentIndex, onNavigate, sourcePath, variant = 'standalone' }) => {
+  ({ onNavigate, variant = 'standalone' }) => {
+    const sections = useReadingSections();
+    const { currentIndex } = useReadingNavigation();
+    const { sourcePath } = useReadingContent();
     const [openSectionIndex, setOpenSectionIndex] = useState<number | null>(null);
     const [openPathIndex, setOpenPathIndex] = useState<number | null>(null);
     const navRef = useRef<HTMLElement>(null);
@@ -330,10 +331,17 @@ const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
           return;
         }
 
-        const file = await fileStorageDB.getFile(node.id);
-        if (!file) return;
+        try {
+          const file = await fileStorageDB.getFile(node.id);
+          if (!file) {
+            toast.error(`File "${node.name}" not found — it may have been deleted`);
+            return;
+          }
 
-        createTab(file.content, file.name, 'file', file.id, file.path);
+          createTab(file.content, file.name, 'file', file.id, file.path);
+        } catch {
+          toast.error(`Failed to open "${node.name}"`);
+        }
       },
       [createTab, setActiveTab, findTabByFileId, setShowEmptyState]
     );

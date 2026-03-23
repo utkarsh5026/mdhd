@@ -3,12 +3,22 @@ import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState }
 import SearchDialog from '@/components/features/content-reading/components/search/search-dialog';
 import { useControls } from '@/components/features/content-reading/hooks';
 import { ExportSnippetsProvider } from '@/components/features/image-export/context/export-snippets-context';
+import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
 import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
 import { useThemeFloatingPicker } from '@/components/shared/theme/store/theme-store';
 import { cn } from '@/lib/utils';
-import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 
 import { useReadingSettingsStore } from '../../settings/store/reading-settings-store';
+import {
+  useReadingActions,
+  useReadingContent,
+  useReadingNavigation,
+  useReadingProgress,
+  useReadingSections,
+  useReadingTabId,
+  useReadingZen,
+  useZenMode,
+} from '../hooks';
 import {
   ContentReader,
   NavigationControls,
@@ -16,6 +26,7 @@ import {
   SectionBreadcrumb,
   SwipeHint,
 } from './layout';
+import MilestoneCelebration from './layout/milestone-celebration';
 import ReadingBackground from './reading-background';
 
 const ReadingSettingsSheet = lazy(() =>
@@ -42,87 +53,56 @@ interface HeaderHandlers {
 }
 
 export interface ReadingCoreProps {
-  markdown: string;
-  metadata: MarkdownMetadata | null;
-  sections: MarkdownSection[];
-  readSections: Set<number>;
-  currentIndex: number;
-  currentSection: MarkdownSection;
-  isTransitioning: boolean;
-  readingMode: 'card' | 'scroll';
-  scrollProgress: number;
-
-  goToNext: () => void;
-  goToPrevious: () => void;
-  changeSection: (index: number) => void;
-  markSectionAsRead: (index: number) => void;
-  updateCurrentIndex: (index: number) => void;
-  onScrollProgressChange: (progress: number) => void;
-
-  // Source file path (for path breadcrumb)
-  sourcePath?: string;
-
-  // View mode
   viewMode: 'preview' | 'edit';
-
-  // Header customization - render function that receives handlers
   headerSlot?: (handlers: HeaderHandlers) => React.ReactNode;
-
   editModeContent?: React.ReactNode;
   onSectionClick?: (sectionIndex: number) => void;
-
-  isZenMode?: boolean;
-  zenControlsVisible?: boolean;
-  isDialogOpen?: boolean;
-  onZenTap?: () => void;
-  onZenDoubleTap?: () => void;
-
   onPresent?: () => void;
 }
 
 /**
  * ReadingCore - Shared reading logic for both fullscreen and inline modes
  *
- * This component contains all the shared logic between ReadingUI and InlineMarkdownViewer:
- * - Content rendering (card/scroll modes)
- * - Navigation controls
- * - Progress indicators
- * - Sections/Settings sheets
- * - Section navigation callbacks
- * - Scroll management
- *
- * The only differences between fullscreen and inline are handled via props:
- * - headerSlot: Custom header component (Exit button vs Fullscreen button)
- * - isZenMode: Zen mode support (fullscreen only)
- * - editModeContent: Edit mode support (inline only)
+ * Reads all navigation state from the ReadingTabContext + Zustand store.
+ * Only accepts per-consumer customization as props.
  */
 const ReadingCore: React.FC<ReadingCoreProps> = memo(
-  ({
-    markdown,
-    metadata,
-    sections,
-    currentIndex,
-    currentSection,
-    isTransitioning,
-    readingMode,
-    goToNext,
-    goToPrevious,
-    changeSection,
-    markSectionAsRead,
-    updateCurrentIndex,
-    onScrollProgressChange,
-    sourcePath,
-    viewMode,
-    headerSlot,
-    editModeContent,
-    onSectionClick,
-    isZenMode = false,
-    zenControlsVisible = false,
-    isDialogOpen = false,
-    onZenTap,
-    onZenDoubleTap,
-    onPresent,
-  }) => {
+  ({ viewMode, headerSlot, editModeContent, onSectionClick, onPresent }) => {
+    const tabId = useReadingTabId();
+    const { currentIndex, readingMode } = useReadingNavigation();
+    const sections = useReadingSections();
+    const { metadata } = useReadingContent();
+    const readSections = useReadingProgress();
+    const { isZenMode, zenControlsVisible, isDialogOpen } = useReadingZen();
+    const {
+      goToNext,
+      goToPrevious,
+      changeSection,
+      markSectionAsRead,
+      updateCurrentIndex,
+      handleScrollProgress,
+    } = useReadingActions();
+
+    const updateTabReadingState = useTabsStore((s) => s.updateTabReadingState);
+    const setZenMode = useCallback(
+      (v: boolean) => updateTabReadingState(tabId, { isZenMode: v, zenControlsVisible: false }),
+      [tabId, updateTabReadingState]
+    );
+    const showZenControls = useCallback(
+      () => updateTabReadingState(tabId, { zenControlsVisible: true }),
+      [tabId, updateTabReadingState]
+    );
+    const hideZenControls = useCallback(
+      () => updateTabReadingState(tabId, { zenControlsVisible: false }),
+      [tabId, updateTabReadingState]
+    );
+    const { handleZenTap, handleZenDoubleTap } = useZenMode({
+      isZenMode,
+      setZenMode,
+      showZenControls,
+      hideZenControls,
+    });
+
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [pdfExportOpen, setPdfExportOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
@@ -155,7 +135,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
       }
     }, [settingsOpen, pendingFloatingPickerOpen, openFloatingPicker]);
 
-    // Jump to specific section (works in both card and scroll mode)
     const handleSelectCard = useCallback(
       (index: number) => {
         if (readingMode === 'scroll') {
@@ -179,23 +158,20 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
       [markSectionAsRead, updateCurrentIndex]
     );
 
-    // Combined double-click handler for zen mode and regular mode
     const handleContentDoubleClick = useCallback(() => {
-      if (isZenMode && onZenDoubleTap) {
-        onZenDoubleTap();
+      if (isZenMode) {
+        handleZenDoubleTap();
       } else {
         handleDoubleClick();
       }
-    }, [isZenMode, onZenDoubleTap, handleDoubleClick]);
+    }, [isZenMode, handleZenDoubleTap, handleDoubleClick]);
 
-    // Combined click handler for zen mode tap
     const handleContentClick = useCallback(() => {
-      if (isZenMode && onZenTap) {
-        onZenTap();
+      if (isZenMode) {
+        handleZenTap();
       }
-    }, [isZenMode, onZenTap]);
+    }, [isZenMode, handleZenTap]);
 
-    // Handle sheet interactions
     const handleSettingsOpen = useCallback(() => {
       setSettingsOpen(true);
       handleInteraction();
@@ -210,7 +186,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
       return <div className="h-full relative bg-background text-foreground">{editModeContent}</div>;
     }
 
-    // Determine if controls should be visible
     const shouldShowControls = !isDialogOpen && (!isZenMode || zenControlsVisible);
 
     return (
@@ -223,24 +198,15 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
           {/* Content Container - Card Mode or Scroll Mode */}
           {readingMode === 'card' ? (
             <ContentReader
-              markdown={markdown}
-              metadata={metadata}
-              currentIndex={currentIndex}
-              goToNext={goToNext}
-              goToPrevious={goToPrevious}
-              isTransitioning={isTransitioning}
               scrollRef={scrollRef}
               handleDoubleClick={handleContentDoubleClick}
-              currentSection={currentSection}
               onSectionClick={onSectionClick}
             />
           ) : (
             <ScrollContentReader
-              sections={sections}
-              metadata={metadata}
               scrollRef={scrollRef}
               handleDoubleClick={handleContentDoubleClick}
-              onScrollProgress={onScrollProgressChange}
+              onScrollProgress={handleScrollProgress}
               onSectionVisible={handleSectionVisible}
               onSectionClick={onSectionClick}
             />
@@ -249,12 +215,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
           {/* Breadcrumb - standalone overlay when there is no header to contain it */}
           {shouldShowControls && readingMode === 'card' && !headerSlot && (
             <div className="absolute top-0 left-0 z-50 p-2">
-              <SectionBreadcrumb
-                sections={sections}
-                currentIndex={currentIndex}
-                onNavigate={handleSelectCard}
-                sourcePath={sourcePath}
-              />
+              <SectionBreadcrumb onNavigate={handleSelectCard} />
             </div>
           )}
 
@@ -269,23 +230,11 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
                 isVisible: isControlsVisible || zenControlsVisible,
                 breadcrumb:
                   readingMode === 'card' ? (
-                    <SectionBreadcrumb
-                      sections={sections}
-                      currentIndex={currentIndex}
-                      onNavigate={handleSelectCard}
-                      sourcePath={sourcePath}
-                      variant="inline"
-                    />
+                    <SectionBreadcrumb onNavigate={handleSelectCard} variant="inline" />
                   ) : undefined,
                 mobileBreadcrumb:
                   readingMode === 'card' ? (
-                    <SectionBreadcrumb
-                      sections={sections}
-                      currentIndex={currentIndex}
-                      onNavigate={handleSelectCard}
-                      sourcePath={sourcePath}
-                      variant="mobile"
-                    />
+                    <SectionBreadcrumb onNavigate={handleSelectCard} variant="mobile" />
                   ) : undefined,
                 scrollRef,
               })}
@@ -298,8 +247,6 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
           {/* Navigation Controls - side arrows, hidden in zen mode and scroll mode */}
           {shouldShowControls && readingMode === 'card' && (
             <NavigationControls
-              currentIndex={currentIndex}
-              total={sections.length}
               onPrevious={() => {
                 goToPrevious();
                 handleInteraction();
@@ -309,6 +256,11 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
                 handleInteraction();
               }}
             />
+          )}
+
+          {/* Milestone celebrations — card mode only */}
+          {readingMode === 'card' && (
+            <MilestoneCelebration readCount={readSections.size} total={sections.length} />
           )}
 
           {/* Reading Settings Sheet - Lazy loaded */}

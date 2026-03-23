@@ -8,36 +8,30 @@ import {
 } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
-import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 
+import {
+  useReadingActions,
+  useReadingContent,
+  useReadingCurrentSection,
+  useReadingNavigation,
+} from '../../hooks';
 import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
+import SectionReadingTime from './section-reading-time';
 
 interface ContentReaderProps {
-  markdown: string;
-  metadata: MarkdownMetadata | null;
-  currentIndex: number;
-  goToNext: () => void;
-  goToPrevious: () => void;
-  isTransitioning: boolean;
   scrollRef: RefObject<HTMLDivElement | null>;
   handleDoubleClick: () => void;
-  currentSection: MarkdownSection;
   onSectionClick?: (sectionIndex: number) => void;
 }
 
 const ContentReader: React.FC<ContentReaderProps> = memo(
-  ({
-    metadata,
-    currentIndex,
-    goToNext,
-    goToPrevious,
-    isTransitioning,
-    scrollRef,
-    handleDoubleClick,
-    currentSection,
-    onSectionClick,
-  }) => {
+  ({ scrollRef, handleDoubleClick, onSectionClick }) => {
+    const { currentIndex, isTransitioning } = useReadingNavigation();
+    const { metadata } = useReadingContent();
+    const currentSection = useReadingCurrentSection();
+    const { goToNext, goToPrevious } = useReadingActions();
+
     const { settings } = useReadingSettings();
     const fontFamily = fontFamilyMap[settings.fontFamily];
     const { fontSize, lineHeight, contentWidth } = settings;
@@ -66,6 +60,8 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
       swipeDuration: 500,
     });
 
+    if (!currentSection) return null;
+
     return (
       <div
         className={cn(
@@ -87,6 +83,7 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
             >
               {/* Show metadata only on the first section */}
               {currentIndex === 0 && metadata && <MetadataDisplay metadata={metadata} />}
+              <SectionReadingTime section={currentSection} />
               <div
                 key={currentSection.id}
                 className="prose prose-lg prose-invert max-w-none cursor-text"

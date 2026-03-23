@@ -7,14 +7,12 @@ import {
 } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
-import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 
+import { useReadingContent, useReadingSections } from '../../hooks';
 import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
 
 interface ScrollContentReaderProps {
-  sections: MarkdownSection[];
-  metadata: MarkdownMetadata | null;
   scrollRef: RefObject<HTMLDivElement | null>;
   handleDoubleClick: () => void;
   onScrollProgress: (progress: number) => void;
@@ -23,14 +21,14 @@ interface ScrollContentReaderProps {
 }
 
 const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
-  sections,
-  metadata,
   scrollRef,
   handleDoubleClick,
   onScrollProgress,
   onSectionVisible,
   onSectionClick,
 }) => {
+  const sections = useReadingSections();
+  const { metadata } = useReadingContent();
   const { settings } = useReadingSettings();
   const fontFamily = fontFamilyMap[settings.fontFamily];
   const { fontSize, lineHeight, contentWidth } = settings;
