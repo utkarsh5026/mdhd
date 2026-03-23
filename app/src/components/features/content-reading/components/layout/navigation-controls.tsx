@@ -24,14 +24,14 @@ const NavigationControls: React.FC<NavigationControlsProps> = memo(
           aria-label="Previous section"
           className={cn(
             'absolute left-3 top-1/2 -translate-y-1/2 z-50',
-            'touch-manipulation p-2 rounded-full',
+            'touch-manipulation p-3 sm:p-2 rounded-full',
             'transition-all duration-200',
             canGoPrev
               ? 'text-foreground/50 hover:text-foreground hover:bg-foreground/8 active:scale-95'
               : 'text-foreground/15 cursor-not-allowed'
           )}
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="h-6 w-6 sm:h-5 sm:w-5" />
         </button>
 
         {/* Right arrow */}
@@ -41,14 +41,14 @@ const NavigationControls: React.FC<NavigationControlsProps> = memo(
           aria-label="Next section"
           className={cn(
             'absolute right-3 top-1/2 -translate-y-1/2 z-50',
-            'touch-manipulation p-2 rounded-full',
+            'touch-manipulation p-3 sm:p-2 rounded-full',
             'transition-all duration-200',
             canGoNext
               ? 'text-foreground/50 hover:text-foreground hover:bg-foreground/8 active:scale-95'
               : 'text-foreground/15 cursor-not-allowed'
           )}
         >
-          <ChevronRight className="h-5 w-5" />
+          <ChevronRight className="h-6 w-6 sm:h-5 sm:w-5" />
         </button>
       </>
     );

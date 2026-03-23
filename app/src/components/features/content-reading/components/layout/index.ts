@@ -3,9 +3,11 @@ import ContentReader from './content-reader';
 import Header from './layout-header';
 import LoadingState from './loading-state';
 import MetadataDisplay from './metadata-display';
+import MobileOnboarding from './mobile-onboarding';
 import NavigationControls from './navigation-controls';
 import ScrollContentReader from './scroll-content-reader';
 import SectionBreadcrumb from './section-breadcrumb';
+import SwipeHint from './swipe-hint';
 
 /**
  * Shared padding classes for the reading area.
@@ -19,8 +21,10 @@ export {
   Header,
   LoadingState,
   MetadataDisplay,
+  MobileOnboarding,
   NavigationControls,
   ReadingCore,
   ScrollContentReader,
   SectionBreadcrumb,
+  SwipeHint,
 };
