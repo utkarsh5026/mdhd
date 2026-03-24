@@ -121,7 +121,7 @@ const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) 
         <BottomSheetContent>
           <BottomSheetTitle>{getNearestHeading(wrapperRef.current) || 'Table'}</BottomSheetTitle>
 
-          <div className="mt-4 overflow-x-auto rounded-xl">
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-border/40 max-w-3xl mx-auto">
             <table
               {...props}
               className="min-w-full divide-y divide-border border-separate border-spacing-0 text-sm sm:text-lg"

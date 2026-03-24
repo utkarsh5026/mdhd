@@ -83,7 +83,10 @@ const CodeFullscreenSheet: React.FC<CodeFullscreenSheetProps> = ({
           </div>
         )}
 
-        <div className="mt-4 overflow-x-auto rounded-xl font-fira-code" style={{ backgroundColor }}>
+        <div
+          className="mt-4 overflow-x-auto rounded-2xl border border-border/40 font-fira-code max-w-3xl mx-auto"
+          style={{ backgroundColor }}
+        >
           <div className="p-5">
             <CodeMirrorDisplay
               code={code}
