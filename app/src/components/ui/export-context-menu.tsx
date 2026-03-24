@@ -1,5 +1,5 @@
 import { MoreVertical } from 'lucide-react';
-import React, { useState } from 'react';
+import React from 'react';
 
 import {
   ContextMenu,
@@ -8,7 +8,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { useIsTouch } from '@/hooks';
+import { useIsTouch, useToggle } from '@/hooks';
 
 import { BottomSheet, BottomSheetContent, BottomSheetTitle } from './bottom-sheet';
 
@@ -26,13 +26,13 @@ export interface ExportContextMenuProps {
 }
 
 const ExportBottomSheet: React.FC<ExportContextMenuProps> = ({ title, items, children }) => {
-  const [open, setOpen] = useState(false);
+  const { state: open, setTrue: openSheet, setFalse: closeSheet, set: setOpen } = useToggle();
 
   return (
     <div className="relative group/export">
       {children}
       <button
-        onClick={() => setOpen(true)}
+        onClick={openSheet}
         className="absolute top-2 right-2 p-2 rounded-full bg-card/80 backdrop-blur-sm border border-border/30 shadow-sm opacity-0 group-hover/export:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
         aria-label={title}
       >
@@ -48,7 +48,7 @@ const ExportBottomSheet: React.FC<ExportContextMenuProps> = ({ title, items, chi
                 key={label}
                 onClick={() => {
                   onSelect();
-                  setOpen(false);
+                  closeSheet();
                 }}
                 className="w-full text-left px-4 py-3 rounded-xl hover:bg-muted/60 transition-colors cursor-pointer"
               >

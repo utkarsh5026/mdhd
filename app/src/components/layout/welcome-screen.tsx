@@ -6,6 +6,7 @@ import {
   useFileTree,
   useIsFileStoreInitialized,
 } from '@/components/features/file-explorer';
+import { useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
 import type { FileTreeNode } from '@/services/indexeddb';
 
@@ -26,7 +27,7 @@ function flattenFiles(nodes: FileTreeNode[]): FileTreeNode[] {
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFileNodeOpen }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [showPasteArea, setShowPasteArea] = useState(false);
+  const { state: showPasteArea, setTrue: openPasteArea, setFalse: closePasteArea } = useToggle();
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -105,7 +106,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
     if (text.trim()) {
       onStartReading(text);
       setText('');
-      setShowPasteArea(false);
+      closePasteArea();
     }
   }, [text, onStartReading]);
 
@@ -113,7 +114,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
       if (e.key === 'Escape') {
-        setShowPasteArea(false);
+        closePasteArea();
         setText('');
       }
     },
@@ -210,7 +211,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
                   icon: FileText,
                   label: 'Paste text',
                   description: 'Type or paste markdown',
-                  onClick: () => setShowPasteArea(true),
+                  onClick: () => openPasteArea(),
                 },
               ].map(({ icon: Icon, label, description, onClick }) => (
                 <button
@@ -252,7 +253,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
                 <button
                   className="rounded-lg px-3 h-8 text-xs text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => {
-                    setShowPasteArea(false);
+                    closePasteArea();
                     setText('');
                   }}
                 >

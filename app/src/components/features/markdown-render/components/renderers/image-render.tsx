@@ -6,6 +6,7 @@ import PhotoImageExportDialog from '@/components/features/image-export/component
 import { useExportSnippets } from '@/components/features/image-export/context/export-snippets-context';
 import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import ExportContextMenu from '@/components/ui/export-context-menu';
+import { useCopyToClipboard, useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { download, getNearestHeading, toFilename } from '@/utils/download';
 
@@ -45,8 +46,9 @@ const ImageRender: React.FC<React.ComponentPropsWithoutRef<'img'>> = ({
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [imageExportOpen, setImageExportOpen] = useState(false);
+  const { copy } = useCopyToClipboard();
+  const { state: open, setTrue: openSheet, set: setOpen } = useToggle();
+  const { state: imageExportOpen, setTrue: openImageExport, set: setImageExportOpen } = useToggle();
   const figureRef = useRef<HTMLElement>(null);
 
   const altText = alt ?? 'Image';
@@ -97,20 +99,14 @@ const ImageRender: React.FC<React.ComponentPropsWithoutRef<'img'>> = ({
     {
       label: 'Copy URL',
       description: 'Copy image address',
-      onSelect: async () => {
-        if (!src) return;
-        try {
-          await navigator.clipboard.writeText(src);
-        } catch (err) {
-          console.error('[ImageRender] copy URL failed', err);
-          toast.error('Failed to copy URL');
-        }
+      onSelect: () => {
+        if (src) copy(src);
       },
     },
     {
       label: 'Customize image',
       description: 'Export with style',
-      onSelect: () => setImageExportOpen(true),
+      onSelect: openImageExport,
     },
     {
       label: 'Open in new tab',
@@ -130,13 +126,8 @@ const ImageRender: React.FC<React.ComponentPropsWithoutRef<'img'>> = ({
     {
       label: 'Copy URL',
       description: 'Copy video address',
-      onSelect: async () => {
-        if (!src) return;
-        try {
-          await navigator.clipboard.writeText(src);
-        } catch (err) {
-          console.error('[ImageRender] copy URL failed', err);
-        }
+      onSelect: () => {
+        if (src) copy(src);
       },
     },
     {
@@ -157,7 +148,7 @@ const ImageRender: React.FC<React.ComponentPropsWithoutRef<'img'>> = ({
         <figure ref={figureRef} className={cn('my-4', className)} style={style}>
           <button
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={openSheet}
             aria-label={`View ${isVideo ? 'video' : 'image'}: ${altText}`}
             className="block w-full cursor-zoom-in relative min-h-48 overflow-hidden rounded-md"
           >

@@ -15,5 +15,5 @@ export const useToggle = (initialState = false) => {
     setState(false);
   }, []);
 
-  return { state, toggle, setTrue, setFalse };
+  return { state, toggle, setTrue, setFalse, set: setState };
 };

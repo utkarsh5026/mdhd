@@ -1,9 +1,10 @@
 import { toPng } from 'html-to-image';
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import * as XLSX from 'xlsx';
 
 import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import ExportContextMenu from '@/components/ui/export-context-menu';
+import { useToggle } from '@/hooks';
 import { download, getNearestHeading, toFilename } from '@/utils/download';
 
 /** Props accepted by any of the six HTML table elements rendered by this module. */
@@ -38,7 +39,7 @@ function extractRows(container: HTMLElement): string[][] {
  */
 const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const { state: sheetOpen, setTrue: openSheet, set: setSheetOpen } = useToggle();
 
   const exportItems = [
     {
@@ -100,11 +101,11 @@ const TableWrapper: React.FC<React.ComponentPropsWithoutRef<'table'>> = (props) 
       <ExportContextMenu title="Export table" items={exportItems}>
         <div
           className="my-4 sm:my-6 overflow-x-auto rounded-2xl border border-border no-swipe cursor-zoom-in"
-          onClick={() => setSheetOpen(true)}
+          onClick={openSheet}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') setSheetOpen(true);
+            if (e.key === 'Enter') openSheet();
           }}
         >
           <div ref={wrapperRef} className="min-w-full overflow-hidden rounded-2xl shadow-sm">

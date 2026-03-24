@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronLeft, ChevronRight, Maximize, Plus, X } from 'lucide-react';
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -8,6 +8,7 @@ import {
   ListPopoverItem,
   ListPopoverTrigger,
 } from '@/components/ui/list-popover';
+import { useToggle } from '@/hooks';
 
 import { type TabDisplayInfo, useTabDisplayMap } from '../../hooks/use-tab-display-map';
 import { type Tab, useActiveTabId, useTabs, useTabsActions } from '../../store';
@@ -26,7 +27,7 @@ interface MobileTabDropdownProps {
 
 const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
   ({ tabs, activeTabId, activeTitle, tabDisplayMap, onTabSelect, onTabClose, onNewTab }) => {
-    const [open, setOpen] = useState(false);
+    const { state: open, setFalse: close, set: setOpen } = useToggle();
 
     return (
       <ListPopover open={open} onOpenChange={setOpen}>
@@ -48,7 +49,7 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
                 isActive={tab.id === activeTabId}
                 onClick={() => {
                   onTabSelect(tab.id);
-                  setOpen(false);
+                  close();
                 }}
                 suffix={
                   <button
@@ -78,7 +79,7 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
             <ListPopoverItem
               onClick={() => {
                 onNewTab();
-                setOpen(false);
+                close();
               }}
               icon={<Plus className="w-3 h-3" />}
             >

@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+import { useKeyPress } from '@/hooks';
 import type { FileTreeNode } from '@/services/indexeddb';
 
 interface TreeContextMenuProps {
@@ -26,6 +27,10 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
     }
   }, [node, onDelete, onClose]);
 
+  useKeyPress('Escape', () => {
+    if (node) onClose();
+  });
+
   useEffect(() => {
     if (!node) return;
 
@@ -35,28 +40,19 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
       }
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
     const handleScroll = () => {
       onClose();
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
     window.addEventListener('scroll', handleScroll, true);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('scroll', handleScroll, true);
     };
   }, [node, onClose]);
 
-  // Adjust position to prevent overflow
   useEffect(() => {
     if (!node || !menuRef.current) return;
 

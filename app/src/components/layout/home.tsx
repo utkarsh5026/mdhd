@@ -10,7 +10,7 @@ import {
 } from '@/components/features/tabs';
 import OfflineIndicator from '@/components/shared/offline-indicator';
 import { ReactErrorBoundary } from '@/components/utils';
-import { useLocalStorage } from '@/hooks';
+import { useLocalStorage, useToggle } from '@/hooks';
 import type { StoredFile } from '@/services/indexeddb';
 
 import Header from './header';
@@ -25,7 +25,12 @@ const FullscreenMarkdownViewer = lazy(
 
 const Homepage = () => {
   const [fullscreenTabId, setFullscreenTabId] = useState<string | null>(null);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const {
+    state: mobileSidebarOpen,
+    toggle: toggleMobileSidebar,
+    setTrue: openMobileSidebar,
+    setFalse: closeMobileSidebar,
+  } = useToggle();
   const { createTab, setActiveTab, findTabByFileId, setShowEmptyState } = useTabsActions();
   const isHeaderVisible = useHeaderVisible();
   const isStatusBarVisible = useStatusBarVisible();
@@ -42,10 +47,10 @@ const Homepage = () => {
 
   const edgeSwipeHandlers = useSwipeable({
     onSwipedRight: () => {
-      if (!mobileSidebarOpen && sidebarPosition === 'left') setMobileSidebarOpen(true);
+      if (!mobileSidebarOpen && sidebarPosition === 'left') openMobileSidebar();
     },
     onSwipedLeft: () => {
-      if (!mobileSidebarOpen && sidebarPosition === 'right') setMobileSidebarOpen(true);
+      if (!mobileSidebarOpen && sidebarPosition === 'right') openMobileSidebar();
     },
     delta: 30,
     trackTouch: true,
@@ -63,9 +68,9 @@ const Homepage = () => {
         createTab(file.content, file.name, 'file', file.id, file.path);
       }
 
-      setMobileSidebarOpen(false);
+      closeMobileSidebar();
     },
-    [createTab, setActiveTab, findTabByFileId, setShowEmptyState]
+    [createTab, setActiveTab, findTabByFileId, setShowEmptyState, closeMobileSidebar]
   );
 
   if (fullscreenTabId) {
@@ -88,7 +93,7 @@ const Homepage = () => {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-card">
       <OfflineIndicator />
-      {isHeaderVisible && <Header onToggleSidebar={() => setMobileSidebarOpen((o) => !o)} />}
+      {isHeaderVisible && <Header onToggleSidebar={toggleMobileSidebar} />}
       {isHeaderVisible && !mobileSidebarOpen && <MobileOnboarding />}
 
       {isHeaderVisible && <div className="shrink-0 h-12 border-b border-border/20" />}
@@ -108,7 +113,7 @@ const Homepage = () => {
               position={sidebarPosition}
               onPositionChange={setSidebarPosition}
               isMobileOpen={mobileSidebarOpen}
-              onMobileClose={() => setMobileSidebarOpen(false)}
+              onMobileClose={closeMobileSidebar}
             />
           </ReactErrorBoundary>
         )}
@@ -126,7 +131,7 @@ const Homepage = () => {
               position={sidebarPosition}
               onPositionChange={setSidebarPosition}
               isMobileOpen={mobileSidebarOpen}
-              onMobileClose={() => setMobileSidebarOpen(false)}
+              onMobileClose={closeMobileSidebar}
             />
           </ReactErrorBoundary>
         )}

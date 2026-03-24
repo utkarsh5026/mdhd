@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import useResize from '../utils/use-resize';
+import useResize from './use-resize';
 
 interface UseMobileOptions {
   phoneBreakpoint?: number;

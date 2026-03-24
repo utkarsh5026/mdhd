@@ -1,5 +1,5 @@
 import { ChevronRight, RotateCcw } from 'lucide-react';
-import React, { useState } from 'react';
+import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
 
 import { COLOR_GROUPS } from '../constants';
@@ -56,7 +57,7 @@ export const CollapsibleSection: React.FC<{
   defaultOpen?: boolean;
   onReset?: () => void;
 }> = ({ title, children, defaultOpen = true, onReset }) => {
-  const [open, setOpen] = useState(defaultOpen);
+  const { state: open, set: setOpen } = useToggle(defaultOpen);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -117,7 +118,7 @@ export const ColorSwatchGrid: React.FC<{
   selected: string;
   onSelect: (color: string) => void;
 }> = ({ selected, onSelect }) => {
-  const [open, setOpen] = useState(false);
+  const { state: open, set: setOpen } = useToggle();
 
   const isPresetSelected = COLOR_GROUPS.some((g) =>
     g.colors.some((c) => c.hex.toLowerCase() === selected.toLowerCase())
