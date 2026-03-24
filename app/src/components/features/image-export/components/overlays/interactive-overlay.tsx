@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+
+import { useKeyPress } from '@/hooks';
 
 import type { Annotation, SharedExportSettings } from '../../store/types';
 import DraggableAnnotation from './annotations/draggable-annotation';
@@ -21,13 +23,7 @@ export const InteractiveOverlay: React.FC<InteractiveOverlayProps> = ({
 }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedId(null);
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
+  useKeyPress('Escape', () => setSelectedId(null));
 
   const hasArrows = annotations.some((a) => a.type === 'arrow');
 

@@ -1,4 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
+
+import { useKeyPress } from '@/hooks';
 
 import { usePercentageDrag } from '../../hooks/use-percentage-drag';
 import type { SharedExportSettings } from '../../store/types';
@@ -58,14 +60,9 @@ export const ContentDragWrapper: React.FC<ContentDragWrapperProps> = ({
     [scaleX, scaleY, offsetX, offsetY, onUpdate]
   );
 
-  useEffect(() => {
-    if (!active) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setActive(false);
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [active]);
+  useKeyPress('Escape', () => {
+    if (active) setActive(false);
+  });
 
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {

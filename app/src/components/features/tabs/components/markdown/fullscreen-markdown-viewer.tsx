@@ -13,6 +13,7 @@ import {
   usePresentationActions,
   usePresentationActive,
 } from '@/components/features/presentation';
+import { useKeyPress } from '@/hooks';
 
 import { useTabsStore } from '../../store/tabs-store';
 
@@ -39,20 +40,13 @@ const FullscreenInner: React.FC<{ onExit: () => void }> = memo(({ onExit }) => {
     startPresentation();
   }, [startPresentation]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (isZenMode) {
-          updateTabReadingState(tabId, { isZenMode: false, zenControlsVisible: false });
-        } else {
-          onExit();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isZenMode, onExit, tabId, updateTabReadingState]);
+  useKeyPress('Escape', () => {
+    if (isZenMode) {
+      updateTabReadingState(tabId, { isZenMode: false, zenControlsVisible: false });
+    } else {
+      onExit();
+    }
+  });
 
   useEffect(() => {
     window.history.pushState({ fullscreen: true }, '');

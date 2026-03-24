@@ -12,10 +12,12 @@ import {
   useCodeThemeStore,
   useReadingSettingsStore,
 } from '@/components/features/settings';
+import type { CodeDisplaySettings } from '@/components/features/settings/store/code-display-settings';
+import type { ThemeKey } from '@/components/features/settings/store/code-theme';
 import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import ExportContextMenu from '@/components/ui/export-context-menu';
-import { useToggle } from '@/hooks';
+import { useCopyToClipboard, useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { download, getNearestHeading, toFilename } from '@/utils/download';
 import { tryAsync } from '@/utils/functions/error';
@@ -48,6 +50,58 @@ const LANGUAGE_TO_EXT: Record<string, string> = {
   plaintext: 'txt',
 };
 
+interface CodeFullscreenSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  code: string;
+  language: string;
+  title: string;
+  backgroundColor: string;
+  displaySettings: CodeDisplaySettings;
+  themeKey: ThemeKey;
+}
+
+const CodeFullscreenSheet: React.FC<CodeFullscreenSheetProps> = ({
+  open,
+  onOpenChange,
+  code,
+  language,
+  title,
+  backgroundColor,
+  displaySettings,
+  themeKey,
+}) => {
+  return (
+    <BottomSheet open={open} onOpenChange={onOpenChange}>
+      <BottomSheetContent>
+        <BottomSheetTitle>{title}</BottomSheetTitle>
+
+        {language && (
+          <div className="flex items-center justify-center gap-1.5 text-muted-foreground mt-1">
+            <LanguageIcon language={language} className="w-4 h-4" />
+            <span className="text-sm font-medium lowercase tracking-wide">{language}</span>
+          </div>
+        )}
+
+        <div className="mt-4 overflow-x-auto rounded-xl font-fira-code" style={{ backgroundColor }}>
+          <div className="p-5">
+            <CodeMirrorDisplay
+              code={code}
+              language={language}
+              themeKey={themeKey}
+              showLineNumbers={displaySettings.showLineNumbers}
+              enableCodeFolding={displaySettings.enableCodeFolding}
+              enableWordWrap
+              fontSize="0.95rem"
+              className="rounded-xl"
+            />
+          </div>
+        </div>
+      </BottomSheetContent>
+    </BottomSheet>
+  );
+};
+
 /**
  * CodeRender — renders fenced code blocks with CodeMirror.
  *
@@ -55,7 +109,7 @@ const LANGUAGE_TO_EXT: Record<string, string> = {
  * component only mounts for actual block-level code. No DOM traversal needed.
  */
 const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ className, children }) => {
-  const [copied, setCopied] = React.useState(false);
+  const { copiedText: copiedCode, copy } = useCopyToClipboard();
   const { state: imageDialogOpen, setTrue: openImageDialog, set: setImageDialogOpen } = useToggle();
   const { state: sheetOpen, setTrue: openSheet, set: setSheetOpen } = useToggle();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -112,7 +166,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
         const numbered = lines
           .map((line, i) => `${String(i + 1).padStart(pad, ' ')}  ${line}`)
           .join('\n');
-        await tryAsync(() => navigator.clipboard.writeText(numbered), undefined);
+        await copy(numbered);
       },
     },
     {
@@ -122,15 +176,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
     },
   ];
 
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(codeContent);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy code:', err);
-    }
-  };
+  const copyToClipboard = () => copy(codeContent);
 
   const backgroundColor = getThemeBackground(selectedTheme);
 
@@ -163,13 +209,15 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
               <Copy
                 className={cn(
                   'w-4 h-4 transition-all duration-300 text-muted-foreground',
-                  copied ? 'opacity-0 scale-0 rotate-90' : 'opacity-100 scale-100 rotate-0'
+                  copiedCode !== null
+                    ? 'opacity-0 scale-0 rotate-90'
+                    : 'opacity-100 scale-100 rotate-0'
                 )}
               />
               <Check
                 className={cn(
                   'absolute inset-0 w-4 h-4 transition-all duration-300',
-                  copied
+                  copiedCode !== null
                     ? 'opacity-100 scale-100 rotate-0 text-green-600'
                     : 'opacity-0 scale-0 -rotate-90'
                 )}
@@ -213,38 +261,16 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
         />
       )}
 
-      <BottomSheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <BottomSheetContent>
-          <BottomSheetTitle>
-            {getNearestHeading(wrapperRef.current) || 'Code block'}
-          </BottomSheetTitle>
-
-          {language && (
-            <div className="flex items-center justify-center gap-1.5 text-muted-foreground mt-1">
-              <LanguageIcon language={language} className="w-4 h-4" />
-              <span className="text-sm font-medium lowercase tracking-wide">{language}</span>
-            </div>
-          )}
-
-          <div
-            className="mt-4 overflow-x-auto rounded-xl font-fira-code"
-            style={{ backgroundColor }}
-          >
-            <div className="p-5">
-              <CodeMirrorDisplay
-                code={codeContent}
-                language={language}
-                themeKey={selectedTheme}
-                showLineNumbers={displaySettings.showLineNumbers}
-                enableCodeFolding={displaySettings.enableCodeFolding}
-                enableWordWrap
-                fontSize="0.95rem"
-                className="rounded-xl"
-              />
-            </div>
-          </div>
-        </BottomSheetContent>
-      </BottomSheet>
+      <CodeFullscreenSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        code={codeContent}
+        language={language}
+        title={getNearestHeading(wrapperRef.current) || 'Code block'}
+        backgroundColor={backgroundColor}
+        displaySettings={displaySettings}
+        themeKey={selectedTheme}
+      />
     </>
   );
 };
