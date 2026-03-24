@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 
 import type { MarkdownSection } from '@/services/section/parsing';
 import { removeMarkdownFormatting } from '@/services/section/parsing';
@@ -14,7 +14,6 @@ export interface SearchResult {
 }
 
 const MAX_RESULTS = 50;
-const DEBOUNCE_MS = 150;
 
 function searchSections(
   sections: MarkdownSection[],
@@ -71,32 +70,20 @@ function searchSections(
 
 export function useSearch(sections: MarkdownSection[]) {
   const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deferredQuery = useDeferredValue(query);
 
   const plainTexts = useMemo(
     () => sections.map((s) => removeMarkdownFormatting(s.content)),
     [sections]
   );
 
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setDebouncedQuery(query);
-    }, DEBOUNCE_MS);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [query]);
-
   const results = useMemo(
-    () => searchSections(sections, plainTexts, debouncedQuery),
-    [sections, plainTexts, debouncedQuery]
+    () => searchSections(sections, plainTexts, deferredQuery),
+    [sections, plainTexts, deferredQuery]
   );
 
   const reset = () => {
     setQuery('');
-    setDebouncedQuery('');
   };
 
   return { query, setQuery, results, reset };
