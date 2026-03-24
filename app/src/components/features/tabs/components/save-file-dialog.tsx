@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -46,13 +46,6 @@ export const SaveFileDialog: React.FC<SaveFileDialogProps> = ({
 }) => {
   const [fileName, setFileName] = useState(stripMdExtension(defaultFileName));
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      setFileName(stripMdExtension(defaultFileName));
-      setError(null);
-    }
-  }, [open, defaultFileName]);
 
   const handleFileNameChange = (value: string) => {
     setFileName(value);
