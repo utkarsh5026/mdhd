@@ -1,5 +1,6 @@
 import * as SliderPrimitive from '@radix-ui/react-slider';
 import * as React from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -9,24 +10,46 @@ function Slider({
   value,
   min = 0,
   max = 100,
+  onValueChange,
+  onValueCommit,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
-  const _values = React.useMemo(
+  const controlled = value !== undefined;
+  const initial = useMemo(
     () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
-    [value, defaultValue, min, max]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
+
+  const [localValue, setLocalValue] = useState<number[]>(initial);
+  const dragging = React.useRef(false);
+
+  useEffect(() => {
+    if (controlled && Array.isArray(value) && !dragging.current) {
+      setLocalValue(value);
+    }
+  }, [controlled, value]);
 
   return (
     <SliderPrimitive.Root
       data-slot="slider"
-      defaultValue={defaultValue}
-      value={value}
+      defaultValue={controlled ? undefined : defaultValue}
+      value={controlled ? localValue : undefined}
       min={min}
       max={max}
       className={cn(
-        'relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col',
+        'relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col',
         className
       )}
+      onValueChange={(v) => {
+        dragging.current = true;
+        setLocalValue(v);
+        onValueChange?.(v);
+      }}
+      onValueCommit={(v) => {
+        dragging.current = false;
+        onValueCommit?.(v);
+      }}
       {...props}
     >
       <SliderPrimitive.Track
@@ -42,11 +65,11 @@ function Slider({
           )}
         />
       </SliderPrimitive.Track>
-      {Array.from({ length: _values.length }, (_, index) => (
+      {Array.from({ length: (controlled ? localValue : initial).length }, (_, index) => (
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
-          className="border-primary bg-background ring-ring/50 block size-4 shrink-0 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+          className="border-primary bg-background ring-ring/50 block size-6 sm:size-4 shrink-0 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
         />
       ))}
     </SliderPrimitive.Root>

@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { useMarkdownStyleStore } from '@/components/features/markdown-style/store/markdown-style-store';
 import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
 
 import { TEXT_SIZE_SCALE_CLASSES } from '../../utils/text-size-classes';
@@ -10,6 +11,13 @@ interface HeadingRenderProps extends HeadingProps {
   level: 1 | 2 | 3 | 4 | 5;
 }
 
+const HEADING_COLOR_CLASSES: Record<string, string> = {
+  none: 'text-foreground/80',
+  solid: 'text-primary/98 hover:text-primary',
+  gradient:
+    'bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent hover:opacity-80',
+};
+
 const HeadingRender: React.FC<HeadingRenderProps> = ({
   level,
   children,
@@ -17,6 +25,7 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({
   ...props
 }) => {
   const textSizeScale = useReadingSettingsStore((s) => s.settings.textSizeScale);
+  const headingColorStyle = useMarkdownStyleStore((s) => s.settings.headingColorStyle);
 
   const sizeKey = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 
@@ -67,13 +76,14 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({
     ].join(' '),
   };
 
+  const colorClass = HEADING_COLOR_CLASSES[headingColorStyle ?? 'solid'];
+
   const sharedClasses = [
-    'text-primary/98',
+    colorClass,
     'text-pretty break-words',
     'group',
     'selection:bg-primary/20',
-    '[transition:color_200ms,font-size_300ms_ease-in-out,line-height_300ms_ease-in-out]',
-    'hover:text-primary',
+    '[transition:color_200ms,opacity_200ms,font-size_300ms_ease-in-out,line-height_300ms_ease-in-out]',
     'scroll-mt-20',
   ].join(' ');
 

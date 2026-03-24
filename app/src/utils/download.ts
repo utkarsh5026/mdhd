@@ -1,150 +1,63 @@
 /**
- * Download as File Functionality
+ * Triggers a file download in the browser by temporarily injecting an anchor element.
  *
- * Creates a text file with the code content and triggers download.
- * File extension is determined by the detected language.
+ * Appends a hidden `<a>` to `document.body`, clicks it programmatically, then removes it.
+ * When `isBlobUrl` is `true`, the object URL is revoked after the click to free memory.
+ *
+ * @param url - The resource URL or blob URL to download.
+ * @param filename - The suggested filename for the downloaded file.
+ * @param isBlobUrl - Whether `url` is a blob URL that should be revoked after download.
  */
-const downloadAsFile = (codeContent: string, language: string) => {
-  try {
-    const getFileExtension = (lang: string) => {
-      const extensions: Record<string, string> = {
-        javascript: 'js',
-        typescript: 'ts',
-        python: 'py',
-        java: 'java',
-        cpp: 'cpp',
-        c: 'c',
-        csharp: 'cs',
-        php: 'php',
-        ruby: 'rb',
-        go: 'go',
-        rust: 'rs',
-        swift: 'swift',
-        kotlin: 'kt',
-        dart: 'dart',
-        html: 'html',
-        css: 'css',
-        scss: 'scss',
-        shell: 'sh',
-        bash: 'sh',
-        powershell: 'ps1',
-        sql: 'sql',
-        json: 'json',
-        yaml: 'yml',
-        xml: 'xml',
-        markdown: 'md',
-      };
-      return extensions[lang] || 'txt';
-    };
-
-    const extension = getFileExtension(language);
-    const blob = new Blob([codeContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `code-snippet-${Date.now()}.${extension}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('Failed to download file:', err);
-  }
-};
+export function download(url: string, filename: string, isBlobUrl = false) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  if (isBlobUrl) URL.revokeObjectURL(url);
+}
 
 /**
- * Download as Image Functionality
+ * Converts a heading string into a URL-safe filename with the given extension.
  *
- * Converts the code display to a canvas and downloads it as PNG.
- * Handles horizontal overflow by temporarily expanding the container.
+ * Non-alphanumeric characters are replaced with hyphens and leading/trailing
+ * hyphens are stripped. Falls back to `fallback` when the slug is empty.
+ *
+ * @param heading - The heading text to slugify.
+ * @param ext - The file extension to append (without leading dot).
+ * @param fallback - Filename stem to use when the slug would be empty. Defaults to `'file'`.
+ * @returns A URL-safe filename string, e.g. `"my-heading.csv"`.
+ *
+ * @example
+ * toFilename('Hello, World!', 'csv') // → 'hello-world.csv'
+ * toFilename('!!!', 'png')           // → 'file.png'
  */
-const downloadAsImage = async (element: HTMLElement, language: string) => {
-  try {
-    // Dynamic import to avoid bundling html2canvas unless needed
-    const html2canvas = (await import('html2canvas')).default;
+export function toFilename(heading: string, ext: string, fallback = 'file'): string {
+  const slug = heading
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  return `${slug || fallback}.${ext}`;
+}
 
-    if (!element) return;
-
-    // Find the scrollable container and the pre element inside
-    const scrollArea = element.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
-    const preElement = element.querySelector('pre') as HTMLElement;
-
-    if (!scrollArea || !preElement) {
-      console.error('Could not find scroll area or pre element');
-      return;
+/**
+ * Walks the DOM upward from `el` to find the nearest preceding heading.
+ *
+ * @param el - The starting DOM element.
+ * @returns The trimmed text content of the nearest `<h1>`–`<h6>`, or `''`.
+ */
+export function getNearestHeading(el: HTMLElement | null): string {
+  let node = el;
+  while (node) {
+    let sibling = node.previousElementSibling as HTMLElement | null;
+    while (sibling) {
+      if (/^H[1-6]$/.test(sibling.tagName)) return sibling.textContent?.trim() ?? '';
+      const headings = sibling.querySelectorAll('h1,h2,h3,h4,h5,h6');
+      if (headings.length) return headings[headings.length - 1].textContent?.trim() ?? '';
+      sibling = sibling.previousElementSibling as HTMLElement | null;
     }
-
-    // Store original styles to restore later
-    const originalStyles = {
-      scrollArea: {
-        maxHeight: scrollArea.style.maxHeight,
-        overflow: scrollArea.style.overflow,
-        overflowX: scrollArea.style.overflowX,
-        overflowY: scrollArea.style.overflowY,
-      },
-      preElement: {
-        maxWidth: preElement.style.maxWidth,
-        width: preElement.style.width,
-        whiteSpace: preElement.style.whiteSpace,
-      },
-    };
-
-    // Temporarily modify styles to show full content
-    // Remove height constraints and scrolling
-    scrollArea.style.maxHeight = 'none';
-    scrollArea.style.overflow = 'visible';
-    scrollArea.style.overflowX = 'visible';
-    scrollArea.style.overflowY = 'visible';
-
-    // Ensure pre element shows full width
-    preElement.style.maxWidth = 'none';
-    preElement.style.width = 'max-content';
-    preElement.style.whiteSpace = 'pre';
-
-    // Wait for layout to settle
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Get the actual dimensions of the content
-    const rect = preElement.getBoundingClientRect();
-    const contentWidth = Math.max(rect.width, preElement.scrollWidth);
-    const contentHeight = Math.max(rect.height, preElement.scrollHeight);
-
-    // Configure canvas options for full content capture
-    const canvas = await html2canvas(element, {
-      backgroundColor: '#1a1a1a', // Dark background
-      scale: 2, // Higher resolution for crisp images
-      logging: false,
-      useCORS: true,
-      allowTaint: true,
-      width: Math.ceil(contentWidth + 48), // Add padding (24px * 2)
-      height: Math.ceil(contentHeight + 96), // Add padding for header/footer
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: Math.ceil(contentWidth + 48),
-      windowHeight: Math.ceil(contentHeight + 96),
-    });
-
-    // Restore original styles
-    Object.assign(scrollArea.style, originalStyles.scrollArea);
-    Object.assign(preElement.style, originalStyles.preElement);
-
-    // Convert canvas to blob and trigger download
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `code-${language || 'snippet'}-${Date.now()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    }, 'image/png');
-  } catch (err) {
-    console.error('Failed to download image:', err);
+    node = node.parentElement;
   }
-};
-
-export { downloadAsFile, downloadAsImage };
+  return '';
+}

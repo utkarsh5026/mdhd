@@ -76,7 +76,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 
       <DropdownMenuContent
         align="end"
-        className="w-[min(480px,calc(100vw-2rem))] p-4 sm:p-6 bg-card border-border rounded-2xl shadow-xl font-cascadia-code"
+        className="w-[min(480px,calc(100vw-2rem))] p-4 sm:p-6 bg-card border-border rounded-2xl shadow-xl"
       >
         {/* Modern Header */}
         <div className="flex items-center justify-between mb-4 sm:mb-6">
@@ -92,7 +92,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 
         {/* Enhanced Tabs */}
         <Tabs defaultValue="categories" className="w-full">
-          <TabsList className="w-full mb-4 sm:mb-6 h-9 sm:h-10 rounded-xl bg-muted/50 font-cascadia-code">
+          <TabsList className="w-full mb-4 sm:mb-6 h-9 sm:h-10 rounded-xl bg-muted/50">
             <TabsTrigger value="categories" className="text-xs sm:text-sm px-2 sm:px-4 font-medium">
               <span className="hidden sm:inline">🗂️ Categories</span>
               <span className="sm:hidden">🗂️</span>

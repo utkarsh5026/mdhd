@@ -1,12 +1,15 @@
-import { List, LucideIcon, Settings, X } from 'lucide-react';
+import { FileText, List, LucideIcon, Presentation, Search, Settings, X } from 'lucide-react';
 
-import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import { TooltipButton } from '@/components/ui/tooltip-button';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   onExit: () => void;
   onSettings: () => void;
-  onMenu: () => void;
+  onSearch?: () => void;
+  onPresent?: () => void;
+  onPdfExport?: () => void;
+  onToc?: () => void;
   isVisible: boolean;
   breadcrumb?: React.ReactNode;
   mobileBreadcrumb?: React.ReactNode;
@@ -53,7 +56,10 @@ const BarButton: React.FC<BarButtonProps> = ({
 const Header: React.FC<HeaderProps> = ({
   onExit,
   onSettings,
-  onMenu,
+  onSearch,
+  onPresent,
+  onPdfExport,
+  onToc,
   isVisible,
   breadcrumb,
   mobileBreadcrumb,
@@ -83,10 +89,17 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Right: Settings + TOC */}
+          {/* Right: controls */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {onToc && <BarButton onClick={onToc} icon={List} tooltip="Table of Contents" />}
+            {onSearch && <BarButton onClick={onSearch} icon={Search} tooltip="Search (Ctrl+F)" />}
+            {onPdfExport && (
+              <BarButton onClick={onPdfExport} icon={FileText} tooltip="Export to PDF" />
+            )}
+            {onPresent && (
+              <BarButton onClick={onPresent} icon={Presentation} tooltip="Presentation Mode" />
+            )}
             <BarButton onClick={onSettings} icon={Settings} tooltip="Reading Settings" />
-            <BarButton onClick={onMenu} icon={List} tooltip="Table of Contents" />
           </div>
         </div>
 

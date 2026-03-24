@@ -1,4 +1,4 @@
-export { fileStorageDB, getParentPath, normalizePath } from './db';
+export { fileStorageDB, getParentPath, normalizePath } from './file-db';
 export type {
   CreateDirectoryInput,
   CreateFileInput,

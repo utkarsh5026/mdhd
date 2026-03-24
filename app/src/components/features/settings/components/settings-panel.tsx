@@ -1,0 +1,99 @@
+import { Loader2 } from 'lucide-react';
+import React, { lazy, memo, startTransition, Suspense, useState } from 'react';
+
+import { cn } from '@/lib/utils';
+
+const ReadingModeSelector = lazy(() => import('./reading-mode-selector'));
+const AppThemeSelector = lazy(() => import('./app-theme-selector'));
+const AppFontSelector = lazy(() => import('./app-font-selector'));
+const BackgroundSettings = lazy(() => import('./background-settings'));
+
+const TabLoader = () => (
+  <div className="flex items-center justify-center py-12">
+    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+  </div>
+);
+
+type TabValue = 'reading' | 'theme' | 'font';
+
+interface TabConfig {
+  value: TabValue;
+  label: string;
+}
+
+const TABS: TabConfig[] = [
+  { value: 'reading', label: 'Reading' },
+  { value: 'theme', label: 'Theme' },
+  { value: 'font', label: 'Font' },
+];
+
+const TabContent = memo(({ value, activeTab }: { value: TabValue; activeTab: TabValue }) => {
+  const isHidden = value !== activeTab;
+
+  return (
+    <div
+      className={cn(
+        'space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300',
+        isHidden ? 'hidden' : 'block'
+      )}
+      aria-hidden={isHidden}
+    >
+      <Suspense fallback={<TabLoader />}>
+        {value === 'reading' && <ReadingModeSelector />}
+        {value === 'theme' && (
+          <>
+            <BackgroundSettings />
+            <div className="border-t border-border/20 pt-4 mt-4">
+              <AppThemeSelector />
+            </div>
+          </>
+        )}
+        {value === 'font' && <AppFontSelector />}
+      </Suspense>
+    </div>
+  );
+});
+
+TabContent.displayName = 'SettingsPanelTabContent';
+
+const SettingsPanel: React.FC = memo(() => {
+  const [activeTab, setActiveTab] = useState<TabValue>('reading');
+
+  const handleTabChange = (value: TabValue) => {
+    startTransition(() => {
+      setActiveTab(value);
+    });
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="px-3 pt-3 pb-2 border-b border-border/50 shrink-0">
+        <div className="flex space-x-1 overflow-x-auto no-scrollbar pb-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => handleTabChange(tab.value)}
+              className={cn(
+                'px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap',
+                activeTab === tab.value
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-3 py-4 text-xs [&_h3]:text-sm [&_p]:text-xs [&_.text-base]:text-sm [&_.text-sm]:text-xs">
+        {TABS.map((tab) => (
+          <TabContent key={tab.value} value={tab.value} activeTab={activeTab} />
+        ))}
+      </div>
+    </div>
+  );
+});
+
+SettingsPanel.displayName = 'SettingsPanel';
+export default SettingsPanel;

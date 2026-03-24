@@ -35,6 +35,16 @@ const fontImports: Record<FontFamily, () => Promise<void>> = {
     await import('@fontsource-variable/bitter');
   },
 
+  'source-code-pro': async () => {
+    await import('@fontsource-variable/source-code-pro');
+  },
+  'fira-code': async () => {
+    await import('@fontsource-variable/fira-code');
+  },
+  'jetbrains-mono': async () => {
+    await import('@fontsource-variable/jetbrains-mono');
+  },
+
   // Non-variable fonts - load specific weights
   merriweather: async () => {
     await import('@fontsource/merriweather/400.css');

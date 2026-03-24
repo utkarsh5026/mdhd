@@ -23,7 +23,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
       if (disabled) return;
       e.preventDefault();
       e.stopPropagation();
-      setIsDragging(true);
+      setIsDragging((prev) => prev || true);
     },
     [disabled]
   );

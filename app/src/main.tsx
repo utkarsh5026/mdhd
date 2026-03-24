@@ -1,6 +1,7 @@
 import './styles/font-styles.css';
 import './index.css';
 import './styles/variable-fonts.css';
+import '@fontsource-variable/geist';
 import '@fontsource-variable/fira-code';
 import '@fontsource-variable/source-code-pro';
 

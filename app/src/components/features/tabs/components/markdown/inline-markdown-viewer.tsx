@@ -1,15 +1,25 @@
-import { ChevronLeft, ChevronRight, List, Maximize, Settings } from 'lucide-react';
-import React, { memo, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, FileText, Maximize, Pencil } from 'lucide-react';
+import React, { type FC, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import ReadingCore from '@/components/features/content-reading/components/reading-core';
-import { TooltipButton } from '@/components/shared/ui/tooltip-button';
+import { ReadingTabProvider } from '@/components/features/content-reading/context/reading-tab-context';
+import {
+  useReadingActions,
+  useReadingCurrentSection,
+  useReadingNavigation,
+  useReadingProgress,
+  useReadingSections,
+} from '@/components/features/content-reading/hooks';
+import { TooltipButton } from '@/components/ui/tooltip-button';
+import { useMilestone } from '@/hooks';
 import { cn } from '@/lib/utils';
 
-import { useTabNavigation } from '../../hooks/use-tab-navigation';
+import { useEditorPreviewSync } from '../../hooks/use-editor-preview-sync';
 import { useTabsStore } from '../../store/tabs-store';
 import styles from './inline-markdown-viewer.module.css';
 import MarkdownCodeMirrorEditor from './markdown-codemirror-editor';
+import SectionEditorOverlay from './section-editor-overlay';
 
 interface InlineMarkdownViewerProps {
   tabId: string;
@@ -44,74 +54,154 @@ const HeaderBtn: React.FC<HeaderIconButtonProps> = ({ tooltip, icon: Icon, onCli
   />
 );
 
-interface InlineHeaderProps {
-  onFullscreen: () => void;
-  onSettings: () => void;
-  onMenu: () => void;
-  onPrevious: () => void;
-  onNext: () => void;
-  currentIndex: number;
+const MilestoneEmoji: FC<{ readCount: number; total: number }> = memo(({ readCount, total }) => {
+  const { milestone, visible } = useMilestone(readCount, total, {
+    showDuration: 1200,
+    exitDelay: 200,
+  });
+
+  if (!milestone) return null;
+
+  return (
+    <span
+      className={cn(
+        'flex items-center gap-1',
+        visible ? styles.milestoneEnter : styles.milestoneExit
+      )}
+    >
+      <span className="text-sm">{milestone.emoji}</span>
+      <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">
+        {milestone.label}
+      </span>
+    </span>
+  );
+});
+MilestoneEmoji.displayName = 'MilestoneEmoji';
+
+interface CardNavigationControlsProps {
+  readCount: number;
   total: number;
-  readingMode: 'card' | 'scroll';
-  breadcrumb?: React.ReactNode;
-  mobileBreadcrumb?: React.ReactNode;
+  currentIndex: number;
+  goToPrevious: () => void;
+  goToNext: () => void;
 }
 
+const CardNavigationControls: React.FC<CardNavigationControlsProps> = memo(
+  ({ readCount, total, currentIndex, goToPrevious, goToNext }) => (
+    <>
+      <div className="flex items-center gap-1.5 mr-1">
+        <div className="w-16 h-1.5 rounded-full bg-muted/60 overflow-hidden">
+          <div
+            className="h-full bg-primary/70 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${total > 0 ? (readCount / total) * 100 : 0}%` }}
+          />
+        </div>
+        <span className="text-[10px] text-muted-foreground tabular-nums">
+          {total > 0 ? Math.round((readCount / total) * 100) : 0}%
+        </span>
+        <MilestoneEmoji readCount={readCount} total={total} />
+      </div>
+      <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
+      <HeaderBtn
+        tooltip="Previous Section"
+        icon={ChevronLeft}
+        onClick={goToPrevious}
+        disabled={currentIndex === 0}
+      />
+      <HeaderBtn
+        tooltip="Next Section"
+        icon={ChevronRight}
+        onClick={goToNext}
+        disabled={currentIndex === total - 1}
+      />
+      <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
+    </>
+  )
+);
+CardNavigationControls.displayName = 'CardNavigationControls';
+
+interface InlineHeaderProps {
+  onFullscreen: () => void;
+  onPdfExport: () => void;
+  onEditSection?: () => void;
+  breadcrumb?: React.ReactNode;
+  mobileBreadcrumb?: React.ReactNode;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
+}
+
+/**
+ * InlineHeader — reads navigation state from ReadingTabContext hooks.
+ */
 const InlineHeader: React.FC<InlineHeaderProps> = memo(
-  ({
-    onFullscreen,
-    onSettings,
-    onMenu,
-    onPrevious,
-    onNext,
-    currentIndex,
-    total,
-    readingMode,
-    breadcrumb,
-    mobileBreadcrumb,
-  }) => {
+  ({ onFullscreen, onPdfExport, onEditSection, breadcrumb, mobileBreadcrumb, scrollRef }) => {
+    const { currentIndex, readingMode } = useReadingNavigation();
+    const sections = useReadingSections();
+    const readSections = useReadingProgress();
+    const { goToNext, goToPrevious } = useReadingActions();
+
+    const total = sections.length;
+    const readCount = readSections.size;
+
+    const [isHidden, setIsHidden] = useState(false);
+    const lastScrollTop = useRef(0);
+
+    useEffect(() => {
+      const el = scrollRef?.current;
+      if (!el) return;
+
+      const handleScroll = () => {
+        const scrollTop = el.scrollTop;
+        const delta = scrollTop - lastScrollTop.current;
+
+        if (Math.abs(delta) < 8) return;
+
+        setIsHidden(delta > 0 && scrollTop > 40);
+        lastScrollTop.current = scrollTop;
+      };
+
+      el.addEventListener('scroll', handleScroll, { passive: true });
+      return () => el.removeEventListener('scroll', handleScroll);
+    }, [scrollRef]);
+
     return (
-      <div className="absolute top-0 left-0 right-0 z-50 bg-card/60 backdrop-blur-2xl border-b border-border/20 shadow-[0_1px_12px_rgba(0,0,0,0.08)]">
-        {/* Main row */}
-        <div className="flex items-center gap-2 px-2 py-1">
-          {/* Left: breadcrumb */}
+      <div
+        className={cn(
+          'absolute top-0 left-0 right-0 z-50 bg-card/60 backdrop-blur-2xl border-b border-border/20 shadow-[0_1px_12px_rgba(0,0,0,0.08)]',
+          'transition-transform duration-300 ease-out',
+          isHidden && '-translate-y-full'
+        )}
+      >
+        {/* Desktop: breadcrumb + controls */}
+        <div className="hidden sm:flex items-center gap-2 px-2 py-1">
           {breadcrumb && readingMode === 'card' && (
-            <div className="hidden sm:block relative min-w-0 flex-1 overflow-hidden">
-              <div className="overflow-x-auto">{breadcrumb}</div>
-              {/* Fade mask */}
-              <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-linear-to-l from-background/85 to-transparent" />
-            </div>
+            <div className="min-w-0 flex-1 overflow-x-auto">{breadcrumb}</div>
           )}
           {(!breadcrumb || readingMode !== 'card') && <div className="flex-1" />}
 
-          {/* Right: controls */}
           <div className="flex items-center gap-1 shrink-0">
             {readingMode === 'card' && (
+              <CardNavigationControls
+                readCount={readCount}
+                total={total}
+                currentIndex={currentIndex}
+                goToPrevious={goToPrevious}
+                goToNext={goToNext}
+              />
+            )}
+            {onEditSection && readingMode === 'card' && (
               <>
-                <HeaderBtn
-                  tooltip="Previous Section"
-                  icon={ChevronLeft}
-                  onClick={onPrevious}
-                  disabled={currentIndex === 0}
-                />
-                <HeaderBtn
-                  tooltip="Next Section"
-                  icon={ChevronRight}
-                  onClick={onNext}
-                  disabled={currentIndex === total - 1}
-                />
+                <HeaderBtn tooltip="Edit Section" icon={Pencil} onClick={onEditSection} />
                 <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
               </>
             )}
+            <HeaderBtn tooltip="Export to PDF" icon={FileText} onClick={onPdfExport} />
             <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
-            <HeaderBtn tooltip="Reading Settings" icon={Settings} onClick={onSettings} />
-            <HeaderBtn tooltip="Table of Contents" icon={List} onClick={onMenu} />
           </div>
         </div>
 
-        {/* Mobile breadcrumb row */}
+        {/* Mobile: breadcrumb only (nav controls are in tab bar) */}
         {breadcrumb && readingMode === 'card' && (
-          <div className="sm:hidden px-2 pb-1.5 pt-0">{mobileBreadcrumb ?? breadcrumb}</div>
+          <div className="sm:hidden px-2 py-1.5">{mobileBreadcrumb ?? breadcrumb}</div>
         )}
       </div>
     );
@@ -121,137 +211,166 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
 InlineHeader.displayName = 'InlineHeader';
 
 /**
- * 🎯 InlineMarkdownViewer - Inline reading mode wrapper
- *
- * This component wraps ReadingCore and adds:
- * - Fullscreen button header (instead of exit button)
- * - Edit mode support with CodeMirror
- * - Inline-specific controls
+ * Inner component that lives inside ReadingTabProvider.
  */
-const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
-  ({ tabId, viewMode, onContentChange, onEnterFullscreen }) => {
-    const tab = useTabsStore((state) => state.tabs.find((t) => t.id === tabId));
+const InlineInner: React.FC<{
+  viewMode: 'preview' | 'edit' | 'dual';
+  onContentChange: (content: string) => void;
+  onEnterFullscreen: () => void;
+}> = memo(({ viewMode, onContentChange, onEnterFullscreen }) => {
+  const tab = useTabsStore((state) => {
+    const activeId = state.activeTabId;
+    return state.tabs.find((t) => t.id === activeId);
+  });
 
-    const {
+  const sections = useReadingSections();
+  const { currentIndex, readingMode } = useReadingNavigation();
+  const currentSection = useReadingCurrentSection();
+  const { changeSection, getSection } = useReadingActions();
+
+  const [editingSectionIndex, setEditingSectionIndex] = useState<number | null>(null);
+  const editingSection = editingSectionIndex !== null ? getSection(editingSectionIndex) : null;
+
+  const handleSectionEditSave = useCallback(
+    (newContent: string) => {
+      if (!tab || editingSectionIndex === null) return;
+      const section = sections[editingSectionIndex];
+      if (!section) return;
+
+      const lines = tab.content.split('\n');
+      const newLines = newContent.split('\n');
+      lines.splice(section.startLine, section.endLine - section.startLine, ...newLines);
+      onContentChange(lines.join('\n'));
+      setEditingSectionIndex(null);
+    },
+    [tab, editingSectionIndex, sections, onContentChange]
+  );
+
+  const { editorViewRef, handleCursorActivity, handleEditorScroll, handlePreviewSectionClick } =
+    useEditorPreviewSync({
       sections,
-      readSections,
       currentIndex,
       readingMode,
-      scrollProgress,
-      isTransitioning,
-      goToNext,
-      goToPrevious,
       changeSection,
-      markSectionAsRead,
-      updateCurrentIndex,
-      getSection,
-      handleScrollProgress,
-      metadata,
-    } = useTabNavigation(tabId);
+      viewMode,
+    });
 
-    const currentSection = getSection(currentIndex);
-
-    const PreviewPanel = useMemo(() => {
-      if (!tab || sections.length === 0 || !currentSection) {
-        return <LoadingState />;
-      }
-
-      return (
-        <ReadingCore
-          markdown={tab.content}
-          metadata={metadata}
-          sections={sections}
-          readSections={readSections}
-          currentIndex={currentIndex}
-          currentSection={currentSection}
-          isTransitioning={isTransitioning}
-          readingMode={readingMode}
-          scrollProgress={scrollProgress}
-          goToNext={goToNext}
-          goToPrevious={goToPrevious}
-          changeSection={changeSection}
-          markSectionAsRead={markSectionAsRead}
-          updateCurrentIndex={updateCurrentIndex}
-          onScrollProgressChange={handleScrollProgress}
-          viewMode="preview"
-          headerSlot={({ onSettings, onMenu, breadcrumb, mobileBreadcrumb }) => (
-            <InlineHeader
-              onFullscreen={onEnterFullscreen}
-              onSettings={onSettings}
-              onMenu={onMenu}
-              onPrevious={goToPrevious}
-              onNext={goToNext}
-              currentIndex={currentIndex}
-              total={sections.length}
-              readingMode={readingMode}
-              breadcrumb={breadcrumb}
-              mobileBreadcrumb={mobileBreadcrumb}
-            />
-          )}
-        />
-      );
-    }, [
-      tab,
-      sections,
-      currentSection,
-      metadata,
-      readSections,
-      currentIndex,
-      isTransitioning,
-      readingMode,
-      scrollProgress,
-      goToNext,
-      goToPrevious,
-      changeSection,
-      markSectionAsRead,
-      updateCurrentIndex,
-      handleScrollProgress,
-      onEnterFullscreen,
-    ]);
-
-    const EditorPanel = useMemo(() => {
-      if (!tab) {
-        return <LoadingState />;
-      }
-      return <MarkdownCodeMirrorEditor content={tab.content} onChange={onContentChange} />;
-    }, [tab, onContentChange]);
-
+  const PreviewPanel = useMemo(() => {
     if (!tab || sections.length === 0 || !currentSection) {
       return <LoadingState />;
     }
 
-    const renderContent = () => {
-      if (viewMode === 'edit') {
-        return (
-          <div key="edit-mode" className={`h-full ${styles.editMode}`}>
-            <div className="h-full relative bg-background text-foreground">{EditorPanel}</div>
-          </div>
-        );
-      }
+    return (
+      <ReadingCore
+        viewMode="preview"
+        onSectionClick={handlePreviewSectionClick}
+        headerSlot={({ onPdfExport, breadcrumb, mobileBreadcrumb, scrollRef }) => (
+          <InlineHeader
+            onFullscreen={onEnterFullscreen}
+            onPdfExport={onPdfExport}
+            onEditSection={() => setEditingSectionIndex(currentIndex)}
+            breadcrumb={breadcrumb}
+            mobileBreadcrumb={mobileBreadcrumb}
+            scrollRef={scrollRef}
+          />
+        )}
+      />
+    );
+  }, [
+    tab,
+    sections.length,
+    currentSection,
+    currentIndex,
+    onEnterFullscreen,
+    handlePreviewSectionClick,
+  ]);
 
-      if (viewMode === 'preview') {
-        return (
-          <div key="preview-mode" className={`h-full ${styles.previewMode}`}>
-            {PreviewPanel}
-          </div>
-        );
-      }
+  const EditorPanel = useMemo(() => {
+    if (!tab) {
+      return <LoadingState />;
+    }
+    return (
+      <MarkdownCodeMirrorEditor
+        content={tab.content}
+        onChange={onContentChange}
+        editorViewRef={editorViewRef}
+        onCursorActivity={handleCursorActivity}
+        onScrollChange={handleEditorScroll}
+      />
+    );
+  }, [tab, onContentChange, editorViewRef, handleCursorActivity, handleEditorScroll]);
 
+  if (!tab || sections.length === 0 || !currentSection) {
+    return <LoadingState />;
+  }
+
+  const renderContent = () => {
+    if (viewMode === 'edit') {
       return (
-        <div key="dual-mode" className={`h-full ${styles.dualMode}`}>
-          <div className="hidden lg:flex flex-row h-full overflow-hidden">
-            <div className="w-1/2 h-full border-r border-border/20 relative bg-background text-foreground">
-              {EditorPanel}
-            </div>
-            <div className="w-1/2 h-full relative">{PreviewPanel}</div>
-          </div>
-
-          <div className="lg:hidden h-full">{PreviewPanel}</div>
+        <div key="edit-mode" className={`h-full ${styles.editMode}`}>
+          <div className="h-full relative bg-background text-foreground">{EditorPanel}</div>
         </div>
       );
-    };
+    }
 
-    return <>{renderContent()}</>;
+    if (viewMode === 'preview') {
+      return (
+        <div key="preview-mode" className={`h-full ${styles.previewMode}`}>
+          {PreviewPanel}
+        </div>
+      );
+    }
+
+    return (
+      <div key="dual-mode" className={`h-full ${styles.dualMode}`}>
+        <div className="hidden lg:flex flex-row h-full overflow-hidden">
+          <div className="w-1/2 h-full border-r border-border/20 relative bg-background text-foreground">
+            {EditorPanel}
+          </div>
+          <div className="w-1/2 h-full relative">{PreviewPanel}</div>
+        </div>
+
+        <div className="lg:hidden h-full">{PreviewPanel}</div>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      {renderContent()}
+      {editingSection && (
+        <SectionEditorOverlay
+          section={editingSection}
+          open={editingSectionIndex !== null}
+          onOpenChange={(open) => {
+            if (!open) setEditingSectionIndex(null);
+          }}
+          onSave={handleSectionEditSave}
+        />
+      )}
+    </>
+  );
+});
+
+InlineInner.displayName = 'InlineInner';
+
+/**
+ * InlineMarkdownViewer - Inline reading mode wrapper
+ *
+ * Wraps ReadingTabProvider around the inner component so all children
+ * can access reading state via selector hooks.
+ */
+const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
+  ({ tabId, viewMode, onContentChange, onEnterFullscreen }) => {
+    return (
+      <ReadingTabProvider value={tabId}>
+        <InlineInner
+          viewMode={viewMode}
+          onContentChange={onContentChange}
+          onEnterFullscreen={onEnterFullscreen}
+        />
+      </ReadingTabProvider>
+    );
   }
 );
 

@@ -2,40 +2,41 @@ import { memo, type RefObject } from 'react';
 import { useSwipeable } from 'react-swipeable';
 
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
-import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
+import {
+  useReadingSettings,
+  useReadingSettingsStore,
+} from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
-import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 
+import {
+  useReadingActions,
+  useReadingContent,
+  useReadingCurrentSection,
+  useReadingNavigation,
+} from '../../hooks';
 import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
+import SectionReadingTime from './section-reading-time';
 
 interface ContentReaderProps {
-  markdown: string;
-  metadata: MarkdownMetadata | null;
-  currentIndex: number;
-  goToNext: () => void;
-  goToPrevious: () => void;
-  isTransitioning: boolean;
   scrollRef: RefObject<HTMLDivElement | null>;
   handleDoubleClick: () => void;
-  currentSection: MarkdownSection;
+  onSectionClick?: (sectionIndex: number) => void;
 }
 
 const ContentReader: React.FC<ContentReaderProps> = memo(
-  ({
-    metadata,
-    currentIndex,
-    goToNext,
-    goToPrevious,
-    isTransitioning,
-    scrollRef,
-    handleDoubleClick,
-    currentSection,
-  }) => {
+  ({ scrollRef, handleDoubleClick, onSectionClick }) => {
+    const { currentIndex, isTransitioning } = useReadingNavigation();
+    const { metadata } = useReadingContent();
+    const currentSection = useReadingCurrentSection();
+    const { goToNext, goToPrevious } = useReadingActions();
+
     const { settings } = useReadingSettings();
     const fontFamily = fontFamilyMap[settings.fontFamily];
     const { fontSize, lineHeight, contentWidth } = settings;
+    const hasCustomBackground =
+      useReadingSettingsStore((s) => s.settings.background.backgroundType) !== 'theme';
 
     const swipeHandlers = useSwipeable({
       onSwipedLeft: (eventData) => {
@@ -59,10 +60,13 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
       swipeDuration: 500,
     });
 
+    if (!currentSection) return null;
+
     return (
       <div
         className={cn(
-          'h-full overflow-y-auto bg-card',
+          'h-full overflow-y-auto',
+          !hasCustomBackground && 'bg-card',
           isTransitioning ? 'opacity-0' : 'opacity-100',
           'transition-opacity duration-200'
         )}
@@ -70,15 +74,27 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
       >
         <div {...swipeHandlers} onDoubleClick={handleDoubleClick} className="h-full">
           <div className={cn(READER_PADDING_CLASSES, 'h-auto')}>
-            <div className="mx-auto rounded-2xl" style={{ maxWidth: `${contentWidth}px` }}>
+            <div
+              className={cn(
+                'mx-auto rounded-2xl',
+                hasCustomBackground && 'bg-card/80 backdrop-blur-sm p-6'
+              )}
+              style={{ maxWidth: `${contentWidth}px` }}
+            >
               {/* Show metadata only on the first section */}
               {currentIndex === 0 && metadata && <MetadataDisplay metadata={metadata} />}
+              <SectionReadingTime section={currentSection} />
               <div
                 key={currentSection.id}
-                className="prose prose-lg prose-invert max-w-none"
+                className="prose prose-lg prose-invert max-w-none cursor-text"
                 style={{
                   fontSize: `${fontSize}px`,
                   lineHeight: lineHeight,
+                }}
+                onClick={(e) => {
+                  if (onSectionClick && !(e.target instanceof HTMLAnchorElement)) {
+                    onSectionClick(currentIndex);
+                  }
                 }}
               >
                 <CustomMarkdownRenderer

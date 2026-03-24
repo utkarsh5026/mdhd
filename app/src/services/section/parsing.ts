@@ -1,28 +1,32 @@
 import { parse as parseYaml } from 'yaml';
 
+import type { HeadingLevel, MarkdownMetadata, MarkdownSection, ParseResult } from './types';
+
+export type { HeadingLevel, MarkdownMetadata, MarkdownSection, ParseResult } from './types';
+
 const AVERAGE_READING_SPEED_WPM = 250;
 
-export type MarkdownMetadata = Record<string, unknown>;
-
-export type ParseResult = {
-  sections: MarkdownSection[];
-  metadata: MarkdownMetadata | null;
-};
-
 /**
- * Extracts YAML frontmatter from markdown content
+ * Extracts YAML frontmatter from markdown content.
  *
- * Returns the metadata object and the content without frontmatter
+ * Parses the `---` delimited YAML block at the start of the document and
+ * returns both the parsed metadata and the remaining content without it.
+ *
+ * @param markdown - Raw markdown string potentially containing frontmatter.
+ * @returns An object with the stripped `content`, parsed `metadata` (or `null`),
+ *   and `frontmatterLineCount` for accurate line-number tracking.
  */
 function extractFrontmatter(markdown: string): {
   content: string;
   metadata: MarkdownMetadata | null;
+  frontmatterLineCount: number;
+  frontmatterError?: string;
 } {
   const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
   const match = frontmatterRegex.exec(markdown);
 
   if (!match) {
-    return { content: markdown, metadata: null };
+    return { content: markdown, metadata: null, frontmatterLineCount: 0 };
   }
 
   try {
@@ -30,22 +34,34 @@ function extractFrontmatter(markdown: string): {
     const data = parseYaml(yamlContent) as MarkdownMetadata;
     const content = markdown.slice(match[0].length);
     const hasMetadata = data && typeof data === 'object' && Object.keys(data).length > 0;
+    const frontmatterLineCount = match[0].split('\n').length - (match[0].endsWith('\n') ? 1 : 0);
 
     return {
       content,
       metadata: hasMetadata ? data : null,
+      frontmatterLineCount,
     };
   } catch (e) {
     console.error('Failed to parse frontmatter YAML:', e);
-    return { content: markdown, metadata: null };
+    return {
+      content: markdown,
+      metadata: null,
+      frontmatterLineCount: 0,
+      frontmatterError: e instanceof Error ? e.message : 'Invalid YAML frontmatter',
+    };
   }
 }
 
 /**
- * 📝 Cleans up Markdown text to make word counting more accurate
- * Strips away all the fancy formatting so we can just count the actual words!
+ * Strips markdown formatting to produce plain text for word counting.
+ *
+ * Removes code blocks, inline code, headings, links, images,
+ * bold/italic markers, and HTML tags.
+ *
+ * @param text - Raw markdown text to clean.
+ * @returns Plain text with all markdown syntax removed.
  */
-function removeMarkdownFormatting(text: string): string {
+export function removeMarkdownFormatting(text: string): string {
   let cleanText = text;
 
   // Remove code blocks
@@ -74,8 +90,12 @@ function removeMarkdownFormatting(text: string): string {
 }
 
 /**
- * 🔢 Counts the number of words in a text
- * First cleans up any Markdown formatting, then splits by spaces to count!
+ * Counts the number of words in a markdown string.
+ *
+ * Strips markdown formatting first, then splits on whitespace.
+ *
+ * @param text - Markdown text to count words in.
+ * @returns The number of words, or `0` if the input is empty/falsy.
  */
 export function countWords(text: string): number {
   if (!text) {
@@ -87,8 +107,11 @@ export function countWords(text: string): number {
 }
 
 /**
- * ⏱️ Figures out how long it would take to read something
- * Uses average reading speed to estimate how many milliseconds you'd need!
+ * Estimates reading time in milliseconds for a given word count.
+ *
+ * @param wordCount - Total number of words to read.
+ * @param readingSpeed - Words per minute (defaults to 250 WPM).
+ * @returns Estimated reading time in milliseconds (minimum 1 minute).
  */
 export function estimateReadingTime(
   wordCount: number,
@@ -97,83 +120,82 @@ export function estimateReadingTime(
   const minutes = Math.max(1, wordCount / readingSpeed);
   return minutes * 60 * 1000;
 }
-export type MarkdownSection = {
-  id: string;
-  title: string;
-  content: string;
-  level: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-  wordCount: number;
-};
-
 /**
- * 📚 Transforms Markdown content into navigable sections!
+ * Parses raw markdown into navigable sections split by headings (H1–H3).
  *
- * This function takes raw Markdown text and intelligently breaks it down into
- * structured sections based on headings. It preserves code blocks, handles
- * introduction content, and calculates word counts for each section.
+ * Splits the document at each heading boundary, preserving code blocks
+ * intact. Content before the first heading becomes an "Introduction" section.
+ * YAML frontmatter is extracted separately as metadata. Each section includes
+ * accurate `startLine`/`endLine` offsets and a computed `wordCount`.
  *
- * Also extracts YAML frontmatter metadata if present.
- *
- * 🧩 Perfect for creating a table of contents or a sectioned reading experience!
+ * @param markdown - The full raw markdown string to parse.
+ * @returns A `ParseResult` containing the ordered `sections` array and
+ *   optional `metadata` from frontmatter.
  */
 export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
-  const { content, metadata } = extractFrontmatter(markdown);
+  const { content, metadata, frontmatterLineCount, frontmatterError } =
+    extractFrontmatter(markdown);
   const lines = content.split('\n');
+  const totalLines = markdown.split('\n').length;
   const sections: MarkdownSection[] = [];
 
   let currentSection: MarkdownSection | null = null;
   let inCodeBlock = false;
   let introContent = '';
+  const introStartLine = frontmatterLineCount;
+  const seenSlugs = new Map<string, number>();
 
-  /**
-   * 🏷️ Creates a special introduction section!
-   *
-   * Turns any content before the first heading into a nice introduction section.
-   */
-  const pushIntroContent = () => {
+  const pushIntroContent = (endLine: number) => {
     if (introContent.trim()) {
       sections.push({
         id: 'introduction',
         title: 'Introduction',
         content: introContent,
         level: 0,
-        wordCount: countWords(introContent),
+        wordCount: 0,
+        startLine: introStartLine,
+        endLine,
       });
       introContent = '';
     }
   };
 
-  /**
-   * 🎨 Creates a fresh new section with the right formatting!
-   *
-   * Sets up a section with proper ID, title, and initial content.
-   * wordCount is intentionally 0 here; the final map below computes it
-   * once over the fully-assembled content, avoiding a double pass.
-   */
-  const initializeSection = (title: string, level: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
+  const initializeSection = (
+    title: string,
+    level: HeadingLevel,
+    startLine: number
+  ): MarkdownSection => {
     const pounds = '#'.repeat(level);
+    let slug = slugify(title);
+    const count = seenSlugs.get(slug) ?? 0;
+    seenSlugs.set(slug, count + 1);
+    if (count > 0) {
+      slug = `${slug}-${count}`;
+    }
     return {
-      id: slugify(title),
+      id: slug,
       title,
       content: pounds + ' ' + title + '\n',
       level,
       wordCount: 0,
+      startLine,
+      endLine: 0,
     };
   };
 
-  /**
-   * 📝 Manages section transitions when a new heading is found!
-   *
-   * Saves the current section and prepares a new one.
-   */
-  const handleHeading = (title: string, level: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
-    if (currentSection) sections.push(currentSection);
-    else if (introContent.trim()) pushIntroContent();
-    currentSection = initializeSection(title, level);
+  const handleHeading = (title: string, level: HeadingLevel, absoluteLine: number) => {
+    if (currentSection) {
+      currentSection.endLine = absoluteLine;
+      sections.push(currentSection);
+    } else if (introContent.trim()) {
+      pushIntroContent(absoluteLine);
+    }
+    currentSection = initializeSection(title, level, absoluteLine);
   };
 
-  for (const markdownLine of lines) {
-    const line = markdownLine.trimEnd();
+  for (let i = 0; i < lines.length; i++) {
+    const absoluteLine = i + frontmatterLineCount;
+    const line = lines[i].trimEnd();
 
     if (line.trim().startsWith('```')) {
       inCodeBlock = !inCodeBlock;
@@ -195,7 +217,7 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
       if (headingMatch) {
         const depth = headingMatch[1].length as 1 | 2 | 3;
         const title = headingMatch[2].trim();
-        handleHeading(title, depth);
+        handleHeading(title, depth, absoluteLine);
         continue;
       }
     }
@@ -207,15 +229,20 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
     }
   }
 
-  if (currentSection) sections.push(currentSection);
-  else if (introContent.trim())
+  if (currentSection) {
+    (currentSection as MarkdownSection).endLine = totalLines;
+    sections.push(currentSection);
+  } else if (introContent.trim()) {
     sections.push({
       id: 'introduction',
       title: 'Introduction',
       content: introContent,
       level: 0,
-      wordCount: countWords(introContent),
+      wordCount: 0,
+      startLine: introStartLine,
+      endLine: totalLines,
     });
+  }
 
   const finalSections = sections.map((section) => ({
     ...section,
@@ -225,14 +252,22 @@ export const parseMarkdownIntoSections = (markdown: string): ParseResult => {
   return {
     sections: finalSections,
     metadata,
+    ...(frontmatterError && { frontmatterError }),
   };
 };
 
 /**
- * 🔤 Transforms text into URL-friendly slugs!
+ * Converts a heading string into a URL-friendly slug for use as a section ID.
  *
- * Takes headings and converts them into clean IDs for navigation and linking.
- * Perfect for creating anchor links that match your section titles.
+ * Lowercases the text, strips non-word characters, and replaces whitespace
+ * with hyphens.
+ *
+ * @param text - The heading text to slugify.
+ * @returns A lowercase, hyphen-separated slug string.
+ *
+ * @example
+ * slugify('Getting Started!') // => 'getting-started'
+ * slugify('API v2 — Overview') // => 'api-v2--overview'
  */
 export const slugify = (text: string): string => {
   return text

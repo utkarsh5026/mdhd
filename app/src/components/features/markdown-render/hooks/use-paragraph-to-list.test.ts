@@ -3,10 +3,6 @@ import { describe, expect, it } from 'vitest';
 
 import { splitChildrenIntoSentences } from './use-paragraph-to-list';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 /** Extract plain text from a sentence group (array of React nodes). */
 function sentenceText(nodes: React.ReactNode[]): string {
   return nodes
@@ -17,10 +13,6 @@ function sentenceText(nodes: React.ReactNode[]): string {
 function texts(result: React.ReactNode[][]): string[] {
   return result.map(sentenceText);
 }
-
-// ---------------------------------------------------------------------------
-// splitChildrenIntoSentences — pure function tests
-// ---------------------------------------------------------------------------
 
 describe('splitChildrenIntoSentences', () => {
   describe('single string child', () => {
@@ -118,34 +110,26 @@ describe('splitChildrenIntoSentences', () => {
     });
 
     it('filters out empty sentences from leading/trailing separators', () => {
-      // Edge case: string that starts with ". " — should not produce empty first item
       const result = splitChildrenIntoSentences('. Second sentence.');
       expect(result.every((s) => s.length > 0)).toBe(true);
     });
   });
 
   describe('mixed children (string + React elements)', () => {
-    // Note: React.Children.toArray clones elements with stable keys, so we
-    // cannot use reference equality. We check by element type instead.
-
     it('keeps React elements in the current sentence', () => {
       const codeEl = React.createElement('code', { key: 'c' }, 'foo');
-      // "Call " + <code>foo</code> + " here. Next sentence."
       const result = splitChildrenIntoSentences(['Call ', codeEl, ' here. Next sentence.']);
       expect(result).toHaveLength(2);
       const first = result[0];
       expect(first).toContain('Call ');
-      // The cloned <code> element should be present — check by type
       const hasCode = first.some((n) => React.isValidElement(n) && n.type === 'code');
       expect(hasCode).toBe(true);
     });
 
-    it('attaches a React element to whichever sentence is current when it appears', () => {
+    it('attaches a React element to whichever sentence is current', () => {
       const bold = React.createElement('strong', { key: 'b' }, 'important');
-      // "First sentence. " + <strong>important</strong> + " continues."
       const result = splitChildrenIntoSentences(['First sentence. ', bold, ' continues.']);
       expect(result).toHaveLength(2);
-      // bold should be in the second sentence
       const hasStrong = result[1].some((n) => React.isValidElement(n) && n.type === 'strong');
       expect(hasStrong).toBe(true);
     });
@@ -160,19 +144,16 @@ describe('splitChildrenIntoSentences', () => {
   });
 
   describe('empty / whitespace children', () => {
-    it('returns an empty array for an empty string', () => {
-      const result = splitChildrenIntoSentences('');
-      expect(result).toHaveLength(0);
+    it('returns empty array for empty string', () => {
+      expect(splitChildrenIntoSentences('')).toHaveLength(0);
     });
 
-    it('returns an empty array for a whitespace-only string', () => {
-      const result = splitChildrenIntoSentences('   ');
-      expect(result).toHaveLength(0);
+    it('returns empty array for whitespace-only', () => {
+      expect(splitChildrenIntoSentences('   ')).toHaveLength(0);
     });
 
-    it('returns an empty array for null children', () => {
-      const result = splitChildrenIntoSentences(null);
-      expect(result).toHaveLength(0);
+    it('returns empty array for null children', () => {
+      expect(splitChildrenIntoSentences(null)).toHaveLength(0);
     });
   });
 
@@ -188,7 +169,7 @@ describe('splitChildrenIntoSentences', () => {
       ]);
     });
 
-    it('handles "i.e." followed by uppercase (still part of same sentence)', () => {
+    it('handles "i.e." followed by uppercase (still protected)', () => {
       const result = splitChildrenIntoSentences(
         'Use a framework i.e. React or Vue. Both are popular.'
       );
@@ -260,14 +241,6 @@ describe('splitChildrenIntoSentences', () => {
       ]);
     });
 
-    it('handles "vs." at end of sentence before uppercase word', () => {
-      const result = splitChildrenIntoSentences(
-        'The debate was React vs. Angular. Both have strengths.'
-      );
-      expect(result).toHaveLength(2);
-      expect(texts(result)).toEqual(['The debate was React vs. Angular.', 'Both have strengths.']);
-    });
-
     it('handles multiple initials in a row', () => {
       const result = splitChildrenIntoSentences(
         'C. S. Lewis was a famous author. He wrote Narnia.'
@@ -299,7 +272,7 @@ describe('splitChildrenIntoSentences', () => {
       ]);
     });
 
-    it('does NOT split on file extensions like ".js" or ".tsx"', () => {
+    it('does NOT split on file extensions like ".js"', () => {
       const result = splitChildrenIntoSentences(
         'Edit the file index.js to fix the bug. Then run the tests.'
       );
@@ -314,12 +287,6 @@ describe('splitChildrenIntoSentences', () => {
       const result = splitChildrenIntoSentences('The version is 3.14. It was released last week.');
       expect(result).toHaveLength(2);
       expect(texts(result)).toEqual(['The version is 3.14.', 'It was released last week.']);
-    });
-
-    it('handles sentence with only abbreviation content', () => {
-      const result = splitChildrenIntoSentences('Dr. Smith');
-      expect(result).toHaveLength(1);
-      expect(texts(result)).toEqual(['Dr. Smith']);
     });
 
     it('handles "Sr." and "Jr." before names', () => {

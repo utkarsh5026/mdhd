@@ -69,7 +69,7 @@ const FloatingThemePicker: React.FC = () => {
           'bg-card border-t border-border rounded-t-3xl shadow-2xl',
           'h-[70vh] overflow-hidden flex flex-col',
           'animate-in slide-in-from-bottom duration-200',
-          'font-cascadia-code'
+          ''
         )}
       >
         {/* Drag handle indicator */}

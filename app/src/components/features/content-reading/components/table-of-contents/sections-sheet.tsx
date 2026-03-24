@@ -1,11 +1,10 @@
-import { ListOrdered, X } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { ListOrdered } from 'lucide-react';
+import { memo, useCallback, useMemo } from 'react';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import SideSheet, { SideSheetBody, SideSheetHeader } from '@/components/ui/side-sheet';
 import { useLocalStorage } from '@/hooks';
-import { cn } from '@/lib/utils';
 import { MarkdownSection } from '@/services/section/parsing';
 
 import TreeOfContents from './tree-of-contents';
@@ -19,35 +18,6 @@ interface SectionsSheetProps {
   readSections: Set<number>;
 }
 
-interface SheetHeaderContentProps {
-  count: number;
-  setMenuOpen: (open: boolean) => void;
-  showProgress: boolean;
-  setShowProgress: (value: boolean) => void;
-}
-const SheetHeaderContent: React.FC<SheetHeaderContentProps> = memo(({ count, setMenuOpen }) => (
-  <div className="bg-card border-b border-border p-4 sticky top-0 z-20">
-    <div className="flex items-center justify-between mb-3">
-      <div className="text-base font-medium flex items-center gap-2">
-        <ListOrdered className="w-4 h-4 text-primary" />
-        <span>Document Sections</span>
-        <Badge variant="outline" className="ml-2 text-xs bg-primary/5 border-primary/20">
-          {count}
-        </Badge>
-      </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setMenuOpen(false)}
-        className="h-8 w-8 rounded-full bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
-        aria-label="Close sections menu"
-      >
-        <X className="h-4 w-4" />
-      </Button>
-    </div>
-  </div>
-));
-
 const SectionsSheet: React.FC<SectionsSheetProps> = ({
   currentIndex,
   handleSelectCard,
@@ -56,29 +26,7 @@ const SectionsSheet: React.FC<SectionsSheetProps> = ({
   sections,
   readSections,
 }) => {
-  const { storedValue: showProgress, setValue: setShowProgress } = useLocalStorage(
-    'showCardProgress',
-    true
-  );
-
-  const [shouldRender, setShouldRender] = useState(menuOpen);
-
-  useEffect(() => {
-    if (menuOpen) {
-      setShouldRender(true);
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-
-      const timer = setTimeout(() => {
-        setShouldRender(false);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [menuOpen]);
+  const { storedValue: showProgress } = useLocalStorage('showCardProgress', true);
 
   const sectionsWithIds = useMemo(
     () =>
@@ -98,50 +46,30 @@ const SectionsSheet: React.FC<SectionsSheetProps> = ({
     [handleSelectCard, setMenuOpen]
   );
 
-  if (!shouldRender) {
-    return null;
-  }
+  const handleClose = useCallback(() => setMenuOpen(false), [setMenuOpen]);
 
   return (
-    <>
-      <div
-        className={cn(
-          'fixed inset-0 bg-black/80 z-40 transition-opacity duration-300 ease-in-out',
-          menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        )}
-        onClick={() => setMenuOpen(false)}
-        aria-hidden="true"
-      />
+    <SideSheet open={menuOpen} onOpenChange={setMenuOpen} size="md">
+      <SideSheetHeader onClose={handleClose} className="bg-card">
+        <ListOrdered className="w-4 h-4 text-primary" />
+        <span className="text-base font-medium">Document Sections</span>
+        <Badge variant="outline" className="ml-2 text-xs bg-primary/5 border-primary/20">
+          {sections.length}
+        </Badge>
+      </SideSheetHeader>
 
-      <div
-        className={cn(
-          'fixed top-0 right-0 z-50 h-full w-full sm:max-w-md bg-background shadow-xl border-l border-border',
-          'transform transition-transform duration-300 ease-out will-change-transform',
-          menuOpen ? 'translate-x-0' : 'translate-x-full'
-        )}
-      >
-        <div className="flex flex-col h-full font-type-mono">
-          <SheetHeaderContent
-            count={sections.length}
-            setMenuOpen={setMenuOpen}
+      <SideSheetBody>
+        <ScrollArea className="h-full">
+          <TreeOfContents
+            sections={sectionsWithIds}
+            currentIndex={currentIndex}
+            readSections={readSections}
             showProgress={showProgress}
-            setShowProgress={setShowProgress}
+            handleSelectCard={onSelect}
           />
-
-          <div className="flex-1 overflow-hidden relative">
-            <ScrollArea className="h-full">
-              <TreeOfContents
-                sections={sectionsWithIds}
-                currentIndex={currentIndex}
-                readSections={readSections}
-                showProgress={showProgress}
-                handleSelectCard={onSelect}
-              />
-            </ScrollArea>
-          </div>
-        </div>
-      </div>
-    </>
+        </ScrollArea>
+      </SideSheetBody>
+    </SideSheet>
   );
 };
 

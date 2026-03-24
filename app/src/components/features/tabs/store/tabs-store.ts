@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
-import { fileStorageDB } from '@/services/indexeddb/db';
+import { fileStorageDB } from '@/services/indexeddb/file-db';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
 
 import { createTab, extractTitleFromMarkdown, hashString } from './helpers';
@@ -165,6 +165,37 @@ export const useTabsStore = create<TabsState & TabsActions>()(
                   // Preserve viewMode and readingMode
                 },
                 metadata,
+              };
+            }),
+          }));
+        },
+
+        updateTabContentPreservePosition: (tabId: string, content: string) => {
+          set((state) => ({
+            tabs: state.tabs.map((t) => {
+              if (t.id !== tabId) return t;
+
+              const { metadata, sections } = content
+                ? parseMarkdownIntoSections(content)
+                : { metadata: null, sections: [] };
+
+              const clampedIndex = Math.min(
+                t.readingState.currentIndex,
+                Math.max(0, sections.length - 1)
+              );
+
+              return {
+                ...t,
+                content,
+                contentHash: hashString(content),
+                title: extractTitleFromMarkdown(content),
+                readingState: {
+                  ...t.readingState,
+                  sections,
+                  metadata,
+                  isInitialized: sections.length > 0,
+                  currentIndex: clampedIndex,
+                },
               };
             }),
           }));
@@ -340,30 +371,39 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             if (fileBackedTabs.length > 0) {
               Promise.all(
                 fileBackedTabs.map(async (tab) => {
-                  const file = await fileStorageDB.getFile(tab.sourceFileId!);
-                  return { tabId: tab.id, content: file?.content ?? null };
+                  try {
+                    const file = await fileStorageDB.getFile(tab.sourceFileId!);
+                    return { tabId: tab.id, content: file?.content ?? null };
+                  } catch (err) {
+                    console.error(`[tabs-store] Failed to load file for tab ${tab.id}:`, err);
+                    return { tabId: tab.id, content: null };
+                  }
                 })
-              ).then((results) => {
-                useTabsStore.setState((prev) => ({
-                  tabs: prev.tabs.map((t) => {
-                    const result = results.find((r) => r.tabId === t.id);
-                    if (!result?.content) return t;
+              )
+                .then((results) => {
+                  useTabsStore.setState((prev) => ({
+                    tabs: prev.tabs.map((t) => {
+                      const result = results.find((r) => r.tabId === t.id);
+                      if (!result?.content) return t;
 
-                    const { metadata, sections } = parseMarkdownIntoSections(result.content);
-                    return {
-                      ...t,
-                      content: result.content,
-                      contentHash: hashString(result.content),
-                      readingState: {
-                        ...t.readingState,
-                        sections,
-                        metadata,
-                        isInitialized: sections.length > 0,
-                      },
-                    };
-                  }),
-                }));
-              });
+                      const { metadata, sections } = parseMarkdownIntoSections(result.content);
+                      return {
+                        ...t,
+                        content: result.content,
+                        contentHash: hashString(result.content),
+                        readingState: {
+                          ...t.readingState,
+                          sections,
+                          metadata,
+                          isInitialized: sections.length > 0,
+                        },
+                      };
+                    }),
+                  }));
+                })
+                .catch((err) => {
+                  console.error('[tabs-store] Tab rehydration failed:', err);
+                });
             }
           }
         },

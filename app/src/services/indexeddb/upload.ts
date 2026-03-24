@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 
-import { fileStorageDB, getParentPath, normalizePath } from './db';
+import { fileStorageDB, getParentPath, normalizePath } from './file-db';
 import type { StoredDirectory, StoredFile, UploadProgressCallback } from './types';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -43,7 +43,6 @@ export function extractDirectoryPaths(filePaths: string[]): string[] {
     }
   }
 
-  // Sort by path length to ensure parents are created before children
   return Array.from(dirs).sort((a, b) => a.length - b.length);
 }
 
@@ -104,9 +103,6 @@ export async function processFileUpload(
         const content = await readFileAsText(file);
         const path = getFilePath(file, basePath);
         const parentPath = getParentPath(path);
-
-        // addFile returns null if the path already exists (ConstraintError),
-        // avoiding a separate existence check that would be a TOCTOU race.
         return fileStorageDB.addFile({
           name: file.name,
           path,
@@ -136,10 +132,6 @@ async function ensureDirectories(dirPaths: string[]): Promise<StoredDirectory[]>
   const storedDirs: StoredDirectory[] = [];
 
   for (const dirPath of dirPaths) {
-    if (await fileStorageDB.getDirectoryByPath(dirPath)) {
-      continue;
-    }
-
     const name = dirPath.split('/').pop() || '';
     try {
       const dir = await fileStorageDB.addDirectory({
@@ -147,7 +139,7 @@ async function ensureDirectories(dirPaths: string[]): Promise<StoredDirectory[]>
         path: dirPath,
         parentPath: getParentPath(dirPath),
       });
-      storedDirs.push(dir);
+      if (dir) storedDirs.push(dir);
     } catch (error) {
       console.error(`Failed to create directory ${dirPath}:`, error);
     }
@@ -160,10 +152,10 @@ async function ensureDirectories(dirPaths: string[]): Promise<StoredDirectory[]>
  * Process and upload a directory (from FileList with webkitRelativePath)
  */
 export async function processDirectoryUpload(
-  fileList: FileList,
+  fileList: FileList | File[],
   onProgress?: UploadProgressCallback
 ): Promise<{ files: StoredFile[]; directories: StoredDirectory[] }> {
-  const mdFiles = filterMarkdownFiles(Array.from(fileList));
+  const mdFiles = filterMarkdownFiles(Array.from(fileList as Iterable<File>));
 
   if (mdFiles.length === 0) {
     return { files: [], directories: [] };
@@ -208,12 +200,12 @@ function readEntryAsFile(
 ): Promise<File> {
   return new Promise((resolve, reject) => {
     fileMethod((f) => {
-      const newFile = new File([f], f.name, { type: f.type });
-      Object.defineProperty(newFile, 'webkitRelativePath', {
+      Object.defineProperty(f, 'webkitRelativePath', {
         value: fullPath.substring(1), // Remove leading /
         writable: false,
+        configurable: true,
       });
-      resolve(newFile);
+      resolve(f);
     }, reject);
   });
 }
@@ -306,22 +298,7 @@ export async function processDroppedItems(
   }
 
   if (isDirectory) {
-    const fileList = {
-      length: allFiles.length,
-      item: (index: number) => allFiles[index],
-      [Symbol.iterator]: function* () {
-        for (let i = 0; i < allFiles.length; i++) {
-          yield allFiles[i];
-        }
-      },
-    } as FileList;
-
-    // Manually set the array-like access
-    allFiles.forEach((file, index) => {
-      (fileList as Record<number, File>)[index] = file;
-    });
-
-    return { ...(await processDirectoryUpload(fileList, onProgress)), isDirectory: true };
+    return { ...(await processDirectoryUpload(allFiles, onProgress)), isDirectory: true };
   } else {
     // Process as individual files
     const files = await processFileUpload(allFiles, '', onProgress);

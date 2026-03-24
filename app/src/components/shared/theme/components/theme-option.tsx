@@ -44,7 +44,7 @@ const ThemeOption: React.FC<ThemeOptionProps> = memo(
       <button
         className={cn(
           'flex items-center w-full rounded-2xl py-2.5 sm:py-3 px-3 sm:px-4 text-left',
-          'transition-colors duration-150 group font-cascadia-code',
+          'transition-colors duration-150 group',
           isActive
             ? 'bg-primary/10 border border-primary/30 shadow-sm'
             : 'hover:bg-secondary/40 hover:shadow-sm'

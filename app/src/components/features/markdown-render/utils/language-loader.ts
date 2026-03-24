@@ -1,5 +1,7 @@
 import type { LanguageSupport } from '@codemirror/language';
 
+import { tryAsync } from '@/utils/functions/error';
+
 type LanguageLoader = () => Promise<LanguageSupport>;
 
 const languageLoaders: Record<string, LanguageLoader> = {
@@ -73,12 +75,7 @@ export async function loadLanguage(lang: string): Promise<LanguageSupport | null
     return null;
   }
 
-  try {
-    const language = await loader();
-    languageCache.set(normalizedLang, language);
-    return language;
-  } catch (error) {
-    console.warn(`Failed to load language support for: ${lang}`, error);
-    return null;
-  }
+  const language = await tryAsync(loader, null);
+  if (language) languageCache.set(normalizedLang, language);
+  return language;
 }

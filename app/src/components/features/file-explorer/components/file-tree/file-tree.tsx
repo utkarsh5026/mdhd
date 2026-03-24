@@ -1,6 +1,6 @@
+import { FolderOpen } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 
-import { ScrollArea } from '@/components/ui/scroll-area';
 import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
 
 import { TreeContextMenu } from './tree-context-menu';
@@ -46,18 +46,24 @@ export const FileTree: React.FC<FileTreeProps> = ({
 
   if (nodes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-xs text-muted-foreground/60 px-4 py-8">
-        <p className="text-center leading-relaxed">
-          No files yet. Upload markdown files or folders to get started.
-        </p>
+      <div className="flex flex-col items-center justify-center h-full gap-3 px-6 py-12 text-center">
+        <div className="rounded-xl bg-muted/30 p-3">
+          <FolderOpen className="h-5 w-5 text-muted-foreground/35" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground/55">No files yet</p>
+          <p className="text-[11px] text-muted-foreground/40 leading-relaxed">
+            Upload markdown files or drag & drop to get started
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <>
-      <ScrollArea className="flex-1">
-        <div className="py-2">
+      <div className="flex-1 overflow-auto">
+        <div className="py-2 min-w-max">
           {nodes.map((node) => (
             <TreeNode
               key={node.id}
@@ -71,7 +77,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
             />
           ))}
         </div>
-      </ScrollArea>
+      </div>
       <TreeContextMenu
         node={contextMenu.node}
         position={contextMenu.position}

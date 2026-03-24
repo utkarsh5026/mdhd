@@ -2,11 +2,11 @@ import { FileText } from 'lucide-react';
 import React, { memo, useCallback, useMemo } from 'react';
 
 import TreeOfContents from '@/components/features/content-reading/components/table-of-contents/tree-of-contents';
-import type { FlatSection } from '@/components/features/content-reading/components/table-of-contents/types';
+import { useReadingActionsById } from '@/components/features/content-reading/hooks/use-reading-selectors';
 import { useActiveTabSections } from '@/components/features/tabs/hooks/use-active-tab-sections';
-import { useTabNavigation } from '@/components/features/tabs/hooks/use-tab-navigation';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { toFlatSections } from '@/services/section/queries';
 
 interface SidebarTocProps {
   className?: string;
@@ -14,7 +14,7 @@ interface SidebarTocProps {
 
 export const SidebarToc: React.FC<SidebarTocProps> = memo(({ className }) => {
   const { sections, currentIndex, tabId, hasActiveTab, readSections } = useActiveTabSections();
-  const { changeSection } = useTabNavigation(tabId ?? '');
+  const { changeSection } = useReadingActionsById(tabId ?? '');
 
   const handleSectionClick = useCallback(
     (index: number) => {
@@ -23,16 +23,7 @@ export const SidebarToc: React.FC<SidebarTocProps> = memo(({ className }) => {
     [changeSection]
   );
 
-  // Transform MarkdownSection[] to FlatSection[] for TreeOfContents
-  const flatSections: FlatSection[] = useMemo(
-    () =>
-      sections.map((section, index) => ({
-        id: index,
-        title: section.title,
-        level: section.level,
-      })),
-    [sections]
-  );
+  const flatSections = useMemo(() => toFlatSections(sections), [sections]);
 
   if (!hasActiveTab || sections.length === 0) {
     return (

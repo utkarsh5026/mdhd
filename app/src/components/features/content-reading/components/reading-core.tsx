@@ -1,17 +1,29 @@
-import React, { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { ListOrdered, PanelLeft, PanelRight, X } from 'lucide-react';
+import React, { lazy, memo, Suspense, useCallback, useMemo, useState } from 'react';
 
-import { useControls } from '@/components/features/content-reading/hooks';
+import SearchDialog from '@/components/features/content-reading/components/search/search-dialog';
+import { ExportSnippetsProvider } from '@/components/features/image-export/context/export-snippets-context';
 import FloatingThemePicker from '@/components/shared/theme/components/floating-theme-picker';
-import { useThemeFloatingPicker } from '@/components/shared/theme/store/theme-store';
-import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
+import { cn } from '@/lib/utils';
 
+import { useReadingSettingsStore } from '../../settings/store/reading-settings-store';
+import {
+  useReadingContent,
+  useReadingNavigation,
+  useReadingProgress,
+  useReadingSections,
+} from '../hooks';
+import { useReadingDialogs } from '../hooks/use-reading-dialogs';
+import { useReadingInteractions } from '../hooks/use-reading-interactions';
 import {
   ContentReader,
   NavigationControls,
   ScrollContentReader,
   SectionBreadcrumb,
+  SwipeHint,
 } from './layout';
-import SectionsSheet from './table-of-contents/sections-sheet';
+import MilestoneCelebration from './layout/milestone-celebration';
+import ReadingBackground from './reading-background';
 
 const ReadingSettingsSheet = lazy(() =>
   import('@/components/features/settings').then((module) => ({
@@ -19,280 +31,281 @@ const ReadingSettingsSheet = lazy(() =>
   }))
 );
 
+const PdfExportDialog = lazy(() =>
+  import('@/components/features/pdf-export').then((module) => ({
+    default: module.PdfExportDialog,
+  }))
+);
+
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useLocalStorage } from '@/hooks';
+
+import { TreeOfContents } from './table-of-contents/tree-of-contents';
+
 interface HeaderHandlers {
   onSettings: () => void;
-  onMenu: () => void;
+  onSearch: () => void;
+  onPresent?: () => void;
+  onPdfExport: () => void;
+  onToc: () => void;
   isVisible: boolean;
   breadcrumb?: React.ReactNode;
   mobileBreadcrumb?: React.ReactNode;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export interface ReadingCoreProps {
-  // Content data
-  markdown: string;
-  metadata: MarkdownMetadata | null;
-  sections: MarkdownSection[];
-  readSections: Set<number>;
-  currentIndex: number;
-  currentSection: MarkdownSection;
-  isTransitioning: boolean;
-  readingMode: 'card' | 'scroll';
-  scrollProgress: number;
-
-  // Navigation callbacks
-  goToNext: () => void;
-  goToPrevious: () => void;
-  changeSection: (index: number) => void;
-  markSectionAsRead: (index: number) => void;
-  updateCurrentIndex: (index: number) => void;
-  onScrollProgressChange: (progress: number) => void;
-
-  // View mode
   viewMode: 'preview' | 'edit';
-
-  // Header customization - render function that receives handlers
   headerSlot?: (handlers: HeaderHandlers) => React.ReactNode;
-
-  // Edit mode content (for inline viewer)
   editModeContent?: React.ReactNode;
-
-  // Zen mode props (optional, for fullscreen only)
-  isZenMode?: boolean;
-  zenControlsVisible?: boolean;
-  isDialogOpen?: boolean;
-  onZenTap?: () => void;
-  onZenDoubleTap?: () => void;
+  onSectionClick?: (sectionIndex: number) => void;
+  onPresent?: () => void;
 }
 
 /**
  * ReadingCore - Shared reading logic for both fullscreen and inline modes
  *
- * This component contains all the shared logic between ReadingUI and InlineMarkdownViewer:
- * - Content rendering (card/scroll modes)
- * - Navigation controls
- * - Progress indicators
- * - Sections/Settings sheets
- * - Section navigation callbacks
- * - Scroll management
- *
- * The only differences between fullscreen and inline are handled via props:
- * - headerSlot: Custom header component (Exit button vs Fullscreen button)
- * - isZenMode: Zen mode support (fullscreen only)
- * - editModeContent: Edit mode support (inline only)
+ * Reads all navigation state from the ReadingTabContext + Zustand store.
+ * Only accepts per-consumer customization as props.
  */
 const ReadingCore: React.FC<ReadingCoreProps> = memo(
-  ({
-    markdown,
-    metadata,
-    sections,
-    readSections,
-    currentIndex,
-    currentSection,
-    isTransitioning,
-    readingMode,
-    goToNext,
-    goToPrevious,
-    changeSection,
-    markSectionAsRead,
-    updateCurrentIndex,
-    onScrollProgressChange,
-    viewMode,
-    headerSlot,
-    editModeContent,
-    isZenMode = false,
-    zenControlsVisible = false,
-    isDialogOpen = false,
-    onZenTap,
-    onZenDoubleTap,
-  }) => {
-    const [settingsOpen, setSettingsOpen] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
+  ({ viewMode, headerSlot, editModeContent, onSectionClick, onPresent }) => {
+    const { readingMode, currentIndex } = useReadingNavigation();
+    const sections = useReadingSections();
+    const { metadata } = useReadingContent();
+    const readSections = useReadingProgress();
 
-    const { openFloatingPicker, pendingFloatingPickerOpen } = useThemeFloatingPicker();
+    const [searchOpen, setSearchOpen] = useState(false);
+    const openSearch = useCallback(() => setSearchOpen(true), []);
 
-    const { isControlsVisible, handleInteraction, handleDoubleClick } = useControls({
+    const {
+      isControlsVisible,
+      shouldShowControls,
+      zenControlsVisible,
+      scrollRef,
+      handleInteraction,
+      handleContentClick,
+      handleContentDoubleClick,
+      handleSelectCard,
+      handleSectionVisible,
       goToNext,
       goToPrevious,
-      readingMode,
-    });
+      handleScrollProgress,
+    } = useReadingInteractions(openSearch);
 
-    useEffect(() => {
-      if (readingMode === 'card' && scrollRef.current) {
-        scrollRef.current.scrollTop = 0;
-      }
-    }, [currentIndex, readingMode]);
+    const {
+      settingsOpen,
+      pdfExportOpen,
+      tocOpen,
+      setSettingsOpen,
+      setPdfExportOpen,
+      setTocOpen,
+      handleSettingsOpen,
+      handlePdfExportOpen,
+      handleTocOpen,
+    } = useReadingDialogs(handleInteraction);
 
-    useEffect(() => {
-      if (!settingsOpen && pendingFloatingPickerOpen) {
-        const timer = setTimeout(() => {
-          openFloatingPicker();
-        }, 350);
-        return () => clearTimeout(timer);
-      }
-    }, [settingsOpen, pendingFloatingPickerOpen, openFloatingPicker]);
+    const backgroundType = useReadingSettingsStore((s) => s.settings.background.backgroundType);
+    const hasCustomBackground = backgroundType !== 'theme';
 
-    // Jump to specific section (works in both card and scroll mode)
-    const handleSelectCard = useCallback(
-      (index: number) => {
-        if (readingMode === 'scroll') {
-          const sectionElement = document.getElementById(`section-${sections[index]?.id}`);
-          if (sectionElement) {
-            sectionElement.scrollIntoView({ behavior: 'instant', block: 'start' });
-          }
-          markSectionAsRead(index);
-        } else {
-          if (index !== currentIndex) changeSection(index);
-        }
-      },
-      [readingMode, sections, currentIndex, changeSection, markSectionAsRead]
+    const { storedValue: showProgress } = useLocalStorage('showCardProgress', true);
+    const { storedValue: tocSide, setValue: setTocSide } = useLocalStorage<'left' | 'right'>(
+      'tocSide',
+      'left'
+    );
+    const toggleTocSide = useCallback(
+      () => setTocSide(tocSide === 'left' ? 'right' : 'left'),
+      [tocSide, setTocSide]
     );
 
-    const handleSectionVisible = useCallback(
-      (index: number) => {
-        markSectionAsRead(index);
-        updateCurrentIndex(index);
-      },
-      [markSectionAsRead, updateCurrentIndex]
+    const flatSections = useMemo(
+      () => sections.map(({ title, level }, index) => ({ id: index, title, level })),
+      [sections]
     );
 
-    // Combined double-click handler for zen mode and regular mode
-    const handleContentDoubleClick = useCallback(() => {
-      if (isZenMode && onZenDoubleTap) {
-        onZenDoubleTap();
-      } else {
-        handleDoubleClick();
-      }
-    }, [isZenMode, onZenDoubleTap, handleDoubleClick]);
-
-    // Combined click handler for zen mode tap
-    const handleContentClick = useCallback(() => {
-      if (isZenMode && onZenTap) {
-        onZenTap();
-      }
-    }, [isZenMode, onZenTap]);
-
-    // Handle sheet interactions
-    const handleSettingsOpen = useCallback(() => {
-      setSettingsOpen(true);
-      handleInteraction();
-    }, [handleInteraction]);
-
-    const handleMenuOpen = useCallback(() => {
-      setMenuOpen(true);
-      handleInteraction();
-    }, [handleInteraction]);
-
-    // If in edit mode, show edit content
     if (viewMode === 'edit' && editModeContent) {
       return <div className="h-full relative bg-background text-foreground">{editModeContent}</div>;
     }
 
-    // Determine if controls should be visible
-    const shouldShowControls = !isDialogOpen && (!isZenMode || zenControlsVisible);
-
     return (
-      <div className="h-full relative bg-card text-foreground" onClick={handleContentClick}>
-        {/* Content Container - Card Mode or Scroll Mode */}
-        {readingMode === 'card' ? (
-          <ContentReader
-            markdown={markdown}
-            metadata={metadata}
-            currentIndex={currentIndex}
-            goToNext={goToNext}
-            goToPrevious={goToPrevious}
-            isTransitioning={isTransitioning}
-            scrollRef={scrollRef}
-            handleDoubleClick={handleContentDoubleClick}
-            currentSection={currentSection}
-          />
-        ) : (
-          <ScrollContentReader
-            sections={sections}
-            metadata={metadata}
-            scrollRef={scrollRef}
-            handleDoubleClick={handleContentDoubleClick}
-            onScrollProgress={onScrollProgressChange}
-            onSectionVisible={handleSectionVisible}
-          />
-        )}
+      <ExportSnippetsProvider sections={sections}>
+        <div className="h-full flex">
+          {/* Embedded TOC sidebar */}
+          <div
+            className={cn(
+              'h-full shrink-0 overflow-x-clip',
+              'transition-[width] duration-300 ease-in-out',
+              'bg-background/95 backdrop-blur-xl',
+              tocSide === 'left'
+                ? 'order-first border-r border-border/30'
+                : 'order-last border-l border-border/30',
+              tocOpen ? 'w-64 sm:w-72' : 'w-0 border-0'
+            )}
+          >
+            {tocOpen && (
+              <div className="flex flex-col h-full w-64 sm:w-72">
+                {/* Sidebar header */}
+                <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/30">
+                  <div className="flex items-center gap-2">
+                    <ListOrdered className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">Contents</span>
+                    <span className="text-xs text-muted-foreground/60">{sections.length}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      onClick={toggleTocSide}
+                      className={cn(
+                        'p-1 rounded-md',
+                        'text-muted-foreground/60 hover:text-foreground',
+                        'hover:bg-accent/60 transition-colors'
+                      )}
+                      aria-label={`Move to ${tocSide === 'left' ? 'right' : 'left'} side`}
+                    >
+                      {tocSide === 'left' ? (
+                        <PanelRight className="h-3.5 w-3.5" />
+                      ) : (
+                        <PanelLeft className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setTocOpen(false)}
+                      className={cn(
+                        'p-1 rounded-md',
+                        'text-muted-foreground/60 hover:text-foreground',
+                        'hover:bg-accent/60 transition-colors'
+                      )}
+                      aria-label="Close table of contents"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
 
-        {/* Breadcrumb - standalone overlay when there is no header to contain it */}
-        {shouldShowControls && readingMode === 'card' && !headerSlot && (
-          <div className="absolute top-0 left-0 z-50 p-2">
-            <SectionBreadcrumb
+                {/* Scrollable TOC tree */}
+                <ScrollArea className="flex-1">
+                  <TreeOfContents
+                    sections={flatSections}
+                    currentIndex={currentIndex}
+                    readSections={readSections}
+                    showProgress={showProgress}
+                    handleSelectCard={handleSelectCard}
+                  />
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+
+          {/* Main reading area */}
+          <div
+            className={cn(
+              'flex-1 h-full relative text-foreground min-w-0',
+              !hasCustomBackground && 'bg-card'
+            )}
+            onClick={handleContentClick}
+          >
+            <ReadingBackground />
+            {/* Content Container - Card Mode or Scroll Mode */}
+            {readingMode === 'card' ? (
+              <ContentReader
+                scrollRef={scrollRef}
+                handleDoubleClick={handleContentDoubleClick}
+                onSectionClick={onSectionClick}
+              />
+            ) : (
+              <ScrollContentReader
+                scrollRef={scrollRef}
+                handleDoubleClick={handleContentDoubleClick}
+                onScrollProgress={handleScrollProgress}
+                onSectionVisible={handleSectionVisible}
+                onSectionClick={onSectionClick}
+              />
+            )}
+
+            {/* Breadcrumb - standalone overlay when there is no header to contain it */}
+            {shouldShowControls && readingMode === 'card' && !headerSlot && (
+              <div className="absolute top-0 left-0 z-50 p-2">
+                <SectionBreadcrumb onNavigate={handleSelectCard} />
+              </div>
+            )}
+
+            {/* Header - breadcrumb is always injected into the header when one exists */}
+            {shouldShowControls && headerSlot && (
+              <div className="absolute top-0 left-0 right-0 z-50">
+                {headerSlot({
+                  onSettings: handleSettingsOpen,
+                  onSearch: openSearch,
+                  onPresent,
+                  onPdfExport: handlePdfExportOpen,
+                  onToc: handleTocOpen,
+                  isVisible: isControlsVisible || zenControlsVisible,
+                  breadcrumb:
+                    readingMode === 'card' ? (
+                      <SectionBreadcrumb onNavigate={handleSelectCard} variant="inline" />
+                    ) : undefined,
+                  mobileBreadcrumb:
+                    readingMode === 'card' ? (
+                      <SectionBreadcrumb onNavigate={handleSelectCard} variant="mobile" />
+                    ) : undefined,
+                  scrollRef,
+                })}
+              </div>
+            )}
+
+            {/* Swipe hint - shown once on touch devices in card mode */}
+            {readingMode === 'card' && <SwipeHint />}
+
+            {/* Navigation Controls - side arrows, hidden in zen mode and scroll mode */}
+            {shouldShowControls && readingMode === 'card' && (
+              <NavigationControls
+                onPrevious={() => {
+                  goToPrevious();
+                  handleInteraction();
+                }}
+                onNext={() => {
+                  goToNext();
+                  handleInteraction();
+                }}
+              />
+            )}
+
+            {/* Milestone celebrations — card mode only */}
+            {readingMode === 'card' && (
+              <MilestoneCelebration readCount={readSections.size} total={sections.length} />
+            )}
+
+            {/* Reading Settings Sheet - Lazy loaded */}
+            {settingsOpen && (
+              <Suspense fallback={null}>
+                <ReadingSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+              </Suspense>
+            )}
+
+            {/* PDF Export Dialog - Lazy loaded */}
+            {pdfExportOpen && (
+              <Suspense fallback={null}>
+                <PdfExportDialog
+                  open={pdfExportOpen}
+                  onOpenChange={setPdfExportOpen}
+                  title={(metadata?.title as string) ?? sections[0]?.title ?? 'Document'}
+                  sections={sections}
+                  metadata={metadata}
+                />
+              </Suspense>
+            )}
+
+            {/* Search Dialog */}
+            <SearchDialog
+              open={searchOpen}
+              onOpenChange={setSearchOpen}
               sections={sections}
-              currentIndex={currentIndex}
-              onNavigate={handleSelectCard}
+              onSelectSection={handleSelectCard}
             />
+
+            {/* Floating Theme Picker */}
+            <FloatingThemePicker />
           </div>
-        )}
-
-        {/* Header - breadcrumb is always injected into the header when one exists */}
-        {shouldShowControls && headerSlot && (
-          <div className="absolute top-0 left-0 right-0 z-50">
-            {headerSlot({
-              onSettings: handleSettingsOpen,
-              onMenu: handleMenuOpen,
-              isVisible: isControlsVisible || zenControlsVisible,
-              breadcrumb:
-                readingMode === 'card' ? (
-                  <SectionBreadcrumb
-                    sections={sections}
-                    currentIndex={currentIndex}
-                    onNavigate={handleSelectCard}
-                    variant="inline"
-                  />
-                ) : undefined,
-              mobileBreadcrumb:
-                readingMode === 'card' ? (
-                  <SectionBreadcrumb
-                    sections={sections}
-                    currentIndex={currentIndex}
-                    onNavigate={handleSelectCard}
-                    variant="mobile"
-                  />
-                ) : undefined,
-            })}
-          </div>
-        )}
-
-        {/* Navigation Controls - side arrows, hidden in zen mode and scroll mode */}
-        {shouldShowControls && readingMode === 'card' && (
-          <NavigationControls
-            currentIndex={currentIndex}
-            total={sections.length}
-            onPrevious={() => {
-              goToPrevious();
-              handleInteraction();
-            }}
-            onNext={() => {
-              goToNext();
-              handleInteraction();
-            }}
-          />
-        )}
-
-        {/* Sections Sheet */}
-        <SectionsSheet
-          currentIndex={currentIndex}
-          handleSelectCard={handleSelectCard}
-          menuOpen={menuOpen}
-          setMenuOpen={setMenuOpen}
-          sections={sections}
-          readSections={readSections}
-        />
-
-        {/* Reading Settings Sheet - Lazy loaded */}
-        {settingsOpen && (
-          <Suspense fallback={null}>
-            <ReadingSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
-          </Suspense>
-        )}
-
-        {/* Floating Theme Picker */}
-        <FloatingThemePicker />
-      </div>
+        </div>
+      </ExportSnippetsProvider>
     );
   }
 );

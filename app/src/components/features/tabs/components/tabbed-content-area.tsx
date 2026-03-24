@@ -1,17 +1,11 @@
-import React, { memo, useCallback, useState } from 'react';
+import React, { memo, useCallback } from 'react';
 
-import HeroMain from '@/components/layout/hero-section';
-import MarkdownEditor from '@/components/layout/markdown-editor';
+import EmptyState from '@/components/layout/empty-state';
+import WelcomeScreen from '@/components/layout/welcome-screen';
+import { fileStorageDB, type FileTreeNode } from '@/services/indexeddb';
 
 import { useSaveShortcut } from '../hooks/use-save-shortcut';
-import {
-  useActiveTab,
-  useActiveTabId,
-  useShowEmptyState,
-  useTabs,
-  useTabsActions,
-  type ViewMode,
-} from '../store';
+import { useActiveTab, useShowEmptyState, useTabs, useTabsActions } from '../store';
 import InlineMarkdownViewer from './markdown/inline-markdown-viewer';
 import { SaveFileDialog } from './save-file-dialog';
 import TabBar from './tab-bar/tab-bar';
@@ -22,122 +16,113 @@ interface TabbedContentAreaProps {
 
 const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFullscreen }) => {
   const tabs = useTabs();
-  const activeTabId = useActiveTabId();
   const activeTab = useActiveTab();
   const showEmptyState = useShowEmptyState();
   const {
     createTab,
-    createUntitledTab,
-    closeTab,
     setActiveTab,
     setShowEmptyState,
+    findTabByFileId,
     updateTabContent,
+    updateTabContentPreservePosition,
     updateTabReadingState,
-    toggleHeaderVisibility,
-    toggleStatusBarVisibility,
   } = useTabsActions();
 
-  // Local state for paste input (replaces reading-store.markdownInput)
-  const [markdownInput, setMarkdownInput] = useState('');
-
-  // Get current view mode from active tab
-  const viewMode = activeTab?.readingState.viewMode ?? 'preview';
-
-  // Handle view mode toggle
-  const handleViewModeToggle = useCallback(
-    (mode: ViewMode) => {
-      if (activeTab) {
-        updateTabReadingState(activeTab.id, { viewMode: mode });
-      }
-    },
-    [activeTab, updateTabReadingState]
-  );
-
-  // Save shortcut hook
   const { showSaveDialog, setShowSaveDialog, defaultFileName, handleSaveToFile, isSaving } =
     useSaveShortcut();
 
-  const handleNewTab = useCallback(() => {
-    createUntitledTab();
-  }, [createUntitledTab]);
+  const handleStartReading = useCallback(
+    (content: string) => {
+      if (!content.trim()) return;
+      if (activeTab && activeTab.content === '') {
+        updateTabContent(activeTab.id, content);
+      } else {
+        createTab(content, undefined, 'paste');
+      }
+    },
+    [activeTab, updateTabContent, createTab]
+  );
 
-  const handleStartReading = useCallback(() => {
-    if (!markdownInput.trim()) return;
+  const handleFileNodeOpen = useCallback(
+    async (node: FileTreeNode) => {
+      const existing = findTabByFileId(node.id);
+      if (existing) {
+        setActiveTab(existing.id);
+        setShowEmptyState(false);
+        return;
+      }
+      const file = await fileStorageDB.getFile(node.id);
+      if (file) createTab(file.content, file.name, 'file', file.id, file.path);
+    },
+    [findTabByFileId, setActiveTab, setShowEmptyState, createTab]
+  );
 
-    // If active tab is empty (untitled with no content), update its content
-    if (activeTab && activeTab.content === '') {
-      updateTabContent(activeTab.id, markdownInput);
-    } else {
-      // Create new tab (when no tabs exist or coming from initial state)
-      createTab(markdownInput, undefined, 'paste');
+  const activeReadingState = activeTab?.readingState;
+  const navCurrentIndex = activeReadingState?.currentIndex ?? 0;
+  const navTotal = activeReadingState?.sections.length ?? 0;
+  const navReadingMode = activeReadingState?.readingMode ?? 'card';
+
+  const handleNavPrevious = useCallback(() => {
+    if (activeTab && navCurrentIndex > 0) {
+      updateTabReadingState(activeTab.id, { currentIndex: navCurrentIndex - 1 });
     }
+  }, [activeTab, navCurrentIndex, updateTabReadingState]);
 
-    // Clear paste input after creating tab
-    setMarkdownInput('');
-  }, [markdownInput, activeTab, updateTabContent, createTab]);
+  const handleNavNext = useCallback(() => {
+    if (activeTab && navCurrentIndex < navTotal - 1) {
+      updateTabReadingState(activeTab.id, { currentIndex: navCurrentIndex + 1 });
+    }
+  }, [activeTab, navCurrentIndex, navTotal, updateTabReadingState]);
 
-  const handleTabSelect = useCallback(
-    (tabId: string) => {
-      setActiveTab(tabId);
-      setShowEmptyState(false);
-    },
-    [setActiveTab, setShowEmptyState]
-  );
-
-  const handleTabClose = useCallback(
-    (tabId: string) => {
-      closeTab(tabId);
-    },
-    [closeTab]
-  );
-
-  // Check if active tab is genuinely empty (paste tab with no content).
-  // File-backed tabs may have empty content temporarily while reloading from IndexedDB.
   const isActiveTabEmpty = activeTab && activeTab.content === '' && activeTab.sourceType !== 'file';
 
-  const shouldShowEmptyState = showEmptyState || tabs.length === 0 || isActiveTabEmpty;
+  const noTabs = tabs.length === 0;
+  const shouldShowEmptyState = showEmptyState || noTabs || isActiveTabEmpty;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden rounded-2xl border border-border/50">
+    <div className="flex-1 flex flex-col overflow-hidden">
       {/* Tab Bar - only show if there are tabs */}
       {tabs.length > 0 && (
         <TabBar
-          tabs={tabs}
-          activeTabId={activeTabId}
-          viewMode={viewMode}
-          onViewModeToggle={handleViewModeToggle}
-          onTabSelect={handleTabSelect}
-          onTabClose={handleTabClose}
-          onNewTab={handleNewTab}
-          onToggleHeaderVisibility={toggleHeaderVisibility}
-          onToggleStatusBarVisibility={toggleStatusBarVisibility}
+          mobileNav={
+            activeTab
+              ? {
+                  currentIndex: navCurrentIndex,
+                  total: navTotal,
+                  readingMode: navReadingMode,
+                  onPrevious: handleNavPrevious,
+                  onNext: handleNavNext,
+                  onFullscreen: () => onEnterFullscreen(activeTab.id),
+                }
+              : undefined
+          }
         />
       )}
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden relative">
         {shouldShowEmptyState ? (
-          <div
-            key={isActiveTabEmpty ? `empty-tab-${activeTab?.id}` : 'empty-state'}
-            className="h-full overflow-auto animate-fade-in"
-          >
-            <div className="container mx-auto px-6 py-12">
-              <HeroMain />
-              <div className="max-w-3xl mx-auto">
-                <MarkdownEditor
-                  markdownInput={markdownInput}
-                  setMarkdownInput={setMarkdownInput}
-                  handleStartReading={handleStartReading}
-                />
-              </div>
+          noTabs ? (
+            <div key="welcome" className="h-full animate-fade-in">
+              <WelcomeScreen
+                onStartReading={handleStartReading}
+                onFileNodeOpen={handleFileNodeOpen}
+              />
             </div>
-          </div>
+          ) : (
+            <div
+              key={isActiveTabEmpty ? `empty-tab-${activeTab?.id}` : 'empty-state'}
+              className="h-full animate-fade-in"
+            >
+              <EmptyState onStartReading={handleStartReading} />
+            </div>
+          )
         ) : activeTab ? (
           <div key={activeTab.id} className="h-full animate-fade-in-fast">
             <InlineMarkdownViewer
               tabId={activeTab.id}
-              viewMode={viewMode}
-              onContentChange={(content) => updateTabContent(activeTab.id, content)}
+              viewMode="preview"
+              onContentChange={(content) => updateTabContentPreservePosition(activeTab.id, content)}
               onEnterFullscreen={() => onEnterFullscreen(activeTab.id)}
             />
           </div>

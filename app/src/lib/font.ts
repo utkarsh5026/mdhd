@@ -19,13 +19,16 @@ export type FontFamily =
   | 'eb-garamond'
   | 'bitter'
   | 'vollkorn'
-  | 'literata';
+  | 'literata'
+  | 'source-code-pro'
+  | 'fira-code'
+  | 'jetbrains-mono';
 
 export interface FontOption {
   value: FontFamily;
   label: string;
   description: string;
-  category: 'serif' | 'sans-serif';
+  category: 'serif' | 'sans-serif' | 'monospace';
   isVariable?: boolean; // Indicates if this font has variable font support
   weightRange?: [number, number]; // Weight range for variable fonts, e.g., [100, 900]
 }
@@ -35,7 +38,7 @@ export const fontOptions: FontOption[] = [
     value: 'cascadia-code',
     label: 'Cascadia Code',
     description: 'A monospaced font with a modern look',
-    category: 'sans-serif',
+    category: 'monospace',
   },
   {
     value: 'system-ui',
@@ -175,11 +178,36 @@ export const fontOptions: FontOption[] = [
     description: "Google Play Books' reading font",
     category: 'serif',
   },
+  {
+    value: 'source-code-pro',
+    label: 'Source Code Pro',
+    description: "Adobe's monospaced font for coding",
+    category: 'monospace',
+    isVariable: true,
+    weightRange: [200, 900],
+  },
+  {
+    value: 'fira-code',
+    label: 'Fira Code',
+    description: 'Monospaced font with programming ligatures',
+    category: 'monospace',
+    isVariable: true,
+    weightRange: [300, 700],
+  },
+  {
+    value: 'jetbrains-mono',
+    label: 'JetBrains Mono',
+    description: 'Developer font with increased height for better readability',
+    category: 'monospace',
+    isVariable: true,
+    weightRange: [100, 800],
+  },
 ];
 
 export const fontCategories = {
   'sans-serif': fontOptions.filter((font) => font.category === 'sans-serif'),
   serif: fontOptions.filter((font) => font.category === 'serif'),
+  monospace: fontOptions.filter((font) => font.category === 'monospace'),
 };
 
 export const FONT_CSS_MAP: Record<FontFamily, React.CSSProperties> = {
@@ -206,6 +234,9 @@ export const FONT_CSS_MAP: Record<FontFamily, React.CSSProperties> = {
   bitter: { fontFamily: '"Bitter", serif' },
   vollkorn: { fontFamily: '"Vollkorn", serif' },
   literata: { fontFamily: '"Literata", serif' },
+  'source-code-pro': { fontFamily: '"Source Code Pro", monospace' },
+  'fira-code': { fontFamily: '"Fira Code", monospace' },
+  'jetbrains-mono': { fontFamily: '"JetBrains Mono", monospace' },
 };
 
 export const getFontCss = (font: FontFamily): React.CSSProperties => {
@@ -234,4 +265,46 @@ export const fontFamilyMap: Record<FontFamily, string> = {
   bitter: '"Bitter", serif',
   vollkorn: '"Vollkorn", serif',
   literata: '"Literata", serif',
+  'source-code-pro': '"Source Code Pro", monospace',
+  'fira-code': '"Fira Code", monospace',
+  'jetbrains-mono': '"JetBrains Mono", monospace',
+};
+
+// --- App UI Font ---
+
+export type AppFontFamily = FontFamily | 'geist';
+
+export interface AppFontOption {
+  value: AppFontFamily;
+  label: string;
+  description: string;
+  category: 'serif' | 'sans-serif' | 'monospace';
+}
+
+const geistOption: AppFontOption = {
+  value: 'geist',
+  label: 'Geist',
+  description: 'Modern, clean sans-serif',
+  category: 'sans-serif',
+};
+
+export const APP_FONT_OPTIONS: AppFontOption[] = [
+  geistOption,
+  ...fontOptions.map((f) => ({
+    value: f.value,
+    label: f.label,
+    description: f.description,
+    category: f.category,
+  })),
+];
+
+export const APP_FONT_CSS_MAP: Record<AppFontFamily, string> = {
+  geist: "'GeistVariable', 'Geist', sans-serif",
+  ...fontFamilyMap,
+};
+
+export const appFontCategories = {
+  'sans-serif': APP_FONT_OPTIONS.filter((font) => font.category === 'sans-serif'),
+  serif: APP_FONT_OPTIONS.filter((font) => font.category === 'serif'),
+  monospace: APP_FONT_OPTIONS.filter((font) => font.category === 'monospace'),
 };

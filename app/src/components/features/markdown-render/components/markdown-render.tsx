@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
 
+import { ReactErrorBoundary } from '@/components/utils/react-error-boundary';
 import { cn } from '@/lib/utils';
 
 import { markdownComponents } from './renderers';
@@ -33,24 +34,35 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
 
     return (
       <div className={cn('markdown-content', className)} style={containerStyle}>
-        <ReactMarkdown
-          components={markdownComponents}
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[
-            [
-              rehypeSanitize,
-              {
-                ...defaultSchema,
-                attributes: {
-                  ...defaultSchema.attributes,
-                  code: [...(defaultSchema.attributes?.code || []), ['className', /^language-./]],
-                },
-              },
-            ],
-          ]}
+        <ReactErrorBoundary
+          fallback={
+            <div className="p-4 text-sm text-muted-foreground border border-destructive/20 rounded-md bg-destructive/5">
+              Failed to render this section. Try refreshing the page.
+            </div>
+          }
         >
-          {markdown}
-        </ReactMarkdown>
+          <ReactMarkdown
+            components={markdownComponents}
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[
+              [
+                rehypeSanitize,
+                {
+                  ...defaultSchema,
+                  attributes: {
+                    ...defaultSchema.attributes,
+                    code: [
+                      ...(defaultSchema.attributes?.code || []),
+                      ['className', /^language-[\w+-]+$/],
+                    ],
+                  },
+                },
+              ],
+            ]}
+          >
+            {markdown}
+          </ReactMarkdown>
+        </ReactErrorBoundary>
       </div>
     );
   }

@@ -54,10 +54,14 @@ const FontFamilySelector: React.FC = () => {
       </div>
 
       <ScrollArea className="h-80 flex-1">
-        {(['sans-serif', 'serif'] as const).map((category, index) => (
-          <div key={category} className={index === 0 ? 'mb-4' : undefined}>
+        {(['sans-serif', 'serif', 'monospace'] as const).map((category, index) => (
+          <div key={category} className={index === 0 ? 'mb-4' : 'mt-4'}>
             <div className="text-xs text-muted-foreground px-2 mb-1">
-              {category === 'sans-serif' ? 'Sans-serif' : 'Serif'}
+              {category === 'sans-serif'
+                ? 'Sans-serif'
+                : category === 'serif'
+                  ? 'Serif'
+                  : 'Monospace'}
             </div>
             <div className="-mx-2">
               {fontCategories[category].map((font) => (

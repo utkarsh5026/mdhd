@@ -42,7 +42,7 @@ const ThemePreview = memo<ThemePreviewProps>(
       <button
         className={cn(
           'flex items-center w-full rounded-2xl py-2.5 px-3 text-left transition-all duration-200',
-          'hover:scale-[1.01] group font-cascadia-code',
+          'hover:scale-[1.01] group',
           isSelected
             ? 'bg-primary/10 border border-primary/30 shadow-sm'
             : 'hover:bg-secondary/40 hover:shadow-sm border border-transparent'

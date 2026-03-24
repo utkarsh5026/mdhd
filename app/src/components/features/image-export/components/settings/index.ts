@@ -1,0 +1,14 @@
+export { AnnotationsSection } from './annotations-section';
+export { BackgroundSection } from './background-section';
+export { CaptionSection } from './caption-section';
+export { CodeSection } from './code-section';
+export { ExportScaleSection } from './export-scale-section';
+export { FiltersSection } from './filters-section';
+export { FrameSection } from './frame-section';
+export { GradientBorderSection } from './gradient-border-section';
+export { LayoutSection } from './layout-section';
+export { LineHighlightSection } from './line-highlight-section';
+export { PerspectiveSection } from './perspective-section';
+export { PresetsSection } from './presets-section';
+export { WatermarkSection } from './watermark-section';
+export { WindowSection } from './window-section';

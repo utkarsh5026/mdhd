@@ -40,18 +40,14 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
       <div className="flex items-center space-x-3">
         <div className="p-2 bg-primary/10 rounded-2xl">{icon}</div>
         <div>
-          <h3 className="font-semibold text-base">{title}</h3>
-          <p className="hidden lg:block text-sm text-muted-foreground">{description}</p>
+          <h3 className="font-semibold text-sm">{title}</h3>
+          <p className="hidden lg:block text-xs text-muted-foreground">{description}</p>
         </div>
       </div>
       {rightContent}
     </div>
   );
 };
-
-// ============================================================================
-// SettingToggle Component
-// ============================================================================
 
 interface SettingToggleProps {
   icon: React.ReactNode;
@@ -75,7 +71,7 @@ export const SettingToggle: React.FC<SettingToggleProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer group',
+        'flex items-center justify-between p-4 rounded-xl border transition-all duration-200 cursor-pointer group',
         checked
           ? 'border-primary/30 bg-primary/5'
           : 'border-border/30 bg-card/30 hover:border-border/50 hover:bg-card/50'
@@ -85,7 +81,7 @@ export const SettingToggle: React.FC<SettingToggleProps> = ({
       <div className="flex items-center gap-3">
         <div
           className={cn(
-            'p-2 rounded-full transition-colors duration-200',
+            'p-2 rounded transition-colors duration-200',
             checked ? 'bg-primary/20 text-primary' : 'bg-muted/50 text-muted-foreground'
           )}
         >
@@ -104,10 +100,6 @@ export const SettingToggle: React.FC<SettingToggleProps> = ({
     </div>
   );
 };
-
-// ============================================================================
-// SelectableOption Component
-// ============================================================================
 
 interface SelectableOptionProps {
   title: string;
@@ -177,10 +169,6 @@ export const SelectableOption: React.FC<SelectableOptionProps> = ({
     </button>
   );
 };
-
-// ============================================================================
-// ExpandableCategory Component
-// ============================================================================
 
 interface ExpandableCategoryProps {
   icon: string;
