@@ -2,8 +2,8 @@ import React, {
   createContext,
   memo,
   startTransition,
+  use,
   useCallback,
-  useContext,
   useMemo,
   useState,
 } from 'react';
@@ -18,7 +18,7 @@ interface TabsContextValue {
 const TabsContext = createContext<TabsContextValue | null>(null);
 
 function useTabsContext() {
-  const context = useContext(TabsContext);
+  const context = use(TabsContext);
   if (!context) {
     throw new Error('Tabs components must be used within a FastTabs provider');
   }
@@ -77,7 +77,7 @@ const FastTabsList = memo(function FastTabsList({ className, children }: FastTab
       data-slot="tabs-list"
       role="tablist"
       className={cn(
-        'bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]',
+        'bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-0.75',
         className
       )}
     >

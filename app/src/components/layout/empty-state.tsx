@@ -1,5 +1,5 @@
 import { FileText, Upload } from 'lucide-react';
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { useToggle } from '@/hooks';
@@ -9,7 +9,7 @@ interface EmptyStateProps {
   onStartReading: (content: string) => void;
 }
 
-const EmptyState: React.FC<EmptyStateProps> = memo(({ onStartReading }) => {
+const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
   const [isDragging, setIsDragging] = useState(false);
   const { state: showPasteArea, setTrue: openPasteArea, setFalse: closePasteArea } = useToggle();
   const [text, setText] = useState('');
@@ -89,7 +89,7 @@ const EmptyState: React.FC<EmptyStateProps> = memo(({ onStartReading }) => {
       setText('');
       closePasteArea();
     }
-  }, [text, onStartReading]);
+  }, [text, onStartReading, closePasteArea]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -101,7 +101,7 @@ const EmptyState: React.FC<EmptyStateProps> = memo(({ onStartReading }) => {
         setText('');
       }
     },
-    [handleSubmit]
+    [handleSubmit, closePasteArea]
   );
 
   return (
@@ -227,7 +227,7 @@ const EmptyState: React.FC<EmptyStateProps> = memo(({ onStartReading }) => {
       </div>
     </div>
   );
-});
+};
 
 EmptyState.displayName = 'EmptyState';
 export default EmptyState;

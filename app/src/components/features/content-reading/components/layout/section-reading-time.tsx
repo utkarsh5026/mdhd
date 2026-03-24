@@ -1,5 +1,5 @@
 import { Clock } from 'lucide-react';
-import { memo } from 'react';
+import React from 'react';
 
 import type { MarkdownSection } from '@/services/section/parsing';
 
@@ -9,7 +9,7 @@ interface SectionReadingTimeProps {
 
 const WORDS_PER_MINUTE = 250;
 
-const SectionReadingTime: React.FC<SectionReadingTimeProps> = memo(({ section }) => {
+const SectionReadingTime: React.FC<SectionReadingTimeProps> = ({ section }) => {
   const minutes = Math.ceil(section.wordCount / WORDS_PER_MINUTE);
 
   if (section.wordCount < 10) return null;
@@ -24,7 +24,7 @@ const SectionReadingTime: React.FC<SectionReadingTimeProps> = memo(({ section })
       <span>{section.wordCount.toLocaleString()} words</span>
     </div>
   );
-});
+};
 
 SectionReadingTime.displayName = 'SectionReadingTime';
 export default SectionReadingTime;

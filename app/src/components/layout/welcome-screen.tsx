@@ -1,5 +1,5 @@
 import { FileText, FolderOpen, Upload } from 'lucide-react';
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   useFileStoreActions,
@@ -25,7 +25,7 @@ function flattenFiles(nodes: FileTreeNode[]): FileTreeNode[] {
   return files;
 }
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFileNodeOpen }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNodeOpen }) => {
   const [isDragging, setIsDragging] = useState(false);
   const { state: showPasteArea, setTrue: openPasteArea, setFalse: closePasteArea } = useToggle();
   const [text, setText] = useState('');
@@ -108,7 +108,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
       setText('');
       closePasteArea();
     }
-  }, [text, onStartReading]);
+  }, [text, onStartReading, closePasteArea]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -118,7 +118,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
         setText('');
       }
     },
-    [handleSubmit]
+    [handleSubmit, closePasteArea]
   );
 
   const [now, setNow] = useState(() => new Date());
@@ -319,7 +319,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = memo(({ onStartReading, onFi
       />
     </div>
   );
-});
+};
 
 WelcomeScreen.displayName = 'WelcomeScreen';
 export default WelcomeScreen;

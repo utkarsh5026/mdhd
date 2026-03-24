@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import React from 'react';
 
 import { useMilestone } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -8,7 +8,7 @@ interface MilestoneCelebrationProps {
   total: number;
 }
 
-const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = memo(({ readCount, total }) => {
+const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = ({ readCount, total }) => {
   const { milestone, visible } = useMilestone(readCount, total);
 
   if (!milestone) return null;
@@ -31,7 +31,7 @@ const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = memo(({ readCo
       </div>
     </div>
   );
-});
+};
 
 MilestoneCelebration.displayName = 'MilestoneCelebration';
 export default MilestoneCelebration;

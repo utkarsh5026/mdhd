@@ -1,11 +1,11 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { memo, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useIsTouch, useLocalStorage } from '@/hooks';
 
 const SWIPE_HINT_KEY = 'mdhd-swipe-hint-shown';
 
-const SwipeHint: React.FC = memo(() => {
+const SwipeHint: React.FC = () => {
   const isTouch = useIsTouch();
   const { storedValue: hintShown, setValue: setHintShown } = useLocalStorage(SWIPE_HINT_KEY, false);
   const [visible, setVisible] = useState(false);
@@ -38,7 +38,7 @@ const SwipeHint: React.FC = memo(() => {
       <ChevronRight className="h-4 w-4 text-muted-foreground animate-pulse" />
     </div>
   );
-});
+};
 
 SwipeHint.displayName = 'SwipeHint';
 export default SwipeHint;

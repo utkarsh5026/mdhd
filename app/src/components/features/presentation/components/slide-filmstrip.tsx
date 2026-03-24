@@ -1,4 +1,4 @@
-import { forwardRef, memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { cn } from '@/lib/utils';
 import type { MarkdownSection } from '@/services/section/parsing';
@@ -61,57 +61,54 @@ interface FilmstripThumbProps {
   index: number;
   isActive: boolean;
   onSelect: (index: number) => void;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
-const FilmstripThumb = memo(
-  forwardRef<HTMLButtonElement, FilmstripThumbProps>(
-    ({ section, index, isActive, onSelect }, ref) => {
-      const heading = useMemo(() => {
-        const { slideMarkdown } = parsePresenterNotes(section.content);
-        const firstLine = slideMarkdown.split('\n').find((l) => l.trim().length > 0);
-        const match = firstLine?.match(/^#{1,6}\s+(.+)$/);
-        return match ? match[1] : `Slide ${index + 1}`;
-      }, [section.content, index]);
+const FilmstripThumb = memo(({ section, index, isActive, onSelect, ref }: FilmstripThumbProps) => {
+  const heading = useMemo(() => {
+    const { slideMarkdown } = parsePresenterNotes(section.content);
+    const firstLine = slideMarkdown.split('\n').find((l) => l.trim().length > 0);
+    const match = firstLine?.match(/^#{1,6}\s+(.+)$/);
+    return match ? match[1] : `Slide ${index + 1}`;
+  }, [section.content, index]);
 
-      const handleClick = useCallback(() => onSelect(index), [onSelect, index]);
+  const handleClick = useCallback(() => onSelect(index), [onSelect, index]);
 
-      return (
-        <button
-          ref={ref}
-          onClick={handleClick}
+  return (
+    <button
+      ref={ref}
+      onClick={handleClick}
+      className={cn(
+        'group relative shrink-0 rounded text-left transition-all duration-200 font-source-code-pro',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+        isActive
+          ? 'bg-primary/10 ring-1 ring-primary/25 shadow-sm shadow-primary/5'
+          : 'bg-foreground/3 ring-1 ring-foreground/6 hover:bg-foreground/6 hover:ring-foreground/10'
+      )}
+    >
+      <div className="w-28 h-14 px-2 py-1.5 flex flex-col justify-between overflow-hidden">
+        <p
           className={cn(
-            'group relative shrink-0 rounded text-left transition-all duration-200 font-source-code-pro',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+            'text-[9px] leading-tight line-clamp-2',
             isActive
-              ? 'bg-primary/10 ring-1 ring-primary/25 shadow-sm shadow-primary/5'
-              : 'bg-foreground/3 ring-1 ring-foreground/6 hover:bg-foreground/6 hover:ring-foreground/10'
+              ? 'text-foreground font-medium'
+              : 'text-foreground/50 group-hover:text-foreground/70'
           )}
         >
-          <div className="w-28 h-14 px-2 py-1.5 flex flex-col justify-between overflow-hidden">
-            <p
-              className={cn(
-                'text-[9px] leading-tight line-clamp-2',
-                isActive
-                  ? 'text-foreground font-medium'
-                  : 'text-foreground/50 group-hover:text-foreground/70'
-              )}
-            >
-              {heading}
-            </p>
-            <span
-              className={cn(
-                'text-[8px] tabular-nums self-end',
-                isActive ? 'text-primary/60' : 'text-muted-foreground/25'
-              )}
-            >
-              {index + 1}
-            </span>
-          </div>
-        </button>
-      );
-    }
-  )
-);
+          {heading}
+        </p>
+        <span
+          className={cn(
+            'text-[8px] tabular-nums self-end',
+            isActive ? 'text-primary/60' : 'text-muted-foreground/25'
+          )}
+        >
+          {index + 1}
+        </span>
+      </div>
+    </button>
+  );
+});
 
 FilmstripThumb.displayName = 'FilmstripThumb';
 
