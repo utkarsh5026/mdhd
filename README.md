@@ -79,11 +79,15 @@ Every heading becomes a boundary. Instead of rendering the whole document at onc
 - 🃏 **Card Mode** — One focused section per screen with smooth 200ms fade transitions, arrow key / spacebar / swipe navigation
 - 📜 **Scroll Mode** — Continuous reading with `IntersectionObserver`-based section tracking and automatic progress updates
 - 🧘 **Zen Mode** — Immersive, distraction-free fullscreen reading with auto-hiding controls
-- 🎨 **25+ Color Themes** — GitHub Dark, Dracula, Nord, Linear, Solarized, and more
-- 🔤 **20+ Fonts** — Serif, sans-serif, and monospace options optimized for long-form reading
+- 🎨 **50+ Color Themes** — GitHub Dark, Dracula, Nord, Linear, Solarized, and more
+- 🔤 **28 Fonts** — Serif, sans-serif, and monospace options optimized for long-form reading
 - ⚙️ **Typography Controls** — Live adjustments for font size, line height, and content width
-- 📊 **Reading Progress** — Per-section and document-wide word-count-based progress tracking
-- 🗂️ **Table of Contents** — Flat list and hierarchical tree views, instantly accessible
+- 🎭 **Markdown Style Customization** — Granular control over heading colors, blockquote styles, list markers, code block containers, and inline code appearance
+- 📊 **Reading Progress** — Per-section and document-wide word-count-based progress tracking with milestone celebrations
+- 🗂️ **Table of Contents** — Embedded sidebar with hierarchical tree view, repositionable to left or right, with reading progress indicators
+- 🔍 **Search** — Full-text search across all sections with instant navigation to results
+- 🎬 **Presentation Mode** — Turn any document into a slideshow with speaker notes, slide overview, and filmstrip view
+- 📄 **PDF Export** — Export documents as formatted PDFs
 - 💾 **Offline File Storage** — Client-side IndexedDB storage for persisting uploaded files across sessions
 - 📑 **Multi-Tab System** — Open multiple documents simultaneously with independent reading states per tab
 - ⌨️ **Keyboard & Touch** — Full keyboard navigation on desktop, native swipe gestures on mobile
@@ -95,6 +99,8 @@ Every heading becomes a boundary. Instead of rendering the whole document at onc
 - 📋 **Snippets Sheet** — Browse all code snippets and media (images, videos) in a document from a single side panel
 - ✏️ **Section Editor** — Edit any markdown section in-place with live editor-preview sync
 - 📤 **Context Menu Exports** — Right-click code blocks, tables, or images to export as image, CSV, Excel, or copy with line numbers
+- 🖌️ **Reading Backgrounds** — Customize with solid colors or background images with opacity, blur, and overlay controls
+- 💻 **Code Display Settings** — Toggle line numbers, code folding, word wrap, and language labels
 
 ---
 
@@ -173,7 +179,20 @@ bun run preview
 |-----|--------|
 | `←` / `→` | Previous / Next section (Card Mode) |
 | `Space` | Next section |
-| `Escape` | Exit Zen Mode |
+| `Escape` | Exit Zen Mode / Exit Fullscreen |
+| `Ctrl/Cmd + F` | Open search |
+| `Ctrl/Cmd + S` | Save edited content |
+
+**Presentation Mode:**
+
+| Key | Action |
+|-----|--------|
+| `→` / `↓` / `Space` | Next slide |
+| `←` / `↑` | Previous slide |
+| `N` | Toggle speaker notes |
+| `G` | Toggle slide overview |
+| `F` | Toggle filmstrip |
+| `Escape` | Exit presentation |
 
 ### Supported Formats
 
@@ -217,7 +236,7 @@ File Upload → IndexedDB → File Explorer (useFileStore)
 
 ### State Management
 
-Three Zustand stores power the app, all persisted to `localStorage`:
+Multiple Zustand stores power the app, all persisted to `localStorage`:
 
 - **`useTabsStore`** — Open documents, active tab, reading mode, per-tab progress, editor-preview sync state
 - **`useReadingSettingsStore`** — Font family, size, line height, content width
@@ -263,7 +282,7 @@ The card format creates natural checkpoints — finishing a section feels like p
 - [x] Card Mode with keyboard & swipe navigation
 - [x] Scroll Mode with IntersectionObserver tracking
 - [x] Zen Mode (distraction-free reading)
-- [x] 25+ color themes & 20+ fonts
+- [x] 50+ color themes & 28 fonts
 - [x] IndexedDB file persistence
 - [x] Multi-tab document system
 - [x] Bionic Reading mode
@@ -274,6 +293,12 @@ The card format creates natural checkpoints — finishing a section feels like p
 - [x] Snippets Sheet — browse all code and media in a document from one panel
 - [x] Section Editor with live editor-preview sync
 - [x] Rich Media Rendering — video support, shimmer loading, gallery view, inline captions
+- [x] Presentation Mode — slideshow with speaker notes, overview, and filmstrip
+- [x] PDF Export
+- [x] Search across sections (Ctrl/Cmd+F)
+- [x] Markdown style customization (headings, blockquotes, lists, code blocks)
+- [x] Reading background customization (solid colors, images)
+- [x] Embedded Table of Contents sidebar with left/right positioning
 - [ ] Scan Mode — collapse paragraphs to first-sentence previews
 - [ ] First Sentence Highlight — auto-emphasize the lead sentence of every paragraph
 - [ ] Dense Paragraph Indicator — visual cues for content-heavy blocks
