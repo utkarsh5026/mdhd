@@ -94,17 +94,14 @@ export function usePdfExport() {
       document.body.appendChild(iframe);
       iframeRef.current = iframe;
 
-      const iframeDoc = iframe.contentDocument ?? iframe.contentWindow?.document;
-      if (!iframeDoc) {
-        setIsExporting(false);
-        return;
-      }
-
-      iframeDoc.open();
-      iframeDoc.write(html);
-      iframeDoc.close();
+      // Use a Blob URL instead of document.write() to avoid DOM-text-as-HTML
+      // reinterpretation (CodeQL js/xss-through-dom).
+      const blob = new Blob([html], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+      iframe.src = blobUrl;
 
       iframe.onload = () => {
+        URL.revokeObjectURL(blobUrl);
         setTimeout(() => {
           if (iframe.contentDocument) {
             injectRenderedSections(iframe.contentDocument);

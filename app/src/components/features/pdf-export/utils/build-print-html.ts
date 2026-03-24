@@ -60,7 +60,8 @@ function collectDocumentStyles(): string {
     }
   }
 
-  return styles.join('\n');
+  // Escape closing </style> sequences so the content cannot break out of its <style> tag.
+  return styles.join('\n').replace(/<\/style/gi, '<\\/style');
 }
 
 function buildTableOfContents(sections: MarkdownSection[]): string {
