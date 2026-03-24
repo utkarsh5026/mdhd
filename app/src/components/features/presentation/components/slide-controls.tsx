@@ -108,7 +108,71 @@ const SlideControls: React.FC<SlideControlsProps> = memo(
             />
           </div>
 
-          <div className="flex items-center justify-between px-5 py-2.5 bg-background/80 backdrop-blur-xl">
+          {/* Mobile: two-row layout */}
+          <div className="sm:hidden">
+            <div className="flex items-center justify-between px-3 py-2 bg-background/80 backdrop-blur-xl">
+              <ControlButton onClick={onExit} icon={X} ariaLabel="Exit presentation" />
+
+              <div className="flex items-center gap-0.5">
+                <ControlButton
+                  onClick={onPrevious}
+                  disabled={!canGoPrev}
+                  icon={ChevronLeft}
+                  ariaLabel="Previous slide"
+                />
+                <button
+                  onClick={onToggleOverview}
+                  className="text-[13px] font-medium tabular-nums min-w-14 text-center px-2 py-1.5 rounded-lg transition-colors duration-200 text-foreground/50 hover:text-foreground hover:bg-foreground/6"
+                  title="Slide overview"
+                >
+                  {currentIndex + 1}
+                  <span className="text-foreground/20 mx-1">/</span>
+                  {total}
+                </button>
+                <ControlButton
+                  onClick={onNext}
+                  disabled={!canGoNext}
+                  icon={ChevronRight}
+                  ariaLabel="Next slide"
+                />
+              </div>
+
+              {startTime ? (
+                <div className="flex items-center gap-1 text-muted-foreground/35">
+                  <Clock className="h-3 w-3" />
+                  <span className="text-xs tabular-nums font-mono">{formatElapsed(elapsed)}</span>
+                </div>
+              ) : (
+                <div className="w-10" />
+              )}
+            </div>
+
+            <div className="flex items-center justify-center gap-3 px-3 pb-2 bg-background/80 backdrop-blur-xl">
+              <ControlButton
+                onClick={onToggleFilmstrip}
+                icon={GalleryHorizontal}
+                label="Slides"
+                ariaLabel="Toggle slide filmstrip"
+                active={showFilmstrip}
+              />
+              <ControlButton
+                onClick={onToggleOverview}
+                icon={Grid3X3}
+                label="Grid"
+                ariaLabel="Slide overview"
+              />
+              <ControlButton
+                onClick={onToggleNotes}
+                icon={StickyNote}
+                label="Notes"
+                ariaLabel="Toggle presenter notes"
+                active={showNotes}
+              />
+            </div>
+          </div>
+
+          {/* Desktop: single-row layout */}
+          <div className="hidden sm:flex items-center justify-between px-5 py-2.5 bg-background/80 backdrop-blur-xl">
             {/* Left: exit + timer */}
             <div className="flex items-center gap-4 min-w-40">
               <ControlButton onClick={onExit} icon={X} label="Exit" />

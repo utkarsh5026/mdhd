@@ -1,4 +1,4 @@
-import { useCallback, useContext } from 'react';
+import { use, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
@@ -45,7 +45,7 @@ function getTabReadingState(tabId: string) {
  * @throws {Error} If called outside a `ReadingTabProvider`.
  */
 export function useReadingTabId(): string {
-  const tabId = useContext(ReadingTabContext);
+  const tabId = use(ReadingTabContext);
   if (!tabId) {
     throw new Error('useReadingTabId must be used within a ReadingTabProvider');
   }

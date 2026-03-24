@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, use, useMemo } from 'react';
 
 import type { CodeSnippet, ImageSnippet } from '@/services/markdown/snippets';
 import { extractSnippets, groupSnippets } from '@/services/markdown/snippets';
@@ -27,4 +27,5 @@ export const ExportSnippetsProvider: React.FC<{
   return <ExportSnippetsContext.Provider value={value}>{children}</ExportSnippetsContext.Provider>;
 };
 
-export const useExportSnippets = () => useContext(ExportSnippetsContext);
+// eslint-disable-next-line react-refresh/only-export-components
+export const useExportSnippets = () => use(ExportSnippetsContext);

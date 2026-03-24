@@ -103,5 +103,6 @@ export const LanguageIcon: React.FC<{
   return <Icon className={className} style={style} />;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const hasLanguageIcon = (language: string): boolean =>
   language.toLowerCase() in LANGUAGE_ICON_MAP;

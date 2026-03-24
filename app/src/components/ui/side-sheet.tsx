@@ -48,14 +48,13 @@ const SideSheet: React.FC<SideSheetProps> = ({
     if (open) {
       setShouldRender(true);
       lockScroll();
+      return () => {
+        unlockScroll();
+      };
     } else {
-      unlockScroll();
       const timer = setTimeout(() => setShouldRender(false), 300);
       return () => clearTimeout(timer);
     }
-    return () => {
-      unlockScroll();
-    };
   }, [open]);
 
   if (!shouldRender) return null;

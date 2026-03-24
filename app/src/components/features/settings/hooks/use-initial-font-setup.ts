@@ -29,6 +29,11 @@ const useInitialFontSetup = () => {
     if (appFontFamily !== 'geist' && appFontFamily !== 'system-ui') {
       loadFont(appFontFamily as FontFamily).catch(() => {});
     }
+
+    return () => {
+      document.documentElement.style.fontFamily = '';
+      document.body.style.fontFamily = '';
+    };
   }, [fontFamily, appFontFamily]);
 };
 

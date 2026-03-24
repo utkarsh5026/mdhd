@@ -1,9 +1,9 @@
 import { Wifi, WifiOff } from 'lucide-react';
-import { memo, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Status = 'online' | 'offline' | 'back-online';
 
-const OfflineIndicator: React.FC = memo(() => {
+const OfflineIndicator: React.FC = () => {
   const [status, setStatus] = useState<Status>(navigator.onLine ? 'online' : 'offline');
   const wasOffline = useRef(!navigator.onLine);
 
@@ -40,7 +40,7 @@ const OfflineIndicator: React.FC = memo(() => {
       <span>{isBackOnline ? 'Back online' : 'Reading offline'}</span>
     </div>
   );
-});
+};
 
 OfflineIndicator.displayName = 'OfflineIndicator';
 export default OfflineIndicator;

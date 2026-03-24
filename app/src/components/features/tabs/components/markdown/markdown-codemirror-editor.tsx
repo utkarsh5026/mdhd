@@ -48,6 +48,9 @@ const MarkdownCodeMirrorEditor: React.FC<MarkdownCodeMirrorEditorProps> = memo(
       },
       [onChange]
     );
+    // Keep a ref so the init effect's updateListener closure is never stale
+    const debouncedOnChangeRef = useRef(debouncedOnChange);
+    debouncedOnChangeRef.current = debouncedOnChange;
 
     const baseTheme = useMemo(
       () =>
@@ -133,7 +136,7 @@ const MarkdownCodeMirrorEditor: React.FC<MarkdownCodeMirrorEditorProps> = memo(
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !isInternalUpdate.current) {
             const newContent = update.state.doc.toString();
-            debouncedOnChange(newContent);
+            debouncedOnChangeRef.current(newContent);
           }
           if (update.selectionSet && onCursorActivityRef.current) {
             const line = update.state.doc.lineAt(update.state.selection.main.head);
@@ -141,7 +144,7 @@ const MarkdownCodeMirrorEditor: React.FC<MarkdownCodeMirrorEditorProps> = memo(
           }
         }),
       ];
-    }, [baseTheme, selectedTheme, debouncedOnChange]);
+    }, [baseTheme, selectedTheme]);
 
     // Initialize editor
     useEffect(() => {

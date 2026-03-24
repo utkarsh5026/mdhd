@@ -1,10 +1,10 @@
-import { memo, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useIsTouch, useLocalStorage } from '@/hooks';
 
 const SIDEBAR_HINT_KEY = 'mdhd-sidebar-hint-shown';
 
-const MobileOnboarding: React.FC = memo(() => {
+const MobileOnboarding: React.FC = () => {
   const isTouch = useIsTouch();
   const { storedValue: hintShown, setValue: setHintShown } = useLocalStorage(
     SIDEBAR_HINT_KEY,
@@ -46,7 +46,7 @@ const MobileOnboarding: React.FC = memo(() => {
       </div>
     </div>
   );
-});
+};
 
 MobileOnboarding.displayName = 'MobileOnboarding';
 export default MobileOnboarding;

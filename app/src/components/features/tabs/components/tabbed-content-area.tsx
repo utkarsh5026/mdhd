@@ -131,6 +131,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
 
       {/* Save File Dialog */}
       <SaveFileDialog
+        key={showSaveDialog ? defaultFileName : 'closed'}
         open={showSaveDialog}
         onOpenChange={setShowSaveDialog}
         defaultFileName={defaultFileName}
