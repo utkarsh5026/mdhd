@@ -1,5 +1,19 @@
 import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Strip characters that could break out of a CSS value context. */
+function escapeCssValue(str: string): string {
+  return str.replace(/[;<>{}]/g, '');
+}
+
 export interface PdfExportOptions {
   title: string;
   sections: MarkdownSection[];
@@ -55,7 +69,7 @@ function buildTableOfContents(sections: MarkdownSection[]): string {
     .map((s) => {
       const indent = (s.level - 1) * 20;
       return `<li style="margin-left: ${indent}px; margin-bottom: 4px;">
-        <span>${s.title}</span>
+        <span>${escapeHtml(s.title)}</span>
       </li>`;
     })
     .join('\n');
@@ -87,13 +101,13 @@ function buildMetadataBlock(metadata: MarkdownMetadata): string {
   const metaItems = otherEntries
     .map(([key, value]) => {
       const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
-      return `<span style="margin-right: 16px;"><strong>${formatKey(key)}:</strong> ${displayValue}</span>`;
+      return `<span style="margin-right: 16px;"><strong>${escapeHtml(formatKey(key))}:</strong> ${escapeHtml(displayValue)}</span>`;
     })
     .join('');
 
   return `
     <div class="pdf-metadata" style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #ddd;">
-      ${title ? `<h1 style="font-size: 1.8em; margin-bottom: 8px; font-weight: 700;">${title}</h1>` : ''}
+      ${title ? `<h1 style="font-size: 1.8em; margin-bottom: 8px; font-weight: 700;">${escapeHtml(String(title))}</h1>` : ''}
       ${metaItems ? `<div style="font-size: 0.85em; color: #666;">${metaItems}</div>` : ''}
     </div>
   `;
@@ -140,7 +154,7 @@ export function buildPrintHtml(options: PdfExportOptions): string {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>${title} — PDF Export</title>
+  <title>${escapeHtml(title)} — PDF Export</title>
   <style>${appStyles}</style>
   <style>
     /* ===== Print-optimized overrides ===== */
@@ -158,9 +172,9 @@ export function buildPrintHtml(options: PdfExportOptions): string {
       padding: 0;
       background: white !important;
       color: #1a1a1a !important;
-      font-family: ${fontFamily};
-      font-size: ${fontSize}px;
-      line-height: ${lineHeight};
+      font-family: ${escapeCssValue(fontFamily)};
+      font-size: ${Number(fontSize)}px;
+      line-height: ${Number(lineHeight)};
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
