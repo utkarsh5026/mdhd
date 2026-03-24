@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { useFileStore } from '@/components/features/file-explorer/store/file-store';
+import { useToggle } from '@/hooks';
 import { fileStorageDB } from '@/services/indexeddb';
 
 import { useTabsStore } from '../store/tabs-store';
@@ -18,8 +19,8 @@ import { useTabsStore } from '../store/tabs-store';
  *
  */
 export function useSaveShortcut() {
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const { state: showSaveDialog, setTrue: openSaveDialog, set: setShowSaveDialog } = useToggle();
+  const { state: isSaving, setTrue: startSaving, setFalse: stopSaving } = useToggle();
 
   const activeTab = useTabsStore((state) => state.tabs.find((t) => t.id === state.activeTabId));
   const updateTabSource = useTabsStore((state) => state.updateTabSource);
@@ -38,17 +39,17 @@ export function useSaveShortcut() {
 
         if (activeTab.sourceType === 'file' && activeTab.sourceFileId) {
           try {
-            setIsSaving(true);
+            startSaving();
             await fileStorageDB.updateFile(activeTab.sourceFileId, activeTab.content);
             toast.success('File saved');
           } catch {
             toast.error('Failed to save file');
           } finally {
-            setIsSaving(false);
+            stopSaving();
           }
           return;
         }
-        setShowSaveDialog(true);
+        openSaveDialog();
       }
     };
 
@@ -66,7 +67,7 @@ export function useSaveShortcut() {
     async (fileName: string) => {
       if (!activeTab) return;
 
-      setIsSaving(true);
+      startSaving();
 
       try {
         const existingFile = await fileStorageDB.getFileByPath(`/${fileName}`);
@@ -91,10 +92,10 @@ export function useSaveShortcut() {
 
         toast.success(`Saved as ${fileName}`);
       } finally {
-        setIsSaving(false);
+        stopSaving();
       }
     },
-    [activeTab, updateTabSource]
+    [activeTab, updateTabSource, startSaving, stopSaving]
   );
 
   return {

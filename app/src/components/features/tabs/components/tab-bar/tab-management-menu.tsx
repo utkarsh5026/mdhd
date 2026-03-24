@@ -1,5 +1,5 @@
 import { MoreHorizontal } from 'lucide-react';
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +13,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useToggle } from '@/hooks';
 
 import {
   useActiveTabId,
@@ -58,7 +59,7 @@ const TabManagementMenu: React.FC = memo(() => {
     closeTabsBySourceType,
   } = useTabClose();
 
-  const [isOpen, setIsOpen] = useState(false);
+  const { state: isOpen, set: setIsOpen } = useToggle();
 
   const uniqueFolders = useMemo(() => {
     if (!isOpen) return [];

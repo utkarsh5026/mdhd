@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import { useThemeFloatingPicker } from '@/components/shared/theme/store/theme-store';
+import { useToggle } from '@/hooks';
 
 /** Return shape for {@link useReadingDialogs}. */
 interface UseReadingDialogsReturn {
@@ -29,10 +30,10 @@ interface UseReadingDialogsReturn {
  * @returns Dialog open states, their setters, and wrapped open handlers.
  */
 export const useReadingDialogs = (handleInteraction: () => void): UseReadingDialogsReturn => {
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [pdfExportOpen, setPdfExportOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [tocOpen, setTocOpen] = useState(false);
+  const { state: settingsOpen, setTrue: openSettings, set: setSettingsOpen } = useToggle();
+  const { state: pdfExportOpen, setTrue: openPdfExport, set: setPdfExportOpen } = useToggle();
+  const { state: searchOpen, set: setSearchOpen } = useToggle();
+  const { state: tocOpen, toggle: toggleToc, set: setTocOpen } = useToggle();
 
   const { openFloatingPicker, pendingFloatingPickerOpen } = useThemeFloatingPicker();
 
@@ -46,19 +47,19 @@ export const useReadingDialogs = (handleInteraction: () => void): UseReadingDial
   }, [settingsOpen, pendingFloatingPickerOpen, openFloatingPicker]);
 
   const handleSettingsOpen = useCallback(() => {
-    setSettingsOpen(true);
+    openSettings();
     handleInteraction();
-  }, [handleInteraction]);
+  }, [handleInteraction, openSettings]);
 
   const handlePdfExportOpen = useCallback(() => {
-    setPdfExportOpen(true);
+    openPdfExport();
     handleInteraction();
-  }, [handleInteraction]);
+  }, [handleInteraction, openPdfExport]);
 
   const handleTocOpen = useCallback(() => {
-    setTocOpen((prev) => !prev);
+    toggleToc();
     handleInteraction();
-  }, [handleInteraction]);
+  }, [handleInteraction, toggleToc]);
 
   return {
     settingsOpen,

@@ -1,6 +1,6 @@
 import { toPng } from 'html-to-image';
 import { Check, Copy } from 'lucide-react';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
 
 import { CodeImageExportDialog } from '@/components/features/image-export';
 import { useExportSnippets } from '@/components/features/image-export/context/export-snippets-context';
@@ -15,6 +15,7 @@ import {
 import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import ExportContextMenu from '@/components/ui/export-context-menu';
+import { useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { download, getNearestHeading, toFilename } from '@/utils/download';
 import { tryAsync } from '@/utils/functions/error';
@@ -55,8 +56,8 @@ const LANGUAGE_TO_EXT: Record<string, string> = {
  */
 const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ className, children }) => {
   const [copied, setCopied] = React.useState(false);
-  const [imageDialogOpen, setImageDialogOpen] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const { state: imageDialogOpen, setTrue: openImageDialog, set: setImageDialogOpen } = useToggle();
+  const { state: sheetOpen, setTrue: openSheet, set: setSheetOpen } = useToggle();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const codeBlockRef = useRef<HTMLDivElement>(null);
 
@@ -117,7 +118,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
     {
       label: 'Customize image',
       description: 'Carbon-style export',
-      onSelect: () => setImageDialogOpen(true),
+      onSelect: openImageDialog,
     },
   ];
 
@@ -181,11 +182,11 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
             ref={codeBlockRef}
             className={cn('overflow-hidden p-4 cursor-zoom-in', containerClasses.inner)}
             style={{ backgroundColor }}
-            onClick={() => setSheetOpen(true)}
+            onClick={openSheet}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') setSheetOpen(true);
+              if (e.key === 'Enter') openSheet();
             }}
           >
             <CodeMirrorDisplay

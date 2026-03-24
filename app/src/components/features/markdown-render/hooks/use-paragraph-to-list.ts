@@ -1,4 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
+
+import { useToggle } from '@/hooks';
 
 /**
  * Abbreviations that NEVER end a sentence — the sentence always continues
@@ -98,12 +100,15 @@ interface UseParagraphToListReturn {
  * from the paragraph's children when list view is active.
  */
 export function useParagraphToList(children: React.ReactNode): UseParagraphToListReturn {
-  const [isListView, setIsListView] = useState(false);
+  const { state: isListView, toggle } = useToggle();
 
-  const toggleListView = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsListView((prev) => !prev);
-  }, []);
+  const toggleListView = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      toggle();
+    },
+    [toggle]
+  );
 
   const sentences = useMemo(
     () => (isListView ? splitChildrenIntoSentences(children) : []),

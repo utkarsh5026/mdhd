@@ -2,6 +2,7 @@ import { FileText, Upload } from 'lucide-react';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
@@ -10,7 +11,7 @@ interface EmptyStateProps {
 
 const EmptyState: React.FC<EmptyStateProps> = memo(({ onStartReading }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [showPasteArea, setShowPasteArea] = useState(false);
+  const { state: showPasteArea, setTrue: openPasteArea, setFalse: closePasteArea } = useToggle();
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +87,7 @@ const EmptyState: React.FC<EmptyStateProps> = memo(({ onStartReading }) => {
     if (text.trim()) {
       onStartReading(text);
       setText('');
-      setShowPasteArea(false);
+      closePasteArea();
     }
   }, [text, onStartReading]);
 
@@ -96,7 +97,7 @@ const EmptyState: React.FC<EmptyStateProps> = memo(({ onStartReading }) => {
         handleSubmit();
       }
       if (e.key === 'Escape') {
-        setShowPasteArea(false);
+        closePasteArea();
         setText('');
       }
     },
@@ -169,7 +170,7 @@ const EmptyState: React.FC<EmptyStateProps> = memo(({ onStartReading }) => {
             <Button
               variant="outline"
               className="flex-1 gap-2 rounded h-10 text-sm"
-              onClick={() => setShowPasteArea(true)}
+              onClick={() => openPasteArea()}
             >
               <FileText className="w-3.5 h-3.5" />
               Type / paste
@@ -197,7 +198,7 @@ const EmptyState: React.FC<EmptyStateProps> = memo(({ onStartReading }) => {
                 size="sm"
                 className="rounded-lg h-8 text-xs text-muted-foreground"
                 onClick={() => {
-                  setShowPasteArea(false);
+                  closePasteArea();
                   setText('');
                 }}
               >

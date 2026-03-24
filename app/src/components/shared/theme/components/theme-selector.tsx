@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/fast-tabs';
+import { useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { type ThemeOption as ThemeTypeOption } from '@/theme/themes';
 
@@ -33,7 +34,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   const { allThemes, loadThemes } = useThemeStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(['Modern Dark']));
-  const [isOpen, setIsOpen] = useState(false);
+  const { state: isOpen, set: setIsOpen } = useToggle();
 
   useEffect(() => {
     if (isOpen) {

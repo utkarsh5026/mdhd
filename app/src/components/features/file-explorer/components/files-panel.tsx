@@ -1,21 +1,18 @@
 import { Loader2 } from 'lucide-react';
 import React, { memo, useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
 import type { FileTreeNode, StoredFile } from '@/services/indexeddb';
 
 import {
   useDirectory,
-  useExpandedDirectories,
-  useFileError,
+  useFileStore,
   useFileStoreActions,
-  useFileTree,
   useFileUpload,
-  useIsFileLoading,
-  useIsFileStoreInitialized,
-  useSelectedFile,
 } from '../store/file-store';
 import { DeleteDialog } from './actions/delete-dialog';
 import { FileTree } from './file-tree/file-tree';
@@ -29,17 +26,27 @@ interface FilesPanelProps {
 }
 
 const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect }) => {
-  const fileTree = useFileTree();
-  const selectedFile = useSelectedFile();
-  const expandedDirectories = useExpandedDirectories();
-  const isInitialized = useIsFileStoreInitialized();
-  const isLoading = useIsFileLoading();
-  const initError = useFileError();
+  const { fileTree, selectedFile, expandedDirectories, isInitialized, isLoading, initError } =
+    useFileStore(
+      useShallow((s) => ({
+        fileTree: s.fileTree,
+        selectedFile: s.selectedFile,
+        expandedDirectories: s.expandedDirectories,
+        isInitialized: s.isInitialized,
+        isLoading: s.isLoading,
+        initError: s.error,
+      }))
+    );
   const { isUploading, uploadProgress, uploadDirectory, uploadFiles } = useFileUpload();
   const { toggleDirectory, deleteDirectory } = useDirectory();
   const { initialize, selectFile, handleDrop, deleteFile, clearError } = useFileStoreActions();
 
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const {
+    state: deleteDialogOpen,
+    setTrue: openDeleteDialog,
+    setFalse: closeDeleteDialog,
+    set: setDeleteDialogOpen,
+  } = useToggle();
   const [nodeToDelete, setNodeToDelete] = useState<FileTreeNode | null>(null);
 
   useEffect(() => {
@@ -47,16 +54,6 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
       initialize();
     }
   }, [isInitialized, initialize]);
-
-  const handleFileClick = (file: StoredFile) => {
-    selectFile(file);
-    onFileSelect?.(file);
-  };
-
-  const handleDeleteNode = (node: FileTreeNode) => {
-    setNodeToDelete(node);
-    setDeleteDialogOpen(true);
-  };
 
   const handleConfirmDelete = async () => {
     if (!nodeToDelete) return;
@@ -67,20 +64,8 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
       await deleteDirectory(nodeToDelete.path);
     }
 
-    setDeleteDialogOpen(false);
+    closeDeleteDialog();
     setNodeToDelete(null);
-  };
-
-  const handleFilesUpload = (files: FileList) => {
-    uploadFiles(Array.from(files));
-  };
-
-  const handleDirectoryUpload = (files: FileList) => {
-    uploadDirectory(files);
-  };
-
-  const handleDropZone = (items: DataTransferItemList) => {
-    handleDrop(items);
   };
 
   if (!isInitialized) {
@@ -122,12 +107,12 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
               Explorer
             </span>
             <div className="flex items-center gap-0.5">
-              <UploadButton variant="files" onUpload={handleFilesUpload} disabled={isUploading} />
               <UploadButton
-                variant="directory"
-                onUpload={handleDirectoryUpload}
+                variant="files"
+                onUpload={(files) => uploadFiles(Array.from(files))}
                 disabled={isUploading}
               />
+              <UploadButton variant="directory" onUpload={uploadDirectory} disabled={isUploading} />
             </div>
           </div>
         </div>
@@ -139,7 +124,7 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
           </>
         )}
 
-        <DropZone onDrop={handleDropZone} className="flex flex-col flex-1 overflow-y-auto">
+        <DropZone onDrop={handleDrop} className="flex flex-col flex-1 overflow-y-auto">
           {isLoading && !isUploading ? (
             <div className="flex items-center justify-center flex-1">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -149,9 +134,15 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
               nodes={fileTree}
               selectedPath={selectedFile?.path || null}
               expandedPaths={expandedDirectories}
-              onFileClick={handleFileClick}
+              onFileClick={(file) => {
+                selectFile(file);
+                onFileSelect?.(file);
+              }}
               onDirectoryToggle={toggleDirectory}
-              onDelete={handleDeleteNode}
+              onDelete={(node) => {
+                setNodeToDelete(node);
+                openDeleteDialog();
+              }}
             />
           )}
         </DropZone>
