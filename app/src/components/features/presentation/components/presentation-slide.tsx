@@ -64,7 +64,12 @@ const PresentationSlide: React.FC<PresentationSlideProps> = memo(
           transitionTransform
         )}
       >
-        <div className={cn('w-full px-16 py-20 m-auto', isTitle ? 'max-w-5xl' : 'max-w-4xl')}>
+        <div
+          className={cn(
+            'w-full px-5 py-8 sm:px-16 sm:py-20 m-auto',
+            isTitle ? 'max-w-5xl' : 'max-w-4xl'
+          )}
+        >
           <div
             className={cn(
               'prose prose-xl max-w-none',
@@ -75,21 +80,21 @@ const PresentationSlide: React.FC<PresentationSlideProps> = memo(
               'prose-code:text-[0.85em] prose-code:bg-foreground/[0.06] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-normal',
               'prose-a:text-primary/90 prose-a:no-underline prose-a:font-medium hover:prose-a:underline',
               // Blocks
-              'prose-blockquote:text-xl prose-blockquote:border-primary/25 prose-blockquote:italic prose-blockquote:text-foreground/60 prose-blockquote:font-light',
+              'prose-blockquote:text-base sm:prose-blockquote:text-xl prose-blockquote:border-primary/25 prose-blockquote:italic prose-blockquote:text-foreground/60 prose-blockquote:font-light',
               'prose-img:rounded-2xl prose-img:shadow-xl',
               'prose-hr:border-border/20 prose-hr:my-12',
               'prose-pre:rounded-xl prose-pre:shadow-lg prose-pre:bg-foreground/[0.04]',
               isTitle
                 ? [
-                    'prose-h1:text-7xl prose-h1:font-bold prose-h1:leading-[1.08] prose-h1:mb-6',
-                    'prose-p:text-2xl prose-p:text-muted-foreground prose-p:text-center prose-p:mt-4 prose-p:leading-relaxed prose-p:font-light',
+                    'prose-h1:text-4xl sm:prose-h1:text-7xl prose-h1:font-bold prose-h1:leading-[1.08] prose-h1:mb-4 sm:prose-h1:mb-6',
+                    'prose-p:text-lg sm:prose-p:text-2xl prose-p:text-muted-foreground prose-p:text-center prose-p:mt-4 prose-p:leading-relaxed prose-p:font-light',
                   ]
                 : [
-                    'prose-h1:text-5xl prose-h1:leading-tight',
-                    'prose-h2:text-4xl prose-h2:leading-snug',
-                    'prose-h3:text-3xl prose-h3:leading-snug',
-                    'prose-p:text-[1.35rem] prose-p:leading-[1.75] prose-p:text-foreground/80',
-                    'prose-li:text-xl prose-li:leading-[1.75] prose-li:text-foreground/80',
+                    'prose-h1:text-2xl sm:prose-h1:text-5xl prose-h1:leading-tight',
+                    'prose-h2:text-xl sm:prose-h2:text-4xl prose-h2:leading-snug',
+                    'prose-h3:text-lg sm:prose-h3:text-3xl prose-h3:leading-snug',
+                    'prose-p:text-base sm:prose-p:text-[1.35rem] prose-p:leading-[1.75] prose-p:text-foreground/80',
+                    'prose-li:text-base sm:prose-li:text-xl prose-li:leading-[1.75] prose-li:text-foreground/80',
                     'prose-li:marker:text-primary/40',
                   ]
             )}

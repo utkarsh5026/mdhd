@@ -35,7 +35,7 @@ const SlideFilmstrip: React.FC<SlideFilmstripProps> = memo(
         <div>
           <div
             ref={scrollRef}
-            className="flex items-center gap-1.5 px-4 py-2 overflow-x-auto scrollbar-none bg-background/70 backdrop-blur-xl border-t border-foreground/5"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 overflow-x-auto scrollbar-none bg-background/70 backdrop-blur-xl border-t border-foreground/5"
           >
             {sections.map((section, i) => (
               <FilmstripThumb
@@ -86,7 +86,7 @@ const FilmstripThumb = memo(({ section, index, isActive, onSelect, ref }: Filmst
           : 'bg-foreground/3 ring-1 ring-foreground/6 hover:bg-foreground/6 hover:ring-foreground/10'
       )}
     >
-      <div className="w-28 h-14 px-2 py-1.5 flex flex-col justify-between overflow-hidden">
+      <div className="w-24 h-12 sm:w-28 sm:h-14 px-2 py-1.5 flex flex-col justify-between overflow-hidden">
         <p
           className={cn(
             'text-[9px] leading-tight line-clamp-2',

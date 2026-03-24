@@ -23,7 +23,7 @@ const PresenterNotesPanel: React.FC<PresenterNotesPanelProps> = memo(({ section,
         'animate-in slide-in-from-bottom-2 fade-in duration-300'
       )}
     >
-      <div className="max-w-3xl mx-auto px-10 py-5 max-h-48 overflow-y-auto">
+      <div className="max-w-3xl mx-auto px-4 sm:px-10 py-3 sm:py-5 max-h-32 sm:max-h-48 overflow-y-auto">
         <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/50 mb-3 block">
           Speaker Notes
         </span>

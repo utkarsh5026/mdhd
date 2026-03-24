@@ -23,7 +23,7 @@ const SlideOverview: React.FC<SlideOverviewProps> = memo(
     return (
       <div className="fixed inset-0 z-70 flex flex-col bg-background/97 backdrop-blur-2xl animate-in fade-in duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between px-10 py-6">
+        <div className="flex items-center justify-between px-4 sm:px-10 py-4 sm:py-6">
           <div>
             <h2 className="text-base font-medium text-foreground/90">Slide Overview</h2>
             <p className="text-xs text-muted-foreground/50 mt-0.5">{sections.length} slides</p>
@@ -37,7 +37,7 @@ const SlideOverview: React.FC<SlideOverviewProps> = memo(
         </div>
 
         {/* Grid */}
-        <div className="flex-1 overflow-y-auto px-10 pb-10">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-10 pb-6 sm:pb-10">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 max-w-7xl mx-auto">
             {sections.map((section, i) => (
               <SlideThumb
