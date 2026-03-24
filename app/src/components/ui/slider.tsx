@@ -1,6 +1,6 @@
 import * as SliderPrimitive from '@radix-ui/react-slider';
 import * as React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -15,20 +15,19 @@ function Slider({
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
   const controlled = value !== undefined;
-  const initial = useMemo(
-    () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+  const initialRef = React.useRef(
+    Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]
   );
 
-  const [localValue, setLocalValue] = useState<number[]>(initial);
+  const [localValue, setLocalValue] = useState<number[]>(initialRef.current);
+  const [prevValue, setPrevValue] = useState(value);
   const dragging = React.useRef(false);
 
-  useEffect(() => {
-    if (controlled && Array.isArray(value) && !dragging.current) {
-      setLocalValue(value);
-    }
-  }, [controlled, value]);
+  // Sync external value changes during render (avoids a double-render from useEffect)
+  if (controlled && Array.isArray(value) && !dragging.current && value !== prevValue) {
+    setPrevValue(value);
+    setLocalValue(value);
+  }
 
   return (
     <SliderPrimitive.Root
@@ -65,7 +64,7 @@ function Slider({
           )}
         />
       </SliderPrimitive.Track>
-      {Array.from({ length: (controlled ? localValue : initial).length }, (_, index) => (
+      {Array.from({ length: (controlled ? localValue : initialRef.current).length }, (_, index) => (
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
