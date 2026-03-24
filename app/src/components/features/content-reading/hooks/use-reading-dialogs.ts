@@ -7,11 +7,14 @@ interface UseReadingDialogsReturn {
   settingsOpen: boolean;
   pdfExportOpen: boolean;
   searchOpen: boolean;
+  tocOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
   setPdfExportOpen: (open: boolean) => void;
   setSearchOpen: (open: boolean) => void;
+  setTocOpen: (open: boolean) => void;
   handleSettingsOpen: () => void;
   handlePdfExportOpen: () => void;
+  handleTocOpen: () => void;
 }
 
 /**
@@ -29,6 +32,7 @@ export const useReadingDialogs = (handleInteraction: () => void): UseReadingDial
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pdfExportOpen, setPdfExportOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [tocOpen, setTocOpen] = useState(false);
 
   const { openFloatingPicker, pendingFloatingPickerOpen } = useThemeFloatingPicker();
 
@@ -51,14 +55,22 @@ export const useReadingDialogs = (handleInteraction: () => void): UseReadingDial
     handleInteraction();
   }, [handleInteraction]);
 
+  const handleTocOpen = useCallback(() => {
+    setTocOpen((prev) => !prev);
+    handleInteraction();
+  }, [handleInteraction]);
+
   return {
     settingsOpen,
     pdfExportOpen,
     searchOpen,
+    tocOpen,
     setSettingsOpen,
     setPdfExportOpen,
     setSearchOpen,
+    setTocOpen,
     handleSettingsOpen,
     handlePdfExportOpen,
+    handleTocOpen,
   };
 };

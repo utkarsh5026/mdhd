@@ -1,4 +1,4 @@
-import { FileText, LucideIcon, Presentation, Search, Settings, X } from 'lucide-react';
+import { FileText, List, LucideIcon, Presentation, Search, Settings, X } from 'lucide-react';
 
 import { TooltipButton } from '@/components/ui/tooltip-button';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ interface HeaderProps {
   onSearch?: () => void;
   onPresent?: () => void;
   onPdfExport?: () => void;
+  onToc?: () => void;
   isVisible: boolean;
   breadcrumb?: React.ReactNode;
   mobileBreadcrumb?: React.ReactNode;
@@ -58,6 +59,7 @@ const Header: React.FC<HeaderProps> = ({
   onSearch,
   onPresent,
   onPdfExport,
+  onToc,
   isVisible,
   breadcrumb,
   mobileBreadcrumb,
@@ -89,6 +91,7 @@ const Header: React.FC<HeaderProps> = ({
 
           {/* Right: controls */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {onToc && <BarButton onClick={onToc} icon={List} tooltip="Table of Contents" />}
             {onSearch && <BarButton onClick={onSearch} icon={Search} tooltip="Search (Ctrl+F)" />}
             {onPdfExport && (
               <BarButton onClick={onPdfExport} icon={FileText} tooltip="Export to PDF" />

@@ -79,6 +79,7 @@ const FullscreenInner: React.FC<{ onExit: () => void }> = memo(({ onExit }) => {
           onSearch,
           onPresent,
           onPdfExport,
+          onToc,
           isVisible,
           breadcrumb,
           mobileBreadcrumb,
@@ -89,6 +90,7 @@ const FullscreenInner: React.FC<{ onExit: () => void }> = memo(({ onExit }) => {
             onSearch={onSearch}
             onPresent={onPresent}
             onPdfExport={onPdfExport}
+            onToc={onToc}
             isVisible={isVisible}
             breadcrumb={breadcrumb}
             mobileBreadcrumb={mobileBreadcrumb}

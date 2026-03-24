@@ -10,6 +10,7 @@ export const MILESTONES: Milestone[] = [
   { threshold: 0.25, emoji: '🎯', label: 'Quarter done!' },
   { threshold: 0.5, emoji: '🔥', label: 'Halfway there!' },
   { threshold: 0.75, emoji: '⚡', label: 'Almost there!' },
+  { threshold: 0.9, emoji: '🚀', label: 'So close!' },
   { threshold: 1, emoji: '🎉', label: 'All done!' },
 ];
 
@@ -18,11 +19,7 @@ interface UseMilestoneOptions {
   exitDelay?: number;
 }
 
-export function useMilestone(
-  readCount: number,
-  total: number,
-  options: UseMilestoneOptions = {}
-) {
+export function useMilestone(readCount: number, total: number, options: UseMilestoneOptions = {}) {
   const { showDuration = 1500, exitDelay = 300 } = options;
 
   const [milestone, setMilestone] = useState<Milestone | null>(null);

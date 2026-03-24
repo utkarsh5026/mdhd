@@ -78,6 +78,48 @@ const MilestoneEmoji: FC<{ readCount: number; total: number }> = memo(({ readCou
 });
 MilestoneEmoji.displayName = 'MilestoneEmoji';
 
+interface CardNavigationControlsProps {
+  readCount: number;
+  total: number;
+  currentIndex: number;
+  goToPrevious: () => void;
+  goToNext: () => void;
+}
+
+const CardNavigationControls: React.FC<CardNavigationControlsProps> = memo(
+  ({ readCount, total, currentIndex, goToPrevious, goToNext }) => (
+    <>
+      <div className="flex items-center gap-1.5 mr-1">
+        <div className="w-16 h-1.5 rounded-full bg-muted/60 overflow-hidden">
+          <div
+            className="h-full bg-primary/70 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${total > 0 ? (readCount / total) * 100 : 0}%` }}
+          />
+        </div>
+        <span className="text-[10px] text-muted-foreground tabular-nums">
+          {total > 0 ? Math.round((readCount / total) * 100) : 0}%
+        </span>
+        <MilestoneEmoji readCount={readCount} total={total} />
+      </div>
+      <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
+      <HeaderBtn
+        tooltip="Previous Section"
+        icon={ChevronLeft}
+        onClick={goToPrevious}
+        disabled={currentIndex === 0}
+      />
+      <HeaderBtn
+        tooltip="Next Section"
+        icon={ChevronRight}
+        onClick={goToNext}
+        disabled={currentIndex === total - 1}
+      />
+      <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
+    </>
+  )
+);
+CardNavigationControls.displayName = 'CardNavigationControls';
+
 interface InlineHeaderProps {
   onFullscreen: () => void;
   onPdfExport: () => void;
@@ -138,34 +180,13 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
 
           <div className="flex items-center gap-1 shrink-0">
             {readingMode === 'card' && (
-              <>
-                <div className="flex items-center gap-1.5 mr-1">
-                  <div className="w-16 h-1.5 rounded-full bg-muted/60 overflow-hidden">
-                    <div
-                      className="h-full bg-primary/70 rounded-full transition-all duration-500 ease-out"
-                      style={{ width: `${total > 0 ? (readCount / total) * 100 : 0}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-muted-foreground tabular-nums">
-                    {total > 0 ? Math.round((readCount / total) * 100) : 0}%
-                  </span>
-                  <MilestoneEmoji readCount={readCount} total={total} />
-                </div>
-                <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
-                <HeaderBtn
-                  tooltip="Previous Section"
-                  icon={ChevronLeft}
-                  onClick={goToPrevious}
-                  disabled={currentIndex === 0}
-                />
-                <HeaderBtn
-                  tooltip="Next Section"
-                  icon={ChevronRight}
-                  onClick={goToNext}
-                  disabled={currentIndex === total - 1}
-                />
-                <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
-              </>
+              <CardNavigationControls
+                readCount={readCount}
+                total={total}
+                currentIndex={currentIndex}
+                goToPrevious={goToPrevious}
+                goToNext={goToNext}
+              />
             )}
             {onEditSection && readingMode === 'card' && (
               <>
