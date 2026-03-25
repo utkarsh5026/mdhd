@@ -18,7 +18,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
-    "prepare": "cd .. && husky install"
+    "prepare": "cd .. && bunx lefthook install"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
@@ -140,9 +140,9 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^15.15.0",
-    "husky": "^9.1.7",
     "jsdom": "^25.0.1",
     "knip": "^5.78.0",
+    "lefthook": "^2.1.4",
     "lighthouse": "^12.8.2",
     "lint-staged": "^15.4.2",
     "nodemon": "^3.1.9",

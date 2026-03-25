@@ -1,1 +1,0 @@
-cd app && bunx lint-staged

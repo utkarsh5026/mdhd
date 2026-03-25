@@ -1,0 +1,22 @@
+pre-commit:
+  parallel: true
+  commands:
+    frontend:
+      root: "app/"
+      run: bunx lint-staged
+
+    rust-fmt-check:
+      glob: "**/*.rs"
+      root: "server/"
+      run: cargo fmt -- --check
+
+    rust-clippy:
+      glob: "**/*.rs"
+      root: "server/"
+      run: cargo clippy -- -D warnings
+
+commit-msg:
+  commands:
+    commitlint:
+      root: "app/"
+      run: bunx commitlint --edit {1}
