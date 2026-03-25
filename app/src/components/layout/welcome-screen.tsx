@@ -8,6 +8,7 @@ import {
 } from '@/components/features/file-explorer';
 import { useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
+import { useAuthUser } from '@/services/auth';
 import type { FileTreeNode } from '@/services/indexeddb';
 
 interface WelcomeScreenProps {
@@ -33,6 +34,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
 
+  const user = useAuthUser();
   const fileTree = useFileTree();
   const isInitialized = useIsFileStoreInitialized();
   const { initialize } = useFileStoreActions();
@@ -129,11 +131,12 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
     return () => clearInterval(id);
   }, []);
 
+  const firstName = user?.name?.split(/\s/)[0];
+
   const greeting = (() => {
     const h = now.getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
+    const base = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    return firstName ? `${base}, ${firstName}` : base;
   })();
 
   const timeString = now.toLocaleTimeString(undefined, {
@@ -168,13 +171,25 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
         )}
       >
         {/* Header */}
-        <div className="space-y-1">
-          <p className="text-xs font-semibold tracking-widest uppercase text-muted-foreground/40 select-none">
-            mdhd
-          </p>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            {greeting}
-          </h1>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            {user?.avatar_url && (
+              <img
+                src={user.avatar_url}
+                alt=""
+                referrerPolicy="no-referrer"
+                className="h-10 w-10 rounded-full ring-2 ring-border/30"
+              />
+            )}
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold tracking-widest uppercase text-muted-foreground/40 select-none">
+                mdhd
+              </p>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                {greeting}
+              </h1>
+            </div>
+          </div>
           <p className="text-sm tabular-nums text-muted-foreground/60">
             {timeString}
             <span className="block mt-0.5 sm:mt-0 sm:inline sm:ml-2 text-muted-foreground/40">

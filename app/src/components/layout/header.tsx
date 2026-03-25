@@ -5,6 +5,7 @@ import { useTheme } from '@/hooks';
 
 import ThemeSelector from '../shared/theme/components/theme-selector';
 import styles from './header.module.css';
+import UserMenu from './user-menu';
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
@@ -45,6 +46,7 @@ const Header = ({ onToggleSidebar }: HeaderProps) => {
 
           <div className={`flex items-center gap-2 ${styles.slideInRight}`}>
             <ThemeSelector currentTheme={currentTheme.name} onThemeChange={setTheme} />
+            <UserMenu />
           </div>
         </div>
       </div>
