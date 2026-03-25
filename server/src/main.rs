@@ -8,9 +8,14 @@ mod routes;
 mod state;
 mod storage;
 
+use std::time::Duration;
+
 use axum::Router;
+use axum::extract::State;
+use axum::http::{Method, StatusCode, header};
 use axum::routing::get;
-use tower_http::cors::{AllowHeaders, AllowMethods, CorsLayer};
+use tower_http::cors::CorsLayer;
+use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
 use config::Config;
@@ -48,13 +53,15 @@ async fn main() {
                 .parse::<axum::http::HeaderValue>()
                 .expect("Invalid CORS_ORIGIN"),
         )
-        .allow_methods(AllowMethods::any())
-        .allow_headers(AllowHeaders::any());
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
 
     let app = Router::new()
         .route("/health", get(health))
         .merge(routes::create_router(state.clone()))
         .with_state(state)
+        .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))
+        .layer(TimeoutLayer::with_status_code(StatusCode::REQUEST_TIMEOUT, Duration::from_secs(30)))
         .layer(cors)
         .layer(TraceLayer::new_for_http());
 
@@ -62,9 +69,22 @@ async fn main() {
     tracing::info!("Starting server on {addr}");
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
 }
 
-async fn health() -> &'static str {
-    "ok"
+async fn health(State(state): State<AppState>) -> StatusCode {
+    match sqlx::query("SELECT 1").execute(&state.db).await {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::SERVICE_UNAVAILABLE,
+    }
+}
+
+async fn shutdown_signal() {
+    tokio::signal::ctrl_c()
+        .await
+        .expect("failed to install Ctrl+C handler");
+    tracing::info!("Shutdown signal received, draining connections...");
 }

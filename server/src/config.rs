@@ -48,13 +48,15 @@ pub struct Config {
 
 impl Config {
     clone_getters!(
-        /// Google OAuth2 client ID.
+        /// Google `OAuth2` client ID.
         google_client_id,
-        /// Google OAuth2 client secret.
+        /// Google `OAuth2` client secret.
         google_client_secret,
         /// JWT signing secret.
+        #[allow(dead_code)]
         jwt_secret,
         /// Frontend URL for redirects.
+        #[allow(dead_code)]
         frontend_url,
     );
 
