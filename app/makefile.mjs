@@ -9,7 +9,7 @@ import { existsSync } from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const APP_DIR = join(__dirname, "app");
+const APP_DIR = __dirname;
 
 const chalkModulePath = join(
   APP_DIR,
@@ -298,13 +298,13 @@ async function runSetup() {
   }
 }
 
-// Run E2E tests with Playwright
+// Run E2E tests with Playwright (run from repo root so playwright.config is found)
 async function runE2ETests() {
   try {
     console.log(chalk.cyan("Running Playwright E2E tests..."));
     console.log();
 
-    await runCommand("bunx", ["playwright", "test"], { cwd: __dirname });
+    await runCommand("bunx", ["playwright", "test"], { cwd: join(APP_DIR, "..") });
 
     console.log();
     console.log(chalk.green("✓ E2E tests passed!"));
@@ -429,7 +429,6 @@ function showHelp() {
     categories[task.category].push({ name, ...task });
   }
 
-  // Display each category
   for (const [category, categoryTasks] of Object.entries(categories)) {
     console.log(chalk.bold.yellow(`  ${category}`));
     console.log(chalk.dim("  ─────────────────────────────────────"));
@@ -445,7 +444,7 @@ function showHelp() {
   return Promise.resolve();
 }
 
-// Main execution
+
 async function main() {
   const args = process.argv.slice(2);
   const taskName = args[0] || "help";
