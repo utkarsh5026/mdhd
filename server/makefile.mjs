@@ -40,6 +40,21 @@ const tasks = {
     category: "Development",
     action: () => runCargo(["run"]),
   },
+  "dev:prod": {
+    description: "Start server with RUN_ENV=production (local prod config)",
+    category: "Development",
+    action: () => runCargo(["run"], { env: { ...process.env, RUN_ENV: "production" } }),
+  },
+  check: {
+    description: "Type-check without building",
+    category: "Development",
+    action: () => runCargo(["check"]),
+  },
+  watch: {
+    description: "Auto-restart server on file changes (requires cargo-watch)",
+    category: "Development",
+    action: () => runCargo(["watch", "-x", "run"]),
+  },
   build: {
     description: "Debug build",
     category: "Build",
@@ -272,11 +287,11 @@ async function runSetup() {
   console.log(chalk.bold.green("═".repeat(50)));
 }
 
-async function runCargo(args) {
+async function runCargo(args, options = {}) {
   const label = `cargo ${args.join(" ")}`;
   console.log(chalk.cyan(`Running: ${label}...`));
   console.log();
-  await runCommand("cargo", args);
+  await runCommand("cargo", args, options);
   console.log();
   console.log(chalk.green("✓ Done!"));
 }
