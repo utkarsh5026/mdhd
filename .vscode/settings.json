@@ -1,5 +1,5 @@
 {
-  // Format & Lint on save
+  // ─── Format & Lint on save ───
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {
@@ -7,48 +7,79 @@
     "source.organizeImports": "never"
   },
 
-  // TypeScript
+  // ─── Language-specific overrides ───
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.tabSize": 4,
+    "editor.rulers": [100],
+    "editor.inlayHints.enabled": "offUnlessPressed"
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
+  },
+  "[sql]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // ─── TypeScript ───
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "typescript.suggest.autoImports": true,
   "typescript.tsdk": "app/node_modules/typescript/lib",
 
-  // File nesting (cleaner explorer)
+  // ─── Rust Analyzer ───
+  "rust-analyzer.linkedProjects": ["server/Cargo.toml"],
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.check.extraArgs": ["--", "-W", "clippy::pedantic"],
+  "rust-analyzer.cargo.features": "all",
+  "rust-analyzer.diagnostics.experimental.enable": true,
+  "rust-analyzer.procMacro.enable": true,
+
+  // ─── File nesting (cleaner explorer) ───
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
     "package.json": "package-lock.json, .prettierrc, .eslintrc*, eslint.config.*, tsconfig*.json, vite.config.*, vitest.config.*, commitlint.config.*",
-    "tsconfig.json": "tsconfig.*.json"
+    "tsconfig.json": "tsconfig.*.json",
+    "Cargo.toml": "Cargo.lock, .clippy.toml, rustfmt.toml, rust-toolchain.toml"
   },
 
-  // Search & files
+  // ─── Search & files ───
   "search.exclude": {
     "**/node_modules": true,
     "**/dist": true,
     "**/coverage": true,
-    "**/.lighthouseci": true
+    "**/.lighthouseci": true,
+    "**/target": true
   },
   "files.exclude": {
     "**/.DS_Store": true,
     "**/Thumbs.db": true
   },
+  "files.watcherExclude": {
+    "**/target/**": true
+  },
 
-  // Tailwind CSS (if you use the Tailwind extension)
+  // ─── Tailwind CSS ───
   "tailwindCSS.experimental.classRegex": [["cn\\(([^)]*)\\)", "'([^']*)'"]],
 
-  // Spell checker
+  // ─── Spell checker ───
   "cSpell.words": [
     "amet",
+    "axum",
     "bionicify",
     "bunx",
     "cascadia",
     "Chatbubble",
+    "chrono",
     "Consolas",
     "Cplusplus",
     "decos",
+    "dotenvy",
     "Fira",
     "Gnubash",
     "hyperlegible",
     "Inconsolata",
     "indexeddb",
+    "jsonwebtoken",
     "Keymap",
     "knip",
     "lightningcss",
@@ -58,10 +89,16 @@
     "nums",
     "nunito",
     "partialize",
+    "reqwest",
+    "rustls",
     "scannability",
     "Seafoam",
+    "sqlx",
+    "Supabase",
     "swipeable",
+    "thiserror",
     "TOCTOU",
+    "tokio",
     "Unhighlighted",
     "uuidv",
     "Videocam",
