@@ -28,19 +28,22 @@ export default defineConfig(({ mode }) => {
         typescript: true,
       }),
 
-      compression({ algorithm: 'gzip' }),
-      compression({
-        algorithm: 'brotliCompress',
-        ext: '.br',
-        threshold: 10240,
-      }),
-
-      ViteImageOptimizer({
-        png: { quality: 80 },
-        jpeg: { quality: 80 },
-        webp: { quality: 80 },
-        avif: { quality: 70 },
-      }),
+      ...(!isDev
+        ? [
+            compression({ algorithm: 'gzip' }),
+            compression({
+              algorithm: 'brotliCompress',
+              ext: '.br',
+              threshold: 10240,
+            }),
+            ViteImageOptimizer({
+              png: { quality: 80 },
+              jpeg: { quality: 80 },
+              webp: { quality: 80 },
+              avif: { quality: 70 },
+            }),
+          ]
+        : []),
 
       VitePWA({
         registerType: 'autoUpdate',
@@ -132,6 +135,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
+      host: true,
       open: true,
       watch: {
         usePolling: true,

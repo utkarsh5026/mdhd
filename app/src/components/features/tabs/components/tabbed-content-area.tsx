@@ -4,6 +4,7 @@ import EmptyState from '@/components/layout/empty-state';
 import WelcomeScreen from '@/components/layout/welcome-screen';
 import { fileStorageDB, type FileTreeNode } from '@/services/indexeddb';
 
+import { useNewTabShortcut } from '../hooks/use-new-tab-shortcut';
 import { useSaveShortcut } from '../hooks/use-save-shortcut';
 import { useActiveTab, useShowEmptyState, useTabs, useTabsActions } from '../store';
 import InlineMarkdownViewer from './markdown/inline-markdown-viewer';
@@ -30,6 +31,8 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
 
   const { showSaveDialog, setShowSaveDialog, defaultFileName, handleSaveToFile, isSaving } =
     useSaveShortcut();
+
+  useNewTabShortcut();
 
   const handleStartReading = useCallback(
     (content: string) => {

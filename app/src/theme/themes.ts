@@ -194,6 +194,26 @@ export const themeCategories = [
     icon: '🎨',
     description: 'Bold and artistic themes for creative expression',
   },
+  {
+    name: 'AI Platforms',
+    icon: '🤖',
+    description: 'Themes inspired by popular AI chat interfaces',
+  },
+  {
+    name: 'Popular Apps',
+    icon: '📱',
+    description: 'Familiar themes from apps you already love',
+  },
+  {
+    name: 'Seasonal',
+    icon: '🌅',
+    description: 'Time-of-day and seasonal color palettes',
+  },
+  {
+    name: 'Accessibility',
+    icon: '♿',
+    description: 'Optimized for readability and visual comfort',
+  },
 ] as const;
 
 export type ThemeCategory = (typeof themeCategories)[number]['name'];
