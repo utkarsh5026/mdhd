@@ -12,13 +12,17 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
-  "forwardPorts": [5173, 8080, 5432],
+  "forwardPorts": [5173, 8080, 8081, 5432, 9000, 9001],
   "portsAttributes": {
     "5173": { "label": "Vite Dev Server", "onAutoForward": "notify" },
     "8080": { "label": "Rust API Server", "onAutoForward": "notify" },
-    "5432": { "label": "PostgreSQL", "onAutoForward": "silent" }
+    "8081": { "label": "Adminer (DB UI)", "onAutoForward": "notify" },
+    "5432": { "label": "PostgreSQL", "onAutoForward": "silent" },
+    "9000": { "label": "MinIO S3 API", "onAutoForward": "silent" },
+    "9001": { "label": "MinIO Console", "onAutoForward": "notify" }
   },
   "postCreateCommand": "cd app && bun install && cargo install sqlx-cli --no-default-features --features postgres && sudo apt-get update && sudo apt-get install -y postgresql-client",
+  "postStartCommand": "docker compose -f server/docker-compose.dev.yml up -d",
   "containerEnv": {
     "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/mdhd",
     "SQLX_OFFLINE": "true"
