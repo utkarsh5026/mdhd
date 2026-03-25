@@ -1,0 +1,28 @@
+# Build artifacts
+/target/
+debug/
+*.d
+*.rlib
+*.dylib
+*.so
+*.dll
+*.pdb
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SQLx offline query data (regenerate with `cargo sqlx prepare`)
+# Uncomment if not using offline mode:
+# .sqlx/
