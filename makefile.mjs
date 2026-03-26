@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { spawn } from "child_process";
-import { fileURLToPath, pathToFileURL } from "url";
-import { dirname, join } from "path";
+import { spawn } from "node:child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { dirname, join } from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,9 +11,35 @@ const ROOT_DIR = __dirname;
 const APP_DIR = join(ROOT_DIR, "app");
 const SERVER_DIR = join(ROOT_DIR, "server");
 
-const chalkModulePath = join(APP_DIR, "node_modules", "chalk", "source", "index.js");
-const chalkModuleURL = pathToFileURL(chalkModulePath).href;
-const chalk = await import(chalkModuleURL).then((m) => m.default);
+// Try to load chalk, fallback to simple ANSI colors if not installed
+let chalk;
+try {
+  const chalkModulePath = join(
+    APP_DIR,
+    "node_modules",
+    "chalk",
+    "source",
+    "index.js",
+  );
+  const chalkModuleURL = pathToFileURL(chalkModulePath).href;
+  chalk = await import(chalkModuleURL).then((m) => m.default);
+} catch {
+  const bold = (s) => `\x1b[1m${s}\x1b[22m`;
+  chalk = {
+    cyan: (s) => `\x1b[36m${s}\x1b[39m`,
+    green: (s) => `\x1b[32m${s}\x1b[39m`,
+    yellow: (s) => `\x1b[33m${s}\x1b[39m`,
+    red: (s) => `\x1b[31m${s}\x1b[39m`,
+    blue: (s) => `\x1b[34m${s}\x1b[39m`,
+    dim: (s) => `\x1b[2m${s}\x1b[22m`,
+    bold: Object.assign(bold, {
+      cyan: (s) => `\x1b[1m\x1b[36m${s}\x1b[22m\x1b[39m`,
+      yellow: (s) => `\x1b[1m\x1b[33m${s}\x1b[22m\x1b[39m`,
+      green: (s) => `\x1b[1m\x1b[32m${s}\x1b[22m\x1b[39m`,
+      red: (s) => `\x1b[1m\x1b[31m${s}\x1b[22m\x1b[39m`,
+    }),
+  };
+}
 
 const COMPOSE_FILE = join(SERVER_DIR, "docker-compose.dev.yml");
 
@@ -30,7 +56,8 @@ const tasks = {
     action: runDev,
   },
   setup: {
-    description: "First-time setup: start containers, migrate, build server",
+    description:
+      "First-time setup: install deps, start containers, migrate, build server",
     category: "Development",
     action: runSetup,
   },
@@ -162,9 +189,13 @@ const tasks = {
     description: "Open psql shell to dev database",
     category: "Server",
     action: () =>
-      runCommand("psql", ["postgresql://postgres:postgres@localhost:5432/mdhd"], {
-        cwd: SERVER_DIR,
-      }),
+      runCommand(
+        "psql",
+        ["postgresql://postgres:postgres@localhost:5432/mdhd"],
+        {
+          cwd: SERVER_DIR,
+        },
+      ),
   },
 
   "server-test": {
@@ -281,7 +312,9 @@ async function runDocker(args) {
   const label = `docker compose ${args.join(" ")}`;
   console.log(chalk.cyan(`Running: ${label}...`));
   console.log();
-  await runCommand("docker", ["compose", "-f", COMPOSE_FILE, ...args], { cwd: SERVER_DIR });
+  await runCommand("docker", ["compose", "-f", COMPOSE_FILE, ...args], {
+    cwd: SERVER_DIR,
+  });
   console.log();
   console.log(chalk.green("✓ Done!"));
 }
@@ -357,7 +390,17 @@ async function waitForPostgres(retries = 30) {
     try {
       await runCommand(
         "docker",
-        ["compose", "-f", COMPOSE_FILE, "exec", "-T", "postgres", "pg_isready", "-U", "postgres"],
+        [
+          "compose",
+          "-f",
+          COMPOSE_FILE,
+          "exec",
+          "-T",
+          "postgres",
+          "pg_isready",
+          "-U",
+          "postgres",
+        ],
         { cwd: SERVER_DIR, stdio: "ignore" },
       );
       console.log(chalk.green("✓ Postgres is ready!"));
@@ -386,7 +429,9 @@ async function runMigrateAdd() {
   }
   console.log(chalk.cyan(`Creating migration: ${name}...`));
   console.log();
-  await runCommand("cargo", ["sqlx", "migrate", "add", name], { cwd: SERVER_DIR });
+  await runCommand("cargo", ["sqlx", "migrate", "add", name], {
+    cwd: SERVER_DIR,
+  });
   console.log();
   console.log(chalk.green("✓ Migration file created!"));
 }
@@ -398,10 +443,14 @@ async function runDbReset() {
   const dbUrl = "postgresql://postgres:postgres@localhost:5432";
 
   console.log(chalk.yellow("▶ Dropping database mdhd..."));
-  await runCommand("psql", [dbUrl, "-c", "DROP DATABASE IF EXISTS mdhd"], { cwd: SERVER_DIR });
+  await runCommand("psql", [dbUrl, "-c", "DROP DATABASE IF EXISTS mdhd"], {
+    cwd: SERVER_DIR,
+  });
 
   console.log(chalk.yellow("▶ Creating database mdhd..."));
-  await runCommand("psql", [dbUrl, "-c", "CREATE DATABASE mdhd"], { cwd: SERVER_DIR });
+  await runCommand("psql", [dbUrl, "-c", "CREATE DATABASE mdhd"], {
+    cwd: SERVER_DIR,
+  });
 
   console.log(chalk.yellow("▶ Running migrations..."));
   await runMigrate();
@@ -413,6 +462,17 @@ async function runDbReset() {
 async function runSetup() {
   console.log(chalk.bold.cyan("Running first-time setup..."));
   console.log();
+
+  console.log(chalk.bold.yellow("\n▶ Installing app dependencies..."));
+  console.log(chalk.dim("─".repeat(50)));
+  await runBun(["install"], "app dependencies");
+
+  console.log(chalk.bold.yellow("\n▶ Setting up server environment..."));
+  console.log(chalk.dim("─".repeat(50)));
+  const envPath = join(SERVER_DIR, ".env");
+  const envExamplePath = join(SERVER_DIR, ".env.example");
+  console.log(chalk.dim("Creating .env from .env.example..."));
+  await runCommand("cp", [envExamplePath, envPath], { cwd: SERVER_DIR });
 
   console.log(chalk.bold.yellow("\n▶ Starting containers..."));
   console.log(chalk.dim("─".repeat(50)));
@@ -439,9 +499,15 @@ async function runPreCommit() {
   console.log();
 
   const checks = [
-    { name: "client fmt-check", fn: () => runBun(["run", "format:check"], "client format check") },
+    {
+      name: "client fmt-check",
+      fn: () => runBun(["run", "format:check"], "client format check"),
+    },
     { name: "client lint", fn: () => runBun(["run", "lint"], "client lint") },
-    { name: "server fmt-check", fn: () => runCargo(["fmt", "--", "--check"], "server fmt-check") },
+    {
+      name: "server fmt-check",
+      fn: () => runCargo(["fmt", "--", "--check"], "server fmt-check"),
+    },
     {
       name: "server lint (Clippy)",
       fn: () => runCargo(["clippy", "--", "-D", "warnings"], "server lint"),
@@ -474,16 +540,28 @@ async function runValidate() {
   console.log();
 
   const checks = [
-    { name: "client fmt-check", fn: () => runBun(["run", "format:check"], "client format check") },
+    {
+      name: "client fmt-check",
+      fn: () => runBun(["run", "format:check"], "client format check"),
+    },
     { name: "client lint", fn: () => runBun(["run", "lint"], "client lint") },
-    { name: "client build", fn: () => runBun(["run", "build"], "client build") },
-    { name: "server fmt-check", fn: () => runCargo(["fmt", "--", "--check"], "server fmt-check") },
+    {
+      name: "client build",
+      fn: () => runBun(["run", "build"], "client build"),
+    },
+    {
+      name: "server fmt-check",
+      fn: () => runCargo(["fmt", "--", "--check"], "server fmt-check"),
+    },
     {
       name: "server lint (Clippy)",
       fn: () => runCargo(["clippy", "--", "-D", "warnings"], "server lint"),
     },
     { name: "server tests", fn: () => runCargo(["test"], "server test") },
-    { name: "server release build", fn: () => runCargo(["build", "--release"], "server release") },
+    {
+      name: "server release build",
+      fn: () => runCargo(["build", "--release"], "server release"),
+    },
   ];
 
   for (const check of checks) {
@@ -551,4 +629,4 @@ async function main() {
   }
 }
 
-main();
+await main();
