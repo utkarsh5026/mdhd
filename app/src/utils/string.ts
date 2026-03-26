@@ -1,8 +1,13 @@
 export const fromSnakeToTitleCase = (str: string) => {
-  const result = str.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-  return result
+  return str
+    .replaceAll('_', ' ')
     .split(' ')
-    .map((word) => (capitalWords.has(word.toUpperCase()) ? word.toUpperCase() : word))
+    .map((word: string) => {
+      if (word.length === 0) return word;
+      const upper = word.toUpperCase();
+      if (capitalWords.has(upper)) return upper;
+      return word[0].toUpperCase() + word.slice(1);
+    })
     .join(' ');
 };
 
