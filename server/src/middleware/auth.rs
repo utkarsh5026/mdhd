@@ -1,71 +1,53 @@
-//! JWT-based authentication middleware for Axum route handlers.
+//! JWT-based authentication extractor for Axum route handlers.
 //!
-//! Provides [`require_auth`] — an Axum middleware function that validates a Bearer token from the
-//! `Authorization` header and injects an [`AuthUser`] into request extensions. Protected routes
-//! retrieve the authenticated identity via `Extension<AuthUser>`.
+//! Implements [`FromRequestParts`] for [`AuthUser`], so protected route handlers
+//! simply declare it as a parameter — no middleware layer or `Extension` required:
+//!
+//! ```rust,ignore
+//! async fn my_handler(auth: AuthUser) -> impl IntoResponse {
+//!     format!("hello {}", auth.user_id)
+//! }
+//! ```
+//!
+//! Returns `401 Unauthorized` if the `Authorization: Bearer <token>` header is
+//! absent, malformed, or carries an invalid / expired JWT.
 
-use axum::extract::Request;
+use axum::extract::FromRequestParts;
 use axum::http::header::AUTHORIZATION;
-use axum::middleware::Next;
-use axum::response::Response;
-use uuid::Uuid;
+use axum::http::request::Parts;
 
-use crate::config::Config;
 use crate::errors::{AppError, OptionExt};
 use crate::state::AppState;
 
-/// The authenticated user identity injected into request extensions by [`require_auth`].
+/// The authenticated user identity extracted from a valid Bearer token.
 ///
-/// Route handlers access this via `Extension<AuthUser>` after the middleware has run.
+/// Obtained by declaring `AuthUser` as a parameter in any route handler. Axum
+/// calls [`FromRequestParts`] automatically; the handler is never reached if
+/// authentication fails.
 #[derive(Debug, Clone)]
 pub struct AuthUser {
     /// The unique ID of the authenticated user.
-    pub user_id: Uuid,
+    pub user_id: uuid::Uuid,
 }
 
-/// Axum middleware that rejects unauthenticated requests with `401 Unauthorized`.
-///
-/// Validates the `Authorization: Bearer <token>` header, then injects an [`AuthUser`] into the
-/// request extensions so downstream handlers can identify the caller without re-parsing the token.
-///
-/// # Errors
-///
-/// Returns [`AppError::Unauthorized`] if the header is absent, malformed, or carries an invalid
-/// or expired JWT. See [`extract_auth_user`] for the full extraction logic.
-pub async fn require_auth(
-    state: axum::extract::State<AppState>,
-    mut req: Request,
-    next: Next,
-) -> Result<Response, AppError> {
-    let auth_user = extract_auth_user(&req, &state.config)?;
-    req.extensions_mut().insert(auth_user);
-    Ok(next.run(req).await)
-}
+impl FromRequestParts<AppState> for AuthUser {
+    type Rejection = AppError;
 
-/// Extracts and validates the Bearer token from a request, returning the authenticated caller.
-///
-/// Reads the `Authorization` header, strips the `"Bearer "` prefix, then delegates to
-/// [`crate::auth::jwt::validate_token`] to verify the signature and expiry. The resulting
-/// [`Claims::sub`](crate::auth::jwt::Claims) is mapped to an [`AuthUser`].
-///
-/// Separated from [`require_auth`] so it can be reused in non-middleware contexts (e.g. tests
-/// or WebSocket upgrade handlers) without requiring a full Axum middleware stack.
-///
-/// # Errors
-///
-/// - [`AppError::Unauthorized`] — `Authorization` header is missing, not valid UTF-8, lacks the
-///   `"Bearer "` prefix, or the token fails JWT validation (bad signature, expired, malformed).
-pub fn extract_auth_user(req: &Request, config: &Config) -> Result<AuthUser, AppError> {
-    let token = req
-        .headers()
-        .get(AUTHORIZATION)
-        .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.strip_prefix("Bearer "))
-        .or_unauthorized()?;
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        let token = parts
+            .headers
+            .get(AUTHORIZATION)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.strip_prefix("Bearer "))
+            .or_unauthorized()?;
 
-    let claims = crate::auth::jwt::validate_token(token, &config.jwt_secret)?;
+        let claims = crate::auth::jwt::validate_token(token, &state.config.jwt_secret)?;
 
-    Ok(AuthUser {
-        user_id: claims.sub,
-    })
+        Ok(AuthUser {
+            user_id: claims.sub,
+        })
+    }
 }

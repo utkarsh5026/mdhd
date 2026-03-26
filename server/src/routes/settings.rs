@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use axum::extract::{Extension, State};
+use axum::extract::State;
 use axum::routing::post;
 use axum::{Json, Router};
 use chrono::{DateTime, Utc};
@@ -50,6 +50,17 @@ pub struct SettingsSyncResponse {
     pub server_time: DateTime<Utc>,
 }
 
+impl From<&UserSetting> for ServerSettingEntry {
+    fn from(s: &UserSetting) -> Self {
+        ServerSettingEntry {
+            key: s.key.clone(),
+            value: s.value.clone(),
+            hash: s.hash.clone(),
+            updated_at: s.updated_at,
+        }
+    }
+}
+
 /// POST /settings/sync — bidirectional settings sync using last-write-wins.
 ///
 /// The client sends all its settings (key + hash + timestamp + value).
@@ -58,15 +69,16 @@ pub struct SettingsSyncResponse {
 /// - Returns server values that are newer for the client to apply.
 /// - Returns server settings the client doesn't have yet (from other devices).
 async fn sync_settings(
-    Extension(auth): Extension<AuthUser>,
+    auth: AuthUser,
     State(state): State<AppState>,
     Json(body): Json<SettingsSyncRequest>,
 ) -> Result<Json<SettingsSyncResponse>, AppError> {
     let server_time = Utc::now();
+    let uid = auth.user_id;
 
     let server_settings =
         sqlx::query_as::<_, UserSetting>("SELECT * FROM user_settings WHERE user_id = $1")
-            .bind(auth.user_id)
+            .bind(uid)
             .fetch_all(&state.db)
             .await?;
 
@@ -83,37 +95,23 @@ async fn sync_settings(
 
     for client_entry in &body.settings {
         match server_map.get(client_entry.key.as_str()) {
-            None => {
-                upsert_setting(&state, auth.user_id, client_entry, server_time).await?;
-                accepted.push(client_entry.key.clone());
+            Some(server_entry) if client_entry.hash == server_entry.hash => {}
+
+            Some(server_entry) if client_entry.updated_at < server_entry.updated_at => {
+                updated.push((*server_entry).into());
             }
-            Some(server_entry) => {
-                if client_entry.hash == server_entry.hash {
-                } else if client_entry.updated_at >= server_entry.updated_at {
-                    upsert_setting(&state, auth.user_id, client_entry, server_time).await?;
-                    accepted.push(client_entry.key.clone());
-                } else {
-                    updated.push(ServerSettingEntry {
-                        key: server_entry.key.clone(),
-                        value: server_entry.value.clone(),
-                        hash: server_entry.hash.clone(),
-                        updated_at: server_entry.updated_at,
-                    });
-                }
+
+            _ => {
+                upsert_setting(&state, uid, client_entry, server_time).await?;
+                accepted.push(client_entry.key.clone());
             }
         }
     }
 
     for server_entry in &server_settings {
-        if client_map.contains_key(server_entry.key.as_str()) {
-            continue;
+        if !client_map.contains_key(server_entry.key.as_str()) {
+            updated.push(server_entry.into());
         }
-        updated.push(ServerSettingEntry {
-            key: server_entry.key.clone(),
-            value: server_entry.value.clone(),
-            hash: server_entry.hash.clone(),
-            updated_at: server_entry.updated_at,
-        });
     }
 
     Ok(Json(SettingsSyncResponse {

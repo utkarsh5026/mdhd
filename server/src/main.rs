@@ -60,7 +60,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", get(health))
-        .merge(routes::create_router(state.clone()))
+        .merge(routes::create_router())
         .with_state(state)
         .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))
         .layer(TimeoutLayer::with_status_code(
