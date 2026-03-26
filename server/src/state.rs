@@ -9,4 +9,5 @@ pub struct AppState {
     pub config: Config,
     pub db: PgPool,
     pub s3: S3Client,
+    pub http: reqwest::Client,
 }

@@ -40,10 +40,12 @@ async fn main() {
 
     let db = db::create_pool(&config.database_url).await;
     let s3 = storage::create_s3_client(&config);
+    let http = reqwest::Client::new();
     let state = AppState {
         config: config.clone(),
         db,
         s3,
+        http,
     };
 
     let cors = CorsLayer::new()
@@ -61,7 +63,10 @@ async fn main() {
         .merge(routes::create_router(state.clone()))
         .with_state(state)
         .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))
-        .layer(TimeoutLayer::with_status_code(StatusCode::REQUEST_TIMEOUT, Duration::from_secs(30)))
+        .layer(TimeoutLayer::with_status_code(
+            StatusCode::REQUEST_TIMEOUT,
+            Duration::from_secs(30),
+        ))
         .layer(cors)
         .layer(TraceLayer::new_for_http());
 

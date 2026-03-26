@@ -96,8 +96,11 @@ pub fn google_client(config: &Config) -> Result<GoogleOAuthClient, AppError> {
 /// # Errors
 ///
 /// Returns [`AppError::Internal`] if the HTTP request or response deserialization fails.
-pub async fn fetch_google_user_info(access_token: &str) -> Result<GoogleUserInfo, AppError> {
-    fetch_user_info(GOOGLE_USERINFO_URL, access_token).await
+pub async fn fetch_google_user_info(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> Result<GoogleUserInfo, AppError> {
+    fetch_user_info(client, GOOGLE_USERINFO_URL, access_token).await
 }
 
 /// Fetches user profile JSON from the given URL using a bearer token.
@@ -110,11 +113,10 @@ pub async fn fetch_google_user_info(access_token: &str) -> Result<GoogleUserInfo
 /// Returns [`AppError::Internal`] if the HTTP request fails, the endpoint returns
 /// a non-2xx status, or the response body cannot be deserialized.
 pub(crate) async fn fetch_user_info(
+    client: &reqwest::Client,
     url: &str,
     access_token: &str,
 ) -> Result<GoogleUserInfo, AppError> {
-    let client = reqwest::Client::new();
-
     let response = client
         .get(url)
         .bearer_auth(access_token)
@@ -193,8 +195,9 @@ mod tests {
             .mount(&server)
             .await;
 
+        let client = reqwest::Client::new();
         let url = format!("{}/userinfo", server.uri());
-        let result = fetch_user_info(&url, "test-token").await.unwrap();
+        let result = fetch_user_info(&client, &url, "test-token").await.unwrap();
 
         assert_eq!(result.sub, "12345");
         assert_eq!(result.email, "user@example.com");
@@ -215,8 +218,9 @@ mod tests {
             .mount(&server)
             .await;
 
+        let client = reqwest::Client::new();
         let url = format!("{}/userinfo", server.uri());
-        let result = fetch_user_info(&url, "bad-token").await;
+        let result = fetch_user_info(&client, &url, "bad-token").await;
 
         assert!(result.is_err());
     }
@@ -231,8 +235,9 @@ mod tests {
             .mount(&server)
             .await;
 
+        let client = reqwest::Client::new();
         let url = format!("{}/userinfo", server.uri());
-        let result = fetch_user_info(&url, "test-token").await;
+        let result = fetch_user_info(&client, &url, "test-token").await;
 
         assert!(result.is_err());
     }
