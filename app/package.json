@@ -139,6 +139,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "eslint-plugin-simple-import-sort": "^12.1.1",
+    "fake-indexeddb": "^6.2.5",
     "globals": "^15.15.0",
     "jsdom": "^25.0.1",
     "knip": "^5.78.0",
