@@ -1,5 +1,5 @@
-import { ChevronLeft, ChevronRight, FileText, Maximize, Pencil } from 'lucide-react';
-import React, { type FC, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, FileText, Maximize } from 'lucide-react';
+import React, { type FC, memo, useEffect, useMemo, useRef, useState } from 'react';
 
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import ReadingCore from '@/components/features/content-reading/components/reading-core';
@@ -15,16 +15,11 @@ import { TooltipButton } from '@/components/ui/tooltip-button';
 import { useMilestone } from '@/hooks';
 import { cn } from '@/lib/utils';
 
-import { useEditorPreviewSync } from '../../hooks/use-editor-preview-sync';
 import { useTabsStore } from '../../store/tabs-store';
 import styles from './inline-markdown-viewer.module.css';
-import MarkdownCodeMirrorEditor from './markdown-codemirror-editor';
-import SectionEditorOverlay from './section-editor-overlay';
 
 interface InlineMarkdownViewerProps {
   tabId: string;
-  viewMode: 'preview' | 'edit' | 'dual';
-  onContentChange: (content: string) => void;
   onEnterFullscreen: () => void;
 }
 
@@ -123,7 +118,6 @@ CardNavigationControls.displayName = 'CardNavigationControls';
 interface InlineHeaderProps {
   onFullscreen: () => void;
   onPdfExport: () => void;
-  onEditSection?: () => void;
   breadcrumb?: React.ReactNode;
   mobileBreadcrumb?: React.ReactNode;
   scrollRef?: React.RefObject<HTMLDivElement | null>;
@@ -133,7 +127,7 @@ interface InlineHeaderProps {
  * InlineHeader — reads navigation state from ReadingTabContext hooks.
  */
 const InlineHeader: React.FC<InlineHeaderProps> = memo(
-  ({ onFullscreen, onPdfExport, onEditSection, breadcrumb, mobileBreadcrumb, scrollRef }) => {
+  ({ onFullscreen, onPdfExport, breadcrumb, mobileBreadcrumb, scrollRef }) => {
     const { currentIndex, readingMode } = useReadingNavigation();
     const sections = useReadingSections();
     const readSections = useReadingProgress();
@@ -188,12 +182,6 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
                 goToNext={goToNext}
               />
             )}
-            {onEditSection && readingMode === 'card' && (
-              <>
-                <HeaderBtn tooltip="Edit Section" icon={Pencil} onClick={onEditSection} />
-                <div className="w-px h-4 bg-border/40 shrink-0 mx-0.5" aria-hidden />
-              </>
-            )}
             <HeaderBtn tooltip="Export to PDF" icon={FileText} onClick={onPdfExport} />
             <HeaderBtn tooltip="Enter Fullscreen" icon={Maximize} onClick={onFullscreen} />
           </div>
@@ -214,46 +202,15 @@ InlineHeader.displayName = 'InlineHeader';
  * Inner component that lives inside ReadingTabProvider.
  */
 const InlineInner: React.FC<{
-  viewMode: 'preview' | 'edit' | 'dual';
-  onContentChange: (content: string) => void;
   onEnterFullscreen: () => void;
-}> = memo(({ viewMode, onContentChange, onEnterFullscreen }) => {
+}> = memo(({ onEnterFullscreen }) => {
   const tab = useTabsStore((state) => {
     const activeId = state.activeTabId;
     return state.tabs.find((t) => t.id === activeId);
   });
 
   const sections = useReadingSections();
-  const { currentIndex, readingMode } = useReadingNavigation();
   const currentSection = useReadingCurrentSection();
-  const { changeSection, getSection } = useReadingActions();
-
-  const [editingSectionIndex, setEditingSectionIndex] = useState<number | null>(null);
-  const editingSection = editingSectionIndex !== null ? getSection(editingSectionIndex) : null;
-
-  const handleSectionEditSave = useCallback(
-    (newContent: string) => {
-      if (!tab || editingSectionIndex === null) return;
-      const section = sections[editingSectionIndex];
-      if (!section) return;
-
-      const lines = tab.content.split('\n');
-      const newLines = newContent.split('\n');
-      lines.splice(section.startLine, section.endLine - section.startLine, ...newLines);
-      onContentChange(lines.join('\n'));
-      setEditingSectionIndex(null);
-    },
-    [tab, editingSectionIndex, sections, onContentChange]
-  );
-
-  const { editorViewRef, handleCursorActivity, handleEditorScroll, handlePreviewSectionClick } =
-    useEditorPreviewSync({
-      sections,
-      currentIndex,
-      readingMode,
-      changeSection,
-      viewMode,
-    });
 
   const PreviewPanel = useMemo(() => {
     if (!tab || sections.length === 0 || !currentSection) {
@@ -263,12 +220,10 @@ const InlineInner: React.FC<{
     return (
       <ReadingCore
         viewMode="preview"
-        onSectionClick={handlePreviewSectionClick}
         headerSlot={({ onPdfExport, breadcrumb, mobileBreadcrumb, scrollRef }) => (
           <InlineHeader
             onFullscreen={onEnterFullscreen}
             onPdfExport={onPdfExport}
-            onEditSection={() => setEditingSectionIndex(currentIndex)}
             breadcrumb={breadcrumb}
             mobileBreadcrumb={mobileBreadcrumb}
             scrollRef={scrollRef}
@@ -276,80 +231,13 @@ const InlineInner: React.FC<{
         )}
       />
     );
-  }, [
-    tab,
-    sections.length,
-    currentSection,
-    currentIndex,
-    onEnterFullscreen,
-    handlePreviewSectionClick,
-  ]);
-
-  const EditorPanel = useMemo(() => {
-    if (!tab) {
-      return <LoadingState />;
-    }
-    return (
-      <MarkdownCodeMirrorEditor
-        content={tab.content}
-        onChange={onContentChange}
-        editorViewRef={editorViewRef}
-        onCursorActivity={handleCursorActivity}
-        onScrollChange={handleEditorScroll}
-      />
-    );
-  }, [tab, onContentChange, editorViewRef, handleCursorActivity, handleEditorScroll]);
+  }, [tab, sections.length, currentSection, onEnterFullscreen]);
 
   if (!tab || sections.length === 0 || !currentSection) {
     return <LoadingState />;
   }
 
-  const renderContent = () => {
-    if (viewMode === 'edit') {
-      return (
-        <div key="edit-mode" className={`h-full ${styles.editMode}`}>
-          <div className="h-full relative bg-background text-foreground">{EditorPanel}</div>
-        </div>
-      );
-    }
-
-    if (viewMode === 'preview') {
-      return (
-        <div key="preview-mode" className={`h-full ${styles.previewMode}`}>
-          {PreviewPanel}
-        </div>
-      );
-    }
-
-    return (
-      <div key="dual-mode" className={`h-full ${styles.dualMode}`}>
-        <div className="hidden lg:flex flex-row h-full overflow-hidden">
-          <div className="w-1/2 h-full border-r border-border/20 relative bg-background text-foreground">
-            {EditorPanel}
-          </div>
-          <div className="w-1/2 h-full relative">{PreviewPanel}</div>
-        </div>
-
-        <div className="lg:hidden h-full">{PreviewPanel}</div>
-      </div>
-    );
-  };
-
-  return (
-    <>
-      {renderContent()}
-      {editingSection && (
-        <SectionEditorOverlay
-          section={editingSection}
-          open={editingSectionIndex !== null}
-          onOpenChange={(open) => {
-            if (!open) setEditingSectionIndex(null);
-          }}
-          onSave={handleSectionEditSave}
-        />
-      )}
-    </>
-  );
+  return <div className={`h-full ${styles.previewMode}`}>{PreviewPanel}</div>;
 });
 
 InlineInner.displayName = 'InlineInner';
@@ -361,14 +249,10 @@ InlineInner.displayName = 'InlineInner';
  * can access reading state via selector hooks.
  */
 const InlineMarkdownViewer: React.FC<InlineMarkdownViewerProps> = memo(
-  ({ tabId, viewMode, onContentChange, onEnterFullscreen }) => {
+  ({ tabId, onEnterFullscreen }) => {
     return (
       <ReadingTabProvider value={tabId}>
-        <InlineInner
-          viewMode={viewMode}
-          onContentChange={onContentChange}
-          onEnterFullscreen={onEnterFullscreen}
-        />
+        <InlineInner onEnterFullscreen={onEnterFullscreen} />
       </ReadingTabProvider>
     );
   }

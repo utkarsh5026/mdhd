@@ -5,10 +5,9 @@ import WelcomeScreen from '@/components/layout/welcome-screen';
 import { fileStorageDB, type FileTreeNode } from '@/services/indexeddb';
 
 import { useNewTabShortcut } from '../hooks/use-new-tab-shortcut';
-import { useSaveShortcut } from '../hooks/use-save-shortcut';
+import { useGlobalPasteToTab, usePasteTabShortcut } from '../hooks/use-paste-tab-shortcut';
 import { useActiveTab, useShowEmptyState, useTabs, useTabsActions } from '../store';
 import InlineMarkdownViewer from './markdown/inline-markdown-viewer';
-import { SaveFileDialog } from './save-file-dialog';
 import TabBar from './tab-bar/tab-bar';
 
 interface TabbedContentAreaProps {
@@ -25,14 +24,12 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     setShowEmptyState,
     findTabByFileId,
     updateTabContent,
-    updateTabContentPreservePosition,
     updateTabReadingState,
   } = useTabsActions();
 
-  const { showSaveDialog, setShowSaveDialog, defaultFileName, handleSaveToFile, isSaving } =
-    useSaveShortcut();
-
   useNewTabShortcut();
+  usePasteTabShortcut();
+  useGlobalPasteToTab();
 
   const handleStartReading = useCallback(
     (content: string) => {
@@ -124,23 +121,11 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
           <div key={activeTab.id} className="h-full animate-fade-in-fast">
             <InlineMarkdownViewer
               tabId={activeTab.id}
-              viewMode="preview"
-              onContentChange={(content) => updateTabContentPreservePosition(activeTab.id, content)}
               onEnterFullscreen={() => onEnterFullscreen(activeTab.id)}
             />
           </div>
         ) : null}
       </div>
-
-      {/* Save File Dialog */}
-      <SaveFileDialog
-        key={showSaveDialog ? defaultFileName : 'closed'}
-        open={showSaveDialog}
-        onOpenChange={setShowSaveDialog}
-        defaultFileName={defaultFileName}
-        onSave={handleSaveToFile}
-        isSaving={isSaving}
-      />
     </div>
   );
 });

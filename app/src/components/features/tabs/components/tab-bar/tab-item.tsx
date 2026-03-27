@@ -1,16 +1,8 @@
-import { Columns2, Eye, type LucideIcon, Pencil, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import React, { memo, useCallback } from 'react';
 
 import { TooltipButton } from '@/components/ui/tooltip-button';
 import { cn } from '@/lib/utils';
-
-import type { ViewMode } from '../../store';
-
-const VIEW_MODE_CONFIG: Record<ViewMode, { Icon: LucideIcon; color: string; label: string }> = {
-  edit: { Icon: Pencil, color: 'amber', label: 'Edit mode' },
-  dual: { Icon: Columns2, color: 'green', label: 'Dual mode' },
-  preview: { Icon: Eye, color: 'blue', label: 'Preview mode' },
-} as const;
 
 interface TabItemProps {
   id: string;
@@ -18,7 +10,6 @@ interface TabItemProps {
   folderPath?: string | null;
   fullPath?: string | null;
   isActive: boolean;
-  viewMode: ViewMode;
   onSelect: () => void;
   onClose: (e: React.MouseEvent) => void;
 }
@@ -50,7 +41,6 @@ interface TabButtonProps {
   title: string;
   displayPath: string | null;
   isActive: boolean;
-  viewMode: 'preview' | 'edit' | 'dual';
   onSelect: () => void;
   onClose: (e: React.MouseEvent) => void;
   onMiddleClick: (e: React.MouseEvent) => void;
@@ -60,7 +50,7 @@ interface TabButtonProps {
  * TabButton component with CSS animations
  */
 const TabButton: React.FC<TabButtonProps> = memo(
-  ({ id, title, displayPath, isActive, viewMode, onSelect, onClose, onMiddleClick }) => {
+  ({ id, title, displayPath, isActive, onSelect, onClose, onMiddleClick }) => {
     return (
       <button
         onClick={onSelect}
@@ -76,20 +66,6 @@ const TabButton: React.FC<TabButtonProps> = memo(
         )}
         data-tab-id={id}
       >
-        {/* View mode icon */}
-        {(() => {
-          const { Icon, color, label } = VIEW_MODE_CONFIG[viewMode];
-          return (
-            <Icon
-              className={cn(
-                'w-3.5 h-3.5 shrink-0',
-                isActive ? `text-${color}-500/80` : `text-${color}-500/60`
-              )}
-              aria-label={label}
-            />
-          );
-        })()}
-
         {/* Title with optional folder path */}
         <div className="flex flex-col flex-1 min-w-0 text-left">
           {displayPath && (
@@ -136,7 +112,7 @@ const TabButton: React.FC<TabButtonProps> = memo(
 TabButton.displayName = 'TabButton';
 
 const TabItem: React.FC<TabItemProps> = memo(
-  ({ id, title, folderPath, fullPath, isActive, viewMode, onSelect, onClose }) => {
+  ({ id, title, folderPath, fullPath, isActive, onSelect, onClose }) => {
     const handleClose = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -163,7 +139,6 @@ const TabItem: React.FC<TabItemProps> = memo(
         title={title}
         displayPath={displayPath}
         isActive={isActive}
-        viewMode={viewMode}
         onSelect={onSelect}
         onClose={handleClose}
         onMiddleClick={handleMiddleClick}

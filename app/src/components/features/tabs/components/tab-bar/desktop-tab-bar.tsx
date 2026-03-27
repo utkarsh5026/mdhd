@@ -63,7 +63,7 @@ const DesktopTabBar: React.FC = memo(() => {
         className={cn('flex-1 flex items-stretch overflow-x-auto scrollbar-none', 'scroll-smooth')}
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {tabs.map(({ id, readingState, title }) => {
+        {tabs.map(({ id, title }) => {
           const displayInfo = tabDisplayMap.get(id);
           return (
             <TabItem
@@ -73,7 +73,6 @@ const DesktopTabBar: React.FC = memo(() => {
               folderPath={displayInfo?.folderPath}
               fullPath={displayInfo?.fullPath}
               isActive={id === activeTabId}
-              viewMode={readingState.viewMode}
               onSelect={() => setActiveTab(id)}
               onClose={handleTabClose(id)}
             />
