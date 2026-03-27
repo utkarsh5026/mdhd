@@ -17,30 +17,42 @@ use axum::extract::State;
 use axum::http::{Method, StatusCode, header};
 use axum::routing::get;
 use tower_http::cors::CorsLayer;
+use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::timeout::TimeoutLayer;
-use tower_http::trace::TraceLayer;
+use tower_http::trace::{DefaultOnResponse, TraceLayer};
+use tracing::Level;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use config::Config;
 use state::AppState;
 
 #[tokio::main]
-async fn main() {
-    // Load environment-specific .env file first (values set here win),
-    // then fall back to .env for shared defaults.
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env = std::env::var("RUN_ENV").unwrap_or_else(|_| "development".into());
     dotenvy::from_filename(format!(".env.{env}")).ok();
     dotenvy::dotenv().ok();
 
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
-        )
-        .init();
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+        if env == "production" {
+            "mdhd_server=info,tower_http=info,sqlx=warn".into()
+        } else {
+            "mdhd_server=debug,tower_http=debug,sqlx=warn".into()
+        }
+    });
 
-    let config = Config::from_env();
+    let registry = tracing_subscriber::registry().with(env_filter);
+    if env == "production" {
+        registry
+            .with(tracing_subscriber::fmt::layer().json())
+            .init();
+    } else {
+        registry.with(tracing_subscriber::fmt::layer()).init();
+    }
+
+    let config = Config::from_env()?;
     let port = config.port;
 
-    let db = db::create_pool(&config.database_url).await;
+    let db = db::create_pool(&config.database_url).await?;
     let s3 = storage::create_s3_client(&config);
     let http = reqwest::Client::new();
     let state = AppState {
@@ -50,13 +62,13 @@ async fn main() {
         http,
     };
 
+    let cors_header = config
+        .cors_origin
+        .parse::<axum::http::HeaderValue>()
+        .map_err(|e| format!("Invalid CORS_ORIGIN '{}': {e}", config.cors_origin))?;
+
     let cors = CorsLayer::new()
-        .allow_origin(
-            config
-                .cors_origin
-                .parse::<axum::http::HeaderValue>()
-                .expect("Invalid CORS_ORIGIN"),
-        )
+        .allow_origin(cors_header)
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
 
@@ -70,16 +82,25 @@ async fn main() {
             Duration::from_secs(30),
         ))
         .layer(cors)
-        .layer(TraceLayer::new_for_http());
+        .layer(
+            TraceLayer::new_for_http().on_response(
+                DefaultOnResponse::new()
+                    .level(Level::INFO)
+                    .latency_unit(tower_http::LatencyUnit::Millis),
+            ),
+        )
+        .layer(PropagateRequestIdLayer::x_request_id())
+        .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid));
 
     let addr = format!("0.0.0.0:{port}");
     tracing::info!("Starting server on {addr}");
 
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }
 
 async fn health(State(state): State<AppState>) -> StatusCode {
@@ -90,8 +111,8 @@ async fn health(State(state): State<AppState>) -> StatusCode {
 }
 
 async fn shutdown_signal() {
-    tokio::signal::ctrl_c()
-        .await
-        .expect("failed to install Ctrl+C handler");
+    if let Err(e) = tokio::signal::ctrl_c().await {
+        tracing::error!("Failed to install Ctrl+C handler: {e}");
+    }
     tracing::info!("Shutdown signal received, draining connections...");
 }
