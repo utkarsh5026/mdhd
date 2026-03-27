@@ -7,6 +7,8 @@ mod models;
 mod routes;
 mod state;
 mod storage;
+#[cfg(test)]
+mod testutil;
 
 use std::time::Duration;
 

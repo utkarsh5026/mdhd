@@ -141,26 +141,14 @@ pub(crate) async fn fetch_user_info(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::Config;
     use wiremock::matchers::{header, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
-    /// Helper to build a Config with dummy values.
-    fn test_config() -> Config {
-        Config {
-            database_url: String::new(),
-            jwt_secret: String::new(),
-            google_client_id: "test-client-id".into(),
-            google_client_secret: "test-client-secret".into(),
-            oauth_redirect_base: "http://localhost:8080".into(),
-            supabase_s3_endpoint: String::new(),
-            supabase_s3_access_key: String::new(),
-            supabase_s3_secret_key: String::new(),
-            supabase_storage_bucket: String::new(),
-            port: 8080,
-            cors_origin: String::new(),
-            frontend_url: String::new(),
-        }
+    fn test_config() -> crate::config::Config {
+        let mut config = crate::testutil::test_config();
+        config.google_client_id = "test-client-id".into();
+        config.google_client_secret = "test-client-secret".into();
+        config
     }
 
     #[test]

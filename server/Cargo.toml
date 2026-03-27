@@ -37,3 +37,4 @@ thiserror = "2"
 
 [dev-dependencies]
 wiremock = "0.6"
+tower = { version = "0.5", features = ["util"] }
