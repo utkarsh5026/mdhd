@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { attemptAsync } from '@/utils/functions/error';
+import { attemptAsync } from '@/utils/error';
 
 interface SaveFileDialogProps {
   open: boolean;
@@ -32,7 +32,7 @@ function validateFileName(name: string): string | null {
 
   const invalidCharsRegex = /[.<>:"/\\|?*]/;
   if (invalidCharsRegex.test(name)) {
-    return 'File name cannot contain . < > : " / \\ | ? *';
+    return String.raw`File name cannot contain . < > : " / \ | ? *`;
   }
   return null;
 }

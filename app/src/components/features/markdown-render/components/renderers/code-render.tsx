@@ -20,7 +20,7 @@ import ExportContextMenu from '@/components/ui/export-context-menu';
 import { useCopyToClipboard, useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { download, getNearestHeading, toFilename } from '@/utils/download';
-import { tryAsync } from '@/utils/functions/error';
+import { tryAsync } from '@/utils/error';
 
 import type { TextSizeScale } from '../../utils/text-size-classes';
 import CodeMirrorDisplay from './codemirror-display';

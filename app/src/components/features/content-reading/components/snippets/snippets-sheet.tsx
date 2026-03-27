@@ -18,7 +18,7 @@ import type {
   SnippetType,
   VideoSnippet,
 } from '@/services/markdown/snippets';
-import { tryCatch } from '@/utils/functions/error';
+import { tryCatch } from '@/utils/error';
 
 export type ActiveTab = SnippetType;
 

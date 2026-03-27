@@ -6,7 +6,7 @@ import type { TextSizeScale } from '@/components/features/markdown-render/utils/
 import type { AppFontFamily, FontFamily } from '@/lib/font';
 import { APP_FONT_CSS_MAP } from '@/lib/font';
 import { loadFont } from '@/lib/font-loader';
-import { tryCatch } from '@/utils/functions/error';
+import { tryCatch } from '@/utils/error';
 
 const STORAGE_KEY = 'reading-settings';
 
