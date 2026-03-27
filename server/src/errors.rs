@@ -68,34 +68,38 @@ impl<T, E: std::fmt::Display> ResultExt<T> for Result<T, E> {
 /// Extension trait on `Option` to convert `None` into common [`AppError`] variants.
 pub trait OptionExt<T> {
     fn or_not_found(self) -> Result<T, AppError>;
-    fn or_unauthorized(self) -> Result<T, AppError>;
 }
 
 impl<T> OptionExt<T> for Option<T> {
     fn or_not_found(self) -> Result<T, AppError> {
         self.ok_or(AppError::NotFound)
     }
-
-    fn or_unauthorized(self) -> Result<T, AppError> {
-        self.ok_or(AppError::Unauthorized)
-    }
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
-            AppError::NotFound => (StatusCode::NOT_FOUND, self.to_string()),
-            AppError::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
-            AppError::BadRequest(_) => (StatusCode::BAD_REQUEST, self.to_string()),
+            AppError::NotFound => {
+                tracing::debug!("resource not found");
+                (StatusCode::NOT_FOUND, self.to_string())
+            }
+            AppError::Unauthorized => {
+                tracing::warn!("unauthorized request");
+                (StatusCode::UNAUTHORIZED, self.to_string())
+            }
+            AppError::BadRequest(msg) => {
+                tracing::warn!("bad request: {msg}");
+                (StatusCode::BAD_REQUEST, self.to_string())
+            }
             AppError::Database(err) => {
-                tracing::error!("Database error: {err:?}");
+                tracing::error!("database error: {err:?}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Internal server error".to_string(),
                 )
             }
             AppError::Internal(msg) => {
-                tracing::error!("Internal error: {msg}");
+                tracing::error!("internal error: {msg}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Internal server error".to_string(),
