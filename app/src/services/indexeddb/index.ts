@@ -8,12 +8,4 @@ export type {
   UploadProgress,
   UploadProgressCallback,
 } from './types';
-export {
-  extractDirectoryPaths,
-  filterMarkdownFiles,
-  getFilePath,
-  processDirectoryUpload,
-  processDroppedItems,
-  processFileUpload,
-  readFileAsText,
-} from './upload';
+export { processDirectoryUpload, processDroppedItems, processFileUpload } from './upload';

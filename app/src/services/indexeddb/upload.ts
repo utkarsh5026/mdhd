@@ -1,14 +1,26 @@
 import { toast } from 'sonner';
 
+import { sha256 } from '@/utils/hash';
+
 import { fileStorageDB, getParentPath, normalizePath } from './file-db';
 import type { StoredDirectory, StoredFile, UploadProgressCallback } from './types';
 
+/** Maximum allowed file size for a single upload (10 MB). Files exceeding this are skipped with a warning toast. */
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
+/** Maximum directory nesting depth traversed during a drag-drop operation. Subtrees beyond this level are skipped. */
+const MAX_DIRECTORY_DEPTH = 10;
+
+/** Maximum number of files collected from a single drag-drop. Files beyond this limit are skipped with a warning toast. */
+const MAX_FILE_COUNT = 1000;
+
 /**
- * Filter files to only include markdown files
+ * Filters a list of `File` objects to only those with a `.md` or `.markdown` extension.
+ *
+ * @param files - The raw file list to filter.
+ * @returns A new array containing only markdown files.
  */
-export function filterMarkdownFiles(files: File[]): File[] {
+function filterMarkdownFiles(files: File[]): File[] {
   return files.filter(({ name }) => {
     const filename = name.toLowerCase();
     return filename.endsWith('.md') || filename.endsWith('.markdown');
@@ -16,21 +28,16 @@ export function filterMarkdownFiles(files: File[]): File[] {
 }
 
 /**
- * Read file content as text
+ * Derives the unique set of ancestor directory paths implied by a list of file paths.
+ *
+ * Walks every segment of each path upward to the root so that all intermediate
+ * directories are represented. The result is sorted shortest-first so callers
+ * can safely create parent directories before their children.
+ *
+ * @param filePaths - Absolute file paths to inspect (will be normalized).
+ * @returns Deduplicated directory paths sorted by ascending length.
  */
-export function readFileAsText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
-    reader.readAsText(file);
-  });
-}
-
-/**
- * Extract unique directory paths from file paths
- */
-export function extractDirectoryPaths(filePaths: string[]): string[] {
+function extractDirectoryPaths(filePaths: string[]): string[] {
   const dirs = new Set<string>();
 
   for (const filePath of filePaths) {
@@ -47,14 +54,29 @@ export function extractDirectoryPaths(filePaths: string[]): string[] {
 }
 
 /**
- * Get the file path from a File object (handles webkitRelativePath for directories)
+ * Resolves the storage path for a `File`, preferring `webkitRelativePath` over
+ * the bare filename so that directory uploads preserve their folder structure.
+ *
+ * @param file - The browser `File` object.
+ * @param basePath - Optional prefix to prepend before the resolved name.
+ * @returns A normalized absolute path (always starts with `/`).
  */
-export function getFilePath(file: File, basePath: string = ''): string {
+function getFilePath(file: File, basePath: string = ''): string {
   return normalizePath(basePath + '/' + (file.webkitRelativePath || file.name));
 }
 
 /**
- * Process and upload individual files with batched parallel operations
+ * Reads, hashes, and persists a list of files to IndexedDB in parallel batches.
+ *
+ * Non-markdown files are silently ignored. Files exceeding `MAX_FILE_SIZE` are
+ * skipped with a warning toast. Each batch of up to 10 files is processed with
+ * `Promise.allSettled` so a single failure doesn't abort the rest.
+ *
+ * @async
+ * @param files - The browser `File` objects to upload.
+ * @param basePath - Optional path prefix prepended to every resolved file path.
+ * @param onProgress - Optional callback invoked after each file is processed.
+ * @returns An array of successfully stored `StoredFile` records.
  */
 export async function processFileUpload(
   files: File[],
@@ -71,8 +93,7 @@ export async function processFileUpload(
     batchResults: PromiseSettledResult<StoredFile | null>[],
     batch: File[]
   ) => {
-    for (let j = 0; j < batchResults.length; j++) {
-      const result = batchResults[j];
+    for (const [j, result] of batchResults.entries()) {
       const file = batch[j];
 
       if (result.status === 'fulfilled' && result.value) {
@@ -100,15 +121,17 @@ export async function processFileUpload(
           toast.warning(`Skipped "${file.name}" — exceeds ${MAX_FILE_SIZE / 1024 / 1024} MB limit`);
           return null;
         }
-        const content = await readFileAsText(file);
+
+        const content = await file.text();
         const path = getFilePath(file, basePath);
-        const parentPath = getParentPath(path);
+
         return fileStorageDB.addFile({
           name: file.name,
           path,
-          parentPath,
+          parentPath: getParentPath(path),
           content,
           size: file.size,
+          contentHash: await sha256(content),
         });
       })
     );
@@ -126,7 +149,15 @@ export async function processFileUpload(
 }
 
 /**
- * Create directories from a list of paths
+ * Creates directory records in IndexedDB for each path in `dirPaths`.
+ *
+ * Paths that already exist are silently skipped (the underlying `addDirectory`
+ * call returns `null` on conflict). Individual failures are logged to the
+ * console but do not abort the remaining directories.
+ *
+ * @async
+ * @param dirPaths - Normalized directory paths to create, sorted parent-first.
+ * @returns The `StoredDirectory` records that were successfully inserted.
  */
 async function ensureDirectories(dirPaths: string[]): Promise<StoredDirectory[]> {
   const storedDirs: StoredDirectory[] = [];
@@ -149,7 +180,16 @@ async function ensureDirectories(dirPaths: string[]): Promise<StoredDirectory[]>
 }
 
 /**
- * Process and upload a directory (from FileList with webkitRelativePath)
+ * Persists a directory upload to IndexedDB, creating all required ancestor directories first.
+ *
+ * Expects `fileList` to contain files with `webkitRelativePath` set (as provided
+ * by `<input type="file" webkitdirectory>` or the drag-drop path). Non-markdown
+ * files are filtered out before processing.
+ *
+ * @async
+ * @param fileList - A `FileList` or `File[]` from a directory input or drag-drop.
+ * @param onProgress - Optional callback forwarded to {@link processFileUpload}.
+ * @returns An object with the stored `files` and `directories`.
  */
 export async function processDirectoryUpload(
   fileList: FileList | File[],
@@ -170,17 +210,27 @@ export async function processDirectoryUpload(
 }
 
 /**
- * Interface for drag-drop file entries
+ * Minimal subset of the browser's `FileSystemEntry` API used for drag-drop handling.
+ *
+ * Typed locally to avoid a `lib.dom` version dependency. Only the properties
+ * actually accessed by this module are declared.
  */
 interface FileSystemEntry {
+  /** `true` when this entry represents a regular file. */
   isFile: boolean;
+  /** `true` when this entry represents a directory. */
   isDirectory: boolean;
+  /** The entry's filename (without path). */
   name: string;
+  /** Absolute path within the dropped file system tree, always starting with `/`. */
   fullPath: string;
+  /** Reads the entry as a `File` object. Only present when `isFile` is `true`. */
   file?: (callback: (file: File) => void, errorCallback?: (error: Error) => void) => void;
+  /** Returns a reader for iterating child entries. Only present when `isDirectory` is `true`. */
   createReader?: () => FileSystemDirectoryReader;
 }
 
+/** Minimal subset of the browser's `FileSystemDirectoryReader` API used for drag-drop traversal. */
 interface FileSystemDirectoryReader {
   readEntries: (
     callback: (entries: FileSystemEntry[]) => void,
@@ -188,11 +238,15 @@ interface FileSystemDirectoryReader {
   ) => void;
 }
 
-const MAX_DIRECTORY_DEPTH = 10;
-const MAX_FILE_COUNT = 1000;
-
 /**
- * Wraps the callback-based FileSystemEntry.file() in a Promise.
+ * Wraps the callback-based `FileSystemEntry.file()` in a Promise.
+ *
+ * Also patches `webkitRelativePath` onto the resulting `File` so downstream
+ * code can derive the correct storage path from `entry.fullPath`.
+ *
+ * @param fileMethod - The bound `file()` method from a `FileSystemEntry`.
+ * @param fullPath - The entry's `fullPath`, used to set `webkitRelativePath`.
+ * @returns A `Promise` that resolves with the `File` object.
  */
 function readEntryAsFile(
   fileMethod: (callback: (file: File) => void, errorCallback?: (error: Error) => void) => void,
@@ -211,16 +265,6 @@ function readEntryAsFile(
 }
 
 /**
- * Wraps the callback-based FileSystemDirectoryReader.readEntries() in a Promise.
- * readEntries() must be called repeatedly until it returns an empty array.
- */
-function readNextBatch(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
-  return new Promise((resolve, reject) => {
-    reader.readEntries(resolve, reject);
-  });
-}
-
-/**
  * Recursively read all files from a directory entry (for drag-drop).
  *
  * The File System Access API's readEntries() callback is synchronous from the
@@ -232,8 +276,9 @@ function readNextBatch(reader: FileSystemDirectoryReader): Promise<FileSystemEnt
 async function readDirectoryEntries(
   dirEntry: FileSystemEntry,
   depth: number = 0,
-  fileCount: { value: number } = { value: 0 }
+  fileCount?: { value: number }
 ): Promise<File[]> {
+  const counter = fileCount ?? { value: 0 };
   if (depth > MAX_DIRECTORY_DEPTH) {
     toast.warning('Directory too deeply nested — skipping further subdirectories');
     return [];
@@ -244,13 +289,15 @@ async function readDirectoryEntries(
 
   const files: File[] = [];
 
-  // readEntries() returns at most ~100 entries per call; loop until empty.
   while (true) {
-    const entries = await readNextBatch(reader);
+    const entries: FileSystemEntry[] = await new Promise((resolve, reject) => {
+      reader.readEntries(resolve, reject);
+    });
+
     if (entries.length === 0) break;
 
     for (const entry of entries) {
-      if (fileCount.value >= MAX_FILE_COUNT) {
+      if (counter.value >= MAX_FILE_COUNT) {
         toast.warning(`File limit reached (${MAX_FILE_COUNT}) — remaining files skipped`);
         return files;
       }
@@ -258,9 +305,9 @@ async function readDirectoryEntries(
       if (entry.isFile && entry.file) {
         const file = await readEntryAsFile(entry.file.bind(entry), entry.fullPath);
         files.push(file);
-        fileCount.value++;
+        counter.value++;
       } else if (entry.isDirectory) {
-        const subFiles = await readDirectoryEntries(entry, depth + 1, fileCount);
+        const subFiles = await readDirectoryEntries(entry, depth + 1, counter);
         files.push(...subFiles);
       }
     }
@@ -270,7 +317,18 @@ async function readDirectoryEntries(
 }
 
 /**
- * Process drag-drop data transfer items
+ * Handles a drag-drop event by reading all dropped files or directories and
+ * persisting them to IndexedDB.
+ *
+ * Uses the `FileSystem Access API` (`webkitGetAsEntry`) to recursively traverse
+ * dropped directories up to `MAX_DIRECTORY_DEPTH` levels deep. Plain file drops
+ * are handled via `DataTransferItem.getAsFile()`. Mixed drops (files and
+ * directories together) treat the entire batch as a directory upload.
+ *
+ * @async
+ * @param items - The `DataTransferItemList` from a `drop` event.
+ * @param onProgress - Optional callback forwarded to the underlying upload functions.
+ * @returns Stored files, directories, and a flag indicating whether a directory was dropped.
  */
 export async function processDroppedItems(
   items: DataTransferItemList,
@@ -279,8 +337,7 @@ export async function processDroppedItems(
   const allFiles: File[] = [];
   let isDirectory = false;
 
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
+  for (const item of Array.from(items)) {
     if (item.kind !== 'file') continue;
 
     const entry = item.webkitGetAsEntry?.() as FileSystemEntry | null;
@@ -299,9 +356,11 @@ export async function processDroppedItems(
 
   if (isDirectory) {
     return { ...(await processDirectoryUpload(allFiles, onProgress)), isDirectory: true };
-  } else {
-    // Process as individual files
-    const files = await processFileUpload(allFiles, '', onProgress);
-    return { files, directories: [], isDirectory: false };
   }
+
+  return {
+    files: await processFileUpload(allFiles, '', onProgress),
+    directories: [],
+    isDirectory: false,
+  };
 }
