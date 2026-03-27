@@ -38,8 +38,21 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
           </button>
         </ListPopoverTrigger>
         <ListPopoverContent
-          title={`${tabs.length} tab${tabs.length !== 1 ? 's' : ''}`}
+          title={`${tabs.length} tab${tabs.length === 1 ? '' : 's'}`}
           align="start"
+          footer={
+            <div className="border-t border-border/40">
+              <ListPopoverItem
+                onClick={() => {
+                  onNewTab();
+                  close();
+                }}
+                icon={<Plus className="w-3 h-3" />}
+              >
+                New tab
+              </ListPopoverItem>
+            </div>
+          }
         >
           {tabs.map((tab) => {
             const displayInfo = tabDisplayMap.get(tab.id);
@@ -75,17 +88,6 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
               </ListPopoverItem>
             );
           })}
-          <div className="border-t border-border/40">
-            <ListPopoverItem
-              onClick={() => {
-                onNewTab();
-                close();
-              }}
-              icon={<Plus className="w-3 h-3" />}
-            >
-              New tab
-            </ListPopoverItem>
-          </div>
         </ListPopoverContent>
       </ListPopover>
     );
@@ -122,7 +124,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
 
       <div className="flex-1" />
 
-      {mobileNav && mobileNav.readingMode === 'card' && mobileNav.total > 0 && (
+      {mobileNav?.readingMode === 'card' && mobileNav.total > 0 && (
         <div className="flex items-center">
           <Button
             variant="ghost"
