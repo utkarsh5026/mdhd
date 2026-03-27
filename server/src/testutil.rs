@@ -5,7 +5,7 @@ use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
 
-use crate::config::Config;
+use crate::config::{AppEnv, Config};
 use crate::state::AppState;
 
 /// Returns a [`Config`] with empty/default values suitable for most tests.
@@ -24,6 +24,7 @@ pub fn test_config() -> Config {
         port: 8080,
         cors_origin: String::new(),
         frontend_url: String::new(),
+        app_env: AppEnv::Development,
     }
 }
 

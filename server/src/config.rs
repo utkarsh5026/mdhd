@@ -1,9 +1,37 @@
 //! Environment-based configuration for the MDHD server.
 //!
 //! Loads all settings from environment variables at startup, distinguishing between
-//! required variables (which panic if missing) and optional ones (with sensible defaults).
+//! required variables (which return an error if missing) and optional ones (with sensible defaults).
 
 use std::env;
+
+/// Deployment environment, derived from the `APP_ENV` environment variable.
+///
+/// Defaults to [`Development`](AppEnv::Development) if unset or unrecognized.
+#[derive(Debug, Clone, PartialEq)]
+pub enum AppEnv {
+    Production,
+    Development,
+}
+
+impl AppEnv {
+    /// Reads `APP_ENV` from the environment.
+    pub fn from_env_var() -> Self {
+        match env::var("APP_ENV").as_deref() {
+            Ok("production") => Self::Production,
+            _ => Self::Development,
+        }
+    }
+}
+
+/// Errors that can occur while loading server configuration.
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigError {
+    #[error("required environment variable {0} is not set")]
+    Missing(String),
+    #[error("{0}")]
+    Invalid(String),
+}
 
 /// Generates `pub fn $field(&self) -> String` clone-getters for each listed field.
 /// Accepts optional doc comments per field.
@@ -18,12 +46,13 @@ macro_rules! clone_getters {
 
 /// Server configuration loaded from environment variables.
 ///
-/// Required variables (`DATABASE_URL`, `JWT_SECRET`) cause a panic at startup if missing,
+/// Required variables (`DATABASE_URL`, `JWT_SECRET`) return an error at startup if missing,
 /// ensuring fast failure before any connections are established. All other fields fall back
 /// to development-friendly defaults (see [`Config::from_env`]).
 #[derive(Debug, Clone)]
 pub struct Config {
-    /// Postgres connection string. **Required.**
+    /// Deployment environment (production vs development).
+    pub app_env: AppEnv,
     pub database_url: String,
     /// Secret used to sign and verify JWT session tokens. **Required.**
     pub jwt_secret: String,
@@ -67,14 +96,15 @@ impl Config {
 
     /// Builds a [`Config`] by reading environment variables.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if `DATABASE_URL` or `JWT_SECRET` are not set, or if `PORT` is set
-    /// to a value that cannot be parsed as a `u16`.
-    pub fn from_env() -> Self {
-        Self {
-            database_url: required("DATABASE_URL"),
-            jwt_secret: required("JWT_SECRET"),
+    /// Returns [`ConfigError::Missing`] if `DATABASE_URL` or `JWT_SECRET` are not set,
+    /// or [`ConfigError::Invalid`] if `PORT` cannot be parsed as a `u16`.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        Ok(Self {
+            app_env: AppEnv::from_env_var(),
+            database_url: required("DATABASE_URL")?,
+            jwt_secret: required("JWT_SECRET")?,
             google_client_id: optional("GOOGLE_CLIENT_ID"),
             google_client_secret: optional("GOOGLE_CLIENT_SECRET"),
             oauth_redirect_base: optional_or("OAUTH_REDIRECT_BASE", "http://localhost:8080"),
@@ -82,18 +112,18 @@ impl Config {
             supabase_s3_access_key: optional("SUPABASE_S3_ACCESS_KEY"),
             supabase_s3_secret_key: optional("SUPABASE_S3_SECRET_KEY"),
             supabase_storage_bucket: optional_or("SUPABASE_STORAGE_BUCKET", "files"),
-            port: optional_or("PORT", "8080")
-                .parse()
-                .expect("PORT must be a number"),
+            port: optional_or("PORT", "8080").parse().map_err(|_| {
+                ConfigError::Invalid("PORT must be a valid port number (0-65535)".into())
+            })?,
             cors_origin: optional_or("CORS_ORIGIN", "http://localhost:5173"),
             frontend_url: optional_or("FRONTEND_URL", "http://localhost:5173"),
-        }
+        })
     }
 }
 
-/// Reads an environment variable or panics with a descriptive message.
-fn required(key: &str) -> String {
-    env::var(key).unwrap_or_else(|_| panic!("{key} must be set"))
+/// Reads an environment variable, returning [`ConfigError::Missing`] if unset.
+fn required(key: &str) -> Result<String, ConfigError> {
+    env::var(key).map_err(|_| ConfigError::Missing(key.to_string()))
 }
 
 /// Reads an environment variable, returning an empty string if unset.
@@ -115,8 +145,6 @@ mod tests {
     static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn lock_env() -> std::sync::MutexGuard<'static, ()> {
-        // Recover from poison: a #[should_panic] test panics while holding the lock,
-        // which poisons it. The guard is still valid — just ignore the poison.
         ENV_LOCK
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -126,17 +154,17 @@ mod tests {
     fn required_returns_value_when_set() {
         let _g = lock_env();
         unsafe { env::set_var("_TEST_REQUIRED", "my_value") };
-        let result = required("_TEST_REQUIRED");
+        let result = required("_TEST_REQUIRED").unwrap();
         unsafe { env::remove_var("_TEST_REQUIRED") };
         assert_eq!(result, "my_value");
     }
 
     #[test]
-    #[should_panic(expected = "_TEST_REQUIRED_MISSING must be set")]
-    fn required_panics_when_unset() {
+    fn required_errors_when_unset() {
         let _g = lock_env();
         unsafe { env::remove_var("_TEST_REQUIRED_MISSING") };
-        required("_TEST_REQUIRED_MISSING");
+        let err = required("_TEST_REQUIRED_MISSING").unwrap_err();
+        assert!(err.to_string().contains("_TEST_REQUIRED_MISSING"));
     }
 
     #[test]
@@ -193,7 +221,7 @@ mod tests {
                 env::remove_var(key);
             }
         }
-        let config = Config::from_env();
+        let config = Config::from_env().unwrap();
         unsafe {
             env::remove_var("DATABASE_URL");
             env::remove_var("JWT_SECRET");
@@ -221,7 +249,7 @@ mod tests {
             env::set_var("FRONTEND_URL", "https://example.com");
             env::set_var("SUPABASE_STORAGE_BUCKET", "my-bucket");
         }
-        let config = Config::from_env();
+        let config = Config::from_env().unwrap();
         unsafe {
             for key in &[
                 "DATABASE_URL",
@@ -242,36 +270,36 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "DATABASE_URL must be set")]
-    fn config_from_env_panics_without_database_url() {
+    fn config_from_env_errors_without_database_url() {
         let _g = lock_env();
         unsafe {
             env::remove_var("DATABASE_URL");
             env::set_var("JWT_SECRET", "secret");
         }
-        Config::from_env();
+        let err = Config::from_env().unwrap_err();
+        assert!(err.to_string().contains("DATABASE_URL"));
     }
 
     #[test]
-    #[should_panic(expected = "JWT_SECRET must be set")]
-    fn config_from_env_panics_without_jwt_secret() {
+    fn config_from_env_errors_without_jwt_secret() {
         let _g = lock_env();
         unsafe {
             env::set_var("DATABASE_URL", "postgres://localhost/test");
             env::remove_var("JWT_SECRET");
         }
-        Config::from_env();
+        let err = Config::from_env().unwrap_err();
+        assert!(err.to_string().contains("JWT_SECRET"));
     }
 
     #[test]
-    #[should_panic(expected = "PORT must be a number")]
-    fn config_from_env_panics_on_invalid_port() {
+    fn config_from_env_errors_on_invalid_port() {
         let _g = lock_env();
         unsafe {
             env::set_var("DATABASE_URL", "postgres://localhost/test");
             env::set_var("JWT_SECRET", "secret");
             env::set_var("PORT", "not_a_number");
         }
-        Config::from_env();
+        let err = Config::from_env().unwrap_err();
+        assert!(err.to_string().contains("PORT"));
     }
 }

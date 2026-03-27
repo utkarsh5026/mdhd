@@ -210,12 +210,12 @@ async fn get_current_user(
 
 #[cfg(test)]
 mod tests {
+    use crate::config::AppEnv;
+
     use super::*;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use tower::ServiceExt;
-
-    // ── helpers ────────────────────────────────────────────────────────────────
 
     fn test_config() -> crate::config::Config {
         crate::config::Config {
@@ -231,6 +231,7 @@ mod tests {
             port: 8080,
             cors_origin: "http://localhost:5173".to_string(),
             frontend_url: "http://localhost:5173".to_string(),
+            app_env: AppEnv::Development,
         }
     }
 
