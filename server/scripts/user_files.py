@@ -24,8 +24,11 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-DB_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/mdhd")
-MINIO_ENDPOINT = os.environ.get("SUPABASE_S3_ENDPOINT", "http://localhost:9000")
+DB_URL = os.environ.get(
+    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/mdhd"
+)
+MINIO_ENDPOINT = os.environ.get(
+    "SUPABASE_S3_ENDPOINT", "http://localhost:9000")
 MINIO_ACCESS_KEY = os.environ.get("SUPABASE_S3_ACCESS_KEY", "minioadmin")
 MINIO_SECRET_KEY = os.environ.get("SUPABASE_S3_SECRET_KEY", "minioadmin")
 MINIO_BUCKET = os.environ.get("SUPABASE_STORAGE_BUCKET", "files")
@@ -38,10 +41,12 @@ console = Console()
 
 
 def get_db():
+    """Return a new psycopg2 connection using DB_URL."""
     return psycopg2.connect(DB_URL)
 
 
 def get_s3():
+    """Return a boto3 S3 client configured for the MinIO/Supabase Storage endpoint."""
     return boto3.client(
         "s3",
         endpoint_url=MINIO_ENDPOINT,
@@ -53,6 +58,7 @@ def get_s3():
 
 
 def humanize_bytes(size: int) -> str:
+    """Convert a byte count to a human-readable string (e.g. 1536 -> '1.5 KB')."""
     n = float(size)
     for unit in ("B", "KB", "MB", "GB"):
         if abs(n) < 1024:
@@ -62,11 +68,18 @@ def humanize_bytes(size: int) -> str:
 
 
 def resolve_user_id(identifier: str) -> str:
+    """Resolve an email address or UUID string to a user UUID.
+
+    If *identifier* already looks like a UUID it is returned as-is.
+    Otherwise the users table is queried by email and the matching UUID is
+    returned.  Exits with an error message if no user is found.
+    """
     if UUID_RE.match(identifier):
         return identifier
 
     with get_db() as conn, conn.cursor() as cur:
-        cur.execute("SELECT id, name, email FROM users WHERE email = %s", (identifier,))
+        cur.execute(
+            "SELECT id, name, email FROM users WHERE email = %s", (identifier,))
         row = cur.fetchone()
 
     if not row:
@@ -79,6 +92,7 @@ def resolve_user_id(identifier: str) -> str:
 
 
 def list_users() -> None:
+    """Query all users from Postgres and print them as a Rich table."""
     with get_db() as conn, conn.cursor() as cur:
         cur.execute(
             "SELECT u.id, u.name, u.email, u.oauth_provider, u.created_at, COUNT(f.id) AS file_count "
@@ -100,12 +114,15 @@ def list_users() -> None:
     table.add_column("Files", justify="right", style="magenta")
 
     for uid, name, email, provider, created, count in rows:
-        table.add_row(str(uid), name or "", email, provider or "", str(created), str(count))
+        table.add_row(
+            str(uid), name or "", email, provider or "", str(created), str(count)
+        )
 
     console.print(table)
 
 
 def show_db_files(user_id: str) -> None:
+    """Print a Rich table of all files belonging to *user_id* in Postgres."""
     with get_db() as conn, conn.cursor() as cur:
         cur.execute(
             "SELECT name, path, storage_key, size_bytes, content_hash, updated_at "
@@ -128,7 +145,9 @@ def show_db_files(user_id: str) -> None:
 
     for name, path, key, size, hash_, updated in rows:
         table.add_row(
-            name, path, key,
+            name,
+            path,
+            key,
             humanize_bytes(size),
             (hash_[:12] + "...") if hash_ else "-",
             str(updated),
@@ -139,6 +158,7 @@ def show_db_files(user_id: str) -> None:
 
 
 def show_minio_files(user_id: str) -> None:
+    """Print a Rich table of all MinIO objects stored under the *user_id* prefix."""
     s3 = get_s3()
     prefix = f"{user_id}"
 
@@ -153,7 +173,8 @@ def show_minio_files(user_id: str) -> None:
 
     objects = response.get("Contents", [])
     if not objects:
-        console.print(f"[yellow]No objects in MinIO under prefix '{prefix}'.[/yellow]")
+        console.print(
+            f"[yellow]No objects in MinIO under prefix '{prefix}'.[/yellow]")
         return
 
     table = Table(title="Objects in MinIO")
@@ -175,10 +196,17 @@ def show_minio_files(user_id: str) -> None:
         )
 
     console.print(table)
-    console.print(f"[dim]Total: {len(objects)} object(s), {humanize_bytes(total_size)}[/dim]")
+    console.print(
+        f"[dim]Total: {len(objects)} object(s), {humanize_bytes(total_size)}[/dim]"
+    )
 
 
 def cat_minio_file(storage_key: str) -> None:
+    """Fetch *storage_key* from MinIO and print its content to the console.
+
+    UTF-8 text is displayed inside a Rich panel.  Binary content that cannot
+    be decoded is reported with its size instead.
+    """
     s3 = get_s3()
     try:
         response = s3.get_object(Bucket=MINIO_BUCKET, Key=storage_key)
@@ -191,16 +219,26 @@ def cat_minio_file(storage_key: str) -> None:
         text = body.decode("utf-8")
         console.print(Panel(text, title=storage_key, border_style="cyan"))
     except UnicodeDecodeError:
-        console.print(f"[yellow]Binary content ({humanize_bytes(len(body))}), cannot display as text.[/yellow]")
+        console.print(
+            f"[yellow]Binary content ({humanize_bytes(len(body))}), cannot display as text.[/yellow]"
+        )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Inspect files for a user in Postgres and MinIO")
+    """Parse CLI arguments and dispatch to the appropriate helper function."""
+    parser = argparse.ArgumentParser(
+        description="Inspect files for a user in Postgres and MinIO"
+    )
     parser.add_argument("user", nargs="?", help="User email or UUID")
-    parser.add_argument("--db", action="store_true", help="Show only Postgres files")
-    parser.add_argument("--minio", action="store_true", help="Show only MinIO objects")
-    parser.add_argument("--cat", metavar="KEY", help="Print content of a MinIO object by storage key")
-    parser.add_argument("--list-users", action="store_true", help="List all users")
+    parser.add_argument("--db", action="store_true",
+                        help="Show only Postgres files")
+    parser.add_argument("--minio", action="store_true",
+                        help="Show only MinIO objects")
+    parser.add_argument(
+        "--cat", metavar="KEY", help="Print content of a MinIO object by storage key"
+    )
+    parser.add_argument("--list-users", action="store_true",
+                        help="List all users")
 
     args = parser.parse_args()
 
