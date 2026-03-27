@@ -1,11 +1,26 @@
 #!/usr/bin/env python3
-"""Interactive inspector for user files in Postgres and MinIO.
+"""Interactive TUI inspector for user files stored in Postgres and MinIO.
+
+Connects to the MDHD backend's Postgres database and MinIO (S3-compatible)
+object storage to let you browse users, inspect their file metadata, and read
+raw file content — all from the terminal.
 
 Setup:
     pip install -r scripts/requirements.txt
 
 Usage:
-    python scripts/inspect.py
+    python scripts/tui.py
+
+    # Override connection defaults via environment variables:
+    DATABASE_URL=postgresql://... SUPABASE_S3_ENDPOINT=http://... python scripts/tui.py
+
+Environment variables (all optional, shown with defaults):
+    DATABASE_URL            postgresql://postgres:postgres@localhost:5432/mdhd
+    SUPABASE_S3_ENDPOINT    http://localhost:9000
+    SUPABASE_S3_ACCESS_KEY  minioadmin
+    SUPABASE_S3_SECRET_KEY  minioadmin
+    SUPABASE_STORAGE_BUCKET files
+    AWS_REGION              us-east-1
 """
 
 import os
@@ -21,9 +36,9 @@ from rich.table import Table
 from rich import box
 
 DB_URL = os.environ.get(
-    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/mdhd")
-MINIO_ENDPOINT = os.environ.get(
-    "SUPABASE_S3_ENDPOINT", "http://localhost:9000")
+    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/mdhd"
+)
+MINIO_ENDPOINT = os.environ.get("SUPABASE_S3_ENDPOINT", "http://localhost:9000")
 MINIO_ACCESS_KEY = os.environ.get("SUPABASE_S3_ACCESS_KEY", "minioadmin")
 MINIO_SECRET_KEY = os.environ.get("SUPABASE_S3_SECRET_KEY", "minioadmin")
 MINIO_BUCKET = os.environ.get("SUPABASE_STORAGE_BUCKET", "files")
@@ -32,10 +47,12 @@ console = Console()
 
 
 def get_db():
+    """Return a new psycopg2 connection using DATABASE_URL."""
     return psycopg2.connect(DB_URL)
 
 
 def get_s3():
+    """Return a boto3 S3 client pointed at the configured MinIO endpoint."""
     return boto3.client(
         "s3",
         endpoint_url=MINIO_ENDPOINT,
@@ -47,6 +64,7 @@ def get_s3():
 
 
 def humanize_bytes(size: int) -> str:
+    """Convert a byte count to a human-readable string (e.g. 1536 → '1.5 KB')."""
     n = float(size)
     for unit in ("B", "KB", "MB", "GB"):
         if abs(n) < 1024:
@@ -56,6 +74,10 @@ def humanize_bytes(size: int) -> str:
 
 
 def fetch_users() -> list[tuple]:
+    """Return all users with their file counts, ordered by creation date (newest first).
+
+    Each row: (id, name, email, oauth_provider, created_at, file_count)
+    """
     with get_db() as conn, conn.cursor() as cur:
         cur.execute(
             "SELECT u.id, u.name, u.email, u.oauth_provider, u.created_at, COUNT(f.id) "
@@ -66,6 +88,10 @@ def fetch_users() -> list[tuple]:
 
 
 def fetch_db_files(user_id: str) -> list[tuple]:
+    """Return all file metadata rows for a user from Postgres, ordered by path.
+
+    Each row: (name, path, storage_key, size_bytes, content_hash, updated_at)
+    """
     with get_db() as conn, conn.cursor() as cur:
         cur.execute(
             "SELECT name, path, storage_key, size_bytes, content_hash, updated_at "
@@ -76,6 +102,11 @@ def fetch_db_files(user_id: str) -> list[tuple]:
 
 
 def fetch_minio_files(user_id: str) -> list[dict]:
+    """List all S3 objects in the bucket whose key starts with user_id.
+
+    Returns the raw Contents list from ListObjectsV2, or [] on error.
+    Each item is a dict with at least: Key, Size, LastModified.
+    """
     s3 = get_s3()
     try:
         response = s3.list_objects_v2(Bucket=MINIO_BUCKET, Prefix=user_id)
@@ -86,6 +117,10 @@ def fetch_minio_files(user_id: str) -> list[dict]:
 
 
 def fetch_minio_content(storage_key: str) -> bytes | None:
+    """Download and return the raw bytes for a single object from MinIO.
+
+    Returns None if the object cannot be read (logs the error to the console).
+    """
     s3 = get_s3()
     try:
         response = s3.get_object(Bucket=MINIO_BUCKET, Key=storage_key)
@@ -96,6 +131,7 @@ def fetch_minio_content(storage_key: str) -> bytes | None:
 
 
 def render_user_table(users: list[tuple]) -> None:
+    """Print a Rich table listing all users with index, name, email, provider, file count, and join date."""
     table = Table(title="Users", box=box.ROUNDED, show_lines=False)
     table.add_column("#", style="dim", width=3, justify="right")
     table.add_column("Name", style="bold")
@@ -118,6 +154,7 @@ def render_user_table(users: list[tuple]) -> None:
 
 
 def render_db_files(files: list[tuple], user_name: str) -> None:
+    """Print a Rich table of Postgres file rows for the given user."""
     if not files:
         console.print("[yellow]No files in Postgres.[/yellow]")
         return
@@ -145,6 +182,7 @@ def render_db_files(files: list[tuple], user_name: str) -> None:
 
 
 def render_minio_files(objects: list[dict], user_id: str, user_name: str) -> None:
+    """Print a Rich table of MinIO objects for the given user, with a total size summary."""
     if not objects:
         console.print("[yellow]No objects in MinIO.[/yellow]")
         return
@@ -160,12 +198,12 @@ def render_minio_files(objects: list[dict], user_id: str, user_name: str) -> Non
         key = obj["Key"].removeprefix(user_id)
         size = obj["Size"]
         total += size
-        table.add_row(str(i), key, humanize_bytes(
-            size), str(obj["LastModified"])[:19])
+        table.add_row(str(i), key, humanize_bytes(size), str(obj["LastModified"])[:19])
 
     console.print(table)
     console.print(
-        f"[dim]  {len(objects)} object(s), {humanize_bytes(total)} total[/dim]")
+        f"[dim]  {len(objects)} object(s), {humanize_bytes(total)} total[/dim]"
+    )
 
 
 def pick_user(users: list[tuple]) -> tuple:
@@ -188,11 +226,18 @@ def pick_user(users: list[tuple]) -> tuple:
             return users[int(raw) - 1]
 
         console.print(
-            f"[red]Invalid choice '{raw}' — enter a number between 1 and {len(users)}.[/red]")
+            f"[red]Invalid choice '{raw}' — enter a number between 1 and {len(users)}.[/red]"
+        )
         Prompt.ask("[dim]Press Enter to try again[/dim]", default="")
 
 
 def _show_minio_reader(user_id: str, label: str) -> None:
+    """Interactively prompt the user to pick a MinIO object and print its content.
+
+    Displays the object list, asks for a selection, downloads the chosen object,
+    and renders it as UTF-8 text in a panel. Falls back to a binary-size notice
+    for non-text content.
+    """
     minio_files = fetch_minio_files(user_id)
     if not minio_files:
         console.print("[yellow]No MinIO objects to read.[/yellow]")
@@ -212,11 +257,9 @@ def _show_minio_reader(user_id: str, label: str) -> None:
     if body is None:
         return
     try:
-        console.print(Panel(body.decode("utf-8"),
-                      title=key, border_style="cyan"))
+        console.print(Panel(body.decode("utf-8"), title=key, border_style="cyan"))
     except UnicodeDecodeError:
-        console.print(
-            f"[yellow]Binary content ({humanize_bytes(len(body))})[/yellow]")
+        console.print(f"[yellow]Binary content ({humanize_bytes(len(body))})[/yellow]")
 
 
 def _handle_detail_choice(choice: str, user_id: str, label: str) -> bool:
@@ -237,6 +280,11 @@ def _handle_detail_choice(choice: str, user_id: str, label: str) -> bool:
 
 
 def user_detail(user: tuple) -> None:
+    """Show the detail screen for a single user and handle action choices.
+
+    Loops until the user chooses 'b' (back) or 'q' (quit), dispatching each
+    menu selection to _handle_detail_choice.
+    """
     user_id, name, email, provider, created, _ = user
     label = name or email
     uid = str(user_id)
@@ -273,6 +321,7 @@ def user_detail(user: tuple) -> None:
 
 
 def main() -> None:
+    """Entry point: load users from Postgres and run the interactive TUI loop."""
     try:
         users = fetch_users()
     except Exception as e:
