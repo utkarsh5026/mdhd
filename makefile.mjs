@@ -57,7 +57,7 @@ const tasks = {
   },
   setup: {
     description:
-      "First-time setup: install deps, start containers, migrate, build server",
+      "First-time setup: install deps, git hooks, start containers, migrate, build server",
     category: "Development",
     action: runSetup,
   },
@@ -467,12 +467,21 @@ async function runSetup() {
   console.log(chalk.dim("─".repeat(50)));
   await runBun(["install"], "app dependencies");
 
+  console.log(chalk.bold.yellow("\n▶ Installing git hooks (lefthook)..."));
+  console.log(chalk.dim("─".repeat(50)));
+  await runBun(["x", "lefthook", "install"], "lefthook install");
+
   console.log(chalk.bold.yellow("\n▶ Setting up server environment..."));
   console.log(chalk.dim("─".repeat(50)));
   const envPath = join(SERVER_DIR, ".env");
   const envExamplePath = join(SERVER_DIR, ".env.example");
-  console.log(chalk.dim("Creating .env from .env.example..."));
-  await runCommand("cp", [envExamplePath, envPath], { cwd: SERVER_DIR });
+  const { existsSync } = await import("node:fs");
+  if (existsSync(envPath)) {
+    console.log(chalk.dim("Skipping .env — already exists."));
+  } else {
+    console.log(chalk.dim("Creating .env from .env.example..."));
+    await runCommand("cp", [envExamplePath, envPath], { cwd: SERVER_DIR });
+  }
 
   console.log(chalk.bold.yellow("\n▶ Starting containers..."));
   console.log(chalk.dim("─".repeat(50)));
