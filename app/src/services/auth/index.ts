@@ -1,4 +1,4 @@
-export { apiFetch, getOAuthUrl } from './api-client';
+export { apiFetch, apiFetchText, getOAuthUrl } from './api-client';
 export type { AuthUser } from './auth-store';
 export {
   useAuthActions,

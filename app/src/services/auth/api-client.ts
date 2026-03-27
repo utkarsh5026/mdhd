@@ -50,6 +50,28 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 }
 
 /**
+ * Like `apiFetch` but returns the raw response body as a string instead of JSON.
+ * Use this for endpoints that return `text/markdown` or other non-JSON content.
+ */
+export async function apiFetchText(path: string, options: RequestInit = {}): Promise<string> {
+  const token = localStorage.getItem('mdhd-auth-token');
+
+  const headers = new Headers(options.headers);
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const response = await fetch(apiUrl(path), { ...options, headers });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(text || `API error: ${response.status}`);
+  }
+
+  return response.text();
+}
+
+/**
  * Returns the full URL to start the OAuth flow for a given provider.
  *
  * The returned URL is intended for browser navigation (e.g., `window.location.href`),
