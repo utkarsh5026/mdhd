@@ -9,7 +9,6 @@ export const useActiveTabId = () => useTabsStore((state) => state.activeTabId);
 export const useActiveTab = () =>
   useTabsStore((state) => state.tabs.find((t) => t.id === state.activeTabId));
 export const useShowEmptyState = () => useTabsStore((state) => state.showEmptyState);
-export const useTabsHasHydrated = () => useTabsStore((state) => state._hasHydrated);
 export const useHeaderVisible = () => useTabsStore((state) => state.isHeaderVisible);
 export const useStatusBarVisible = () => useTabsStore((state) => state.isStatusBarVisible);
 
@@ -31,6 +30,9 @@ export const useTabsActions = () =>
       toggleHeaderVisibility: state.toggleHeaderVisibility,
       toggleStatusBarVisibility: state.toggleStatusBarVisibility,
       clearPersistedTabs: state.clearPersistedTabs,
+      pinTab: state.pinTab,
+      unpinTab: state.unpinTab,
+      duplicateTab: state.duplicateTab,
     }))
   );
 

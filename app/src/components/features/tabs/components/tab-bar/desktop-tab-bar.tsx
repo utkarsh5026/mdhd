@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 import { useTabDisplayMap } from '../../hooks/use-tab-display-map';
 import { useActiveTabId, useTabs, useTabsActions } from '../../store';
-import TabItem from './tab-item';
+import TabContextMenu from './tab-context-menu';
 import TabManagementMenu from './tab-management-menu';
 
 const DesktopTabBar: React.FC = memo(() => {
@@ -63,16 +63,17 @@ const DesktopTabBar: React.FC = memo(() => {
         className={cn('flex-1 flex items-stretch overflow-x-auto scrollbar-none', 'scroll-smooth')}
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {tabs.map(({ id, title }) => {
+        {tabs.map(({ id, title, pinned }) => {
           const displayInfo = tabDisplayMap.get(id);
           return (
-            <TabItem
+            <TabContextMenu
               key={id}
               id={id}
               title={title}
               folderPath={displayInfo?.folderPath}
               fullPath={displayInfo?.fullPath}
               isActive={id === activeTabId}
+              pinned={pinned}
               onSelect={() => setActiveTab(id)}
               onClose={handleTabClose(id)}
             />
