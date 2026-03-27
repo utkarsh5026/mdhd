@@ -31,6 +31,8 @@ import { useLocalStorage } from '@/hooks';
 import { cn } from '@/lib/utils';
 import type { StoredFile } from '@/services/indexeddb';
 
+import SyncIndicator from './sync-indicator';
+
 const ACTIVE_PANEL_KEY = 'mdhd-sidebar-panel';
 
 export type SidebarPosition = 'left' | 'right';
@@ -104,8 +106,8 @@ const Sidebar: React.FC<SidebarProps> = memo(
         const panelId = (e as CustomEvent<string>).detail;
         setActivePanel(panelId);
       };
-      window.addEventListener('mdhd:activate-panel', handleActivatePanel);
-      return () => window.removeEventListener('mdhd:activate-panel', handleActivatePanel);
+      globalThis.addEventListener('mdhd:activate-panel', handleActivatePanel);
+      return () => globalThis.removeEventListener('mdhd:activate-panel', handleActivatePanel);
     }, [setActivePanel]);
 
     const isPanelOpen = activePanel !== null;
@@ -165,6 +167,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
           >
             <ArrowLeftRight className="h-4 w-4" />
           </Button>
+          <SyncIndicator />
           <TooltipButton
             button={
               <Button
@@ -185,7 +188,9 @@ const Sidebar: React.FC<SidebarProps> = memo(
     return (
       <>
         {/* Mobile backdrop */}
-        <div
+        <button
+          type="button"
+          aria-label="Close sidebar"
           className={cn(
             'fixed inset-0 z-50 bg-background/50 backdrop-blur-sm md:hidden transition-opacity duration-300',
             isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -203,9 +208,8 @@ const Sidebar: React.FC<SidebarProps> = memo(
                 'fixed inset-0 z-50 md:hidden',
                 isRight ? 'right-0' : 'left-0',
                 isMobileOpen ? 'translate-x-0' : isRight ? 'translate-x-full' : '-translate-x-full',
-                // Desktop: static in flow, restore className width/border
                 'md:relative md:inset-auto md:z-auto md:translate-x-0 md:flex',
-                !isPanelOpen ? 'md:w-10' : 'md:w-80',
+                isPanelOpen ? 'md:w-80' : 'md:w-10',
                 className
               )}
             >
