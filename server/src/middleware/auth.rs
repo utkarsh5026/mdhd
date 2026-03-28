@@ -13,10 +13,12 @@
 //! absent, malformed, or carries an invalid / expired JWT.
 
 use axum::extract::FromRequestParts;
-use axum::http::header::AUTHORIZATION;
 use axum::http::request::Parts;
+use axum_extra::TypedHeader;
+use axum_extra::headers::{Authorization, authorization::Bearer};
+use tracing::warn;
 
-use crate::errors::{AppError, OptionExt};
+use crate::errors::AppError;
 use crate::state::AppState;
 
 /// The authenticated user identity extracted from a valid Bearer token.
@@ -37,14 +39,22 @@ impl FromRequestParts<AppState> for AuthUser {
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        let token = parts
-            .headers
-            .get(AUTHORIZATION)
-            .and_then(|v| v.to_str().ok())
-            .and_then(|v| v.strip_prefix("Bearer "))
-            .or_unauthorized()?;
+        let TypedHeader(Authorization(bearer)) =
+            TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
+                .await
+                .map_err(|_| {
+                    warn!("missing or malformed Authorization header");
+                    AppError::Unauthorized
+                })?;
 
-        let claims = crate::auth::jwt::validate_token(token, &state.config.jwt_secret)?;
+        let claims =
+            match crate::auth::jwt::validate_token(bearer.token(), &state.config.jwt_secret) {
+                Ok(c) => c,
+                Err(e) => {
+                    warn!("JWT validation failed: {e}");
+                    return Err(e);
+                }
+            };
 
         Ok(AuthUser {
             user_id: claims.sub,
