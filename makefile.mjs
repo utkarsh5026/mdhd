@@ -42,6 +42,10 @@ try {
 }
 
 const COMPOSE_FILE = join(SERVER_DIR, "docker-compose.dev.yml");
+const SCRIPTS_DIR = join(SERVER_DIR, "scripts");
+const VENV_DIR = join(SCRIPTS_DIR, ".venv");
+const VENV_PYTHON = join(VENV_DIR, "bin", "python");
+const VENV_PIP = join(VENV_DIR, "bin", "pip");
 
 const tasks = {
   help: {
@@ -57,7 +61,7 @@ const tasks = {
   },
   setup: {
     description:
-      "First-time setup: install deps, git hooks, start containers, migrate, build server",
+      "First-time setup: install deps, git hooks, python venv, containers, migrate, build",
     category: "Development",
     action: runSetup,
   },
@@ -79,190 +83,68 @@ const tasks = {
     },
   },
 
-  "client-dev": {
-    description: "Start Vite dev server (port 5173)",
-    category: "Client",
-    action: () => runBun(["run", "dev"], "client dev"),
-  },
-  "client-build": {
-    description: "TypeScript check + Vite production build",
-    category: "Client",
-    action: () => runBun(["run", "build"], "client build"),
-  },
-  "client-lint": {
-    description: "ESLint check",
-    category: "Client",
-    action: () => runBun(["run", "lint"], "client lint"),
-  },
-  "client-fmt": {
-    description: "Prettier format all files",
-    category: "Client",
-    action: () => runBun(["run", "format"], "client format"),
-  },
-  "client-fmt-check": {
-    description: "Prettier check (no write)",
-    category: "Client",
-    action: () => runBun(["run", "format:check"], "client format check"),
-  },
-  "client-test": {
-    description: "Vitest in watch mode",
-    category: "Client",
-    action: () => runBun(["run", "test"], "client test"),
-  },
-  "client-test-run": {
-    description: "Vitest single run",
-    category: "Client",
-    action: () => runBun(["run", "test:run"], "client test:run"),
-  },
-
-  "server-dev": {
-    description: "Start Rust dev server (port 8080, reads .env)",
-    category: "Server",
-    action: () => runCargo(["run"], "server dev"),
-  },
-  "server-dev-prod": {
-    description: "Start server with RUN_ENV=production (local prod config)",
-    category: "Server",
-    action: () =>
-      runCargo(["run"], "server dev:prod", {
-        env: { ...process.env, RUN_ENV: "production" },
-      }),
-  },
-  "server-watch": {
-    description: "Auto-restart server on file changes (requires cargo-watch)",
-    category: "Server",
-    action: () => runCargo(["watch", "-x", "run"], "server watch"),
-  },
-  "server-build": {
-    description: "Server debug build",
-    category: "Server",
-    action: () => runCargo(["build"], "server build"),
-  },
-  "server-build-release": {
-    description: "Server optimized release build",
-    category: "Server",
-    action: () => runCargo(["build", "--release"], "server release build"),
-  },
-
-  "server-up": {
-    description: "Start Postgres + MinIO containers",
-    category: "Server",
-    action: () => runDocker(["up", "-d"]),
-  },
-  "server-down": {
-    description: "Stop containers (keep data)",
-    category: "Server",
-    action: () => runDocker(["down"]),
-  },
-  "server-nuke": {
-    description: "Stop containers and delete volumes",
-    category: "Server",
-    action: () => runDocker(["down", "-v"]),
-  },
-  "server-ps": {
-    description: "Show container status",
-    category: "Server",
-    action: () => runDocker(["ps"]),
-  },
-  "server-logs": {
-    description: "Tail container logs",
-    category: "Server",
-    action: () => runDocker(["logs", "-f", "--tail", "50"]),
-  },
-
-  "server-migrate": {
-    description: "Run pending database migrations",
-    category: "Server",
-    action: runMigrate,
-  },
-  "server-migrate-add": {
-    description: "Create a new migration file (make server-migrate-add <name>)",
-    category: "Server",
-    action: runMigrateAdd,
-  },
-  "server-db-reset": {
-    description: "Drop and recreate database, re-run migrations",
-    category: "Server",
-    action: runDbReset,
-  },
-  "server-db-shell": {
-    description: "Open psql shell to dev database",
-    category: "Server",
-    action: () =>
-      runCommand(
-        "psql",
-        ["postgresql://postgres:postgres@localhost:5432/mdhd"],
-        {
-          cwd: SERVER_DIR,
-        },
-      ),
-  },
-
-  "server-test": {
-    description: "Run server tests",
-    category: "Server",
-    action: () => runCargo(["test"], "server test"),
-  },
-  "server-test-watch": {
-    description: "Run server tests in watch mode (cargo-watch)",
-    category: "Server",
-    action: () => runCargo(["watch", "-x", "test"], "server test:watch"),
-  },
-
-  "server-lint": {
-    description: "Server lint with Clippy (warnings as errors)",
-    category: "Server",
-    action: () => runCargo(["clippy", "--", "-D", "warnings"], "server lint"),
-  },
-  "server-fmt": {
-    description: "Server format code",
-    category: "Server",
-    action: () => runCargo(["fmt"], "server fmt"),
-  },
-  "server-fmt-check": {
-    description: "Server check formatting (CI)",
-    category: "Server",
-    action: () => runCargo(["fmt", "--", "--check"], "server fmt-check"),
-  },
-  "server-clean": {
-    description: "Remove server build artifacts",
-    category: "Server",
-    action: () => runCargo(["clean"], "server clean"),
-  },
-
   lint: {
-    description: "Lint client (ESLint) and server (Clippy)",
+    description: "Lint client (ESLint), server (Clippy), and Python (ruff)",
     category: "Quality",
     action: async () => {
       await runBun(["run", "lint"], "client lint");
       await runCargo(["clippy", "--", "-D", "warnings"], "server lint");
+      await runVenv(["ruff", "check", "."], "python lint");
     },
   },
   fmt: {
-    description: "Format client (Prettier) and server (cargo fmt)",
+    description: "Format client (Prettier), server (cargo fmt), and Python (ruff)",
     category: "Quality",
     action: async () => {
       await runBun(["run", "format"], "client format");
       await runCargo(["fmt"], "server fmt");
+      await runVenv(["ruff", "format", "."], "python format");
     },
   },
   "fmt-check": {
-    description: "Check formatting for both client and server",
+    description: "Check formatting for client, server, and Python",
     category: "Quality",
     action: async () => {
       await runBun(["run", "format:check"], "client format check");
       await runCargo(["fmt", "--", "--check"], "server fmt-check");
+      await runVenv(["ruff", "format", "--check", "."], "python format check");
     },
   },
   "pre-commit": {
-    description: "Run all CI checks (fmt-check, lint, test) for both",
+    description: "Run all CI checks (fmt-check, lint, test) for all",
     category: "Quality",
     action: runPreCommit,
   },
   validate: {
-    description: "Run all validations (pre-push) for both",
+    description: "Run all validations (pre-push) for all",
     category: "Quality",
     action: runValidate,
+  },
+
+  "python-setup": {
+    description: "Create venv and install Python dependencies (scripts/)",
+    category: "Python",
+    action: runPythonSetup,
+  },
+  "python-fmt": {
+    description: "Format Python scripts with ruff",
+    category: "Python",
+    action: () => runVenv(["ruff", "format", "."], "python format"),
+  },
+  "python-fmt-check": {
+    description: "Check Python formatting (no write)",
+    category: "Python",
+    action: () => runVenv(["ruff", "format", "--check", "."], "python format check"),
+  },
+  "python-lint": {
+    description: "Lint Python scripts with ruff",
+    category: "Python",
+    action: () => runVenv(["ruff", "check", "."], "python lint"),
+  },
+  "python-lint-fix": {
+    description: "Lint and auto-fix Python scripts with ruff",
+    category: "Python",
+    action: () => runVenv(["ruff", "check", "--fix", "."], "python lint fix"),
   },
 };
 
@@ -317,6 +199,37 @@ async function runDocker(args) {
   });
   console.log();
   console.log(chalk.green("✓ Done!"));
+}
+
+async function runVenv(args, label) {
+  if (label) {
+    console.log(chalk.cyan(`Running: ${label}...`));
+    console.log();
+  }
+  await runCommand(VENV_PYTHON, ["-m", ...args], { cwd: SCRIPTS_DIR });
+  console.log();
+  console.log(chalk.green("✓ Done!"));
+}
+
+async function runPythonSetup() {
+  console.log(chalk.bold.cyan("Setting up Python virtual environment..."));
+  console.log();
+
+  const { existsSync } = await import("node:fs");
+  if (!existsSync(VENV_DIR)) {
+    console.log(chalk.yellow("▶ Creating virtual environment..."));
+    await runCommand("python3", ["-m", "venv", VENV_DIR], { cwd: SCRIPTS_DIR });
+    console.log(chalk.green("✓ venv created!"));
+  } else {
+    console.log(chalk.dim("Skipping venv creation — already exists."));
+  }
+
+  console.log(chalk.yellow("▶ Installing dependencies..."));
+  await runCommand(VENV_PIP, ["install", "-r", "requirements.txt"], {
+    cwd: SCRIPTS_DIR,
+  });
+  console.log();
+  console.log(chalk.green("✓ Python setup complete!"));
 }
 
 async function runDev() {
@@ -412,53 +325,6 @@ async function waitForPostgres(retries = 30) {
   throw new Error("Postgres did not become ready in time");
 }
 
-async function runMigrate() {
-  console.log(chalk.cyan("Running: sqlx migrate run..."));
-  console.log();
-  await runCommand("cargo", ["sqlx", "migrate", "run"], { cwd: SERVER_DIR });
-  console.log();
-  console.log(chalk.green("✓ Migrations applied!"));
-}
-
-async function runMigrateAdd() {
-  const name = process.argv[3];
-  if (!name) {
-    console.error(chalk.red("Usage: make server-migrate-add <name>"));
-    console.log(chalk.dim("  Example: make server-migrate-add create_posts"));
-    process.exit(1);
-  }
-  console.log(chalk.cyan(`Creating migration: ${name}...`));
-  console.log();
-  await runCommand("cargo", ["sqlx", "migrate", "add", name], {
-    cwd: SERVER_DIR,
-  });
-  console.log();
-  console.log(chalk.green("✓ Migration file created!"));
-}
-
-async function runDbReset() {
-  console.log(chalk.bold.cyan("Resetting database..."));
-  console.log();
-
-  const dbUrl = "postgresql://postgres:postgres@localhost:5432";
-
-  console.log(chalk.yellow("▶ Dropping database mdhd..."));
-  await runCommand("psql", [dbUrl, "-c", "DROP DATABASE IF EXISTS mdhd"], {
-    cwd: SERVER_DIR,
-  });
-
-  console.log(chalk.yellow("▶ Creating database mdhd..."));
-  await runCommand("psql", [dbUrl, "-c", "CREATE DATABASE mdhd"], {
-    cwd: SERVER_DIR,
-  });
-
-  console.log(chalk.yellow("▶ Running migrations..."));
-  await runMigrate();
-
-  console.log();
-  console.log(chalk.green("✓ Database reset complete!"));
-}
-
 async function runSetup() {
   console.log(chalk.bold.cyan("Running first-time setup..."));
   console.log();
@@ -470,6 +336,10 @@ async function runSetup() {
   console.log(chalk.bold.yellow("\n▶ Installing git hooks (lefthook)..."));
   console.log(chalk.dim("─".repeat(50)));
   await runBun(["x", "lefthook", "install"], "lefthook install");
+
+  console.log(chalk.bold.yellow("\n▶ Setting up Python environment..."));
+  console.log(chalk.dim("─".repeat(50)));
+  await runPythonSetup();
 
   console.log(chalk.bold.yellow("\n▶ Setting up server environment..."));
   console.log(chalk.dim("─".repeat(50)));
@@ -491,7 +361,9 @@ async function runSetup() {
 
   console.log(chalk.bold.yellow("\n▶ Running migrations..."));
   console.log(chalk.dim("─".repeat(50)));
-  await runMigrate();
+  console.log(chalk.cyan("Running: sqlx migrate run..."));
+  await runCommand("cargo", ["sqlx", "migrate", "run"], { cwd: SERVER_DIR });
+  console.log(chalk.green("✓ Migrations applied!"));
 
   console.log(chalk.bold.yellow("\n▶ Building server..."));
   console.log(chalk.dim("─".repeat(50)));
@@ -522,6 +394,14 @@ async function runPreCommit() {
       fn: () => runCargo(["clippy", "--", "-D", "warnings"], "server lint"),
     },
     { name: "server tests", fn: () => runCargo(["test"], "server test") },
+    {
+      name: "python fmt-check",
+      fn: () => runVenv(["ruff", "format", "--check", "."], "python format check"),
+    },
+    {
+      name: "python lint",
+      fn: () => runVenv(["ruff", "check", "."], "python lint"),
+    },
   ];
 
   for (const check of checks) {
@@ -568,6 +448,14 @@ async function runValidate() {
     },
     { name: "server tests", fn: () => runCargo(["test"], "server test") },
     {
+      name: "python fmt-check",
+      fn: () => runVenv(["ruff", "format", "--check", "."], "python format check"),
+    },
+    {
+      name: "python lint",
+      fn: () => runVenv(["ruff", "check", "."], "python lint"),
+    },
+    {
       name: "server release build",
       fn: () => runCargo(["build", "--release"], "server release"),
     },
@@ -594,6 +482,9 @@ async function runValidate() {
 function showHelp() {
   console.log();
   console.log(chalk.bold("  MDHD — root task runner"));
+  console.log(chalk.dim("  Run client/server-specific commands from their directories:"));
+  console.log(chalk.dim("    cd app && node makefile.mjs help"));
+  console.log(chalk.dim("    cd server && node makefile.mjs help"));
   console.log();
 
   const categories = {};
