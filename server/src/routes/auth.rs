@@ -8,12 +8,14 @@
 //! cookie during the redirect and verified on callback.
 
 use axum::Router;
-use axum::extract::{FromRequestParts, Path, Query, State};
-use axum::http::{HeaderValue, header, request::Parts};
-use axum::response::{IntoResponse, Redirect, Response};
-use axum::routing::get;
+use axum::extract::{Path, Query, State};
+use axum::response::{IntoResponse, Redirect};
+use axum::routing::{get, post};
+use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use time::Duration;
+use uuid::Uuid;
 
 use crate::auth::jwt::create_token;
 use crate::auth::oauth::{fetch_google_user_info, google_client};
@@ -27,6 +29,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/auth/{provider}", get(start_oauth))
         .route("/auth/{provider}/callback", get(oauth_callback))
+        .route("/auth/exchange", post(exchange_code))
         .route("/auth/me", get(get_current_user))
 }
 
@@ -38,7 +41,8 @@ pub fn router() -> Router<AppState> {
 async fn start_oauth(
     State(state): State<AppState>,
     Path(provider): Path<String>,
-) -> Result<Response, AppError> {
+    jar: CookieJar,
+) -> Result<impl IntoResponse, AppError> {
     match provider.as_str() {
         "google" => {
             if state.config.google_client_id.is_empty()
@@ -58,17 +62,13 @@ async fn start_oauth(
                 .add_scope(Scope::new("profile".to_string()))
                 .url();
 
-            let cookie = format!(
-                "{CSRF_COOKIE_NAME}={}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600",
-                csrf_token.secret()
-            );
+            let cookie = Cookie::build((CSRF_COOKIE_NAME, csrf_token.secret().clone()))
+                .http_only(true)
+                .same_site(SameSite::Lax)
+                .path("/")
+                .max_age(Duration::minutes(10));
 
-            let mut response = Redirect::temporary(auth_url.as_str()).into_response();
-            response.headers_mut().insert(
-                header::SET_COOKIE,
-                HeaderValue::from_str(&cookie).internal("Failed to build CSRF cookie")?,
-            );
-            Ok(response)
+            Ok((jar.add(cookie), Redirect::temporary(auth_url.as_str())))
         }
         _ => Err(AppError::unsupported_provider(&provider)),
     }
@@ -83,33 +83,6 @@ struct CallbackParams {
     state: Option<String>,
 }
 
-/// Axum extractor that reads the CSRF cookie set during [`start_oauth`].
-///
-/// Rejects with `400 Bad Request` if the cookie is absent.
-#[derive(Debug)]
-struct CsrfCookie(String);
-
-impl<S: Send + Sync> FromRequestParts<S> for CsrfCookie {
-    type Rejection = AppError;
-
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let value = parts
-            .headers
-            .get_all(header::COOKIE)
-            .iter()
-            .filter_map(|v| v.to_str().ok())
-            .flat_map(|v| v.split(';'))
-            .find_map(|pair| {
-                let pair = pair.trim();
-                let (key, val) = pair.split_once('=')?;
-                (key.trim() == CSRF_COOKIE_NAME).then(|| val.trim().to_string())
-            })
-            .ok_or_else(|| AppError::bad_request("Invalid or missing OAuth state parameter"))?;
-
-        Ok(CsrfCookie(value))
-    }
-}
-
 /// Handles the OAuth callback after the user consents.
 ///
 /// Verifies the CSRF `state` parameter against the cookie set during [`start_oauth`],
@@ -119,15 +92,19 @@ impl<S: Send + Sync> FromRequestParts<S> for CsrfCookie {
 async fn oauth_callback(
     State(state): State<AppState>,
     Path(provider): Path<String>,
-    CsrfCookie(csrf_cookie): CsrfCookie,
+    jar: CookieJar,
     Query(params): Query<CallbackParams>,
-) -> Result<Response, AppError> {
+) -> Result<impl IntoResponse, AppError> {
+    let csrf_cookie = jar
+        .get(CSRF_COOKIE_NAME)
+        .ok_or_else(|| AppError::bad_request("Invalid or missing OAuth state parameter"))?;
+
     let csrf_param = params
         .state
         .as_deref()
         .ok_or_else(|| AppError::bad_request("Invalid or missing OAuth state parameter"))?;
 
-    if csrf_cookie != csrf_param {
+    if csrf_cookie.value() != csrf_param {
         return Err(AppError::bad_request(
             "Invalid or missing OAuth state parameter",
         ));
@@ -166,21 +143,53 @@ async fn oauth_callback(
             .fetch_one(&state.db)
             .await?;
 
-            let token = create_token(user.id, &state.config.jwt_secret)?;
-            let redirect_url = format!("{}?token={}", state.config.frontend_url, token);
+            let code: Uuid = sqlx::query_scalar!(
+                "INSERT INTO auth_codes (user_id) VALUES ($1) RETURNING code",
+                user.id,
+            )
+            .fetch_one(&state.db)
+            .await?;
 
-            // Clear the CSRF cookie
-            let clear_cookie =
-                format!("{CSRF_COOKIE_NAME}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0");
-            let mut response = Redirect::temporary(&redirect_url).into_response();
-            response.headers_mut().insert(
-                header::SET_COOKIE,
-                HeaderValue::from_str(&clear_cookie).internal("Failed to build cookie")?,
-            );
-            Ok(response)
+            let redirect_url = format!("{}?code={}", state.config.frontend_url, code);
+            let jar = jar.remove(Cookie::from(CSRF_COOKIE_NAME));
+
+            Ok((jar, Redirect::temporary(&redirect_url)))
         }
         _ => Err(AppError::unsupported_provider(&provider)),
     }
+}
+
+/// Request body for POST /auth/exchange.
+#[derive(Deserialize)]
+struct ExchangeRequest {
+    code: Uuid,
+}
+
+/// Response body for POST /auth/exchange.
+#[derive(Serialize)]
+struct ExchangeResponse {
+    token: String,
+}
+
+/// POST /auth/exchange — consume a one-time auth code and return a JWT.
+///
+/// The code is deleted atomically via `DELETE … RETURNING`, so concurrent
+/// requests with the same code cannot both succeed. Returns `404 Not Found`
+/// if the code is unknown or has already expired (60-second window).
+async fn exchange_code(
+    State(state): State<AppState>,
+    axum::Json(body): axum::Json<ExchangeRequest>,
+) -> Result<axum::Json<ExchangeResponse>, AppError> {
+    let row = sqlx::query!(
+        "DELETE FROM auth_codes WHERE code = $1 AND expires_at > now() RETURNING user_id",
+        body.code,
+    )
+    .fetch_optional(&state.db)
+    .await?
+    .or_not_found()?;
+
+    let token = create_token(row.user_id, &state.config.jwt_secret)?;
+    Ok(axum::Json(ExchangeResponse { token }))
 }
 
 /// Returns the current authenticated user's profile as JSON.
@@ -214,7 +223,7 @@ mod tests {
 
     use super::*;
     use axum::body::Body;
-    use axum::http::{Request, StatusCode};
+    use axum::http::{Request, StatusCode, header};
     use tower::ServiceExt;
 
     fn test_config() -> crate::config::Config {
@@ -262,62 +271,6 @@ mod tests {
             s3: aws_sdk_s3::Client::from_conf(s3_config),
             http: reqwest::Client::new(),
         }
-    }
-
-    /// Helper so each test can call the extractor without repeating boilerplate.
-    async fn extract_csrf(req: Request<Body>) -> Result<CsrfCookie, AppError> {
-        let (mut parts, _) = req.into_parts();
-        CsrfCookie::from_request_parts(&mut parts, &()).await
-    }
-
-    #[tokio::test]
-    async fn csrf_cookie_extracted_when_present() {
-        let req = Request::builder()
-            .header(header::COOKIE, "oauth_csrf=my_token_123")
-            .body(Body::empty())
-            .unwrap();
-        let csrf = extract_csrf(req).await.unwrap();
-        assert_eq!(csrf.0, "my_token_123");
-    }
-
-    #[tokio::test]
-    async fn csrf_cookie_returns_bad_request_when_absent() {
-        let req = Request::builder().body(Body::empty()).unwrap();
-        let err = extract_csrf(req).await.unwrap_err();
-        assert!(matches!(err, AppError::BadRequest(_)));
-    }
-
-    #[tokio::test]
-    async fn csrf_cookie_returns_bad_request_when_only_other_cookies_present() {
-        let req = Request::builder()
-            .header(header::COOKIE, "session=abc; other=xyz")
-            .body(Body::empty())
-            .unwrap();
-        let err = extract_csrf(req).await.unwrap_err();
-        assert!(matches!(err, AppError::BadRequest(_)));
-    }
-
-    #[tokio::test]
-    async fn csrf_cookie_found_among_multiple_cookies() {
-        let req = Request::builder()
-            .header(
-                header::COOKIE,
-                "session=abc; oauth_csrf=csrf_value; other=xyz",
-            )
-            .body(Body::empty())
-            .unwrap();
-        let csrf = extract_csrf(req).await.unwrap();
-        assert_eq!(csrf.0, "csrf_value");
-    }
-
-    #[tokio::test]
-    async fn csrf_cookie_value_is_trimmed() {
-        let req = Request::builder()
-            .header(header::COOKIE, "oauth_csrf= spaced_token ")
-            .body(Body::empty())
-            .unwrap();
-        let csrf = extract_csrf(req).await.unwrap();
-        assert_eq!(csrf.0, "spaced_token");
     }
 
     #[tokio::test]
