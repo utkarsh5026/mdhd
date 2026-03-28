@@ -12,6 +12,7 @@ type TreeItemProps =
       isSelected: boolean;
       onClick: () => void;
       onContextMenu: (e: React.MouseEvent) => void;
+      onDragStart?: (e: React.DragEvent) => void;
     }
   | {
       type: 'directory';
@@ -27,11 +28,14 @@ export const TreeItem: React.FC<TreeItemProps> = (props) => {
   const isFile = type === 'file';
   const isSelected = isFile && props.isSelected;
   const onClick = isFile ? props.onClick : props.onToggle;
+  const handleDragStart = isFile ? props.onDragStart : undefined;
 
   return (
     <div
       role="button"
       tabIndex={0}
+      draggable={isFile}
+      onDragStart={handleDragStart}
       className={cn(
         'group relative flex items-center gap-1.5 py-0.75 pr-3 cursor-pointer rounded-sm transition-colors duration-100',
         isSelected ? 'bg-accent/70' : 'hover:bg-accent/40'

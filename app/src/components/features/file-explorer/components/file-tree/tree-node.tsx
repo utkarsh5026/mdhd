@@ -47,6 +47,11 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
       }
     };
 
+    const handleDragStart = (e: React.DragEvent) => {
+      e.dataTransfer.setData('application/x-mdhd-file-id', node.id);
+      e.dataTransfer.effectAllowed = 'copyMove';
+    };
+
     return (
       <TreeItem
         type="file"
@@ -55,6 +60,7 @@ export const TreeNode: React.FC<TreeNodeProps> = ({
         isSelected={isSelected}
         onClick={handleFileClick}
         onContextMenu={handleContextMenu}
+        onDragStart={handleDragStart}
       />
     );
   }
