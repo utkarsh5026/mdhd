@@ -18,8 +18,10 @@ interface AuthState {
 }
 
 interface AuthActions {
-  /** Set token (from URL param), persist it, and fetch the user profile. */
+  /** Set token, persist it, and fetch the user profile. */
   login: (token: string) => Promise<void>;
+  /** Exchange a one-time auth code for a JWT, then log in. */
+  exchange: (code: string) => Promise<void>;
   /** Clear all auth state. */
   logout: () => void;
   /** Attempt to restore session from a previously stored token. */
@@ -35,6 +37,14 @@ const useAuthStore = create<AuthState & AuthActions>()(
       token: null,
       isLoading: false,
 
+      exchange: async (code) => {
+        const { token } = await apiFetch<{ token: string }>('/auth/exchange', {
+          method: 'POST',
+          body: JSON.stringify({ code }),
+        });
+        await get().login(token);
+      },
+
       login: async (token) => {
         localStorage.setItem(TOKEN_KEY, token);
         set({ token, isLoading: true });
@@ -43,7 +53,6 @@ const useAuthStore = create<AuthState & AuthActions>()(
           const user = await apiFetch<AuthUser>('/auth/me');
           set({ user, isLoading: false });
         } catch {
-          // Token invalid — clean up
           localStorage.removeItem(TOKEN_KEY);
           set({ user: null, token: null, isLoading: false });
         }
@@ -58,7 +67,6 @@ const useAuthStore = create<AuthState & AuthActions>()(
         const token = localStorage.getItem(TOKEN_KEY);
         if (!token) return;
 
-        // Skip if already restored
         if (get().token === token && get().user) return;
 
         set({ token, isLoading: true });
@@ -75,8 +83,6 @@ const useAuthStore = create<AuthState & AuthActions>()(
   )
 );
 
-// --- Selector hooks ---
-
 export const useAuthUser = () => useAuthStore((s) => s.user);
 export const useAuthToken = () => useAuthStore((s) => s.token);
 export const useIsAuthenticated = () => useAuthStore((s) => !!s.user);
@@ -86,6 +92,7 @@ export const useAuthActions = () =>
   useAuthStore(
     useShallow((s) => ({
       login: s.login,
+      exchange: s.exchange,
       logout: s.logout,
       restore: s.restore,
     }))
