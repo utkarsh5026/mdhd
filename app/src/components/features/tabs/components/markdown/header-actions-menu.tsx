@@ -1,6 +1,16 @@
-import { Bookmark, BookmarkCheck, FileText, Maximize, MoreHorizontal, Share2 } from 'lucide-react';
+import {
+  Bookmark,
+  BookmarkCheck,
+  FileText,
+  Maximize,
+  MoreHorizontal,
+  Pause,
+  Share2,
+  Volume2,
+} from 'lucide-react';
 import { memo } from 'react';
 
+import { useTTSContext } from '@/components/features/content-reading/context/tts-context';
 import {
   useBookmarkActions,
   useIsCurrentSectionBookmarked,
@@ -25,6 +35,8 @@ const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = memo(
   ({ onFullscreen, onPdfExport, onShare }) => {
     const isBookmarked = useIsCurrentSectionBookmarked();
     const { toggleBookmark } = useBookmarkActions();
+    const tts = useTTSContext();
+    const isNarrating = tts.ttsStatus === 'playing' || tts.ttsStatus === 'paused';
 
     return (
       <ListPopover>
@@ -44,6 +56,25 @@ const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = memo(
             <ListPopoverItem icon={<Icon icon={Maximize} size="sm" />} onClick={onFullscreen}>
               Enter Fullscreen
             </ListPopoverItem>
+            {tts.isSupported && (
+              <ListPopoverItem
+                icon={
+                  isNarrating ? (
+                    <Icon icon={Pause} size="sm" className="text-primary" />
+                  ) : (
+                    <Icon icon={Volume2} size="sm" />
+                  )
+                }
+                isActive={isNarrating}
+                onClick={tts.togglePlayPause}
+              >
+                {tts.ttsStatus === 'playing'
+                  ? 'Pause Narration'
+                  : tts.ttsStatus === 'paused'
+                    ? 'Resume Narration'
+                    : 'Narrate'}
+              </ListPopoverItem>
+            )}
           </ListPopoverGroup>
           <ListPopoverGroup className="border-t border-border/40 mt-1 pt-1">
             <ListPopoverItem icon={<Icon icon={FileText} size="sm" />} onClick={onPdfExport}>
