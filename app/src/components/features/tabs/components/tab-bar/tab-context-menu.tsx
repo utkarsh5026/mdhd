@@ -1,14 +1,13 @@
 import { Copy, Pin, PinOff } from 'lucide-react';
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu';
 import Icon from '@/components/ui/icon';
+import {
+  ListPopover,
+  ListPopoverContent,
+  ListPopoverItem,
+  ListPopoverTrigger,
+} from '@/components/ui/list-popover';
 
 import { useActiveTabId, useTabClose, useTabs, useTabsActions } from '../../store';
 import TabItem from './tab-item';
@@ -30,6 +29,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = memo(
     const activeTabId = useActiveTabId();
     const { pinTab, unpinTab, duplicateTab } = useTabsActions();
     const closeActions = useTabClose();
+    const [open, setOpen] = useState(false);
 
     const tabIndex = tabs.findIndex((t) => t.id === id);
     const closableToRight = tabs.slice(tabIndex + 1).some((t) => !t.pinned);
@@ -37,8 +37,14 @@ const TabContextMenu: React.FC<TabContextMenuProps> = memo(
     const hasOtherClosable = tabs.some((t) => t.id !== id && !t.pinned);
 
     return (
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
+      <ListPopover open={open} onOpenChange={setOpen}>
+        <ListPopoverTrigger
+          asChild
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setOpen(true);
+          }}
+        >
           <span>
             <TabItem
               id={id}
@@ -51,72 +57,73 @@ const TabContextMenu: React.FC<TabContextMenuProps> = memo(
               onClose={onClose}
             />
           </span>
-        </ContextMenuTrigger>
+        </ListPopoverTrigger>
 
-        <ContextMenuContent className="w-48 rounded-2xl">
-          <ContextMenuItem
-            onClick={() => (pinned ? unpinTab(id) : pinTab(id))}
-            className="cursor-pointer gap-2 px-2.5 py-1.5 text-xs"
+        <ListPopoverContent className="w-48">
+          <ListPopoverItem
+            icon={<Icon icon={pinned ? PinOff : Pin} size="sm" />}
+            onClick={() => {
+              if (pinned) unpinTab(id);
+              else pinTab(id);
+              setOpen(false);
+            }}
           >
-            {pinned ? (
-              <>
-                <Icon icon={PinOff} size="sm" />
-                Unpin tab
-              </>
-            ) : (
-              <>
-                <Icon icon={Pin} size="sm" />
-                Pin tab
-              </>
-            )}
-          </ContextMenuItem>
+            {pinned ? 'Unpin tab' : 'Pin tab'}
+          </ListPopoverItem>
 
-          <ContextMenuItem
-            onClick={() => duplicateTab(id)}
-            className="cursor-pointer gap-2 px-2.5 py-1.5 text-xs"
+          <ListPopoverItem
+            icon={<Icon icon={Copy} size="sm" />}
+            onClick={() => {
+              duplicateTab(id);
+              setOpen(false);
+            }}
           >
-            <Icon icon={Copy} size="sm" />
             Duplicate tab
-          </ContextMenuItem>
+          </ListPopoverItem>
 
-          <ContextMenuSeparator />
+          <div className="my-1 border-t border-border/50" />
 
           {[
             {
               label: 'Close tab',
-              handler: (e: React.MouseEvent) => {
+              handler: (e: React.MouseEvent<HTMLButtonElement>) => {
                 e.stopPropagation();
-                onClose(e);
+                onClose(e as unknown as React.MouseEvent);
+                setOpen(false);
               },
               disabled: !!pinned,
             },
             {
               label: 'Close others',
-              handler: () => closeActions.closeOtherTabs(id),
+              handler: () => {
+                closeActions.closeOtherTabs(id);
+                setOpen(false);
+              },
               disabled: !hasOtherClosable || !activeTabId,
             },
             {
               label: 'Close tabs to the right',
-              handler: () => closeActions.closeTabsToTheRight(id),
+              handler: () => {
+                closeActions.closeTabsToTheRight(id);
+                setOpen(false);
+              },
               disabled: !closableToRight,
             },
             {
               label: 'Close tabs to the left',
-              handler: () => closeActions.closeTabsToTheLeft(id),
+              handler: () => {
+                closeActions.closeTabsToTheLeft(id);
+                setOpen(false);
+              },
               disabled: !closableToLeft,
             },
           ].map(({ label, handler, disabled }) => (
-            <ContextMenuItem
-              key={label}
-              onClick={handler}
-              disabled={disabled}
-              className="cursor-pointer px-2.5 py-1.5 text-xs"
-            >
+            <ListPopoverItem key={label} onClick={handler} disabled={disabled}>
               {label}
-            </ContextMenuItem>
+            </ListPopoverItem>
           ))}
-        </ContextMenuContent>
-      </ContextMenu>
+        </ListPopoverContent>
+      </ListPopover>
     );
   }
 );
