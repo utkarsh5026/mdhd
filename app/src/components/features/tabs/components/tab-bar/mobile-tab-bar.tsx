@@ -2,6 +2,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Maximize, Plus, X } from 'lucid
 import React, { memo } from 'react';
 
 import { Button } from '@/components/ui/button';
+import Icon from '@/components/ui/icon';
 import {
   ListPopover,
   ListPopoverContent,
@@ -34,7 +35,7 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
         <ListPopoverTrigger asChild>
           <button className="flex items-center gap-1 px-2.5 py-1.5 min-w-0 max-w-48 text-xs font-medium text-foreground hover:bg-accent/50 transition-colors">
             <span className="truncate">{activeTitle}</span>
-            <ChevronDown className="w-3 h-3 shrink-0 text-muted-foreground" />
+            <Icon icon={ChevronDown} size="xs" className="shrink-0 text-muted-foreground" />
           </button>
         </ListPopoverTrigger>
         <ListPopoverContent
@@ -47,7 +48,7 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
                   onNewTab();
                   close();
                 }}
-                icon={<Plus className="w-3 h-3" />}
+                icon={<Icon icon={Plus} size="xs" />}
               >
                 New tab
               </ListPopoverItem>
@@ -73,7 +74,7 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
                     className="p-1.5 rounded hover:bg-destructive/20 hover:text-destructive transition-colors"
                     aria-label={`Close ${tab.title}`}
                   >
-                    <X className="w-3 h-3" />
+                    <Icon icon={X} size="xs" />
                   </button>
                 }
               >
@@ -134,7 +135,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
             disabled={mobileNav.currentIndex === 0}
             aria-label="Previous section"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <Icon icon={ChevronLeft} size="sm" />
           </Button>
           <span className="text-xs text-muted-foreground tabular-nums min-w-10 text-center">
             {mobileNav.currentIndex + 1}/{mobileNav.total}
@@ -147,7 +148,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
             disabled={mobileNav.currentIndex === mobileNav.total - 1}
             aria-label="Next section"
           >
-            <ChevronRight className="w-3.5 h-3.5" />
+            <Icon icon={ChevronRight} size="sm" />
           </Button>
         </div>
       )}
@@ -160,7 +161,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
         disabled={!mobileNav}
         aria-label="Enter fullscreen"
       >
-        <Maximize className="w-3.5 h-3.5" />
+        <Icon icon={Maximize} size="sm" />
       </Button>
 
       <TabManagementMenu />

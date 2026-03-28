@@ -1,4 +1,4 @@
-import { MoreHorizontal } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import React, { memo, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import Icon from '@/components/ui/icon';
 import { useToggle } from '@/hooks';
 
 import {
@@ -114,7 +115,7 @@ const TabManagementMenu: React.FC = memo(() => {
           aria-label="Tab management menu"
           disabled={tabs.length === 0}
         >
-          <MoreHorizontal className="h-3.5 w-3.5" />
+          <Icon icon={MoreVertical} size="sm" />
         </Button>
       </DropdownMenuTrigger>
 

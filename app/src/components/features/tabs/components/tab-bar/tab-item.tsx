@@ -1,6 +1,7 @@
 import { Pin, X } from 'lucide-react';
 import React, { memo, useCallback } from 'react';
 
+import Icon from '@/components/ui/icon';
 import { TooltipButton } from '@/components/ui/tooltip-button';
 import { cn } from '@/lib/utils';
 
@@ -112,7 +113,7 @@ const TabButton: React.FC<TabButtonProps> = memo(
             )}
             aria-label={`Close ${title}`}
           >
-            <X className="w-3 h-3" />
+            <Icon icon={X} size="xs" />
           </span>
         )}
       </button>

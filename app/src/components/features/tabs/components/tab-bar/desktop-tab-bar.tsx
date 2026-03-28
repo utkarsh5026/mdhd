@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import React, { memo, useCallback, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
+import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 
 import { useTabDisplayMap } from '../../hooks/use-tab-display-map';
@@ -54,7 +55,7 @@ const DesktopTabBar: React.FC = memo(() => {
           onClick={handleScrollLeft}
           aria-label="Scroll tabs left"
         >
-          <ChevronLeft className="w-3.5 h-3.5" />
+          <Icon icon={ChevronLeft} size="sm" />
         </Button>
       )}
       <div
@@ -88,7 +89,7 @@ const DesktopTabBar: React.FC = memo(() => {
           onClick={handleScrollRight}
           aria-label="Scroll tabs right"
         >
-          <ChevronRight className="w-3.5 h-3.5" />
+          <Icon icon={ChevronRight} size="sm" />
         </Button>
       )}
       <Button
@@ -98,7 +99,7 @@ const DesktopTabBar: React.FC = memo(() => {
         onClick={createUntitledTab}
         aria-label="Create new tab"
       >
-        <Plus className="w-3.5 h-3.5" />
+        <Icon icon={Plus} size="sm" />
       </Button>
       <TabManagementMenu />
     </div>

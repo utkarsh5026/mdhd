@@ -8,6 +8,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import Icon from '@/components/ui/icon';
 
 import { useActiveTabId, useTabClose, useTabs, useTabsActions } from '../../store';
 import TabItem from './tab-item';
@@ -59,12 +60,12 @@ const TabContextMenu: React.FC<TabContextMenuProps> = memo(
           >
             {pinned ? (
               <>
-                <PinOff className="w-3.5 h-3.5" />
+                <Icon icon={PinOff} size="sm" />
                 Unpin tab
               </>
             ) : (
               <>
-                <Pin className="w-3.5 h-3.5" />
+                <Icon icon={Pin} size="sm" />
                 Pin tab
               </>
             )}
@@ -74,7 +75,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = memo(
             onClick={() => duplicateTab(id)}
             className="cursor-pointer gap-2 px-2.5 py-1.5 text-xs"
           >
-            <Copy className="w-3.5 h-3.5" />
+            <Icon icon={Copy} size="sm" />
             Duplicate tab
           </ContextMenuItem>
 
