@@ -3,6 +3,14 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 
 import type { TextSizeScale } from '@/components/features/markdown-render/utils/text-size-classes';
+import type {
+  BodyFontWeight,
+  LetterSpacing,
+  ParagraphSpacing,
+  TextAlignment,
+  TextIndent,
+  WordSpacing,
+} from '@/components/features/markdown-render/utils/typography-classes';
 import type { AppFontFamily, FontFamily } from '@/lib/font';
 import { APP_FONT_CSS_MAP } from '@/lib/font';
 import { loadFont } from '@/lib/font-loader';
@@ -13,6 +21,14 @@ const STORAGE_KEY = 'reading-settings';
 const clamp = (min: number, max: number, value: number) => Math.min(max, Math.max(min, value));
 
 export type { TextSizeScale };
+export type {
+  BodyFontWeight,
+  LetterSpacing,
+  ParagraphSpacing,
+  TextAlignment,
+  TextIndent,
+  WordSpacing,
+};
 
 /** Controls which background source is active in reading mode. */
 export type ReadingBackgroundType = 'theme' | 'solid' | 'image';
@@ -48,6 +64,15 @@ export interface ReadingSettings {
   bionicReading: boolean;
   sentenceFocusOnHover: boolean;
   textSizeScale: TextSizeScale;
+  letterSpacing: LetterSpacing;
+  wordSpacing: WordSpacing;
+  paragraphSpacing: ParagraphSpacing;
+  textAlignment: TextAlignment;
+  bodyFontWeight: BodyFontWeight;
+  textIndent: TextIndent;
+  ttsSpeed: number; // 0.5-2.0
+  ttsVoiceName: string; // preferred voice name, '' = system default
+  ttsAutoAdvance: boolean;
 }
 
 interface ReadingSettingsState {
@@ -60,9 +85,18 @@ interface ReadingSettingsState {
   toggleBionicReading: () => void;
   toggleSentenceFocusOnHover: () => void;
   setTextSizeScale: (scale: TextSizeScale) => void;
+  setLetterSpacing: (v: LetterSpacing) => void;
+  setWordSpacing: (v: WordSpacing) => void;
+  setParagraphSpacing: (v: ParagraphSpacing) => void;
+  setTextAlignment: (v: TextAlignment) => void;
+  setBodyFontWeight: (v: BodyFontWeight) => void;
+  setTextIndent: (v: TextIndent) => void;
   updateBackground: (partial: Partial<ReadingBackgroundSettings>) => void;
   setBackgroundImageId: (id: string | null) => void;
   clearBackgroundImage: () => void;
+  setTtsSpeed: (speed: number) => void;
+  setTtsVoiceName: (name: string) => void;
+  toggleTtsAutoAdvance: () => void;
   resetSettings: () => void;
 }
 
@@ -88,6 +122,15 @@ const DEFAULT_SETTINGS: ReadingSettings = {
   bionicReading: false,
   sentenceFocusOnHover: false,
   textSizeScale: 'base',
+  letterSpacing: 'normal',
+  wordSpacing: 'normal',
+  paragraphSpacing: 'normal',
+  textAlignment: 'left',
+  bodyFontWeight: 'normal',
+  textIndent: 'none',
+  ttsSpeed: 1.0,
+  ttsVoiceName: '',
+  ttsAutoAdvance: true,
 };
 
 /**
@@ -191,6 +234,13 @@ export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
 
   setTextSizeScale: (scale: TextSizeScale) => patchSettings(set, () => ({ textSizeScale: scale })),
 
+  setLetterSpacing: (v: LetterSpacing) => patchSettings(set, () => ({ letterSpacing: v })),
+  setWordSpacing: (v: WordSpacing) => patchSettings(set, () => ({ wordSpacing: v })),
+  setParagraphSpacing: (v: ParagraphSpacing) => patchSettings(set, () => ({ paragraphSpacing: v })),
+  setTextAlignment: (v: TextAlignment) => patchSettings(set, () => ({ textAlignment: v })),
+  setBodyFontWeight: (v: BodyFontWeight) => patchSettings(set, () => ({ bodyFontWeight: v })),
+  setTextIndent: (v: TextIndent) => patchSettings(set, () => ({ textIndent: v })),
+
   updateBackground: (partial: Partial<ReadingBackgroundSettings>) =>
     patchSettings(set, (s) => ({ background: { ...s.background, ...partial } })),
 
@@ -202,6 +252,12 @@ export const useReadingSettingsStore = create<ReadingSettingsState>((set) => ({
       backgroundImageId: null,
       background: { ...s.background, backgroundType: 'theme' as const },
     })),
+
+  setTtsSpeed: (speed: number) => patchSettings(set, () => ({ ttsSpeed: clamp(0.5, 2.0, speed) })),
+
+  setTtsVoiceName: (name: string) => patchSettings(set, () => ({ ttsVoiceName: name })),
+
+  toggleTtsAutoAdvance: () => patchSettings(set, (s) => ({ ttsAutoAdvance: !s.ttsAutoAdvance })),
 
   resetSettings: () =>
     set(() => {
@@ -226,6 +282,12 @@ export const useReadingSettings = () => {
       toggleBionicReading: state.toggleBionicReading,
       toggleSentenceFocusOnHover: state.toggleSentenceFocusOnHover,
       setTextSizeScale: state.setTextSizeScale,
+      setLetterSpacing: state.setLetterSpacing,
+      setWordSpacing: state.setWordSpacing,
+      setParagraphSpacing: state.setParagraphSpacing,
+      setTextAlignment: state.setTextAlignment,
+      setBodyFontWeight: state.setBodyFontWeight,
+      setTextIndent: state.setTextIndent,
       updateBackground: state.updateBackground,
       setBackgroundImageId: state.setBackgroundImageId,
       clearBackgroundImage: state.clearBackgroundImage,

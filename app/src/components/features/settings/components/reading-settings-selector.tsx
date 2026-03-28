@@ -5,6 +5,7 @@ import SideSheet, { SideSheetBody, SideSheetHeader } from '@/components/ui/side-
 import { cn } from '@/lib/utils';
 
 const ReadingModeSelector = lazy(() => import('./reading-mode-selector'));
+const TypographySelector = lazy(() => import('./typography-selector'));
 const AppThemeSelector = lazy(() => import('./app-theme-selector'));
 const AppFontSelector = lazy(() => import('./app-font-selector'));
 const BackgroundSettings = lazy(() => import('./background-settings'));
@@ -51,7 +52,14 @@ const TabContent = memo(({ value, activeTab, onRequestCloseSheet }: TabContentPr
       aria-hidden={isHidden}
     >
       <Suspense fallback={<TabLoader />}>
-        {value === 'reading' && <ReadingModeSelector />}
+        {value === 'reading' && (
+          <>
+            <ReadingModeSelector />
+            <div className="border-t border-border/20 pt-6 mt-6">
+              <TypographySelector />
+            </div>
+          </>
+        )}
         {value === 'theme' && (
           <>
             <BackgroundSettings />

@@ -4,6 +4,7 @@ import React, { lazy, memo, startTransition, Suspense, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const ReadingModeSelector = lazy(() => import('./reading-mode-selector'));
+const TypographySelector = lazy(() => import('./typography-selector'));
 const AppThemeSelector = lazy(() => import('./app-theme-selector'));
 const AppFontSelector = lazy(() => import('./app-font-selector'));
 const BackgroundSettings = lazy(() => import('./background-settings'));
@@ -39,7 +40,14 @@ const TabContent = memo(({ value, activeTab }: { value: TabValue; activeTab: Tab
       aria-hidden={isHidden}
     >
       <Suspense fallback={<TabLoader />}>
-        {value === 'reading' && <ReadingModeSelector />}
+        {value === 'reading' && (
+          <>
+            <ReadingModeSelector />
+            <div className="border-t border-border/20 pt-4 mt-4">
+              <TypographySelector />
+            </div>
+          </>
+        )}
         {value === 'theme' && (
           <>
             <BackgroundSettings />

@@ -1,12 +1,26 @@
 import { AlignLeft, List } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
-import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
 import { Button } from '@/components/ui/button';
 
 import { transformBionicChildren } from '../../hooks/use-bionic-transform';
 import { splitChildrenIntoSentences, useParagraphToList } from '../../hooks/use-paragraph-to-list';
+import {
+  useBionicReading,
+  useBodyFontWeight,
+  useSentenceFocusOnHover,
+  useSpacing,
+  useTextLayout,
+} from '../../hooks/use-typography-settings';
 import { TEXT_SIZE_SCALE_CLASSES } from '../../utils/text-size-classes';
+import {
+  BODY_FONT_WEIGHT_CLASSES,
+  LETTER_SPACING_CLASSES,
+  PARAGRAPH_SPACING_CLASSES,
+  TEXT_ALIGNMENT_CLASSES,
+  TEXT_INDENT_CLASSES,
+  WORD_SPACING_CLASSES,
+} from '../../utils/typography-classes';
 
 /**
  * ParagraphRender Component
@@ -16,9 +30,11 @@ import { TEXT_SIZE_SCALE_CLASSES } from '../../utils/text-size-classes';
  * which splits the text into individual sentences for enhanced scannability.
  */
 const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ children, ...rest }) => {
-  const bionicReading = useReadingSettingsStore((s) => s.settings.bionicReading);
-  const sentenceFocusOnHover = useReadingSettingsStore((s) => s.settings.sentenceFocusOnHover);
-  const textSizeScale = useReadingSettingsStore((s) => s.settings.textSizeScale);
+  const bionicReading = useBionicReading();
+  const sentenceFocusOnHover = useSentenceFocusOnHover();
+  const { textSizeScale, textAlignment, textIndent } = useTextLayout();
+  const { letterSpacing, wordSpacing, paragraphSpacing } = useSpacing();
+  const bodyFontWeight = useBodyFontWeight();
   const { isListView, sentences, toggleListView } = useParagraphToList(children);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
@@ -34,14 +50,17 @@ const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ childr
 
   const paragraphClasses = [
     'text-foreground/92',
-    'my-3 sm:my-5 lg:my-6',
+    PARAGRAPH_SPACING_CLASSES[paragraphSpacing],
     'leading-relaxed sm:leading-7 lg:leading-8',
     'text-pretty break-words',
     TEXT_SIZE_SCALE_CLASSES.paragraph[textSizeScale],
     'px-0',
     'first:mt-0 last:mb-0',
-    'tracking-normal',
-    'font-normal',
+    LETTER_SPACING_CLASSES[letterSpacing],
+    BODY_FONT_WEIGHT_CLASSES[bodyFontWeight],
+    WORD_SPACING_CLASSES[wordSpacing],
+    TEXT_ALIGNMENT_CLASSES[textAlignment],
+    TEXT_INDENT_CLASSES[textIndent],
     '[transition:font-size_300ms_ease-in-out,line-height_300ms_ease-in-out]',
   ].join(' ');
 
@@ -67,7 +86,7 @@ const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ childr
 
   if (isListView) {
     const listBaseClasses = [
-      'my-3 sm:my-5',
+      PARAGRAPH_SPACING_CLASSES[paragraphSpacing],
       'ml-5 sm:ml-7 lg:ml-8',
       'space-y-1.5 sm:space-y-2.5',
       TEXT_SIZE_SCALE_CLASSES.paragraph[textSizeScale],
@@ -76,6 +95,9 @@ const ParagraphRender: React.FC<React.ComponentPropsWithoutRef<'p'>> = ({ childr
       'text-pretty break-words',
       'list-disc marker:text-primary/70 text-foreground/92',
       'first:mt-0 last:mb-0',
+      LETTER_SPACING_CLASSES[letterSpacing],
+      BODY_FONT_WEIGHT_CLASSES[bodyFontWeight],
+      WORD_SPACING_CLASSES[wordSpacing],
     ].join(' ');
 
     const listItemClasses = [
