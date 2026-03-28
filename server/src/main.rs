@@ -16,15 +16,40 @@ use axum::Router;
 use axum::extract::State;
 use axum::http::{Method, StatusCode, header};
 use axum::routing::get;
+use tower_http::compression::CompressionLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
+use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::Level;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
-use config::Config;
+use config::{AppEnv, Config};
 use state::AppState;
+
+fn init_tracing(env: &AppEnv) {
+    let env_filter =
+        tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| match env {
+            AppEnv::Production => "mdhd_server=info,tower_http=info,sqlx=warn".into(),
+            AppEnv::Development => "mdhd_server=debug,tower_http=debug,sqlx=warn".into(),
+        });
+
+    let fmt_layer: Box<dyn Layer<_> + Send + Sync> = match env {
+        AppEnv::Production => Box::new(tracing_subscriber::fmt::layer().json().with_ansi(false)),
+
+        AppEnv::Development => Box::new(
+            tracing_subscriber::fmt::layer()
+                .with_target(true)
+                .with_line_number(true),
+        ),
+    };
+
+    tracing_subscriber::registry()
+        .with(env_filter)
+        .with(fmt_layer)
+        .init();
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -32,24 +57,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::from_filename(format!(".env.{env}")).ok();
     dotenvy::dotenv().ok();
 
-    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-        if env == "production" {
-            "mdhd_server=info,tower_http=info,sqlx=warn".into()
-        } else {
-            "mdhd_server=debug,tower_http=debug,sqlx=warn".into()
-        }
-    });
-
-    let registry = tracing_subscriber::registry().with(env_filter);
-    if env == "production" {
-        registry
-            .with(tracing_subscriber::fmt::layer().json())
-            .init();
-    } else {
-        registry.with(tracing_subscriber::fmt::layer()).init();
-    }
-
     let config = Config::from_env()?;
+
+    init_tracing(&config.app_env);
+
     let port = config.port;
 
     let db = db::create_pool(&config.database_url).await?;
@@ -69,7 +80,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cors = CorsLayer::new()
         .allow_origin(cors_header)
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
 
     let app = Router::new()
@@ -82,6 +99,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Duration::from_secs(30),
         ))
         .layer(cors)
+        .layer(CompressionLayer::new())
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::X_CONTENT_TYPE_OPTIONS,
+            axum::http::HeaderValue::from_static("nosniff"),
+        ))
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::X_FRAME_OPTIONS,
+            axum::http::HeaderValue::from_static("DENY"),
+        ))
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::REFERRER_POLICY,
+            axum::http::HeaderValue::from_static("strict-origin-when-cross-origin"),
+        ))
         .layer(
             TraceLayer::new_for_http().on_response(
                 DefaultOnResponse::new()
@@ -111,8 +141,27 @@ async fn health(State(state): State<AppState>) -> StatusCode {
 }
 
 async fn shutdown_signal() {
-    if let Err(e) = tokio::signal::ctrl_c().await {
-        tracing::error!("Failed to install Ctrl+C handler: {e}");
+    let ctrl_c = async {
+        if let Err(e) = tokio::signal::ctrl_c().await {
+            tracing::error!("Failed to install Ctrl+C handler: {e}");
+        }
+    };
+
+    #[cfg(unix)]
+    let sigterm = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let sigterm = std::future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {},
+        () = sigterm => {},
     }
+
     tracing::info!("Shutdown signal received, draining connections...");
 }
