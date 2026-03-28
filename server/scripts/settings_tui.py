@@ -212,6 +212,16 @@ def _handle_detail_choice(
                 show_setting_detail(setting)
         return True
 
+    if choice == "4":
+        if not settings:
+            console.print("[yellow]No settings to display.[/yellow]")
+            return True
+
+        console.print()
+        for setting in settings:
+            show_setting_detail(setting)
+        return True
+
     return False
 
 
@@ -236,6 +246,7 @@ def user_detail(user: tuple) -> None:
             "  [bold]1[/bold]  List all settings\n"
             "  [bold]2[/bold]  Inspect a setting (full JSON)\n"
             "  [bold]3[/bold]  Search settings by key\n"
+            "  [bold]4[/bold]  Show all settings (full JSON)\n"
             "  [bold]b[/bold]  Back to user list\n"
             "  [bold]q[/bold]  Quit\n"
         )

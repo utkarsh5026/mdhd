@@ -27,8 +27,7 @@ from rich.table import Table
 DB_URL = os.environ.get(
     "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/mdhd"
 )
-MINIO_ENDPOINT = os.environ.get(
-    "SUPABASE_S3_ENDPOINT", "http://localhost:9000")
+MINIO_ENDPOINT = os.environ.get("SUPABASE_S3_ENDPOINT", "http://localhost:9000")
 MINIO_ACCESS_KEY = os.environ.get("SUPABASE_S3_ACCESS_KEY", "minioadmin")
 MINIO_SECRET_KEY = os.environ.get("SUPABASE_S3_SECRET_KEY", "minioadmin")
 MINIO_BUCKET = os.environ.get("SUPABASE_STORAGE_BUCKET", "files")
@@ -78,8 +77,7 @@ def resolve_user_id(identifier: str) -> str:
         return identifier
 
     with get_db() as conn, conn.cursor() as cur:
-        cur.execute(
-            "SELECT id, name, email FROM users WHERE email = %s", (identifier,))
+        cur.execute("SELECT id, name, email FROM users WHERE email = %s", (identifier,))
         row = cur.fetchone()
 
     if not row:
@@ -173,8 +171,7 @@ def show_minio_files(user_id: str) -> None:
 
     objects = response.get("Contents", [])
     if not objects:
-        console.print(
-            f"[yellow]No objects in MinIO under prefix '{prefix}'.[/yellow]")
+        console.print(f"[yellow]No objects in MinIO under prefix '{prefix}'.[/yellow]")
         return
 
     table = Table(title="Objects in MinIO")
@@ -230,15 +227,12 @@ def main() -> None:
         description="Inspect files for a user in Postgres and MinIO"
     )
     parser.add_argument("user", nargs="?", help="User email or UUID")
-    parser.add_argument("--db", action="store_true",
-                        help="Show only Postgres files")
-    parser.add_argument("--minio", action="store_true",
-                        help="Show only MinIO objects")
+    parser.add_argument("--db", action="store_true", help="Show only Postgres files")
+    parser.add_argument("--minio", action="store_true", help="Show only MinIO objects")
     parser.add_argument(
         "--cat", metavar="KEY", help="Print content of a MinIO object by storage key"
     )
-    parser.add_argument("--list-users", action="store_true",
-                        help="List all users")
+    parser.add_argument("--list-users", action="store_true", help="List all users")
 
     args = parser.parse_args()
 
