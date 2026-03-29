@@ -2,9 +2,11 @@ mod auth;
 mod config;
 mod db;
 mod errors;
+mod github;
 mod middleware;
 mod models;
 mod routes;
+mod services;
 mod state;
 mod storage;
 #[cfg(test)]
