@@ -1,10 +1,11 @@
-//! Sync reconciliation logic for bidirectional cross-device file sync.
+//! Sync reconciliation logic for bidirectional cross-device file and settings sync.
 //!
-//! This module is pure business logic — it takes a [`SyncManifest`] describing what the server and
-//! client each have, and returns a [`SyncDecision`] with three disjoint action lists. No I/O or
-//! database access happens here, making the reconciliation fully unit-testable.
+//! This module is pure business logic — it takes manifests describing what the server and client
+//! each have, and returns decisions with disjoint action lists. No I/O or database access happens
+//! here, making the reconciliation fully unit-testable.
 
 use crate::models::file::FileMeta;
+use crate::models::setting::UserSetting;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -133,4 +134,82 @@ pub fn reconcile(manifest: &SyncManifest) -> SyncDecision {
         download,
         delete,
     }
+}
+
+/// A single setting entry sent by the client.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ClientSettingEntry {
+    pub key: String,
+    pub hash: String,
+    pub updated_at: DateTime<Utc>,
+    pub value: serde_json::Value,
+}
+
+/// A setting the client should apply (server has a newer version).
+#[derive(Debug, Serialize)]
+pub struct ServerSettingEntry {
+    pub key: String,
+    pub value: serde_json::Value,
+    pub hash: String,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl From<&UserSetting> for ServerSettingEntry {
+    fn from(s: &UserSetting) -> Self {
+        ServerSettingEntry {
+            key: s.key.clone(),
+            value: s.value.clone(),
+            hash: s.hash.clone(),
+            updated_at: s.updated_at,
+        }
+    }
+}
+
+/// The two disjoint action lists produced by [`reconcile_settings`].
+pub struct SettingsSyncDecision {
+    /// Client settings the server should persist (client wins or key is new).
+    pub to_upsert: Vec<ClientSettingEntry>,
+    /// Server settings the client should apply (server wins or client doesn't have them).
+    pub updated: Vec<ServerSettingEntry>,
+}
+
+/// Computes which settings to upsert on the server and which to send back to the client.
+///
+/// Uses last-write-wins by timestamp, with hash equality as a short-circuit:
+/// - Hashes match → no action.
+/// - Client is newer (or key unknown to server) → `to_upsert`.
+/// - Server is newer → `updated`.
+/// - Server has a key the client didn't send → `updated`.
+pub fn reconcile_settings(
+    server: &[UserSetting],
+    client: &[ClientSettingEntry],
+) -> SettingsSyncDecision {
+    let server_map: HashMap<&str, &UserSetting> =
+        server.iter().map(|s| (s.key.as_str(), s)).collect();
+
+    let client_keys: std::collections::HashSet<&str> =
+        client.iter().map(|s| s.key.as_str()).collect();
+
+    let mut to_upsert = Vec::new();
+    let mut updated = Vec::new();
+
+    for entry in client {
+        match server_map.get(entry.key.as_str()) {
+            Some(sv) if entry.hash == sv.hash => {}
+            Some(sv) if entry.updated_at < sv.updated_at => {
+                updated.push((*sv).into());
+            }
+            _ => {
+                to_upsert.push(entry.clone());
+            }
+        }
+    }
+
+    for sv in server {
+        if !client_keys.contains(sv.key.as_str()) {
+            updated.push(sv.into());
+        }
+    }
+
+    SettingsSyncDecision { to_upsert, updated }
 }

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use axum::extract::State;
 use axum::routing::post;
 use axum::{Json, Router};
@@ -9,34 +7,17 @@ use serde::{Deserialize, Serialize};
 use crate::errors::AppError;
 use crate::middleware::auth::AuthUser;
 use crate::models::setting::UserSetting;
+use crate::services::sync::{ClientSettingEntry, ServerSettingEntry, reconcile_settings};
 use crate::state::AppState;
 
 pub fn router() -> Router<AppState> {
     Router::new().route("/settings/sync", post(sync_settings))
 }
 
-/// A single setting entry sent by the client.
-#[derive(Debug, Deserialize)]
-pub struct ClientSettingEntry {
-    pub key: String,
-    pub hash: String,
-    pub updated_at: DateTime<Utc>,
-    pub value: serde_json::Value,
-}
-
 /// Request body for POST /settings/sync.
 #[derive(Debug, Deserialize)]
 pub struct SettingsSyncRequest {
     pub settings: Vec<ClientSettingEntry>,
-}
-
-/// A setting the client should apply (server has a newer version).
-#[derive(Debug, Serialize)]
-pub struct ServerSettingEntry {
-    pub key: String,
-    pub value: serde_json::Value,
-    pub hash: String,
-    pub updated_at: DateTime<Utc>,
 }
 
 /// Response body for POST /settings/sync.
@@ -48,17 +29,6 @@ pub struct SettingsSyncResponse {
     pub accepted: Vec<String>,
     /// Current server time — store as reference for next sync.
     pub server_time: DateTime<Utc>,
-}
-
-impl From<&UserSetting> for ServerSettingEntry {
-    fn from(s: &UserSetting) -> Self {
-        ServerSettingEntry {
-            key: s.key.clone(),
-            value: s.value.clone(),
-            hash: s.hash.clone(),
-            updated_at: s.updated_at,
-        }
-    }
 }
 
 /// POST /settings/sync — bidirectional settings sync using last-write-wins.
@@ -84,37 +54,15 @@ async fn sync_settings(
     .fetch_all(&state.db)
     .await?;
 
-    let server_map: HashMap<&str, &UserSetting> = server_settings
-        .iter()
-        .map(|s| (s.key.as_str(), s))
-        .collect();
+    let decision = reconcile_settings(&server_settings, &body.settings);
 
-    let client_map: HashMap<&str, &ClientSettingEntry> =
-        body.settings.iter().map(|s| (s.key.as_str(), s)).collect();
-
-    let mut updated: Vec<ServerSettingEntry> = Vec::new();
     let mut accepted: Vec<String> = Vec::new();
-
-    for client_entry in &body.settings {
-        match server_map.get(client_entry.key.as_str()) {
-            Some(server_entry) if client_entry.hash == server_entry.hash => {}
-
-            Some(server_entry) if client_entry.updated_at < server_entry.updated_at => {
-                updated.push((*server_entry).into());
-            }
-
-            _ => {
-                upsert_setting(&state, uid, client_entry, server_time).await?;
-                accepted.push(client_entry.key.clone());
-            }
-        }
+    for entry in &decision.to_upsert {
+        upsert_setting(&state, uid, entry, server_time).await?;
+        accepted.push(entry.key.clone());
     }
 
-    for server_entry in &server_settings {
-        if !client_map.contains_key(server_entry.key.as_str()) {
-            updated.push(server_entry.into());
-        }
-    }
+    let updated = decision.updated;
 
     Ok(Json(SettingsSyncResponse {
         updated,
