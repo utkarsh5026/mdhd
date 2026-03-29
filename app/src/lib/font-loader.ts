@@ -47,11 +47,16 @@ const fontImports: Record<FontFamily, () => Promise<void>> = {
 
   // Non-variable fonts - load specific weights
   merriweather: async () => {
+    await import('@fontsource/merriweather/300.css');
     await import('@fontsource/merriweather/400.css');
+    await import('@fontsource/merriweather/500.css');
+    await import('@fontsource/merriweather/600.css');
     await import('@fontsource/merriweather/700.css');
   },
   'libre-baskerville': async () => {
     await import('@fontsource/libre-baskerville/400.css');
+    await import('@fontsource/libre-baskerville/500.css');
+    await import('@fontsource/libre-baskerville/600.css');
     await import('@fontsource/libre-baskerville/700.css');
   },
   'pt-serif': async () => {
@@ -64,6 +69,7 @@ const fontImports: Record<FontFamily, () => Promise<void>> = {
     await import('@fontsource/crimson-text/700.css');
   },
   spectral: async () => {
+    await import('@fontsource/spectral/300.css');
     await import('@fontsource/spectral/400.css');
     await import('@fontsource/spectral/500.css');
     await import('@fontsource/spectral/600.css');
@@ -76,6 +82,7 @@ const fontImports: Record<FontFamily, () => Promise<void>> = {
     await import('@fontsource/vollkorn/700.css');
   },
   literata: async () => {
+    await import('@fontsource/literata/300.css');
     await import('@fontsource/literata/400.css');
     await import('@fontsource/literata/500.css');
     await import('@fontsource/literata/600.css');
@@ -86,6 +93,7 @@ const fontImports: Record<FontFamily, () => Promise<void>> = {
     await import('@fontsource/atkinson-hyperlegible/700.css');
   },
   'ibm-plex-sans': async () => {
+    await import('@fontsource/ibm-plex-sans/300.css');
     await import('@fontsource/ibm-plex-sans/400.css');
     await import('@fontsource/ibm-plex-sans/500.css');
     await import('@fontsource/ibm-plex-sans/600.css');
