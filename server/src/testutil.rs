@@ -24,6 +24,9 @@ pub fn test_config() -> Config {
         port: 8080,
         cors_origin: String::new(),
         frontend_url: String::new(),
+        github_client_id: String::new(),
+        github_client_secret: String::new(),
+        github_webhook_base: String::new(),
         app_env: AppEnv::Development,
     }
 }
@@ -63,6 +66,43 @@ pub async fn create_test_user(db: &PgPool) -> (Uuid, String) {
 
     let token = crate::auth::jwt::create_token(user_id, "test-secret").unwrap();
     (user_id, token)
+}
+
+/// Sends a GET request with a Bearer token and returns `(status, body)`.
+pub async fn get_json(app: axum::Router, uri: &str, token: &str) -> (StatusCode, Value) {
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(uri)
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let status = response.status();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: Value = serde_json::from_slice(&bytes).unwrap_or(Value::Null);
+    (status, json)
+}
+
+/// Sends a DELETE request with a Bearer token and returns the status code.
+pub async fn delete_req(app: axum::Router, uri: &str, token: &str) -> StatusCode {
+    app.oneshot(
+        Request::builder()
+            .method("DELETE")
+            .uri(uri)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await
+    .unwrap()
+    .status()
 }
 
 /// Sends a JSON POST request with a Bearer token and returns `(status, body)`.
