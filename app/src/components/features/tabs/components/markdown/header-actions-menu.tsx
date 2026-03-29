@@ -34,7 +34,7 @@ interface HeaderActionsMenuProps {
 const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = memo(
   ({ onFullscreen, onPdfExport, onShare }) => {
     const isBookmarked = useIsCurrentSectionBookmarked();
-    const { toggleBookmark } = useBookmarkActions();
+    const { toggleBookmark, isPasteTab } = useBookmarkActions();
     const tts = useTTSContext();
     const isNarrating = tts.ttsStatus === 'playing' || tts.ttsStatus === 'paused';
 
@@ -95,6 +95,13 @@ const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = memo(
               }
               isActive={isBookmarked}
               onClick={toggleBookmark}
+              suffix={
+                isPasteTab ? (
+                  <span className="text-[9px] px-1 rounded bg-muted/50 text-muted-foreground/50 leading-4">
+                    local
+                  </span>
+                ) : undefined
+              }
             >
               {isBookmarked ? 'Remove Bookmark' : 'Bookmark Section'}
             </ListPopoverItem>
