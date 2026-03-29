@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { clamp } from '@/lib/utils';
 import { tryCatch } from '@/utils/error';
 
+import { type BackgroundSlice, createBackgroundSlice } from './background-slice';
 import type { TtsSettingsSlice } from './tts-slice';
 import { createTtsSlice } from './tts-slice';
 import type { TypographySlice } from './typography-slice';
@@ -12,7 +13,11 @@ import { createTypographySlice } from './typography-slice';
 
 const STORAGE_KEY = 'reading-settings';
 
-// Re-export typography types so existing imports from this module continue to work
+export type {
+  ReadingBackgroundFit,
+  ReadingBackgroundSettings,
+  ReadingBackgroundType,
+} from './background-slice';
 export type { TextSizeScale } from './typography-slice';
 export type {
   BodyFontWeight,
@@ -23,33 +28,8 @@ export type {
   WordSpacing,
 } from './typography-slice';
 
-/** Controls which background source is active in reading mode. */
-export type ReadingBackgroundType = 'theme' | 'solid' | 'image';
-/** CSS `object-fit` mode (plus `tile`) used when a background image is active. */
-export type ReadingBackgroundFit = 'cover' | 'contain' | 'fill' | 'tile';
-
-/**
- * All configurable background properties for reading mode.
- *
- * When `backgroundType` is `'theme'` the background color fields are ignored
- * and the active app theme drives the canvas color. When `'solid'`, only
- * `backgroundColor` applies. When `'image'`, the image fields take effect.
- */
-export interface ReadingBackgroundSettings {
-  backgroundType: ReadingBackgroundType;
-  backgroundColor: string;
-  backgroundImageFit: ReadingBackgroundFit;
-  backgroundImageOpacity: number; // 10-100
-  backgroundImageBlur: number; // 0-20px
-  backgroundImageOverlay: string;
-  backgroundImageOverlayOpacity: number; // 0-80
-}
-
-/** Reading display and interaction settings (background, layout, reading features). */
+/** Reading display and interaction settings (layout and reading features). */
 export interface ReadingSettings {
-  background: ReadingBackgroundSettings;
-  /** IndexedDB key of the image file currently used as the reading background, or `null` when none is set. */
-  backgroundImageId: string | null;
   /** Maximum width (in px) of the reading content column. Clamped to 500–900. */
   contentWidth: number;
   /** When `true`, bold prefixes are applied to words to aid rapid reading (Bionic Reading technique). */
@@ -63,34 +43,16 @@ interface ReadingSettingsState {
   setContentWidth: (width: number) => void;
   toggleBionicReading: () => void;
   toggleSentenceFocusOnHover: () => void;
-  updateBackground: (partial: Partial<ReadingBackgroundSettings>) => void;
-  setBackgroundImageId: (id: string | null) => void;
-  clearBackgroundImage: () => void;
   resetSettings: () => void;
 }
 
-const DEFAULT_BACKGROUND: ReadingBackgroundSettings = {
-  backgroundType: 'theme',
-  backgroundColor: '',
-  backgroundImageFit: 'cover',
-  backgroundImageOpacity: 100,
-  backgroundImageBlur: 0,
-  backgroundImageOverlay: '#000000',
-  backgroundImageOverlayOpacity: 0,
-};
-
 const DEFAULT_SETTINGS: ReadingSettings = {
-  background: DEFAULT_BACKGROUND,
-  backgroundImageId: null,
   contentWidth: 700,
   bionicReading: false,
   sentenceFocusOnHover: false,
 };
 
-/**
- * Loads reading settings (background, layout, reading features) from localStorage.
- * Deep-merges `background` so new fields added to `DEFAULT_BACKGROUND` are always present.
- */
+/** Loads layout/reading-feature settings from localStorage. */
 const loadInitialSettings = (): ReadingSettings => {
   if (typeof window === 'undefined') return DEFAULT_SETTINGS;
 
@@ -100,13 +62,7 @@ const loadInitialSettings = (): ReadingSettings => {
   const parsed = tryCatch(() => JSON.parse(savedSettings), null);
   if (!parsed) return DEFAULT_SETTINGS;
 
-  const background = parsed.background
-    ? { ...DEFAULT_BACKGROUND, ...parsed.background }
-    : DEFAULT_BACKGROUND;
-
   return {
-    background,
-    backgroundImageId: parsed.backgroundImageId ?? null,
     contentWidth: parsed.contentWidth ?? DEFAULT_SETTINGS.contentWidth,
     bionicReading: parsed.bionicReading ?? DEFAULT_SETTINGS.bionicReading,
     sentenceFocusOnHover: parsed.sentenceFocusOnHover ?? DEFAULT_SETTINGS.sentenceFocusOnHover,
@@ -132,23 +88,21 @@ const patchSettings = (
 
 /**
  * Combined Zustand store that merges reading display settings ({@link ReadingSettingsState}),
- * text-to-speech settings ({@link TtsSettingsSlice}), and typography settings
- * ({@link TypographySlice}) into a single store instance.
- *
- * Initial state is hydrated from localStorage via {@link loadInitialSettings}. All mutating
- * actions persist their changes back to localStorage automatically through `patchSettings`.
+ * background settings ({@link BackgroundSlice}), text-to-speech settings ({@link TtsSettingsSlice}),
+ * and typography settings ({@link TypographySlice}) into a single store instance.
  *
  * Prefer the pre-built selector hooks ({@link useTypography}, {@link useReadingDisplay},
  * `useTtsSettings`) over consuming this store directly — they are shallow-compared and avoid
  * unnecessary re-renders.
  */
 export const useReadingSettingsStore = create<
-  ReadingSettingsState & TtsSettingsSlice & TypographySlice
+  ReadingSettingsState & BackgroundSlice & TtsSettingsSlice & TypographySlice
 >()((...a) => {
   const [set] = a;
   return {
     ...createTtsSlice(...(a as Parameters<typeof createTtsSlice>)),
     ...createTypographySlice(...(a as Parameters<typeof createTypographySlice>)),
+    ...createBackgroundSlice(...(a as Parameters<typeof createBackgroundSlice>)),
     settings: loadInitialSettings(),
 
     setContentWidth: (width) =>
@@ -158,18 +112,6 @@ export const useReadingSettingsStore = create<
 
     toggleSentenceFocusOnHover: () =>
       patchSettings(set, (s) => ({ sentenceFocusOnHover: !s.sentenceFocusOnHover })),
-
-    updateBackground: (partial: Partial<ReadingBackgroundSettings>) =>
-      patchSettings(set, (s) => ({ background: { ...s.background, ...partial } })),
-
-    setBackgroundImageId: (id: string | null) =>
-      patchSettings(set, () => ({ backgroundImageId: id })),
-
-    clearBackgroundImage: () =>
-      patchSettings(set, (s) => ({
-        backgroundImageId: null,
-        background: { ...s.background, backgroundType: 'theme' as const },
-      })),
 
     resetSettings: () =>
       set(() => {

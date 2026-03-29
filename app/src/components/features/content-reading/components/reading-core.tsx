@@ -113,7 +113,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
 
     const tts = useTTS();
 
-    const backgroundType = useReadingSettingsStore((s) => s.settings.background.backgroundType);
+    const backgroundType = useReadingSettingsStore((s) => s.background.backgroundType);
     const hasCustomBackground = backgroundType !== 'theme';
 
     const { storedValue: showProgress } = useLocalStorage('showCardProgress', true);

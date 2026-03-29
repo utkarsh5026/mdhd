@@ -26,8 +26,8 @@ const MAX_IMAGE_SIZE = 5_000_000;
  *   - `removeImage` — deletes the stored image and resets the background
  */
 export const useReadingBackground = () => {
-  const background = useReadingSettingsStore((s) => s.settings.background);
-  const backgroundImageId = useReadingSettingsStore((s) => s.settings.backgroundImageId);
+  const background = useReadingSettingsStore((s) => s.background);
+  const backgroundImageId = useReadingSettingsStore((s) => s.backgroundImageId);
   const updateBackground = useReadingSettingsStore((s) => s.updateBackground);
   const setBackgroundImageId = useReadingSettingsStore((s) => s.setBackgroundImageId);
   const clearBackgroundImage = useReadingSettingsStore((s) => s.clearBackgroundImage);

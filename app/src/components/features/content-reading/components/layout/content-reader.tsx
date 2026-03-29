@@ -42,7 +42,7 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
     const { fontSize, lineHeight } = typography;
     const { contentWidth } = settings;
     const hasCustomBackground =
-      useReadingSettingsStore((s) => s.settings.background.backgroundType) !== 'theme';
+      useReadingSettingsStore((s) => s.background.backgroundType) !== 'theme';
 
     const swipeHandlers = useSwipeable({
       onSwipedLeft: (eventData) => {

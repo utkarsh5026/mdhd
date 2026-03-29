@@ -36,7 +36,7 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
   const { fontSize, lineHeight } = typography;
   const { contentWidth } = settings;
   const hasCustomBackground =
-    useReadingSettingsStore((s) => s.settings.background.backgroundType) !== 'theme';
+    useReadingSettingsStore((s) => s.background.backgroundType) !== 'theme';
   const sectionRefs = useRef<Map<number, HTMLElement>>(new Map());
   const [isLoaded, setIsLoaded] = useState(false);
 
