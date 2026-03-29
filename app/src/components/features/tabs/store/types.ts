@@ -88,13 +88,6 @@ export interface TabsActions extends BookmarkActions {
   updateTabReadingState: (tabId: string, state: Partial<TabReadingState>) => void;
 
   updateTabContent: (tabId: string, content: string) => void;
-  updateTabContentPreservePosition: (tabId: string, content: string) => void;
-  updateTabSource: (
-    tabId: string,
-    sourceType: 'paste' | 'file',
-    sourceFileId: string,
-    sourcePath: string
-  ) => void;
   getTabById: (tabId: string) => Tab | undefined;
 
   setShowEmptyState: (show: boolean) => void;
@@ -106,7 +99,6 @@ export interface TabsActions extends BookmarkActions {
 
   toggleHeaderVisibility: () => void;
   toggleStatusBarVisibility: () => void;
-  clearPersistedTabs: () => void;
 
   /**
    * Parses sections for all tabs that have content but are not yet initialized.

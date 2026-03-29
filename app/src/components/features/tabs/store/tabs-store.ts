@@ -146,49 +146,6 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           if (tab) persistPaste(tab.id, tab.title, tab.content);
         },
 
-        updateTabContentPreservePosition: (tabId: string, content: string) => {
-          set((state) => ({
-            tabs: state.tabs.map((t) => {
-              if (t.id !== tabId) return t;
-
-              const { metadata, sections } = content
-                ? parseMarkdownIntoSections(content)
-                : { metadata: null, sections: [] };
-
-              const clampedIndex = Math.min(
-                t.readingState.currentIndex,
-                Math.max(0, sections.length - 1)
-              );
-
-              return {
-                ...t,
-                content,
-                contentHash: hashString(content),
-                title: extractTitleFromMarkdown(content),
-                readingState: {
-                  ...t.readingState,
-                  sections,
-                  metadata,
-                  isInitialized: sections.length > 0,
-                  currentIndex: clampedIndex,
-                },
-              };
-            }),
-          }));
-
-          const tab = get().tabs.find((t) => t.id === tabId);
-          if (tab) persistPaste(tab.id, tab.title, tab.content);
-        },
-
-        updateTabSource: (
-          tabId: string,
-          sourceType: 'paste' | 'file',
-          sourceFileId: string,
-          sourcePath: string
-        ) => {
-          get().updateTab(tabId, { sourceType, sourceFileId, sourcePath });
-        },
-
         getTabById: (tabId: string) => {
           return get().tabs.find((t) => t.id === tabId);
         },
@@ -247,17 +204,6 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           set((state) => ({
             isStatusBarVisible: !state.isStatusBarVisible,
           }));
-        },
-
-        clearPersistedTabs: () => {
-          localStorage.removeItem(STORAGE_KEY);
-          set({
-            tabs: [],
-            activeTabId: null,
-            showEmptyState: true,
-            version: STORAGE_VERSION,
-            _hasHydrated: true,
-          });
         },
 
         initializeTabSections: () => {
