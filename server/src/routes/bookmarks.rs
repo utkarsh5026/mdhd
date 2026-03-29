@@ -1,3 +1,15 @@
+//! Bookmark routes — create, list, and delete named section saves for a file.
+//!
+//! All endpoints require a valid JWT (`AuthUser` extractor) and enforce that the
+//! requesting user owns the target file before any bookmark operation is performed.
+//! The three routes mounted by [`router`] are:
+//!
+//! | Method | Path | Handler |
+//! |--------|------|---------|
+//! | GET | `/files/:id/bookmarks` | [`list_bookmarks`] |
+//! | POST | `/files/:id/bookmarks` | [`create_bookmark`] |
+//! | DELETE | `/files/:id/bookmarks/:bookmark_id` | [`delete_bookmark`] |
+
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::{delete, get};
@@ -11,16 +23,21 @@ use crate::middleware::auth::AuthUser;
 use crate::models::bookmark::Bookmark;
 use crate::state::AppState;
 
-/// Public bookmark data returned to the client (omits `user_id`).
+/// Public bookmark data returned to the client.
+///
+/// This is a projection of [`Bookmark`] that intentionally omits `user_id` to avoid
+/// leaking ownership information in API responses.
 #[derive(Debug, Serialize)]
 pub struct BookmarkResponse {
     pub id: Uuid,
     pub file_id: Uuid,
+    /// Zero-based index of the bookmarked section within the file's parsed section list.
     pub section_index: i32,
     pub name: String,
     pub created_at: DateTime<Utc>,
 }
 
+/// Converts a [`Bookmark`] into its public API representation, dropping `user_id`.
 impl From<Bookmark> for BookmarkResponse {
     fn from(b: Bookmark) -> Self {
         BookmarkResponse {
@@ -33,13 +50,18 @@ impl From<Bookmark> for BookmarkResponse {
     }
 }
 
-/// Request body for creating a bookmark.
+/// Request body for creating or updating a bookmark.
 #[derive(Debug, Deserialize)]
 pub struct CreateBookmarkRequest {
+    /// Zero-based index of the section to bookmark. Must be non-negative.
     pub section_index: i32,
+    /// Display name for the bookmark. Must be non-empty after trimming and at most 200 characters.
     pub name: String,
 }
 
+/// Builds the bookmark sub-router and registers all bookmark endpoints.
+///
+/// Mount this router into the application router via `Router::merge` or `Router::nest`.
 pub fn router() -> Router<AppState> {
     Router::new()
         .route(
@@ -52,7 +74,10 @@ pub fn router() -> Router<AppState> {
         )
 }
 
-/// Verifies a file exists and is owned by `user_id`. Returns `NotFound` if either check fails.
+/// Verifies a file exists and is owned by `user_id`.
+///
+/// Returns `NotFound` for both "file doesn't exist" and "file belongs to a different user" so
+/// that ownership cannot be probed by unauthenticated enumeration.
 async fn verify_file_owner(
     db: &sqlx::PgPool,
     file_id: Uuid,
@@ -69,7 +94,12 @@ async fn verify_file_owner(
     Ok(())
 }
 
-/// GET /files/:id/bookmarks — list all bookmarks for a file.
+/// `GET /files/:id/bookmarks` — returns all bookmarks for the authenticated user's file,
+/// ordered by `section_index` ascending.
+///
+/// # Errors
+/// - [`AppError::Unauthorized`] — missing or invalid JWT.
+/// - [`AppError::NotFound`] — file does not exist or belongs to another user.
 async fn list_bookmarks(
     auth: AuthUser,
     State(state): State<AppState>,
@@ -91,10 +121,17 @@ async fn list_bookmarks(
     ))
 }
 
-/// POST /files/:id/bookmarks — create or update a bookmark at a section.
+/// `POST /files/:id/bookmarks` — creates or updates a bookmark at a given section.
 ///
-/// Uses UPSERT on `(user_id, file_id, section_index)` so calling this twice
-/// for the same section updates the name rather than returning a conflict.
+/// Uses an `INSERT … ON CONFLICT … DO UPDATE` on `(user_id, file_id, section_index)`, so
+/// POSTing twice for the same section updates the name in place rather than creating a duplicate.
+/// The name is trimmed of leading/trailing whitespace before storage.
+///
+/// # Errors
+/// - [`AppError::Unauthorized`] — missing or invalid JWT.
+/// - [`AppError::BadRequest`] — `section_index` is negative, `name` is blank after trim, or
+///   `name` exceeds 200 characters.
+/// - [`AppError::NotFound`] — file does not exist or belongs to another user.
 async fn create_bookmark(
     auth: AuthUser,
     State(state): State<AppState>,
@@ -136,7 +173,15 @@ async fn create_bookmark(
     Ok((StatusCode::CREATED, Json(BookmarkResponse::from(bookmark))))
 }
 
-/// DELETE /`files/:id/bookmarks/:bookmark_id` — delete a bookmark.
+/// `DELETE /files/:id/bookmarks/:bookmark_id` — deletes a bookmark by ID.
+///
+/// Both `file_id` and `user_id` are verified against the stored bookmark before deletion so
+/// that a user cannot delete bookmarks on files they don't own.
+///
+/// # Errors
+/// - [`AppError::Unauthorized`] — missing or invalid JWT.
+/// - [`AppError::NotFound`] — bookmark does not exist, belongs to another user, or is on a
+///   different file than the one in the URL path.
 async fn delete_bookmark(
     auth: AuthUser,
     State(state): State<AppState>,
