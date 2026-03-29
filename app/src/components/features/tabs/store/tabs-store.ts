@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
+import { patch, patchById, patchNested } from '@/lib/store-utils';
 import { fileStorageDB } from '@/services/indexeddb/file-db';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
 import { persistPaste } from '@/services/sync/paste-persistence';
@@ -45,12 +46,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
 
         updateTab: (tabId: string, updater: Partial<Tab> | ((tab: Tab) => Partial<Tab>)) => {
           set((state) => ({
-            tabs: state.tabs.map((t) => {
-              if (t.id !== tabId) return t;
-
-              const updates = typeof updater === 'function' ? updater(t) : updater;
-              return { ...t, ...updates };
-            }),
+            tabs: patchById(state.tabs, 'id', tabId, updater),
           }));
         },
 
@@ -108,35 +104,28 @@ export const useTabsStore = create<TabsState & TabsActions>()(
 
         updateTabReadingState: (tabId: string, newReadingState: Partial<TabReadingState>) => {
           get().updateTab(tabId, (tab) => ({
-            readingState: {
-              ...tab.readingState,
-              ...newReadingState,
-            },
+            readingState: patch(tab.readingState, newReadingState),
           }));
         },
 
         updateTabContent: (tabId: string, content: string) => {
           set((state) => ({
-            tabs: state.tabs.map((t) => {
-              if (t.id !== tabId) return t;
-
+            tabs: patchById(state.tabs, 'id', tabId, (t) => {
               const { metadata, sections } = content
                 ? parseMarkdownIntoSections(content)
                 : { metadata: null, sections: [] };
               return {
-                ...t,
                 content,
                 contentHash: hashString(content),
                 title: extractTitleFromMarkdown(content),
-                readingState: {
-                  ...t.readingState,
+                // Preserve viewMode and readingMode; reset position
+                readingState: patch(t.readingState, {
                   sections,
                   isInitialized: sections.length > 0,
                   currentIndex: 0,
                   readSections: new Set([0]),
                   scrollProgress: 0,
-                  // Preserve viewMode and readingMode
-                },
+                }),
                 metadata,
               };
             }),
@@ -211,15 +200,11 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             tabs: state.tabs.map((t) => {
               if (t.readingState.isInitialized || !t.content) return t;
               const { metadata, sections } = parseMarkdownIntoSections(t.content);
-              return {
-                ...t,
-                readingState: {
-                  ...t.readingState,
-                  sections,
-                  metadata,
-                  isInitialized: sections.length > 0,
-                },
-              };
+              return patchNested(t, 'readingState', {
+                sections,
+                metadata,
+                isInitialized: sections.length > 0,
+              });
             }),
           }));
         },
@@ -286,17 +271,15 @@ export const useTabsStore = create<TabsState & TabsActions>()(
                       if (!result?.content) return t;
 
                       const { metadata, sections } = parseMarkdownIntoSections(result.content);
-                      return {
-                        ...t,
+                      return patch(t, {
                         content: result.content,
                         contentHash: hashString(result.content),
-                        readingState: {
-                          ...t.readingState,
+                        readingState: patch(t.readingState, {
                           sections,
                           metadata,
                           isInitialized: sections.length > 0,
-                        },
-                      };
+                        }),
+                      });
                     }),
                   }));
                 })
