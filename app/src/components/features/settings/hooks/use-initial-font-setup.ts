@@ -13,7 +13,7 @@ import { useReadingSettingsStore } from '../store/reading-settings-store';
  *
  */
 const useInitialFontSetup = () => {
-  const { fontFamily, appFontFamily } = useReadingSettingsStore((s) => s.settings);
+  const { fontFamily, appFontFamily } = useReadingSettingsStore((s) => s.typography);
 
   useEffect(() => {
     loadFont(fontFamily).catch((error) => {

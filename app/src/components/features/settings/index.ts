@@ -15,4 +15,8 @@ export type {
   ReadingBackgroundType,
   ReadingSettings,
 } from './store/reading-settings-store';
-export { useReadingSettings, useReadingSettingsStore } from './store/reading-settings-store';
+export {
+  useReadingDisplay,
+  useReadingSettingsStore,
+  useTypography,
+} from './store/reading-settings-store';

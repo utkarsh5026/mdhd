@@ -122,7 +122,7 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
   const language = match ? match[1] : '';
   const { selectedTheme } = useCodeThemeStore();
   const { settings: displaySettings } = useCodeDisplaySettingsStore();
-  const textSizeScale = useReadingSettingsStore((s) => s.settings.textSizeScale);
+  const textSizeScale = useReadingSettingsStore((s) => s.typography.textSizeScale);
   const codeBlockContainerStyle = useMarkdownStyleStore((s) => s.settings.codeBlockContainerStyle);
   const { codeSnippets } = useExportSnippets();
   const containerClasses = CODE_BLOCK_CONTAINER_CLASSES[codeBlockContainerStyle];

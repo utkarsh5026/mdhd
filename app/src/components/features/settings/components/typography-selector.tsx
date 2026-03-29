@@ -1,5 +1,5 @@
-import { ALargeSmall } from 'lucide-react';
-import React from 'react';
+import { ALargeSmall, RotateCcw } from 'lucide-react';
+import React, { useMemo } from 'react';
 
 import type {
   BodyFontWeight,
@@ -11,6 +11,8 @@ import type {
 } from '@/components/features/markdown-render/utils/typography-classes';
 import type { SelectOption } from '@/components/shared/labeled-select';
 import { LabeledSelect } from '@/components/shared/labeled-select';
+import { Button } from '@/components/ui/button';
+import { getSupportedBodyWeights } from '@/lib/font';
 
 import { useReadingSettingsStore } from '../store/reading-settings-store';
 import { SettingsHeader } from './settings-commons';
@@ -47,6 +49,8 @@ const FONT_WEIGHT: SelectOption<BodyFontWeight>[] = [
   { value: 'light', label: 'Light' },
   { value: 'normal', label: 'Normal' },
   { value: 'medium', label: 'Medium' },
+  { value: 'semibold', label: 'Semibold' },
+  { value: 'bold', label: 'Bold' },
 ];
 
 const TEXT_INDENT: SelectOption<TextIndent>[] = [
@@ -57,18 +61,25 @@ const TEXT_INDENT: SelectOption<TextIndent>[] = [
 ];
 
 const TypographySelector: React.FC = () => {
-  const letterSpacing = useReadingSettingsStore((s) => s.settings.letterSpacing);
+  const letterSpacing = useReadingSettingsStore((s) => s.typography.letterSpacing);
   const setLetterSpacing = useReadingSettingsStore((s) => s.setLetterSpacing);
-  const wordSpacing = useReadingSettingsStore((s) => s.settings.wordSpacing);
+  const wordSpacing = useReadingSettingsStore((s) => s.typography.wordSpacing);
   const setWordSpacing = useReadingSettingsStore((s) => s.setWordSpacing);
-  const paragraphSpacing = useReadingSettingsStore((s) => s.settings.paragraphSpacing);
+  const paragraphSpacing = useReadingSettingsStore((s) => s.typography.paragraphSpacing);
   const setParagraphSpacing = useReadingSettingsStore((s) => s.setParagraphSpacing);
-  const textAlignment = useReadingSettingsStore((s) => s.settings.textAlignment);
+  const textAlignment = useReadingSettingsStore((s) => s.typography.textAlignment);
   const setTextAlignment = useReadingSettingsStore((s) => s.setTextAlignment);
-  const bodyFontWeight = useReadingSettingsStore((s) => s.settings.bodyFontWeight);
+  const bodyFontWeight = useReadingSettingsStore((s) => s.typography.bodyFontWeight);
   const setBodyFontWeight = useReadingSettingsStore((s) => s.setBodyFontWeight);
-  const textIndent = useReadingSettingsStore((s) => s.settings.textIndent);
+  const fontFamily = useReadingSettingsStore((s) => s.typography.fontFamily);
+  const textIndent = useReadingSettingsStore((s) => s.typography.textIndent);
   const setTextIndent = useReadingSettingsStore((s) => s.setTextIndent);
+  const resetTypography = useReadingSettingsStore((s) => s.resetTypography);
+
+  const availableWeights = useMemo(() => {
+    const supported = getSupportedBodyWeights(fontFamily);
+    return FONT_WEIGHT.filter((opt) => supported.includes(opt.value));
+  }, [fontFamily]);
 
   return (
     <div className="space-y-4">
@@ -76,6 +87,17 @@ const TypographySelector: React.FC = () => {
         icon={<ALargeSmall className="h-4 w-4 text-primary" />}
         title="Typography"
         description="Fine-tune text appearance"
+        rightContent={
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={resetTypography}
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset
+          </Button>
+        }
       />
 
       <div className="space-y-3">
@@ -117,7 +139,7 @@ const TypographySelector: React.FC = () => {
           />
           <LabeledSelect
             label="Weight"
-            options={FONT_WEIGHT}
+            options={availableWeights}
             value={bodyFontWeight}
             onChange={setBodyFontWeight}
           />

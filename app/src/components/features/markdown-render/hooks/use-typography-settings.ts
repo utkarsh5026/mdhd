@@ -20,19 +20,19 @@ export const useSpacing = (): {
 } =>
   useReadingSettingsStore(
     useShallow((s) => ({
-      letterSpacing: s.settings.letterSpacing,
-      wordSpacing: s.settings.wordSpacing,
-      paragraphSpacing: s.settings.paragraphSpacing,
+      letterSpacing: s.typography.letterSpacing,
+      wordSpacing: s.typography.wordSpacing,
+      paragraphSpacing: s.typography.paragraphSpacing,
     }))
   );
 
 /** Returns the active text size scale from reading settings. */
 export const useTextSizeScale = (): TextSizeScale =>
-  useReadingSettingsStore((s) => s.settings.textSizeScale);
+  useReadingSettingsStore((s) => s.typography.textSizeScale);
 
 /** Returns the active body font weight from reading settings. */
 export const useBodyFontWeight = (): BodyFontWeight =>
-  useReadingSettingsStore((s) => s.settings.bodyFontWeight);
+  useReadingSettingsStore((s) => s.typography.bodyFontWeight);
 
 /** Bundles text indent, alignment, and size scale — the three text-layout axes. */
 export const useTextLayout = (): {
@@ -42,9 +42,9 @@ export const useTextLayout = (): {
 } =>
   useReadingSettingsStore(
     useShallow((s) => ({
-      textIndent: s.settings.textIndent,
-      textAlignment: s.settings.textAlignment,
-      textSizeScale: s.settings.textSizeScale,
+      textIndent: s.typography.textIndent,
+      textAlignment: s.typography.textAlignment,
+      textSizeScale: s.typography.textSizeScale,
     }))
   );
 
