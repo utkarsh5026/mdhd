@@ -65,6 +65,11 @@ const tasks = {
     category: "Development",
     action: runSetup,
   },
+  containers: {
+    description: "Start containers, wait for Postgres, run migrations, build server",
+    category: "Development",
+    action: runContainers,
+  },
 
   build: {
     description: "Build client (tsc + vite) then server (cargo)",
@@ -325,10 +330,7 @@ async function waitForPostgres(retries = 30) {
   throw new Error("Postgres did not become ready in time");
 }
 
-async function runSetup() {
-  console.log(chalk.bold.cyan("Running first-time setup..."));
-  console.log();
-
+async function runPreContainerSetup() {
   console.log(chalk.bold.yellow("\n▶ Installing app dependencies..."));
   console.log(chalk.dim("─".repeat(50)));
   await runBun(["install"], "app dependencies");
@@ -352,6 +354,11 @@ async function runSetup() {
     console.log(chalk.dim("Creating .env from .env.example..."));
     await runCommand("cp", [envExamplePath, envPath], { cwd: SERVER_DIR });
   }
+}
+
+async function runContainers() {
+  console.log(chalk.bold.cyan("Starting containers and running migrations..."));
+  console.log();
 
   console.log(chalk.bold.yellow("\n▶ Starting containers..."));
   console.log(chalk.dim("─".repeat(50)));
@@ -368,6 +375,19 @@ async function runSetup() {
   console.log(chalk.bold.yellow("\n▶ Building server..."));
   console.log(chalk.dim("─".repeat(50)));
   await runCargo(["build"], "server build");
+
+  console.log();
+  console.log(chalk.bold.green("═".repeat(50)));
+  console.log(chalk.bold.green("✓ Containers ready! Run 'make dev' to start."));
+  console.log(chalk.bold.green("═".repeat(50)));
+}
+
+async function runSetup() {
+  console.log(chalk.bold.cyan("Running first-time setup..."));
+  console.log();
+
+  await runPreContainerSetup();
+  await runContainers();
 
   console.log();
   console.log(chalk.bold.green("═".repeat(50)));

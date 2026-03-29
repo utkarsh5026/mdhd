@@ -1,5 +1,5 @@
 TASKS := help \
-         dev setup \
+         dev setup containers \
          build build-release \
          client-dev client-build client-lint client-fmt client-fmt-check client-test client-test-run \
          server-dev server-dev-prod server-watch \
