@@ -49,6 +49,51 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
   );
 };
 
+// ============================================================================
+// ToggleRow Component
+// ============================================================================
+
+export interface ToggleRowProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  checked: boolean;
+  onToggle: () => void;
+}
+
+/**
+ * Compact toggle row for inline settings lists.
+ * Uses negative horizontal margin to extend to section edges.
+ */
+export const ToggleRow: React.FC<ToggleRowProps> = ({
+  icon,
+  title,
+  description,
+  checked,
+  onToggle,
+}) => (
+  <div
+    className="flex items-center justify-between px-2 py-2.5 rounded-xl hover:bg-accent/50 transition-colors cursor-pointer group"
+    onClick={onToggle}
+  >
+    <div className="flex items-center gap-3">
+      <span
+        className={cn(
+          'transition-colors',
+          checked ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+        )}
+      >
+        {icon}
+      </span>
+      <div>
+        <div className="text-sm font-medium leading-none mb-0.5">{title}</div>
+        <div className="text-xs text-muted-foreground">{description}</div>
+      </div>
+    </div>
+    <Switch checked={checked} onCheckedChange={onToggle} onClick={(e) => e.stopPropagation()} />
+  </div>
+);
+
 interface SettingToggleProps {
   icon: React.ReactNode;
   title: string;
