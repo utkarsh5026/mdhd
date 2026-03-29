@@ -1,4 +1,4 @@
-import { attempt } from '@/utils/functions/error';
+import { attempt } from '@/utils/error';
 
 import type { Tab, TabReadingState, ViewMode } from './types';
 
@@ -8,7 +8,7 @@ export interface PersistedTabsState {
       Tab & {
         readingState: Omit<TabReadingState, 'readSections' | 'sections'> & {
           readSections: number[];
-          viewMode?: 'preview' | 'edit' | 'dual';
+          viewMode?: ViewMode;
         };
       }
     >;
@@ -52,14 +52,10 @@ export const customTabsStorage = {
       if (!parsed.state?.tabs) return parsed;
 
       const updated = (parsed.state.tabs as unknown as PersistedTab[]).map((tab) => {
-        const validViewModes: ReadonlyArray<ViewMode> = ['preview', 'edit', 'dual'];
-        const viewMode = validViewModes.includes(tab.readingState.viewMode ?? 'preview')
-          ? (tab.readingState.viewMode ?? 'preview')
-          : 'preview';
+        const viewMode: ViewMode = 'preview';
 
         return {
           ...tab,
-          // Ensure content is always a string (stripped tabs have no content key)
           content: tab.content ?? '',
           readingState: {
             ...tab.readingState,
@@ -73,6 +69,7 @@ export const customTabsStorage = {
             isZenMode: tab.readingState.isZenMode ?? false,
             zenControlsVisible: tab.readingState.zenControlsVisible ?? false,
             isDialogOpen: tab.readingState.isDialogOpen ?? false,
+            bookmarks: tab.readingState.bookmarks ?? [],
           },
         };
       }) as unknown as typeof parsed.state.tabs;
@@ -97,9 +94,7 @@ export const customTabsStorage = {
           ...value.state,
           tabs: value.state.tabs?.map((tab) => ({
             ...tab,
-            // File-backed tabs: strip content (reloaded from IndexedDB on hydration).
-            // Paste tabs: keep content so it survives page reloads.
-            content: tab.sourceType === 'file' ? undefined : tab.content,
+            content: undefined,
             readingState: {
               ...tab.readingState,
               readSections: Array.from(tab.readingState.readSections ?? []),

@@ -3,7 +3,9 @@ import { devtools, persist } from 'zustand/middleware';
 
 import { fileStorageDB } from '@/services/indexeddb/file-db';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
+import { persistPaste } from '@/services/sync/paste-persistence';
 
+import { createBookmarkSlice } from './bookmark-slice';
 import { createTab, extractTitleFromMarkdown, hashString } from './helpers';
 import { customTabsStorage, type PersistedTabsState } from './storage';
 import type { Tab, TabReadingState, TabsActions, TabsState } from './types';
@@ -20,7 +22,7 @@ const STORAGE_KEY = 'mdhd-tabs-storage';
 export const useTabsStore = create<TabsState & TabsActions>()(
   devtools(
     persist(
-      (set, get) => ({
+      (set, get, api) => ({
         tabs: [],
         activeTabId: null,
         showEmptyState: true,
@@ -37,6 +39,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             showEmptyState: false,
             ...(options?.incrementCounter ? { untitledCounter: state.untitledCounter + 1 } : {}),
           }));
+          persistPaste(newTab.id, newTab.title, newTab.content);
           return newTab.id;
         },
 
@@ -77,48 +80,8 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           return get().addTab(newTab, { incrementCounter: true });
         },
 
-        closeTab: (tabId: string) => {
-          const state = get();
-          const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
-          if (tabIndex === -1) return;
-
-          const newTabs = state.tabs.filter((t) => t.id !== tabId);
-
-          let newActiveTabId: string | null = null;
-          if (newTabs.length > 0) {
-            if (state.activeTabId === tabId) {
-              const newIndex = Math.min(tabIndex, newTabs.length - 1);
-              newActiveTabId = newTabs[newIndex].id;
-            } else {
-              newActiveTabId = state.activeTabId;
-            }
-          }
-
-          set({
-            tabs: newTabs,
-            activeTabId: newActiveTabId,
-            showEmptyState: newTabs.length === 0,
-          });
-        },
-
-        closeAllTabs: () => {
-          set({
-            tabs: [],
-            activeTabId: null,
-            showEmptyState: true,
-          });
-        },
-
-        closeOtherTabs: (tabId: string) => {
-          const state = get();
-          const tabToKeep = state.tabs.find((t) => t.id === tabId);
-          if (!tabToKeep) return;
-
-          set({
-            tabs: [tabToKeep],
-            activeTabId: tabId,
-            showEmptyState: false,
-          });
+        setTabsState: (tabs: Tab[], activeTabId: string | null, showEmptyState: boolean) => {
+          set({ tabs, activeTabId, showEmptyState });
         },
 
         setActiveTab: (tabId: string) => {
@@ -131,6 +94,16 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             activeTabId: tabId,
             showEmptyState: false,
           });
+
+          const isAuthenticated = !!localStorage.getItem('mdhd-auth-token');
+          if (isAuthenticated && tab.sourceType === 'file' && tab.sourceFileId) {
+            const fileId = tab.sourceFileId;
+            import('@/services/bookmarks').then(({ fetchBookmarks, toLocalBookmark }) =>
+              fetchBookmarks(fileId)
+                .then((bms) => get().setBookmarks(tabId, bms.map(toLocalBookmark)))
+                .catch((err) => console.error('[tabs-store] Failed to load bookmarks:', err))
+            );
+          }
         },
 
         updateTabReadingState: (tabId: string, newReadingState: Partial<TabReadingState>) => {
@@ -168,6 +141,9 @@ export const useTabsStore = create<TabsState & TabsActions>()(
               };
             }),
           }));
+
+          const tab = get().tabs.find((t) => t.id === tabId);
+          if (tab) persistPaste(tab.id, tab.title, tab.content);
         },
 
         updateTabContentPreservePosition: (tabId: string, content: string) => {
@@ -199,6 +175,9 @@ export const useTabsStore = create<TabsState & TabsActions>()(
               };
             }),
           }));
+
+          const tab = get().tabs.find((t) => t.id === tabId);
+          if (tab) persistPaste(tab.id, tab.title, tab.content);
         },
 
         updateTabSource: (
@@ -222,73 +201,41 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           return get().tabs.find((t) => t.sourceFileId === fileId);
         },
 
-        closeTabByFileId: (fileId: string) => {
+        pinTab: (tabId: string) => {
+          get().updateTab(tabId, { pinned: true });
+        },
+
+        unpinTab: (tabId: string) => {
+          get().updateTab(tabId, { pinned: false });
+        },
+
+        duplicateTab: (tabId: string) => {
           const state = get();
-          const tab = state.tabs.find((t) => t.sourceFileId === fileId);
-          if (tab) {
-            state.closeTab(tab.id);
-          }
-        },
+          const tab = state.tabs.find((t) => t.id === tabId);
+          if (!tab) return null;
 
-        closeTabsByPathPrefix: (pathPrefix: string) => {
-          set((state) => {
-            const newTabs = state.tabs.filter(
-              (t) =>
-                !t.sourcePath ||
-                (t.sourcePath !== pathPrefix && !t.sourcePath.startsWith(pathPrefix + '/'))
-            );
-            const activeStillExists = newTabs.some((t) => t.id === state.activeTabId);
-            return {
-              tabs: newTabs,
-              activeTabId: activeStillExists ? state.activeTabId : (newTabs[0]?.id ?? null),
-              showEmptyState: newTabs.length === 0,
-            };
+          const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
+          const newTab: Tab = {
+            ...tab,
+            id: crypto.randomUUID(),
+            title: `${tab.title} (copy)`,
+            createdAt: Date.now(),
+            lastAccessedAt: Date.now(),
+            pinned: false,
+            readingState: { ...tab.readingState },
+          };
+
+          set((s) => {
+            const newTabs = [...s.tabs];
+            newTabs.splice(tabIndex + 1, 0, newTab);
+            return { tabs: newTabs, activeTabId: newTab.id, showEmptyState: false };
           });
+
+          persistPaste(newTab.id, newTab.title, newTab.content);
+          return newTab.id;
         },
 
-        closeTabsToTheRight: (tabId: string) => {
-          set((state) => {
-            const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
-            if (tabIndex === -1) return state;
-
-            const newTabs = state.tabs.slice(0, tabIndex + 1);
-            const activeStillExists = newTabs.some((t) => t.id === state.activeTabId);
-            return {
-              tabs: newTabs,
-              activeTabId: activeStillExists
-                ? state.activeTabId
-                : (newTabs[newTabs.length - 1]?.id ?? null),
-              showEmptyState: newTabs.length === 0,
-            };
-          });
-        },
-
-        closeTabsToTheLeft: (tabId: string) => {
-          set((state) => {
-            const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
-            if (tabIndex === -1) return state;
-
-            const newTabs = state.tabs.slice(tabIndex);
-            const activeStillExists = newTabs.some((t) => t.id === state.activeTabId);
-            return {
-              tabs: newTabs,
-              activeTabId: activeStillExists ? state.activeTabId : (newTabs[0]?.id ?? null),
-              showEmptyState: newTabs.length === 0,
-            };
-          });
-        },
-
-        closeTabsBySourceType: (sourceType: 'paste' | 'file') => {
-          set((state) => {
-            const newTabs = state.tabs.filter((t) => t.sourceType !== sourceType);
-            const activeStillExists = newTabs.some((t) => t.id === state.activeTabId);
-            return {
-              tabs: newTabs,
-              activeTabId: activeStillExists ? state.activeTabId : (newTabs[0]?.id ?? null),
-              showEmptyState: newTabs.length === 0,
-            };
-          });
-        },
+        ...createBookmarkSlice(set, get, api),
 
         toggleHeaderVisibility: () => {
           set((state) => ({
@@ -365,17 +312,23 @@ export const useTabsStore = create<TabsState & TabsActions>()(
               }, 0);
             }
 
-            const fileBackedTabs = state.tabs.filter(
-              (t) => t.sourceType === 'file' && t.sourceFileId && !t.content
-            );
-            if (fileBackedTabs.length > 0) {
+            const tabsNeedingContent = state.tabs.filter((t) => !t.content);
+            if (tabsNeedingContent.length > 0) {
               Promise.all(
-                fileBackedTabs.map(async (tab) => {
+                tabsNeedingContent.map(async (tab) => {
                   try {
-                    const file = await fileStorageDB.getFile(tab.sourceFileId!);
-                    return { tabId: tab.id, content: file?.content ?? null };
+                    let content: string | null = null;
+                    if (tab.sourceType === 'file' && tab.sourceFileId) {
+                      const file = await fileStorageDB.getFile(tab.sourceFileId);
+                      content = file?.content ?? null;
+                    } else if (tab.sourceType === 'paste') {
+                      const { pastePathForTab } = await import('@/services/sync/paste-persistence');
+                      const file = await fileStorageDB.getFileByPath(pastePathForTab(tab.id));
+                      content = file?.content ?? null;
+                    }
+                    return { tabId: tab.id, content };
                   } catch (err) {
-                    console.error(`[tabs-store] Failed to load file for tab ${tab.id}:`, err);
+                    console.error(`[tabs-store] Failed to load content for tab ${tab.id}:`, err);
                     return { tabId: tab.id, content: null };
                   }
                 })
