@@ -116,7 +116,7 @@ export const SettingToggle: React.FC<SettingToggleProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center justify-between p-4 rounded-xl border transition-all duration-200 cursor-pointer group',
+        'flex items-center justify-between p-4 rounded-2xl border-none transition-all duration-200 cursor-pointer group',
         checked
           ? 'border-primary/30 bg-primary/5'
           : 'border-border/30 bg-card/30 hover:border-border/50 hover:bg-card/50'
