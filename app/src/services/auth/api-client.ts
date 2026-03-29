@@ -79,6 +79,6 @@ export async function apiFetchText(path: string, options: RequestInit = {}): Pro
  *
  * @param provider - The OAuth provider to authenticate with.
  */
-export function getOAuthUrl(provider: 'google'): string {
+export function getOAuthUrl(provider: 'google' | 'github'): string {
   return apiUrl(`/auth/${provider}`);
 }
