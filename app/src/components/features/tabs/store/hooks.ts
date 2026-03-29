@@ -17,7 +17,6 @@ export const useTabsActions = () =>
     useShallow((state) => ({
       createTab: state.createTab,
       createUntitledTab: state.createUntitledTab,
-      closeTab: state.closeTab,
       setActiveTab: state.setActiveTab,
       updateTabReadingState: state.updateTabReadingState,
       updateTabContent: state.updateTabContent,
@@ -26,7 +25,6 @@ export const useTabsActions = () =>
       getTabById: state.getTabById,
       setShowEmptyState: state.setShowEmptyState,
       findTabByFileId: state.findTabByFileId,
-      closeTabsBySourceType: state.closeTabsBySourceType,
       toggleHeaderVisibility: state.toggleHeaderVisibility,
       toggleStatusBarVisibility: state.toggleStatusBarVisibility,
       clearPersistedTabs: state.clearPersistedTabs,
@@ -35,29 +33,3 @@ export const useTabsActions = () =>
       duplicateTab: state.duplicateTab,
     }))
   );
-
-export function useTabClose() {
-  return useTabsStore(
-    useShallow(
-      ({
-        closeAllTabs,
-        closeOtherTabs,
-        closeTabByFileId,
-        closeTabsByPathPrefix,
-        closeTabsBySourceType,
-        closeTabsToTheLeft,
-        closeTabsToTheRight,
-      }) => {
-        return {
-          closeAllTabs,
-          closeOtherTabs,
-          closeTabByFileId,
-          closeTabsByPathPrefix,
-          closeTabsBySourceType,
-          closeTabsToTheLeft,
-          closeTabsToTheRight,
-        };
-      }
-    )
-  );
-}

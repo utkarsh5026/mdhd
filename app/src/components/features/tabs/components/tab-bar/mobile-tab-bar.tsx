@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronLeft, ChevronRight, Maximize, Plus, X } from 'lucide-react';
 import React, { memo } from 'react';
 
+import { useTabClose } from '@/components/features/tabs/hooks/use-tab-close';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import {
@@ -104,7 +105,8 @@ interface MobileTabBarProps {
 const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
   const tabs = useTabs();
   const activeTabId = useActiveTabId();
-  const { setActiveTab, closeTab, createUntitledTab } = useTabsActions();
+  const { setActiveTab, createUntitledTab } = useTabsActions();
+  const { closeTab } = useTabClose();
   const tabDisplayMap = useTabDisplayMap(tabs);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);

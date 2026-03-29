@@ -1,6 +1,7 @@
 import { Copy, Pin, PinOff } from 'lucide-react';
 import React, { memo, useState } from 'react';
 
+import { useTabClose } from '@/components/features/tabs/hooks/use-tab-close';
 import Icon from '@/components/ui/icon';
 import {
   ListPopover,
@@ -9,7 +10,7 @@ import {
   ListPopoverTrigger,
 } from '@/components/ui/list-popover';
 
-import { useActiveTabId, useTabClose, useTabs, useTabsActions } from '../../store';
+import { useActiveTabId, useTabs, useTabsActions } from '../../store';
 import TabItem from './tab-item';
 
 interface TabContextMenuProps {
@@ -104,7 +105,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = memo(
             {
               label: 'Close tabs to the right',
               handler: () => {
-                closeActions.closeTabsToTheRight(id);
+                closeActions.closeTabsInDirection('right', id);
                 setOpen(false);
               },
               disabled: !closableToRight,
@@ -112,7 +113,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = memo(
             {
               label: 'Close tabs to the left',
               handler: () => {
-                closeActions.closeTabsToTheLeft(id);
+                closeActions.closeTabsInDirection('left', id);
                 setOpen(false);
               },
               disabled: !closableToLeft,

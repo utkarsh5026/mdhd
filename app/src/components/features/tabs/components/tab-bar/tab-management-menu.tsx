@@ -1,6 +1,7 @@
 import { MoreVertical } from 'lucide-react';
 import React, { memo, useMemo } from 'react';
 
+import { useTabClose } from '@/components/features/tabs/hooks/use-tab-close';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import {
@@ -17,7 +18,6 @@ import {
   useActiveTabId,
   useHeaderVisible,
   useStatusBarVisible,
-  useTabClose,
   useTabs,
   useTabsActions,
 } from '../../store';
@@ -36,8 +36,7 @@ const TabManagementMenu: React.FC = memo(() => {
   const {
     closeAllTabs,
     closeOtherTabs,
-    closeTabsToTheRight,
-    closeTabsToTheLeft,
+    closeTabsInDirection,
     closeTabsByPathPrefix,
     closeTabsBySourceType,
   } = useTabClose();
@@ -134,7 +133,7 @@ const TabManagementMenu: React.FC = memo(() => {
           <ListPopoverItem
             disabled={positionCounts.right === 0 || !activeTabId}
             onClick={() => {
-              if (activeTabId) closeTabsToTheRight(activeTabId);
+              if (activeTabId) closeTabsInDirection('right', activeTabId);
             }}
             suffix={<CountBadge count={positionCounts.right || undefined} />}
           >
@@ -143,7 +142,7 @@ const TabManagementMenu: React.FC = memo(() => {
           <ListPopoverItem
             disabled={positionCounts.left === 0 || !activeTabId}
             onClick={() => {
-              if (activeTabId) closeTabsToTheLeft(activeTabId);
+              if (activeTabId) closeTabsInDirection('left', activeTabId);
             }}
             suffix={<CountBadge count={positionCounts.left || undefined} />}
           >

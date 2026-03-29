@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import React, { memo, useCallback, useRef } from 'react';
 
+import { useTabClose } from '@/components/features/tabs/hooks/use-tab-close';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
@@ -13,7 +14,8 @@ import TabManagementMenu from './tab-management-menu';
 const DesktopTabBar: React.FC = memo(() => {
   const tabs = useTabs();
   const activeTabId = useActiveTabId();
-  const { setActiveTab, closeTab, createUntitledTab } = useTabsActions();
+  const { setActiveTab, createUntitledTab } = useTabsActions();
+  const { closeTab } = useTabClose();
   const tabDisplayMap = useTabDisplayMap(tabs);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
