@@ -29,6 +29,9 @@ pub struct FileMeta {
     /// SHA-256 (or equivalent) hash of the file content, used for change detection during sync.
     /// `None` if no hash was computed at upload time.
     pub content_hash: Option<String>,
+    /// Opaque UUID token granting public read access to this file's content.
+    /// `None` means the file is not currently shared.
+    pub share_token: Option<Uuid>,
     /// Timestamp of when this record was first created.
     pub created_at: DateTime<Utc>,
     /// Timestamp of the most recent update to this record.
