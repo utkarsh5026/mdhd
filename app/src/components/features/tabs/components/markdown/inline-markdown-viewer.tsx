@@ -1,5 +1,4 @@
-import React, { memo, useCallback, useMemo } from 'react';
-import { toast } from 'sonner';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 
 import { LoadingState } from '@/components/features/content-reading/components/layout';
 import ReadingCore from '@/components/features/content-reading/components/reading-core';
@@ -8,11 +7,11 @@ import {
   useReadingCurrentSection,
   useReadingSections,
 } from '@/components/features/content-reading/hooks';
-import { shareFile } from '@/services/share';
 
 import { useTabsStore } from '../../store/tabs-store';
 import InlineHeader from './inline-header';
 import styles from './inline-markdown-viewer.module.css';
+import ShareModal from './share-modal';
 
 interface InlineMarkdownViewerProps {
   tabId: string;
@@ -33,15 +32,11 @@ const InlineInner: React.FC<{
   const sections = useReadingSections();
   const currentSection = useReadingCurrentSection();
 
-  const handleShare = useCallback(async () => {
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const handleShare = useCallback(() => {
     if (!tab) return;
-    try {
-      const { url } = await shareFile(tab.title, tab.sourcePath ?? tab.title, tab.content);
-      await navigator.clipboard.writeText(url);
-      toast.success('Share link copied!');
-    } catch {
-      toast.error('Failed to create share link');
-    }
+    setShareOpen(true);
   }, [tab]);
 
   const PreviewPanel = useMemo(() => {
@@ -70,7 +65,12 @@ const InlineInner: React.FC<{
     return <LoadingState />;
   }
 
-  return <div className={`h-full ${styles.previewMode}`}>{PreviewPanel}</div>;
+  return (
+    <>
+      <div className={`h-full ${styles.previewMode}`}>{PreviewPanel}</div>
+      <ShareModal tab={tab} open={shareOpen} onOpenChange={setShareOpen} />
+    </>
+  );
 });
 
 InlineInner.displayName = 'InlineInner';
