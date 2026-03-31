@@ -73,6 +73,12 @@ pub struct Config {
     pub cors_origin: String,
     /// Frontend URL used for post-auth redirects. Defaults to `http://localhost:5173`.
     pub frontend_url: String,
+    /// GitHub `OAuth2` client ID for repo integration.
+    pub github_client_id: String,
+    /// GitHub `OAuth2` client secret.
+    pub github_client_secret: String,
+    /// Public base URL for GitHub webhook callbacks (e.g. `https://api.mdhd.app`).
+    pub github_webhook_base: String,
 }
 
 impl Config {
@@ -81,6 +87,10 @@ impl Config {
         google_client_id,
         /// Google `OAuth2` client secret.
         google_client_secret,
+        /// GitHub `OAuth2` client ID.
+        github_client_id,
+        /// GitHub `OAuth2` client secret.
+        github_client_secret,
         /// JWT signing secret.
         #[allow(dead_code)]
         jwt_secret,
@@ -117,6 +127,9 @@ impl Config {
             })?,
             cors_origin: optional_or("CORS_ORIGIN", "http://localhost:5173"),
             frontend_url: optional_or("FRONTEND_URL", "http://localhost:5173"),
+            github_client_id: optional("GITHUB_CLIENT_ID"),
+            github_client_secret: optional("GITHUB_CLIENT_SECRET"),
+            github_webhook_base: optional("GITHUB_WEBHOOK_BASE"),
         })
     }
 }
@@ -209,6 +222,9 @@ mod tests {
             for key in &[
                 "GOOGLE_CLIENT_ID",
                 "GOOGLE_CLIENT_SECRET",
+                "GITHUB_CLIENT_ID",
+                "GITHUB_CLIENT_SECRET",
+                "GITHUB_WEBHOOK_BASE",
                 "OAUTH_REDIRECT_BASE",
                 "SUPABASE_S3_ENDPOINT",
                 "SUPABASE_S3_ACCESS_KEY",
@@ -234,7 +250,6 @@ mod tests {
         assert_eq!(config.frontend_url, "http://localhost:5173");
         assert_eq!(config.oauth_redirect_base, "http://localhost:8080");
         assert_eq!(config.supabase_storage_bucket, "files");
-        // Optional fields default to empty string
         assert_eq!(config.google_client_id, "");
     }
 

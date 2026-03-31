@@ -10,6 +10,7 @@ pub struct User {
     pub avatar_url: Option<String>,
     pub oauth_provider: String,
     pub oauth_id: String,
+    pub github_access_token: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
