@@ -1,6 +1,8 @@
 import {
   Bookmark,
   BookmarkCheck,
+  ClipboardCopy,
+  ClipboardList,
   FileText,
   Maximize,
   MoreHorizontal,
@@ -8,12 +10,14 @@ import {
   Share2,
   Volume2,
 } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useCallback, useState } from 'react';
 
 import { useTTSContext } from '@/components/features/content-reading/context/tts-context';
 import {
   useBookmarkActions,
   useIsCurrentSectionBookmarked,
+  useReadingContent,
+  useReadingCurrentSection,
 } from '@/components/features/content-reading/hooks';
 import Icon from '@/components/ui/icon';
 import {
@@ -37,6 +41,26 @@ const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = memo(
     const { toggleBookmark, isPasteTab } = useBookmarkActions();
     const tts = useTTSContext();
     const isNarrating = tts.ttsStatus === 'playing' || tts.ttsStatus === 'paused';
+    const currentSection = useReadingCurrentSection();
+    const { markdown } = useReadingContent();
+
+    const [copiedSection, setCopiedSection] = useState(false);
+    const [copiedAll, setCopiedAll] = useState(false);
+
+    const copySection = useCallback(() => {
+      if (!currentSection) return;
+      navigator.clipboard.writeText(currentSection.content).then(() => {
+        setCopiedSection(true);
+        setTimeout(() => setCopiedSection(false), 2000);
+      });
+    }, [currentSection]);
+
+    const copyAll = useCallback(() => {
+      navigator.clipboard.writeText(markdown).then(() => {
+        setCopiedAll(true);
+        setTimeout(() => setCopiedAll(false), 2000);
+      });
+    }, [markdown]);
 
     return (
       <ListPopover>
@@ -75,6 +99,34 @@ const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = memo(
                     : 'Narrate'}
               </ListPopoverItem>
             )}
+          </ListPopoverGroup>
+          <ListPopoverGroup className="border-t border-border/40 mt-1 pt-1">
+            <ListPopoverItem
+              icon={
+                <Icon
+                  icon={ClipboardCopy}
+                  size="sm"
+                  className={copiedSection ? 'text-green-500' : ''}
+                />
+              }
+              onClick={copySection}
+              isActive={copiedSection}
+            >
+              {copiedSection ? 'Copied!' : 'Copy Section'}
+            </ListPopoverItem>
+            <ListPopoverItem
+              icon={
+                <Icon
+                  icon={ClipboardList}
+                  size="sm"
+                  className={copiedAll ? 'text-green-500' : ''}
+                />
+              }
+              onClick={copyAll}
+              isActive={copiedAll}
+            >
+              {copiedAll ? 'Copied!' : 'Copy All Markdown'}
+            </ListPopoverItem>
           </ListPopoverGroup>
           <ListPopoverGroup className="border-t border-border/40 mt-1 pt-1">
             <ListPopoverItem icon={<Icon icon={FileText} size="sm" />} onClick={onPdfExport}>
