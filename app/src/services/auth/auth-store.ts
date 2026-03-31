@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 
-import { apiFetch } from './api-client';
+import { authFetch } from './api-client';
 
 /**
  * Represents an authenticated user returned from the `/auth/me` endpoint.
@@ -64,7 +64,7 @@ const useAuthStore = create<AuthState & AuthActions>()(
       isLoading: false,
 
       exchange: async (code) => {
-        const { token } = await apiFetch<{ token: string }>('/auth/exchange', {
+        const { token } = await authFetch<{ token: string }>('/auth/exchange', {
           method: 'POST',
           body: JSON.stringify({ code }),
         });
@@ -76,7 +76,7 @@ const useAuthStore = create<AuthState & AuthActions>()(
         set({ token, isLoading: true });
 
         try {
-          const user = await apiFetch<AuthUser>('/auth/me');
+          const user = await authFetch<AuthUser>('/auth/me');
           set({ user, isLoading: false });
         } catch {
           localStorage.removeItem(TOKEN_KEY);
@@ -97,7 +97,7 @@ const useAuthStore = create<AuthState & AuthActions>()(
 
         set({ token, isLoading: true });
         try {
-          const user = await apiFetch<AuthUser>('/auth/me');
+          const user = await authFetch<AuthUser>('/auth/me');
           set({ user, isLoading: false });
         } catch {
           localStorage.removeItem(TOKEN_KEY);

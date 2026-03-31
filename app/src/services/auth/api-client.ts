@@ -5,7 +5,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
  * Builds a full API URL from a relative path.
  */
 function apiUrl(path: string): string {
-  return `${API_BASE}${path}`;
+  return `${API_BASE}/api${path}`;
 }
 
 /**
@@ -27,6 +27,32 @@ function apiUrl(path: string): string {
  * await apiFetch<void>('/sync', { method: 'POST', body: JSON.stringify(payload) });
  * ```
  */
+/**
+ * Like `apiFetch` but calls `/auth/*` routes directly (no `/api` prefix).
+ * Use this for auth endpoints that live outside the `/api` namespace.
+ */
+export async function authFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = localStorage.getItem('mdhd-auth-token');
+
+  const headers = new Headers(options.headers);
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  if (!headers.has('Content-Type') && options.body) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(text || `API error: ${response.status}`);
+  }
+
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
+}
+
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('mdhd-auth-token');
 
@@ -80,5 +106,5 @@ export async function apiFetchText(path: string, options: RequestInit = {}): Pro
  * @param provider - The OAuth provider to authenticate with.
  */
 export function getOAuthUrl(provider: 'google' | 'github'): string {
-  return apiUrl(`/auth/${provider}`);
+  return `${API_BASE}/auth/${provider}`;
 }
