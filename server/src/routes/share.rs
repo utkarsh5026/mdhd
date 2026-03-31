@@ -19,8 +19,7 @@
 //! | GET    | `/api/share/{token}`   | [`get_shared_content`] (public, wired in mod.rs) |
 
 use axum::extract::{Path, State};
-use axum::http::{HeaderValue, StatusCode, header};
-use axum::response::IntoResponse;
+use axum::http::StatusCode;
 use axum::routing::{delete, post};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
@@ -57,6 +56,14 @@ pub struct SharePasteRequest {
 pub struct ShareResponse {
     pub token: Uuid,
     pub url: String,
+}
+
+/// Response returned by the public `GET /api/share/{token}` endpoint.
+#[derive(Debug, Serialize)]
+pub struct SharedContentResponse {
+    pub content: String,
+    pub sharer_name: Option<String>,
+    pub sharer_avatar: Option<String>,
 }
 
 pub fn router() -> Router<AppState> {
@@ -216,40 +223,39 @@ async fn revoke_paste_share(
 /// `GET /api/share/{token}` — public read endpoint, no authentication required.
 ///
 /// Checks `paste_shares` first (no S3 round-trip needed), then falls back to
-/// `files.share_token`. Returns raw markdown with `text/markdown` content type.
+/// `files.share_token`. Returns JSON with markdown content and sharer metadata.
 ///
 /// Registered directly in `routes/mod.rs` without any auth middleware.
 #[instrument(skip(state), fields(%token))]
 pub async fn get_shared_content(
     State(state): State<AppState>,
     Path(token): Path<Uuid>,
-) -> Result<impl IntoResponse, AppError> {
+) -> Result<Json<SharedContentResponse>, AppError> {
     // Check paste_shares first — cheaper path (no S3).
-    let paste = sqlx::query!("SELECT content FROM paste_shares WHERE token = $1", token)
-        .fetch_optional(&state.db)
-        .await?;
+    let paste = sqlx::query!(
+        "SELECT p.content, u.name AS sharer_name, u.avatar_url AS sharer_avatar
+         FROM paste_shares p
+         JOIN users u ON u.id = p.user_id
+         WHERE p.token = $1",
+        token
+    )
+    .fetch_optional(&state.db)
+    .await?;
 
     if let Some(row) = paste {
-        return Ok((
-            [
-                (
-                    header::CONTENT_TYPE,
-                    HeaderValue::from_static("text/markdown; charset=utf-8"),
-                ),
-                (
-                    header::CACHE_CONTROL,
-                    HeaderValue::from_static("public, max-age=60"),
-                ),
-            ],
-            row.content.into_bytes(),
-        ));
+        return Ok(Json(SharedContentResponse {
+            content: row.content,
+            sharer_name: row.sharer_name,
+            sharer_avatar: row.sharer_avatar,
+        }));
     }
 
     // Fall back to file share.
-    let file = sqlx::query_as!(
-        FileMeta,
-        "SELECT id, user_id, name, path, storage_key, size_bytes, content_hash, share_token, created_at, updated_at
-         FROM files WHERE share_token = $1",
+    let file = sqlx::query!(
+        "SELECT f.storage_key, u.name AS sharer_name, u.avatar_url AS sharer_avatar
+         FROM files f
+         JOIN users u ON u.id = f.user_id
+         WHERE f.share_token = $1",
         token
     )
     .fetch_optional(&state.db)
@@ -263,19 +269,13 @@ pub async fn get_shared_content(
     )
     .await?;
 
-    Ok((
-        [
-            (
-                header::CONTENT_TYPE,
-                HeaderValue::from_static("text/markdown; charset=utf-8"),
-            ),
-            (
-                header::CACHE_CONTROL,
-                HeaderValue::from_static("public, max-age=60"),
-            ),
-        ],
-        bytes,
-    ))
+    let content = String::from_utf8_lossy(&bytes).into_owned();
+
+    Ok(Json(SharedContentResponse {
+        content,
+        sharer_name: file.sharer_name,
+        sharer_avatar: file.sharer_avatar,
+    }))
 }
 
 #[cfg(test)]
@@ -460,7 +460,7 @@ mod tests {
     }
 
     #[sqlx::test(migrations = "./migrations")]
-    async fn get_shared_content_returns_paste_body_as_markdown(db: PgPool) {
+    async fn get_shared_content_returns_paste_body_as_json(db: PgPool) {
         let (_user_id, jwt) = create_test_user(&db).await;
         let app = test_router(test_state(db));
 
@@ -470,11 +470,16 @@ mod tests {
         let (status, bytes) = get_shared(app, share_token).await;
 
         assert_eq!(status, StatusCode::OK);
-        assert_eq!(bytes, b"# Hello World");
+        let body: Value = serde_json::from_slice(&bytes).expect("response must be valid JSON");
+        assert_eq!(
+            body["content"].as_str().unwrap(),
+            "# Hello World",
+            "content field must match"
+        );
     }
 
     #[sqlx::test(migrations = "./migrations")]
-    async fn get_shared_content_sets_text_markdown_content_type(db: PgPool) {
+    async fn get_shared_content_sets_json_content_type(db: PgPool) {
         let (_user_id, jwt) = create_test_user(&db).await;
         let app = test_router(test_state(db));
 
@@ -499,8 +504,8 @@ mod tests {
             .and_then(|v| v.to_str().ok())
             .unwrap_or("");
         assert!(
-            ct.contains("text/markdown"),
-            "expected text/markdown content-type, got: {ct}"
+            ct.contains("application/json"),
+            "expected application/json content-type, got: {ct}"
         );
     }
 
