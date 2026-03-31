@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
 
     let app = Router::new()
-        .route("/health", get(health))
+        .route("/api/health", get(health))
         .merge(routes::create_router())
         .with_state(state)
         .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))

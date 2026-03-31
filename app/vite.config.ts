@@ -8,6 +8,10 @@ import compression from 'vite-plugin-compression';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 import { VitePWA } from 'vite-plugin-pwa';
 import svgr from 'vite-plugin-svgr';
+/// <reference types="vitest" />
+
+const API_PROXY_TARGET = process.env.VITE_API_URL || 'http://localhost:8080';
+const API_ROUTES = ['/api', '/auth'];
 
 export default defineConfig(({ mode }) => {
   const isDev = mode === 'development';
@@ -133,6 +137,10 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    test: {
+      environment: 'jsdom',
+      globals: true,
+    },
     server: {
       port: 5173,
       host: true,
@@ -141,6 +149,9 @@ export default defineConfig(({ mode }) => {
         usePolling: true,
         interval: 100,
       },
+      proxy: Object.fromEntries(
+        API_ROUTES.map((route) => [route, { target: API_PROXY_TARGET, changeOrigin: true }])
+      ),
     },
   };
 });
