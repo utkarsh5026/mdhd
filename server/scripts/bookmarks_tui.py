@@ -18,26 +18,13 @@ Environment variables (all optional, shown with defaults):
     DATABASE_URL  postgresql://postgres:postgres@localhost:5432/mdhd
 """
 
-import os
 import sys
 
-import psycopg2
+from common import console, get_db, pick_user
 from rich import box
-from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
-
-DB_URL = os.environ.get(
-    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/mdhd"
-)
-
-console = Console()
-
-
-def get_db():
-    """Return a new psycopg2 connection using DATABASE_URL."""
-    return psycopg2.connect(DB_URL)
 
 
 def fetch_users() -> list[tuple]:
@@ -104,32 +91,6 @@ def fetch_all_bookmarks(user_id: str) -> list[tuple]:
             (user_id,),
         )
         return cur.fetchall()
-
-
-# ── Renderers ────────────────────────────────────────────────────────────────
-
-
-def render_user_table(users: list[tuple]) -> None:
-    """Print a Rich table listing all users with index, name, email, provider, bookmark count, and join date."""
-    table = Table(title="Users", box=box.ROUNDED, show_lines=False)
-    table.add_column("#", style="dim", width=3, justify="right")
-    table.add_column("Name", style="bold")
-    table.add_column("Email", style="cyan")
-    table.add_column("Provider", style="blue")
-    table.add_column("Bookmarks", justify="right", style="magenta")
-    table.add_column("Created", style="green")
-
-    for i, (uid, name, email, provider, created, count) in enumerate(users, 1):
-        table.add_row(
-            str(i),
-            name or "[dim]—[/dim]",
-            email,
-            provider or "—",
-            str(count),
-            str(created)[:10],
-        )
-
-    console.print(table)
 
 
 def render_files_table(files: list[tuple], user_name: str) -> None:
@@ -210,31 +171,6 @@ def show_bookmark_detail(bookmark: tuple, file_name: str) -> None:
 
 
 # ── Navigation ────────────────────────────────────────────────────────────────
-
-
-def pick_user(users: list[tuple]) -> tuple:
-    """Show the users table and prompt for a number. Returns the chosen row."""
-    while True:
-        console.clear()
-        console.rule("[bold cyan]MDHD Bookmarks Inspector[/bold cyan]")
-        render_user_table(users)
-        console.print()
-
-        raw = Prompt.ask(
-            "[bold]Select user[/bold] [dim](number, or q to quit)[/dim]",
-            default="q",
-        )
-        if raw.lower() == "q":
-            console.print("[dim]Bye.[/dim]")
-            sys.exit(0)
-
-        if raw.isdigit() and 1 <= int(raw) <= len(users):
-            return users[int(raw) - 1]
-
-        console.print(
-            f"[red]Invalid choice '{raw}' — enter a number between 1 and {len(users)}.[/red]"
-        )
-        Prompt.ask("[dim]Press Enter to try again[/dim]", default="")
 
 
 def file_detail(user_id: str, file_row: tuple) -> None:
@@ -400,7 +336,7 @@ def main() -> None:
         sys.exit(0)
 
     while True:
-        user = pick_user(users)
+        user = pick_user(users, title="MDHD Bookmarks Inspector", count_col="Bookmarks")
         user_detail(user)
 
 

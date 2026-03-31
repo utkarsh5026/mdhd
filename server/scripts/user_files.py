@@ -13,57 +13,17 @@ Usage:
 """
 
 import argparse
-import os
 import re
 import sys
 
-import boto3
-import psycopg2
-from botocore.config import Config as BotoConfig
-from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-DB_URL = os.environ.get(
-    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/mdhd"
-)
-MINIO_ENDPOINT = os.environ.get("SUPABASE_S3_ENDPOINT", "http://localhost:9000")
-MINIO_ACCESS_KEY = os.environ.get("SUPABASE_S3_ACCESS_KEY", "minioadmin")
-MINIO_SECRET_KEY = os.environ.get("SUPABASE_S3_SECRET_KEY", "minioadmin")
-MINIO_BUCKET = os.environ.get("SUPABASE_STORAGE_BUCKET", "files")
+from common import MINIO_BUCKET, console, get_db, get_s3, humanize_bytes
 
 UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE
 )
-
-console = Console()
-
-
-def get_db():
-    """Return a new psycopg2 connection using DB_URL."""
-    return psycopg2.connect(DB_URL)
-
-
-def get_s3():
-    """Return a boto3 S3 client configured for the MinIO/Supabase Storage endpoint."""
-    return boto3.client(
-        "s3",
-        endpoint_url=MINIO_ENDPOINT,
-        aws_access_key_id=MINIO_ACCESS_KEY,
-        aws_secret_access_key=MINIO_SECRET_KEY,
-        region_name=os.environ.get("AWS_REGION", "us-east-1"),
-        config=BotoConfig(signature_version="s3v4"),
-    )
-
-
-def humanize_bytes(size: int) -> str:
-    """Convert a byte count to a human-readable string (e.g. 1536 -> '1.5 KB')."""
-    n = float(size)
-    for unit in ("B", "KB", "MB", "GB"):
-        if abs(n) < 1024:
-            return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
-        n /= 1024
-    return f"{n:.1f} TB"
 
 
 def resolve_user_id(identifier: str) -> str:

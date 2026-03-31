@@ -19,27 +19,15 @@ Environment variables (all optional, shown with defaults):
 """
 
 import json
-import os
 import sys
 
-import psycopg2
 from rich import box
-from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.syntax import Syntax
 from rich.table import Table
 
-DB_URL = os.environ.get(
-    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/mdhd"
-)
-
-console = Console()
-
-
-def get_db():
-    """Return a new psycopg2 connection using DATABASE_URL."""
-    return psycopg2.connect(DB_URL)
+from common import console, get_db, pick_user
 
 
 def fetch_users() -> list[tuple]:
@@ -69,29 +57,6 @@ def fetch_settings(user_id: str) -> list[tuple]:
             (user_id,),
         )
         return cur.fetchall()
-
-
-def render_user_table(users: list[tuple]) -> None:
-    """Print a Rich table listing all users with index, name, email, provider, setting count, and join date."""
-    table = Table(title="Users", box=box.ROUNDED, show_lines=False)
-    table.add_column("#", style="dim", width=3, justify="right")
-    table.add_column("Name", style="bold")
-    table.add_column("Email", style="cyan")
-    table.add_column("Provider", style="blue")
-    table.add_column("Settings", justify="right", style="magenta")
-    table.add_column("Created", style="green")
-
-    for i, (uid, name, email, provider, created, count) in enumerate(users, 1):
-        table.add_row(
-            str(i),
-            name or "[dim]—[/dim]",
-            email,
-            provider or "—",
-            str(count),
-            str(created)[:10],
-        )
-
-    console.print(table)
 
 
 def render_settings_table(settings: list[tuple], user_name: str) -> None:
@@ -138,31 +103,6 @@ def show_setting_detail(setting: tuple) -> None:
             border_style="cyan",
         )
     )
-
-
-def pick_user(users: list[tuple]) -> tuple:
-    """Show the users table and prompt for a number. Returns the chosen row."""
-    while True:
-        console.clear()
-        console.rule("[bold cyan]MDHD Settings Inspector[/bold cyan]")
-        render_user_table(users)
-        console.print()
-
-        raw = Prompt.ask(
-            "[bold]Select user[/bold] [dim](number, or q to quit)[/dim]",
-            default="q",
-        )
-        if raw.lower() == "q":
-            console.print("[dim]Bye.[/dim]")
-            sys.exit(0)
-
-        if raw.isdigit() and 1 <= int(raw) <= len(users):
-            return users[int(raw) - 1]
-
-        console.print(
-            f"[red]Invalid choice '{raw}' — enter a number between 1 and {len(users)}.[/red]"
-        )
-        Prompt.ask("[dim]Press Enter to try again[/dim]", default="")
 
 
 def _handle_detail_choice(
@@ -277,7 +217,7 @@ def main() -> None:
         sys.exit(0)
 
     while True:
-        user = pick_user(users)
+        user = pick_user(users, title="MDHD Settings Inspector", count_col="Settings")
         user_detail(user)
 
 
