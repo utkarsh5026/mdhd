@@ -6,6 +6,7 @@ pub mod github;
 pub mod settings;
 pub mod share;
 pub mod sync;
+pub mod utils;
 
 use axum::Router;
 use axum::routing::get;

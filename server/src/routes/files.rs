@@ -3,32 +3,22 @@ use std::time::Duration;
 use axum::extract::{Path, State};
 use axum::http::{HeaderValue, StatusCode, header};
 use axum::response::IntoResponse;
-use axum::routing::{delete, get, post};
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use tracing::{info, instrument, warn};
 
-use crate::errors::{AppError, OptionExt, ResultExt};
+use crate::errors::{AppError, ResultExt};
 use crate::middleware::auth::AuthUser;
 use crate::models::file::FileMeta;
+use crate::routes::utils::{
+    assert_owner, fetch_file_by_id, prepare_content, storage_key, validate_path,
+};
 use crate::state::AppState;
 use crate::storage;
-
-async fn fetch_file_by_id(db: &sqlx::PgPool, id: Uuid) -> Result<FileMeta, AppError> {
-    sqlx::query_as!(
-        FileMeta,
-        "SELECT id, user_id, name, path, storage_key, size_bytes, content_hash, share_token, created_at, updated_at
-         FROM files WHERE id = $1",
-        id
-    )
-    .fetch_optional(db)
-    .await?
-    .or_not_found()
-}
 
 #[derive(Debug, Serialize)]
 pub struct FileResponse {
@@ -65,31 +55,6 @@ pub struct CreateFileRequest {
     pub content: String,
 }
 
-/// Request body for POST /files/share.
-#[derive(Debug, Deserialize)]
-pub struct ShareFileRequest {
-    pub name: String,
-    pub path: String,
-    pub content: String,
-}
-
-/// Response body for POST /files/share.
-#[derive(Debug, Serialize)]
-pub struct ShareResponse {
-    pub token: Uuid,
-    pub url: String,
-}
-
-fn hex_encode(bytes: &[u8]) -> String {
-    use std::fmt::Write as _;
-    bytes
-        .iter()
-        .fold(String::with_capacity(bytes.len() * 2), |mut s, b| {
-            write!(s, "{b:02x}").unwrap();
-            s
-        })
-}
-
 /// Request body for POST /files/import-url.
 #[derive(Debug, Deserialize)]
 pub struct ImportUrlRequest {
@@ -110,8 +75,6 @@ const IMPORT_URL_MAX_SIZE: usize = 5 * 1024 * 1024;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/files/search", get(search_files))
-        .route("/files/share", post(share_file))
-        .route("/files/share/{token}", delete(revoke_share))
         .route("/files/import-url", post(import_url))
         .route("/files", get(list_files).post(create_file))
         .route("/files/{id}", get(get_file).delete(delete_file))
@@ -146,22 +109,16 @@ async fn create_file(
     State(state): State<AppState>,
     Json(body): Json<CreateFileRequest>,
 ) -> Result<(StatusCode, Json<FileResponse>), AppError> {
-    if !body.path.starts_with('/') {
-        return Err(AppError::bad_request("path must start with '/'"));
-    }
+    validate_path(&body.path)?;
 
-    let content_bytes = body.content.as_bytes().to_vec();
-    let size_bytes =
-        i64::try_from(content_bytes.len()).map_err(|_| AppError::bad_request("file too large"))?;
-
-    let hash = hex_encode(&Sha256::digest(&content_bytes));
-    let storage_key = format!("{}{}", auth.user_id, body.path);
+    let content = prepare_content(&body.content)?;
+    let key = storage_key(auth.user_id, &body.path);
 
     storage::upload_object(
         &state.s3,
         &state.config.supabase_storage_bucket,
-        &storage_key,
-        content_bytes,
+        &key,
+        content.bytes,
     )
     .await?;
 
@@ -181,9 +138,9 @@ async fn create_file(
         auth.user_id,
         &body.name,
         &body.path,
-        &storage_key,
-        size_bytes,
-        &hash,
+        &key,
+        content.size_bytes,
+        &content.hash,
         &body.content
     )
     .fetch_one(&state.db)
@@ -201,11 +158,7 @@ async fn get_file(
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Json<FileResponse>, AppError> {
     let file = fetch_file_by_id(&state.db, id).await?;
-
-    if file.user_id != auth.user_id {
-        return Err(AppError::NotFound);
-    }
-
+    assert_owner(&file, auth.user_id)?;
     Ok(Json(FileResponse::from(file)))
 }
 
@@ -217,10 +170,7 @@ async fn download_content(
     Path(id): Path<uuid::Uuid>,
 ) -> Result<impl IntoResponse, AppError> {
     let file = fetch_file_by_id(&state.db, id).await?;
-
-    if file.user_id != auth.user_id {
-        return Err(AppError::NotFound);
-    }
+    assert_owner(&file, auth.user_id)?;
 
     let bytes = storage::download_object(
         &state.s3,
@@ -246,10 +196,7 @@ async fn delete_file(
     Path(id): Path<uuid::Uuid>,
 ) -> Result<StatusCode, AppError> {
     let file = fetch_file_by_id(&state.db, id).await?;
-
-    if file.user_id != auth.user_id {
-        return Err(AppError::NotFound);
-    }
+    assert_owner(&file, auth.user_id)?;
 
     if let Err(e) = storage::delete_object(
         &state.s3,
@@ -266,103 +213,6 @@ async fn delete_file(
         .await?;
 
     info!("file deleted");
-    Ok(StatusCode::NO_CONTENT)
-}
-
-/// POST /files/share — upsert file content and mint (or preserve) a share token.
-///
-/// If the file already has a share token, it is preserved (COALESCE). A new token
-/// is only generated when none exists yet, so previously distributed links keep working.
-#[instrument(skip(state, body), fields(user_id = %auth.user_id, path = %body.path))]
-async fn share_file(
-    auth: AuthUser,
-    State(state): State<AppState>,
-    Json(body): Json<ShareFileRequest>,
-) -> Result<Json<ShareResponse>, AppError> {
-    if !body.path.starts_with('/') {
-        return Err(AppError::bad_request("path must start with '/'"));
-    }
-
-    let content_bytes = body.content.as_bytes().to_vec();
-    let size_bytes =
-        i64::try_from(content_bytes.len()).map_err(|_| AppError::bad_request("file too large"))?;
-
-    let hash = hex_encode(&Sha256::digest(&content_bytes));
-    let storage_key = format!("{}{}", auth.user_id, body.path);
-
-    storage::upload_object(
-        &state.s3,
-        &state.config.supabase_storage_bucket,
-        &storage_key,
-        content_bytes,
-    )
-    .await?;
-
-    let candidate_token = Uuid::new_v4();
-
-    let file = sqlx::query_as!(
-        FileMeta,
-        "INSERT INTO files (user_id, name, path, storage_key, size_bytes, content_hash, share_token, content_text, search_content)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, to_tsvector('english', $8))
-         ON CONFLICT (user_id, path) DO UPDATE
-             SET name         = EXCLUDED.name,
-                 storage_key  = EXCLUDED.storage_key,
-                 size_bytes   = EXCLUDED.size_bytes,
-                 content_hash = EXCLUDED.content_hash,
-                 share_token  = COALESCE(files.share_token, EXCLUDED.share_token),
-                 content_text = EXCLUDED.content_text,
-                 search_content = EXCLUDED.search_content,
-                 updated_at   = now()
-         RETURNING id, user_id, name, path, storage_key, size_bytes, content_hash, share_token, created_at, updated_at",
-        auth.user_id,
-        &body.name,
-        &body.path,
-        &storage_key,
-        size_bytes,
-        &hash,
-        candidate_token,
-        &body.content
-    )
-    .fetch_one(&state.db)
-    .await?;
-
-    let token = file
-        .share_token
-        .expect("share_token must be set after upsert");
-    let url = format!("{}/share/{}", state.config.frontend_url, token);
-
-    info!(file_id = %file.id, %token, "share link created/preserved");
-    Ok(Json(ShareResponse { token, url }))
-}
-
-/// DELETE /files/share/:token — revoke a share token.
-///
-/// Verifies ownership before nulling the token so a user cannot revoke another user's link.
-#[instrument(skip(state), fields(user_id = %auth.user_id, %token))]
-async fn revoke_share(
-    auth: AuthUser,
-    State(state): State<AppState>,
-    Path(token): Path<Uuid>,
-) -> Result<StatusCode, AppError> {
-    let file = sqlx::query_as!(
-        FileMeta,
-        "SELECT id, user_id, name, path, storage_key, size_bytes, content_hash, share_token, created_at, updated_at
-         FROM files WHERE share_token = $1",
-        token
-    )
-    .fetch_optional(&state.db)
-    .await?
-    .or_not_found()?;
-
-    if file.user_id != auth.user_id {
-        return Err(AppError::NotFound);
-    }
-
-    sqlx::query!("UPDATE files SET share_token = NULL WHERE id = $1", file.id)
-        .execute(&state.db)
-        .await?;
-
-    info!(file_id = %file.id, "share token revoked");
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -533,46 +383,4 @@ async fn search_files(
 
     info!(count = results.len(), "search completed");
     Ok(Json(SearchResponse { results }))
-}
-
-/// GET /share/:token — public endpoint, no authentication required.
-///
-/// Downloads and returns the raw markdown content of a shared file.
-/// This handler is registered directly in `routes/mod.rs` (not inside `router()`)
-/// to guarantee no `AuthUser` extractor is ever in scope.
-#[instrument(skip(state), fields(%token))]
-pub async fn get_shared_file(
-    State(state): State<AppState>,
-    Path(token): Path<Uuid>,
-) -> Result<impl IntoResponse, AppError> {
-    let file = sqlx::query_as!(
-        FileMeta,
-        "SELECT id, user_id, name, path, storage_key, size_bytes, content_hash, share_token, created_at, updated_at
-         FROM files WHERE share_token = $1",
-        token
-    )
-    .fetch_optional(&state.db)
-    .await?
-    .or_not_found()?;
-
-    let bytes = storage::download_object(
-        &state.s3,
-        &state.config.supabase_storage_bucket,
-        &file.storage_key,
-    )
-    .await?;
-
-    Ok((
-        [
-            (
-                header::CONTENT_TYPE,
-                HeaderValue::from_static("text/markdown; charset=utf-8"),
-            ),
-            (
-                header::CACHE_CONTROL,
-                HeaderValue::from_static("public, max-age=60"),
-            ),
-        ],
-        bytes,
-    ))
 }
