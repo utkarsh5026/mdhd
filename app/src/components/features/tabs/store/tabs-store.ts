@@ -181,6 +181,33 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           return newTab.id;
         },
 
+        openPasteTab: async (
+          tabId: string,
+          fileId: string,
+          fileName: string,
+          createdAt: number
+        ) => {
+          const state = get();
+          const existing = state.getTabById(tabId);
+          if (existing) {
+            state.setActiveTab(tabId);
+            return;
+          }
+
+          const storedFile = await fileStorageDB.getFile(fileId);
+          if (!storedFile) return;
+
+          const title =
+            fileName.replace(/\.md$/, '') || extractTitleFromMarkdown(storedFile.content);
+          const tab = {
+            ...createTab(storedFile.content, title, { sType: 'paste' as const }),
+            id: tabId,
+            createdAt,
+          };
+
+          get().addTab(tab);
+        },
+
         ...createBookmarkSlice(set, get, api),
 
         toggleHeaderVisibility: () => {

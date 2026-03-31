@@ -106,4 +106,16 @@ export interface TabsActions extends BookmarkActions {
    * parsing of every tab's markdown content.
    */
   initializeTabSections: () => void;
+
+  /**
+   * Opens a paste-backed file from IndexedDB as a tab.
+   * Reuses the existing tab if already open, otherwise fetches content,
+   * parses sections, and creates a tab with the ID derived from the paste path.
+   */
+  openPasteTab: (
+    tabId: string,
+    fileId: string,
+    fileName: string,
+    createdAt: number
+  ) => Promise<void>;
 }
