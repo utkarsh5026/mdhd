@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   ArrowLeftRight,
+  Bookmark,
   Files,
   Layers,
   Palette,
@@ -15,6 +16,7 @@ import { useSwipeable } from 'react-swipeable';
 
 import SearchPanel from '@/components/features/content-reading/components/search/search-panel';
 import SnippetsPanel from '@/components/features/content-reading/components/snippets/snippets-panel';
+import BookmarksPanel from '@/components/features/file-explorer/components/bookmarks-panel';
 import FilesPanel from '@/components/features/file-explorer/components/files-panel';
 import OutlinePanel from '@/components/features/file-explorer/components/outline-panel';
 import { MarkdownStylePanel } from '@/components/features/markdown-style';
@@ -56,6 +58,7 @@ interface SidebarProps {
 const DEFAULT_PANELS: Panel[] = [
   { id: 'files', icon: Files, tooltip: 'Files', content: <FilesPanel /> },
   { id: 'outline', icon: TableOfContents, tooltip: 'Outline', content: <OutlinePanel /> },
+  { id: 'bookmarks', icon: Bookmark, tooltip: 'Bookmarks', content: <BookmarksPanel /> },
   { id: 'snippets', icon: Layers, tooltip: 'Snippets', content: <SnippetsPanel /> },
   { id: 'search', icon: Search, tooltip: 'Search', content: <SearchPanel /> },
   { id: 'style', icon: Palette, tooltip: 'Style', content: <MarkdownStylePanel /> },

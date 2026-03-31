@@ -43,6 +43,7 @@ export const useTheme = () => {
     root.style.setProperty('--popover', currentTheme.cardBg);
     root.style.setProperty('--popover-foreground', currentTheme.popoverForeground);
     root.style.setProperty('--ring', currentTheme.primary);
+    root.style.setProperty('--input', currentTheme.border);
   }, [currentTheme]);
 
   useEffect(() => {
