@@ -384,3 +384,510 @@ async fn search_files(
     info!(count = results.len(), "search completed");
     Ok(Json(SearchResponse { results }))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode, header};
+    use serde_json::{Value, json};
+    use sqlx::PgPool;
+    use tower::ServiceExt;
+
+    use crate::testutil::{create_test_user, delete_req, get_json, post_json, test_state};
+
+    /// Seed a file row directly (no S3 upload needed for read-only endpoint tests).
+    async fn seed_file(db: &PgPool, user_id: Uuid, path: &str, content_text: &str) -> Uuid {
+        sqlx::query_scalar!(
+            r#"
+            INSERT INTO files (user_id, name, path, storage_key, size_bytes, content_text, search_content)
+            VALUES ($1, $2, $3, $4, $5, $6, to_tsvector('english', $6))
+            RETURNING id
+            "#,
+            user_id,
+            path.split('/').last().unwrap_or("test.md"),
+            path,
+            format!("key/{}", Uuid::new_v4()),
+            i64::try_from(content_text.len()).unwrap_or(i64::MAX),
+            content_text,
+        )
+        .fetch_one(db)
+        .await
+        .unwrap()
+    }
+
+    /// POST /files with a JSON body and return `(status, body)`.
+    async fn create_file(
+        app: axum::Router,
+        token: &str,
+        name: &str,
+        path: &str,
+        content: &str,
+    ) -> (StatusCode, Value) {
+        post_json(
+            app,
+            "/files",
+            token,
+            json!({ "name": name, "path": path, "content": content }),
+        )
+        .await
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn list_without_token_returns_401(db: PgPool) {
+        let app = super::router().with_state(test_state(db));
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/files")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn create_without_token_returns_401(db: PgPool) {
+        let app = super::router().with_state(test_state(db));
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/files")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(
+                        json!({"name":"a","path":"/a.md","content":""}).to_string(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn get_file_without_token_returns_401(db: PgPool) {
+        let app = super::router().with_state(test_state(db));
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri(format!("/files/{}", Uuid::new_v4()))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn delete_without_token_returns_401(db: PgPool) {
+        let app = super::router().with_state(test_state(db));
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("DELETE")
+                    .uri(format!("/files/{}", Uuid::new_v4()))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    // ── GET /files ────────────────────────────────────────────────────────────
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn list_files_empty_returns_empty_array(db: PgPool) {
+        let (_, token) = create_test_user(&db).await;
+        let app = super::router().with_state(test_state(db));
+
+        let (status, body) = get_json(app, "/files", &token).await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body.as_array().unwrap().len(), 0);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn list_files_returns_only_own_files(db: PgPool) {
+        let (user1, token1) = create_test_user(&db).await;
+        let (user2, _token2) = create_test_user(&db).await;
+
+        seed_file(&db, user1, "/user1/a.md", "hello").await;
+        seed_file(&db, user1, "/user1/b.md", "world").await;
+        seed_file(&db, user2, "/user2/c.md", "other").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, body) = get_json(app, "/files", &token1).await;
+
+        assert_eq!(status, StatusCode::OK);
+        let arr = body.as_array().unwrap();
+        assert_eq!(arr.len(), 2, "should only see own files");
+        for entry in arr {
+            assert!(
+                entry["path"].as_str().unwrap().starts_with("/user1/"),
+                "unexpected path: {entry}"
+            );
+        }
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn list_files_returns_correct_fields(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        seed_file(&db, user_id, "/notes/hello.md", "# Hello").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, body) = get_json(app, "/files", &token).await;
+
+        assert_eq!(status, StatusCode::OK);
+        let entry = &body.as_array().unwrap()[0];
+        assert!(entry["id"].as_str().is_some());
+        assert_eq!(entry["path"], "/notes/hello.md");
+        assert!(
+            entry.get("user_id").is_none(),
+            "user_id must not be exposed"
+        );
+        assert!(
+            entry.get("storage_key").is_none(),
+            "storage_key must not be exposed"
+        );
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn list_files_ordered_by_path(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        seed_file(&db, user_id, "/z/z.md", "z").await;
+        seed_file(&db, user_id, "/a/a.md", "a").await;
+        seed_file(&db, user_id, "/m/m.md", "m").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (_, body) = get_json(app, "/files", &token).await;
+
+        let paths: Vec<&str> = body
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["path"].as_str().unwrap())
+            .collect();
+        assert_eq!(paths, vec!["/a/a.md", "/m/m.md", "/z/z.md"]);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn get_file_returns_correct_metadata(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, user_id, "/docs/readme.md", "# Readme").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, body) = get_json(app, &format!("/files/{file_id}"), &token).await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["id"], file_id.to_string());
+        assert_eq!(body["path"], "/docs/readme.md");
+        assert!(body.get("user_id").is_none(), "user_id must not be exposed");
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn get_file_not_found_returns_404(db: PgPool) {
+        let (_, token) = create_test_user(&db).await;
+        let app = super::router().with_state(test_state(db));
+
+        let (status, _) = get_json(app, &format!("/files/{}", Uuid::new_v4()), &token).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn get_file_owned_by_other_user_returns_404(db: PgPool) {
+        let (owner, _owner_token) = create_test_user(&db).await;
+        let (_, attacker_token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, owner, "/secret.md", "secret").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, _) = get_json(app, &format!("/files/{file_id}"), &attacker_token).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn delete_file_returns_204(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, user_id, "/to-delete.md", "bye").await;
+
+        let app = super::router().with_state(test_state(db));
+        let status = delete_req(app, &format!("/files/{file_id}"), &token).await;
+        assert_eq!(status, StatusCode::NO_CONTENT);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn delete_file_removes_row_from_db(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, user_id, "/gone.md", "content").await;
+
+        let app = super::router().with_state(test_state(db.clone()));
+        delete_req(app, &format!("/files/{file_id}"), &token).await;
+
+        let count: i64 = sqlx::query_scalar!("SELECT COUNT(*) FROM files WHERE id = $1", file_id)
+            .fetch_one(&db)
+            .await
+            .unwrap()
+            .unwrap_or(0);
+        assert_eq!(count, 0);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn delete_nonexistent_file_returns_404(db: PgPool) {
+        let (_, token) = create_test_user(&db).await;
+        let app = super::router().with_state(test_state(db));
+
+        let status = delete_req(app, &format!("/files/{}", Uuid::new_v4()), &token).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn delete_foreign_file_returns_404(db: PgPool) {
+        let (owner, _) = create_test_user(&db).await;
+        let (_, attacker_token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, owner, "/owner-file.md", "content").await;
+
+        let app = super::router().with_state(test_state(db));
+        let status = delete_req(app, &format!("/files/{file_id}"), &attacker_token).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn create_file_invalid_path_returns_400(db: PgPool) {
+        let (_, token) = create_test_user(&db).await;
+        let app = super::router().with_state(test_state(db));
+
+        // path does not start with '/'
+        let (status, body) = create_file(app, &token, "test.md", "no-slash.md", "content").await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(
+            body["error"].as_str().unwrap_or("").contains('/'),
+            "expected error about '/', got: {body}"
+        );
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn search_without_token_returns_401(db: PgPool) {
+        let app = super::router().with_state(test_state(db));
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/files/search?q=hello")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn search_short_query_returns_400(db: PgPool) {
+        let (_, token) = create_test_user(&db).await;
+        let app = super::router().with_state(test_state(db));
+
+        let (status, body) = get_json(app, "/files/search?q=a", &token).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(
+            body["error"].as_str().unwrap_or("").contains("2 char"),
+            "expected '2 char' in error, got: {body}"
+        );
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn search_returns_matching_files(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        seed_file(
+            &db,
+            user_id,
+            "/notes/rust.md",
+            "Rust is a systems programming language",
+        )
+        .await;
+        seed_file(
+            &db,
+            user_id,
+            "/notes/python.md",
+            "Python is a scripting language",
+        )
+        .await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, body) = get_json(app, "/files/search?q=systems", &token).await;
+
+        assert_eq!(status, StatusCode::OK);
+        let results = body["results"].as_array().unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0]["file_path"], "/notes/rust.md");
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn search_is_isolated_to_requesting_user(db: PgPool) {
+        let (user1, token1) = create_test_user(&db).await;
+        let (user2, _) = create_test_user(&db).await;
+
+        seed_file(&db, user1, "/u1/doc.md", "unique token xyzzy").await;
+        seed_file(&db, user2, "/u2/doc.md", "unique token xyzzy").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, body) = get_json(app, "/files/search?q=xyzzy", &token1).await;
+
+        assert_eq!(status, StatusCode::OK);
+        let results = body["results"].as_array().unwrap();
+        assert_eq!(
+            results.len(),
+            1,
+            "search must not surface other users' files"
+        );
+        assert!(
+            results[0]["file_path"]
+                .as_str()
+                .unwrap()
+                .starts_with("/u1/")
+        );
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn search_no_matches_returns_empty_results(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        seed_file(&db, user_id, "/notes/intro.md", "Hello world").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, body) = get_json(app, "/files/search?q=zzznomatch", &token).await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["results"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn localhost_is_private() {
+        assert!(is_private_host("localhost"));
+    }
+
+    #[test]
+    fn loopback_ipv4_is_private() {
+        assert!(is_private_host("127.0.0.1"));
+    }
+
+    #[test]
+    fn loopback_ipv6_is_private() {
+        assert!(is_private_host("::1"));
+    }
+
+    #[test]
+    fn private_rfc1918_is_private() {
+        assert!(is_private_host("10.0.0.1"));
+        assert!(is_private_host("192.168.1.1"));
+        assert!(is_private_host("172.16.0.1"));
+    }
+
+    #[test]
+    fn link_local_is_private() {
+        assert!(is_private_host("169.254.0.1"));
+    }
+
+    #[test]
+    fn zero_zero_is_private() {
+        assert!(is_private_host("0.0.0.0"));
+    }
+
+    #[test]
+    fn public_ip_is_not_private() {
+        assert!(!is_private_host("8.8.8.8"));
+        assert!(!is_private_host("93.184.216.34"));
+    }
+
+    #[test]
+    fn public_hostname_is_not_private() {
+        assert!(!is_private_host("example.com"));
+        assert!(!is_private_host("github.com"));
+    }
+
+    #[test]
+    fn derive_filename_keeps_md_extension() {
+        let url = url::Url::parse("https://example.com/docs/readme.md").unwrap();
+        assert_eq!(derive_filename(&url), "readme.md");
+    }
+
+    #[test]
+    fn derive_filename_keeps_markdown_extension() {
+        let url = url::Url::parse("https://example.com/docs/guide.markdown").unwrap();
+        assert_eq!(derive_filename(&url), "guide.markdown");
+    }
+
+    #[test]
+    fn derive_filename_adds_md_when_no_extension() {
+        let url = url::Url::parse("https://example.com/some/page").unwrap();
+        assert_eq!(derive_filename(&url), "page.md");
+    }
+
+    #[test]
+    fn derive_filename_adds_md_when_unknown_extension() {
+        let url = url::Url::parse("https://example.com/file.txt").unwrap();
+        assert_eq!(derive_filename(&url), "file.txt.md");
+    }
+
+    #[test]
+    fn derive_filename_root_path_falls_back_to_imported() {
+        let url = url::Url::parse("https://example.com/").unwrap();
+        assert_eq!(derive_filename(&url), "imported.md");
+    }
+
+    #[test]
+    fn file_response_from_file_meta_maps_all_fields() {
+        use crate::models::file::FileMeta;
+
+        let now = chrono::Utc::now();
+        let id = Uuid::new_v4();
+        let user_id = Uuid::new_v4();
+        let share = Uuid::new_v4();
+
+        let meta = FileMeta {
+            id,
+            user_id,
+            name: "notes.md".to_string(),
+            path: "/notes.md".to_string(),
+            storage_key: "key/notes".to_string(),
+            size_bytes: 42,
+            content_hash: Some("abc123".to_string()),
+            share_token: Some(share),
+            created_at: now,
+            updated_at: now,
+        };
+
+        let resp = FileResponse::from(meta);
+        assert_eq!(resp.id, id);
+        assert_eq!(resp.name, "notes.md");
+        assert_eq!(resp.path, "/notes.md");
+        assert_eq!(resp.size_bytes, 42);
+        assert_eq!(resp.content_hash.as_deref(), Some("abc123"));
+        assert_eq!(resp.share_token, Some(share));
+        assert_eq!(resp.created_at, now);
+        assert_eq!(resp.updated_at, now);
+    }
+
+    #[test]
+    fn file_response_does_not_expose_user_id_or_storage_key() {
+        // FileResponse type itself must not have those fields — compile-time check.
+        let resp = FileResponse {
+            id: Uuid::new_v4(),
+            name: "x".into(),
+            path: "/x".into(),
+            size_bytes: 0,
+            content_hash: None,
+            share_token: None,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        };
+        // If the struct had user_id or storage_key, accessing `.id` here
+        // would compile but the fields below would not exist — this test
+        // simply documents the expected shape.
+        let _ = resp.id;
+    }
+}
