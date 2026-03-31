@@ -3,8 +3,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSwipeable } from 'react-swipeable';
 
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
+import Avatar from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
+
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 import { READER_PADDING_CLASSES } from '../layout';
 import MetadataDisplay from '../layout/metadata-display';
@@ -83,19 +86,14 @@ const ShareSectionReader: React.FC<ShareSectionReaderProps> = ({
     <div className="relative h-screen overflow-hidden bg-card">
       {(sharerName ?? sharerAvatar) && (
         <div className="absolute top-0 left-0 right-0 z-40 flex items-center gap-2.5 px-5 py-3 bg-card/80 backdrop-blur-sm border-b border-border/10">
-          {sharerAvatar ? (
-            <img
-              src={sharerAvatar}
-              alt={sharerName ?? 'Shared by'}
-              className="h-6 w-6 rounded-full object-cover shrink-0"
-            />
-          ) : (
-            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center shrink-0">
-              <span className="text-[10px] text-muted-foreground font-medium uppercase">
-                {sharerName?.[0] ?? '?'}
-              </span>
-            </div>
-          )}
+          <Avatar
+            name={sharerName ?? '?'}
+            src={
+              sharerAvatar ? `${API_BASE}/api/avatar?url=${encodeURIComponent(sharerAvatar)}` : null
+            }
+            size="sm"
+            className="bg-muted"
+          />
           <span className="text-xs text-muted-foreground/70">
             Shared by{' '}
             <span className="text-foreground/70 font-medium">{sharerName ?? 'a user'}</span>

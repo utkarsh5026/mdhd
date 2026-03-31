@@ -1,5 +1,7 @@
-import { Cloud, LogOut, User } from 'lucide-react';
+import { BarChart3, Cloud, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
+import Avatar from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -64,13 +66,6 @@ const UserMenu = () => {
     );
   }
 
-  const initials = (user.name || user.email)
-    .split(/[\s@]/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((s) => s[0].toUpperCase())
-    .join('');
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -82,41 +77,24 @@ const UserMenu = () => {
             'active:scale-95'
           )}
         >
-          {user.avatar_url ? (
-            <img
-              src={user.avatar_url}
-              alt={user.name || user.email}
-              className="h-full w-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="h-full w-full bg-primary flex items-center justify-center text-[11px] font-semibold text-primary-foreground tracking-wide select-none">
-              {initials}
-            </div>
-          )}
+          <Avatar
+            name={user.name || user.email}
+            src={user.avatar_url}
+            size="sm"
+            referrerPolicy="no-referrer"
+            className="ring-0"
+          />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="w-64 p-0">
         <div className="px-4 py-3.5 flex items-center gap-3">
-          <div
-            className={cn(
-              'h-10 w-10 shrink-0 rounded-full overflow-hidden',
-              'ring-2 ring-border/30'
-            )}
-          >
-            {user.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                alt={user.name || user.email}
-                className="h-full w-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="h-full w-full bg-primary flex items-center justify-center text-sm font-semibold text-primary-foreground select-none">
-                {initials}
-              </div>
-            )}
-          </div>
+          <Avatar
+            name={user.name || user.email}
+            src={user.avatar_url}
+            size="lg"
+            referrerPolicy="no-referrer"
+            className="ring-2 ring-border/30"
+          />
           <div className="flex flex-col min-w-0">
             {user.name && (
               <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
@@ -126,9 +104,11 @@ const UserMenu = () => {
         </div>
         <DropdownMenuSeparator className="m-0" />
         <div className="p-1.5">
-          <DropdownMenuItem disabled className="rounded-md">
-            <User className="mr-2.5 h-4 w-4 text-muted-foreground" />
-            Profile
+          <DropdownMenuItem asChild className="rounded-md">
+            <Link to="/analytics">
+              <BarChart3 className="mr-2.5 h-4 w-4 text-muted-foreground" />
+              Reading Analytics
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem disabled className="rounded-md">
             <Cloud className="mr-2.5 h-4 w-4 text-muted-foreground" />

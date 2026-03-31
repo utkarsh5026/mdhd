@@ -18,9 +18,11 @@
 //! | DELETE | `/share/paste/{token}` | [`revoke_paste_share`] |
 //! | GET    | `/api/share/{token}`   | [`get_shared_content`] (public, wired in mod.rs) |
 
-use axum::extract::{Path, State};
-use axum::http::StatusCode;
-use axum::routing::{delete, post};
+use axum::body::Body;
+use axum::extract::{Path, Query, State};
+use axum::http::{HeaderMap, StatusCode, header};
+use axum::response::Response;
+use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -72,6 +74,70 @@ pub fn router() -> Router<AppState> {
         .route("/share/file/{token}", delete(revoke_file_share))
         .route("/share/paste", post(share_paste))
         .route("/share/paste/{token}", delete(revoke_paste_share))
+        .route("/avatar", get(proxy_avatar))
+}
+
+/// Trusted domains for avatar proxying — prevents SSRF.
+const AVATAR_ALLOWLIST: &[&str] = &["lh3.googleusercontent.com", "avatars.githubusercontent.com"];
+
+#[derive(Deserialize)]
+pub struct AvatarQuery {
+    url: String,
+}
+
+/// `GET /api/avatar?url=<encoded>` — proxy an avatar image from a trusted domain.
+///
+/// Fetches the image server-side so the browser never hits the OAuth provider's
+/// CDN directly, avoiding cold-request rate limits (e.g. Google's 429s in
+/// incognito). Only allowlisted hostnames are accepted to prevent SSRF.
+#[instrument(skip(state, query))]
+pub async fn proxy_avatar(
+    State(state): State<AppState>,
+    Query(query): Query<AvatarQuery>,
+) -> Result<Response, AppError> {
+    let parsed =
+        url::Url::parse(&query.url).map_err(|_| AppError::bad_request("invalid avatar URL"))?;
+
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| AppError::bad_request("avatar URL has no host"))?;
+
+    if !AVATAR_ALLOWLIST.contains(&host) {
+        return Err(AppError::bad_request("avatar host not allowed"));
+    }
+
+    let upstream = state
+        .http
+        .get(parsed)
+        .header("User-Agent", "mdhd-server/1.0")
+        .send()
+        .await
+        .map_err(|e| AppError::internal(format!("avatar fetch failed: {e}")))?;
+
+    let content_type = upstream
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .cloned()
+        .unwrap_or_else(|| "image/jpeg".parse().unwrap());
+
+    let bytes = upstream
+        .bytes()
+        .await
+        .map_err(|e| AppError::internal(format!("avatar read failed: {e}")))?;
+
+    let mut headers = HeaderMap::new();
+    headers.insert(header::CONTENT_TYPE, content_type);
+    headers.insert(
+        header::CACHE_CONTROL,
+        "public, max-age=86400, immutable".parse().unwrap(),
+    );
+
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, headers[header::CONTENT_TYPE].clone())
+        .header(header::CACHE_CONTROL, "public, max-age=86400, immutable")
+        .body(Body::from(bytes))
+        .unwrap())
 }
 
 /// `POST /share/file` — upsert file content and mint (or preserve) a share token.
@@ -290,6 +356,195 @@ mod tests {
     use uuid::Uuid;
 
     use crate::testutil::{create_test_user, delete_req, post_json, test_state};
+
+    // ── proxy_avatar SSRF-protection tests ──────────────────────────────────
+
+    /// Build a minimal router with only the avatar proxy.
+    ///
+    /// `proxy_avatar` rejects bad URLs before touching the database, so a lazy
+    /// pool (no real connection) is sufficient for all rejection-path tests.
+    fn avatar_router() -> axum::Router {
+        let db = sqlx::PgPool::connect_lazy("postgresql://localhost/test")
+            .expect("lazy pool creation must not fail");
+        axum::Router::new()
+            .route("/avatar", axum::routing::get(super::proxy_avatar))
+            .with_state(crate::testutil::test_state(db))
+    }
+
+    /// Percent-encode `url` so it is safe as a query-string value.
+    fn avatar_uri(url: &str) -> String {
+        let encoded: String = url::form_urlencoded::byte_serialize(url.as_bytes()).collect();
+        format!("/avatar?url={encoded}")
+    }
+
+    /// Fire a GET /avatar?url=<encoded> and return the status code.
+    async fn avatar_status(url: &str) -> StatusCode {
+        avatar_router()
+            .oneshot(
+                Request::builder()
+                    .uri(avatar_uri(url))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+            .status()
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_localhost() {
+        assert_eq!(
+            avatar_status("http://localhost/secret").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_loopback_ipv4() {
+        assert_eq!(
+            avatar_status("http://127.0.0.1/etc/passwd").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_ipv6_loopback() {
+        assert_eq!(
+            avatar_status("http://[::1]/").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_rfc1918_10_block() {
+        assert_eq!(
+            avatar_status("http://10.0.0.1/internal").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_rfc1918_172_block() {
+        assert_eq!(
+            avatar_status("http://172.16.0.1/internal").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_rfc1918_192_168_block() {
+        assert_eq!(
+            avatar_status("http://192.168.1.1/internal").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_aws_link_local_metadata() {
+        // IMDS endpoint used in AWS/GCP/Azure for credential theft.
+        assert_eq!(
+            avatar_status("http://169.254.169.254/latest/meta-data/iam/security-credentials/")
+                .await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_arbitrary_external_host() {
+        assert_eq!(
+            avatar_status("https://evil.com/steal.jpg").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_subdomain_of_allowlisted_host() {
+        // "evil.lh3.googleusercontent.com" ≠ "lh3.googleusercontent.com"
+        assert_eq!(
+            avatar_status("https://evil.lh3.googleusercontent.com/photo").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_allowlisted_host_used_as_subdomain() {
+        // Host is "lh3.googleusercontent.com.attacker.com", not allowlisted.
+        assert_eq!(
+            avatar_status("https://lh3.googleusercontent.com.attacker.com/photo").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_malformed_url() {
+        assert_eq!(avatar_status("not-a-url").await, StatusCode::BAD_REQUEST,);
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_empty_url() {
+        assert_eq!(avatar_status("").await, StatusCode::BAD_REQUEST,);
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_file_scheme() {
+        // file:// has no host — caught by the "no host" guard.
+        assert_eq!(
+            avatar_status("file:///etc/passwd").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_data_uri() {
+        // data: URIs have no host.
+        assert_eq!(
+            avatar_status("data:text/html,<script>alert(1)</script>").await,
+            StatusCode::BAD_REQUEST,
+        );
+    }
+
+    #[tokio::test]
+    async fn avatar_proxy_rejects_missing_url_param() {
+        let status = avatar_router()
+            .oneshot(
+                Request::builder()
+                    .uri("/avatar")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+            .status();
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+    }
+
+    /// Confirms the allowlist blocks even when a real server is listening at
+    /// the target address — the host check happens before any connection is made.
+    #[tokio::test]
+    async fn avatar_proxy_blocks_live_server_at_non_allowlisted_ip() {
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/photo.jpg"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_bytes(b"\x89PNG\r\n")
+                    .insert_header("content-type", "image/png"),
+            )
+            .mount(&mock_server)
+            .await;
+
+        // wiremock binds to 127.0.0.1 — not in AVATAR_ALLOWLIST.
+        // Even though a real server would answer, the allowlist must reject it.
+        let url = format!("{}/photo.jpg", mock_server.uri());
+        assert_eq!(
+            avatar_status(&url).await,
+            StatusCode::BAD_REQUEST,
+            "a live server at 127.0.0.1 must not bypass the allowlist",
+        );
+    }
 
     /// Returns `true` when S3 integration tests should run.
     fn s3_integration_enabled() -> bool {
