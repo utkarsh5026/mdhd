@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { spawn } from "child_process";
-import { fileURLToPath, pathToFileURL } from "url";
-import { dirname, join } from "path";
+import { spawn } from "node:child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { dirname, join } from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -43,7 +43,8 @@ const tasks = {
   "dev:prod": {
     description: "Start server with RUN_ENV=production (local prod config)",
     category: "Development",
-    action: () => runCargo(["run"], { env: { ...process.env, RUN_ENV: "production" } }),
+    action: () =>
+      runCargo(["run"], { env: { ...process.env, RUN_ENV: "production" } }),
   },
   check: {
     description: "Type-check without building",
@@ -401,4 +402,4 @@ async function main() {
   }
 }
 
-main();
+await main();

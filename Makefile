@@ -1,13 +1,7 @@
 TASKS := help \
-         dev setup containers \
+         dev prod prod-watch setup containers \
          build build-release \
-         client-dev client-build client-lint client-fmt client-fmt-check client-test client-test-run \
-         server-dev server-dev-prod server-watch \
-         server-build server-build-release \
-         server-up server-down server-nuke server-ps server-logs \
-         server-migrate server-migrate-add server-db-reset server-db-shell \
-         server-test server-test-watch \
-         server-lint server-fmt server-fmt-check server-clean \
+         test \
          lint fmt fmt-check pre-commit validate
 
 .PHONY: $(TASKS)
