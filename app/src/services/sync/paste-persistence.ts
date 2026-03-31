@@ -84,3 +84,26 @@ export async function deletePasteFromServer(tabId: string): Promise<void> {
     console.warn('[paste-persistence] Failed to delete paste from server:', err);
   }
 }
+
+/** Fire-and-forget helper for async paste persistence. */
+export const persistPaste = (tabId: string, title: string, content: string) => {
+  savePasteToIndexedDB(tabId, title, content).catch((err) =>
+    console.error('[tabs-store] Failed to persist paste:', err)
+  );
+};
+
+/** Fire-and-forget: check auth and delete paste from IndexedDB + server. */
+export const removePaste = (tabID: string, sourceType: 'paste' | 'file') => {
+  if (sourceType !== 'paste') return;
+  const isAuthenticated = !!localStorage.getItem('mdhd-auth-token');
+
+  deletePasteFromIndexedDB(tabID).catch((err) =>
+    console.error('[tabs-store] Failed to delete paste from IndexedDB:', err)
+  );
+
+  if (isAuthenticated) {
+    deletePasteFromServer(tabID).catch((err) =>
+      console.error('[tabs-store] Failed to delete paste from server:', err)
+    );
+  }
+};

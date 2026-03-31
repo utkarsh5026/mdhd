@@ -5,11 +5,13 @@ import Homepage from '@/components/layout/home';
 
 import { useTheme } from './hooks';
 import { useAuthRedirect } from './hooks/use-auth-redirect';
+import { useSync } from './hooks/use-sync';
 
 const App = () => {
   useTheme();
   useInitialFontSetup();
   useAuthRedirect();
+  useSync();
 
   return (
     <>

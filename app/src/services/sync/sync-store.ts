@@ -6,6 +6,8 @@ import { useFileStore } from '@/components/features/file-explorer';
 import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
 import type { SyncResult } from '@/services/sync/types';
 
+import { performAnalyticsSync } from './analytics-sync';
+import { removePaste } from './paste-persistence';
 import { performSettingsSync, performSync } from './sync-service';
 
 /** Persistent and transient state for the cross-device sync process. */
@@ -51,6 +53,10 @@ const useSyncStore = create<SyncState & SyncActions>()(
               console.error('Settings sync failed:', err);
             });
 
+            await performAnalyticsSync().catch((err) => {
+              console.error('Analytics sync failed:', err);
+            });
+
             set({
               isSyncing: false,
               lastSyncAt: result.serverTime,
@@ -68,9 +74,22 @@ const useSyncStore = create<SyncState & SyncActions>()(
               .filter((paste) => !tabsStore.getTabById(paste.tabId))
               .forEach((paste) => tabsStore.createTab(paste.content, paste.title, 'paste'));
 
-            result.deletedPasteTabIds
-              .filter((id) => tabsStore.getTabById(id))
-              .forEach((id) => tabsStore.closeTab(id));
+            result.deletedPasteTabIds.forEach((id) => {
+              const { tabs, activeTabId, setTabsState } = useTabsStore.getState();
+              const tab = tabs.find((t) => t.id === id);
+              if (!tab || tab.pinned) return;
+              const tabIndex = tabs.indexOf(tab);
+              const newTabs = tabs.filter((t) => t.id !== id);
+              let newActiveTabId: string | null = null;
+              if (newTabs.length > 0) {
+                newActiveTabId =
+                  activeTabId === id
+                    ? newTabs[Math.min(tabIndex, newTabs.length - 1)].id
+                    : activeTabId;
+              }
+              setTabsState(newTabs, newActiveTabId, newTabs.length === 0);
+              removePaste(tab.id, tab.sourceType);
+            });
           } catch (err) {
             set({
               isSyncing: false,
