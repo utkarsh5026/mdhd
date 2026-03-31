@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 
 import AdaptiveModal from '@/components/ui/adaptive-modal';
 import { Button } from '@/components/ui/button';
-import { shareFile } from '@/services/share';
 
+import { useShare } from '../../hooks/use-share';
 import { type Tab } from '../../store/types';
 
 interface ShareModalProps {
@@ -15,25 +15,26 @@ interface ShareModalProps {
 }
 
 const ShareModal: React.FC<ShareModalProps> = memo(({ tab, open, onOpenChange }) => {
-  const [shareUrl, setShareUrl] = useState('');
-  const [shareLoading, setShareLoading] = useState(false);
+  const { shareUrl, isLoading: shareLoading, error, share, reset } = useShare(tab);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!open || !tab) return;
 
-    setShareUrl('');
+    reset();
     setCopied(false);
-    setShareLoading(true);
+    share().catch(() => {
+      toast.error('Failed to create share link');
+      onOpenChange(false);
+    });
+  }, [onOpenChange, open, reset, share, tab]);
 
-    shareFile(tab.title, tab.sourcePath ?? tab.title, tab.content)
-      .then(({ url }) => setShareUrl(url))
-      .catch(() => {
-        toast.error('Failed to create share link');
-        onOpenChange(false);
-      })
-      .finally(() => setShareLoading(false));
-  }, [open, tab, onOpenChange]);
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      onOpenChange(false);
+    }
+  }, [error, onOpenChange]);
 
   const handleCopy = useCallback(async () => {
     if (!shareUrl) return;
