@@ -10,10 +10,24 @@ export interface ServerBookmark {
   created_at: string;
 }
 
+/**
+ * Fetches all bookmarks for a given file from the server.
+ *
+ * @param fileId - The ID of the file whose bookmarks should be retrieved.
+ * @returns A promise resolving to the list of bookmarks stored on the server for that file.
+ */
 export async function fetchBookmarks(fileId: string): Promise<ServerBookmark[]> {
   return apiFetch<ServerBookmark[]>(`/files/${fileId}/bookmarks`);
 }
 
+/**
+ * Creates a new bookmark on the server for the specified file and section.
+ *
+ * @param fileId - The ID of the file to bookmark.
+ * @param sectionIndex - The zero-based index of the section being bookmarked.
+ * @param name - A user-visible label for the bookmark.
+ * @returns A promise resolving to the newly created bookmark as returned by the server.
+ */
 export async function createBookmark(
   fileId: string,
   sectionIndex: number,
@@ -25,6 +39,12 @@ export async function createBookmark(
   });
 }
 
+/**
+ * Deletes a bookmark from the server.
+ *
+ * @param fileId - The ID of the file that owns the bookmark.
+ * @param bookmarkServerId - The server-assigned ID of the bookmark to remove.
+ */
 export async function deleteBookmark(fileId: string, bookmarkServerId: string): Promise<void> {
   return apiFetch<void>(`/files/${fileId}/bookmarks/${bookmarkServerId}`, {
     method: 'DELETE',
