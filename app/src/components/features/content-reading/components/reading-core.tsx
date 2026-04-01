@@ -6,7 +6,6 @@ import FloatingThemePicker from '@/components/shared/theme/components/floating-t
 import { useLocalStorage, useMobile } from '@/hooks';
 import { cn } from '@/lib/utils';
 
-import { useReadingTimer } from '../../analytics/hooks/use-reading-timer';
 import { useReadingSettingsStore } from '../../settings/store/reading-settings-store';
 import TTSContext from '../context/tts-context';
 import {
@@ -14,7 +13,6 @@ import {
   useReadingNavigation,
   useReadingProgress,
   useReadingSections,
-  useReadingTabId,
 } from '../hooks';
 import { useReadingDialogs } from '../hooks/use-reading-dialogs';
 import { useReadingInteractions } from '../hooks/use-reading-interactions';
@@ -71,13 +69,10 @@ export interface ReadingCoreProps {
  */
 const ReadingCore: React.FC<ReadingCoreProps> = memo(
   ({ viewMode, headerSlot, editModeContent, onSectionClick, onPresent }) => {
-    const tabId = useReadingTabId();
     const { readingMode, currentIndex } = useReadingNavigation();
     const sections = useReadingSections();
     const { metadata } = useReadingContent();
     const readSections = useReadingProgress();
-
-    useReadingTimer(tabId);
 
     const [searchOpen, setSearchOpen] = useState(false);
     const openSearch = useCallback(() => setSearchOpen(true), []);

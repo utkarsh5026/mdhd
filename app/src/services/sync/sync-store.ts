@@ -6,7 +6,6 @@ import { useFileStore } from '@/components/features/file-explorer';
 import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
 import type { SyncResult } from '@/services/sync/types';
 
-import { performAnalyticsSync } from './analytics-sync';
 import { removePaste } from './paste-persistence';
 import { performSettingsSync, performSync } from './sync-service';
 
@@ -51,10 +50,6 @@ const useSyncStore = create<SyncState & SyncActions>()(
 
             await performSettingsSync().catch((err) => {
               console.error('Settings sync failed:', err);
-            });
-
-            await performAnalyticsSync().catch((err) => {
-              console.error('Analytics sync failed:', err);
             });
 
             set({

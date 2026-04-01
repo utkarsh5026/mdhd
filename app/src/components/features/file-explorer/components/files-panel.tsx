@@ -1,4 +1,4 @@
-import { Globe, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import React, { memo, useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import { FileTreeNode, type StoredFile } from '@/services/indexeddb';
 
 import { useDeleteActions } from '../hooks/use-delete-actions';
-import { useImportActions } from '../hooks/use-import-actions';
 import { useShareActions } from '../hooks/use-share-actions';
 import {
   useDirectory,
@@ -18,7 +17,6 @@ import {
   usePasteFiles,
 } from '../store/file-store';
 import { DeleteDialog } from './actions/delete-dialog';
-import { ImportUrlDialog } from './actions/import-url-dialog';
 import { FileTree } from './file-tree/file-tree';
 import PasteFilesList from './paste-files-list';
 import { DropZone } from './upload/drop-zone';
@@ -71,14 +69,6 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
   } = useDeleteActions();
 
   const { shareTokens, handleShare, handleRevoke } = useShareActions();
-
-  const {
-    importDialogOpen,
-    openImportDialog,
-    setImportDialogOpen,
-    isImporting,
-    handleImportFromUrl,
-  } = useImportActions();
 
   const [activeTab, setActiveTab] = useState<'files' | 'pasted'>('files');
 
@@ -135,15 +125,6 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
                 disabled={isUploading}
               />
               <UploadButton variant="directory" onUpload={uploadDirectory} disabled={isUploading} />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={openImportDialog}
-                disabled={isUploading}
-                className="h-7 w-7"
-              >
-                <Globe className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </div>
@@ -242,12 +223,6 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
         node={nodeToDelete}
         onConfirm={handleConfirmDelete}
         isDeleting={isLoading}
-      />
-      <ImportUrlDialog
-        open={importDialogOpen}
-        onOpenChange={setImportDialogOpen}
-        onImport={handleImportFromUrl}
-        isImporting={isImporting}
       />
     </>
   );
