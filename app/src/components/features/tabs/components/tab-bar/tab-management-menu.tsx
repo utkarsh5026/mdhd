@@ -92,7 +92,7 @@ const TabManagementMenu: React.FC = memo(() => {
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 shrink-0 rounded-none border-l border-border/10 transition-all duration-150 hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary"
+          className="h-9 w-9 shrink-0 rounded-none border-l border-border/10 transition-all duration-150 hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary"
           aria-label="Tab management menu"
           disabled={tabs.length === 0}
         >

@@ -8,7 +8,9 @@ import {
   MoreHorizontal,
   Pause,
   Share2,
+  Trash2,
   Volume2,
+  X,
 } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 
@@ -19,11 +21,14 @@ import {
   useReadingContent,
   useReadingCurrentSection,
 } from '@/components/features/content-reading/hooks';
+import { useTabClose } from '@/components/features/tabs/hooks/use-tab-close';
+import { useActiveTabId, useTabs } from '@/components/features/tabs/store';
 import Icon from '@/components/ui/icon';
 import {
   ListPopover,
   ListPopoverContent,
   ListPopoverGroup,
+  ListPopoverGroupLabel,
   ListPopoverItem,
   ListPopoverTrigger,
 } from '@/components/ui/list-popover';
@@ -43,6 +48,10 @@ const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = memo(
     const isNarrating = tts.ttsStatus === 'playing' || tts.ttsStatus === 'paused';
     const currentSection = useReadingCurrentSection();
     const { markdown } = useReadingContent();
+
+    const tabs = useTabs();
+    const activeTabId = useActiveTabId();
+    const { closeTab, closeAllTabs } = useTabClose();
 
     const [copiedSection, setCopiedSection] = useState(false);
     const [copiedAll, setCopiedAll] = useState(false);
@@ -156,6 +165,23 @@ const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = memo(
               }
             >
               {isBookmarked ? 'Remove Bookmark' : 'Bookmark Section'}
+            </ListPopoverItem>
+          </ListPopoverGroup>
+          <ListPopoverGroup className="border-t border-border/40 mt-1 pt-1 sm:hidden">
+            <ListPopoverGroupLabel>Tabs</ListPopoverGroupLabel>
+            <ListPopoverItem
+              icon={<Icon icon={X} size="sm" />}
+              onClick={() => activeTabId && closeTab(activeTabId)}
+              disabled={!activeTabId}
+            >
+              Close this tab
+            </ListPopoverItem>
+            <ListPopoverItem
+              icon={<Icon icon={Trash2} size="sm" />}
+              onClick={closeAllTabs}
+              disabled={tabs.length === 0}
+            >
+              Close all tabs
             </ListPopoverItem>
           </ListPopoverGroup>
         </ListPopoverContent>

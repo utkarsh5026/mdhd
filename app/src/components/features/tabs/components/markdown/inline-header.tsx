@@ -185,10 +185,19 @@ const InlineHeader: React.FC<InlineHeaderProps> = memo(
           </div>
         </div>
 
-        {/* Mobile: breadcrumb only (nav controls are in tab bar) */}
-        {breadcrumb && readingMode === 'card' && (
-          <div className="sm:hidden px-2 py-1.5">{mobileBreadcrumb ?? breadcrumb}</div>
-        )}
+        {/* Mobile: breadcrumb + actions menu */}
+        <div className="sm:hidden flex items-center gap-1 px-2 py-1">
+          {breadcrumb && readingMode === 'card' ? (
+            <div className="flex-1 min-w-0">{mobileBreadcrumb ?? breadcrumb}</div>
+          ) : (
+            <div className="flex-1" />
+          )}
+          <HeaderActionsMenu
+            onFullscreen={onFullscreen}
+            onPdfExport={onPdfExport}
+            onShare={onShare}
+          />
+        </div>
       </div>
     );
   }

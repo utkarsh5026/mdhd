@@ -15,7 +15,6 @@ import { useToggle } from '@/hooks';
 import { type TabDisplayInfo, useTabDisplayMap } from '../../hooks/use-tab-display-map';
 import { type Tab, useActiveTabId, useTabs, useTabsActions } from '../../store';
 import type { MobileNavProps } from './tab-bar';
-import TabManagementMenu from './tab-management-menu';
 
 interface MobileTabDropdownProps {
   tabs: Tab[];
@@ -165,8 +164,6 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
       >
         <Icon icon={Maximize} size="sm" />
       </Button>
-
-      <TabManagementMenu />
     </div>
   );
 });
