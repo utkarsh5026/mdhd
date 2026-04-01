@@ -24,9 +24,6 @@ pub fn test_config() -> Config {
         port: 8080,
         cors_origin: String::new(),
         frontend_url: String::new(),
-        github_client_id: String::new(),
-        github_client_secret: String::new(),
-        github_webhook_base: String::new(),
         app_env: AppEnv::Development,
     }
 }

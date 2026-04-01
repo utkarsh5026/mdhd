@@ -18,9 +18,7 @@ use time::Duration;
 use uuid::Uuid;
 
 use crate::auth::jwt::create_token;
-use crate::auth::oauth::{
-    fetch_github_user_info, fetch_google_user_info, github_client, google_client,
-};
+use crate::auth::oauth::{fetch_google_user_info, google_client};
 use crate::errors::{AppError, OptionExt, ResultExt};
 use crate::state::AppState;
 
@@ -29,7 +27,7 @@ const CSRF_COOKIE_NAME: &str = "oauth_csrf";
 /// Builds a CSRF cookie and returns the jar + redirect as a response tuple.
 /// Used by both provider branches in [`start_oauth`].
 fn csrf_redirect(
-    auth_url: oauth2::url::Url,
+    auth_url: &oauth2::url::Url,
     csrf_token: &CsrfToken,
     jar: CookieJar,
 ) -> (CookieJar, Redirect) {
@@ -99,28 +97,7 @@ async fn start_oauth(
                 .add_scope(Scope::new("profile".to_string()))
                 .url();
 
-            Ok(csrf_redirect(auth_url, &csrf_token, jar))
-        }
-        "github" => {
-            if state.config.github_client_id.is_empty()
-                || state.config.github_client_secret.is_empty()
-            {
-                return Err(AppError::bad_request(
-                    "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.",
-                ));
-            }
-
-            let client = github_client(&state.config)?;
-
-            let (auth_url, csrf_token) = client
-                .authorize_url(CsrfToken::new_random)
-                .add_scope(Scope::new("read:user".to_string()))
-                .add_scope(Scope::new("user:email".to_string()))
-                .add_scope(Scope::new("repo".to_string()))
-                .add_scope(Scope::new("admin:repo_hook".to_string()))
-                .url();
-
-            Ok(csrf_redirect(auth_url, &csrf_token, jar))
+            Ok(csrf_redirect(&auth_url, &csrf_token, jar))
         }
         _ => Err(AppError::unsupported_provider(&provider)),
     }
@@ -191,47 +168,6 @@ async fn oauth_callback(
                 user_info.name,
                 user_info.picture,
                 user_info.sub,
-            )
-            .fetch_one(&state.db)
-            .await?;
-
-            Ok(issue_auth_code_redirect(user.id, &state, jar).await?)
-        }
-        "github" => {
-            let client = github_client(&state.config)?;
-            let token_response = client
-                .exchange_code(AuthorizationCode::new(params.code))
-                .request_async(&state.http)
-                .await
-                .internal("GitHub token exchange failed")?;
-
-            let access_token = token_response.access_token().secret();
-
-            let user_info = fetch_github_user_info(&state.http, access_token).await?;
-
-            let email = user_info
-                .email
-                .unwrap_or_else(|| format!("{}@users.noreply.github.com", user_info.login));
-            let oauth_id = user_info.id.to_string();
-
-            let user = sqlx::query_as!(
-                crate::models::user::User,
-                r"
-                INSERT INTO users (email, name, avatar_url, oauth_provider, oauth_id, github_access_token)
-                VALUES ($1, $2, $3, 'github', $4, $5)
-                ON CONFLICT (oauth_provider, oauth_id) DO UPDATE
-                SET email = EXCLUDED.email,
-                    name = EXCLUDED.name,
-                    avatar_url = EXCLUDED.avatar_url,
-                    github_access_token = EXCLUDED.github_access_token,
-                    updated_at = now()
-                RETURNING *
-                ",
-                email,
-                user_info.name,
-                user_info.avatar_url,
-                oauth_id,
-                access_token.clone(),
             )
             .fetch_one(&state.db)
             .await?;
@@ -323,9 +259,6 @@ mod tests {
             port: 8080,
             cors_origin: "http://localhost:5173".to_string(),
             frontend_url: "http://localhost:5173".to_string(),
-            github_client_id: String::new(),
-            github_client_secret: String::new(),
-            github_webhook_base: String::new(),
             app_env: AppEnv::Development,
         }
     }
@@ -364,17 +297,6 @@ mod tests {
         let app = router().with_state(test_state());
         let req = Request::builder()
             .uri("/auth/google")
-            .body(Body::empty())
-            .unwrap();
-        let status = app.oneshot(req).await.unwrap().status();
-        assert_eq!(status, StatusCode::BAD_REQUEST);
-    }
-
-    #[tokio::test]
-    async fn start_oauth_returns_400_for_unconfigured_github() {
-        let app = router().with_state(test_state());
-        let req = Request::builder()
-            .uri("/auth/github")
             .body(Body::empty())
             .unwrap();
         let status = app.oneshot(req).await.unwrap().status();

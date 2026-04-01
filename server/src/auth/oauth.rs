@@ -1,11 +1,4 @@
-//! `OAuth2` client construction and user profile fetching for supported providers.
-//!
-//! Currently, supports Google `OAuth2`. Each provider has a typed client constructor
-//! and a user info fetcher that exchanges an access token for profile data.
-//!
-//! To add a new provider, define its endpoint constants, a client constructor
-//! (similar to [`google_client`]), and a userinfo fetcher that delegates to
-//! [`fetch_user_info`].
+//! `OAuth2` client construction and user profile fetching for Google.
 
 use oauth2::basic::{BasicClient, BasicTokenType};
 use oauth2::{
@@ -22,15 +15,6 @@ const GOOGLE_AUTH_URL: &str = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL: &str = "https://oauth2.googleapis.com/token";
 /// Google `OpenID` Connect userinfo endpoint (returns profile data for an access token).
 const GOOGLE_USERINFO_URL: &str = "https://www.googleapis.com/oauth2/v3/userinfo";
-
-/// GitHub `OAuth2` authorization endpoint.
-const GITHUB_AUTH_URL: &str = "https://github.com/login/oauth/authorize";
-/// GitHub `OAuth2` token exchange endpoint.
-const GITHUB_TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
-/// GitHub user profile endpoint.
-const GITHUB_USERINFO_URL: &str = "https://api.github.com/user";
-/// GitHub user emails endpoint (needed when profile email is private).
-const GITHUB_EMAILS_URL: &str = "https://api.github.com/user/emails";
 
 /// Fully-specified `OAuth2` client type for Google, with auth and token endpoints set.
 pub type GoogleOAuthClient = oauth2::Client<
@@ -145,129 +129,6 @@ pub(crate) async fn fetch_user_info(
         .json::<GoogleUserInfo>()
         .await
         .internal("Failed to parse user info")
-}
-
-/// Fully-specified `OAuth2` client type for GitHub.
-pub type GitHubOAuthClient = oauth2::Client<
-    oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>,
-    oauth2::StandardTokenResponse<EmptyExtraTokenFields, BasicTokenType>,
-    oauth2::StandardTokenIntrospectionResponse<EmptyExtraTokenFields, BasicTokenType>,
-    oauth2::StandardRevocableToken,
-    oauth2::StandardErrorResponse<RevocationErrorResponseType>,
-    oauth2::EndpointSet,
-    oauth2::EndpointNotSet,
-    oauth2::EndpointNotSet,
-    oauth2::EndpointNotSet,
-    oauth2::EndpointSet,
->;
-
-/// Profile data returned by GitHub's user endpoint.
-#[derive(Debug, serde::Deserialize)]
-pub struct GitHubUserInfo {
-    pub id: i64,
-    pub login: String,
-    pub email: Option<String>,
-    pub name: Option<String>,
-    pub avatar_url: Option<String>,
-}
-
-/// A single email entry from GitHub's `/user/emails` endpoint.
-#[derive(Debug, serde::Deserialize)]
-struct GitHubEmail {
-    email: String,
-    primary: bool,
-    verified: bool,
-}
-
-/// Constructs a [`GitHubOAuthClient`] configured with credentials and URLs from [`Config`].
-pub fn github_client(config: &Config) -> Result<GitHubOAuthClient, AppError> {
-    let client_id = ClientId::new(config.github_client_id());
-    let client_secret = ClientSecret::new(config.github_client_secret());
-    let redirect_url = config.oauth_redirect_url("github");
-
-    let client = BasicClient::new(client_id)
-        .set_client_secret(client_secret)
-        .set_auth_uri(parse_oauth_url(
-            AuthUrl::new,
-            GITHUB_AUTH_URL.to_string(),
-            "GitHub auth",
-        )?)
-        .set_token_uri(parse_oauth_url(
-            TokenUrl::new,
-            GITHUB_TOKEN_URL.to_string(),
-            "GitHub token",
-        )?)
-        .set_redirect_uri(parse_oauth_url(RedirectUrl::new, redirect_url, "redirect")?);
-
-    Ok(client)
-}
-
-/// Fetches the authenticated user's GitHub profile. If the profile email is
-/// `None` (private), falls back to the `/user/emails` endpoint.
-pub async fn fetch_github_user_info(
-    client: &reqwest::Client,
-    access_token: &str,
-) -> Result<GitHubUserInfo, AppError> {
-    let response = client
-        .get(GITHUB_USERINFO_URL)
-        .bearer_auth(access_token)
-        .header("User-Agent", "mdhd-server")
-        .header("Accept", "application/vnd.github+json")
-        .send()
-        .await
-        .internal("Failed to fetch GitHub user info")?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        return Err(AppError::internal(format!(
-            "GitHub userinfo returned {status}: {body}"
-        )));
-    }
-
-    let mut info: GitHubUserInfo = response
-        .json()
-        .await
-        .internal("Failed to parse GitHub user info")?;
-
-    // If the user's email is private, fetch from /user/emails
-    if info.email.is_none()
-        && let Ok(email) = fetch_github_primary_email(client, access_token).await
-    {
-        info.email = Some(email);
-    }
-
-    Ok(info)
-}
-
-/// Fetches the user's primary verified email from GitHub.
-async fn fetch_github_primary_email(
-    client: &reqwest::Client,
-    access_token: &str,
-) -> Result<String, AppError> {
-    let response = client
-        .get(GITHUB_EMAILS_URL)
-        .bearer_auth(access_token)
-        .header("User-Agent", "mdhd-server")
-        .header("Accept", "application/vnd.github+json")
-        .send()
-        .await
-        .internal("Failed to fetch GitHub emails")?;
-
-    if !response.status().is_success() {
-        return Err(AppError::internal("GitHub emails endpoint failed"));
-    }
-
-    let emails: Vec<GitHubEmail> = response
-        .json()
-        .await
-        .internal("Failed to parse GitHub emails")?;
-
-    emails
-        .into_iter()
-        .find(|e| e.primary && e.verified)
-        .map(|e| e.email)
-        .ok_or_else(|| AppError::internal("No primary verified email on GitHub account"))
 }
 
 #[cfg(test)]
