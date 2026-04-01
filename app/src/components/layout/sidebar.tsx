@@ -1,18 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
-import {
-  ArrowLeftRight,
-  Bookmark,
-  Files,
-  Layers,
-  Palette,
-  Search,
-  Settings,
-  TableOfContents,
-  X,
-} from 'lucide-react';
+import { Bookmark, Files, Layers, Palette, Search, Settings, TableOfContents } from 'lucide-react';
 import React, { memo, useCallback, useEffect } from 'react';
 import { FaGithub } from 'react-icons/fa';
-import { useSwipeable } from 'react-swipeable';
 
 import SearchPanel from '@/components/features/content-reading/components/search/search-panel';
 import SnippetsPanel from '@/components/features/content-reading/components/snippets/snippets-panel';
@@ -21,6 +10,7 @@ import FilesPanel from '@/components/features/file-explorer/components/files-pan
 import OutlinePanel from '@/components/features/file-explorer/components/outline-panel';
 import { MarkdownStylePanel } from '@/components/features/markdown-style';
 import { SettingsPanel } from '@/components/features/settings';
+import { BottomSheet, BottomSheetContent } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
@@ -29,7 +19,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { TooltipButton } from '@/components/ui/tooltip-button';
-import { useLocalStorage } from '@/hooks';
+import { useLocalStorage, useMobile } from '@/hooks';
 import { cn } from '@/lib/utils';
 import type { StoredFile } from '@/services/indexeddb';
 
@@ -65,6 +55,54 @@ const DEFAULT_PANELS: Panel[] = [
   { id: 'settings', icon: Settings, tooltip: 'Settings', content: <SettingsPanel /> },
 ];
 
+interface MobileSidebarSheetProps {
+  panels: Panel[];
+  activePanel: string | null;
+  togglePanel: (panelId: string) => void;
+  open: boolean;
+  onClose?: () => void;
+}
+
+const MobileSidebarSheet: React.FC<MobileSidebarSheetProps> = memo(
+  ({ panels, activePanel, togglePanel, open, onClose }) => {
+    const activePanelDef = panels.find((p) => p.id === activePanel);
+
+    return (
+      <BottomSheet
+        open={open}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) onClose?.();
+        }}
+      >
+        <BottomSheetContent className="overflow-y-hidden flex flex-col">
+          <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border/40 overflow-x-auto shrink-0">
+            {panels.map((panel) => {
+              const Icon = panel.icon;
+              return (
+                <Button
+                  key={panel.id}
+                  variant="ghost"
+                  size="icon"
+                  className={cn('h-9 w-9 shrink-0', activePanel === panel.id && 'bg-muted')}
+                  onClick={() => togglePanel(panel.id)}
+                  aria-label={panel.tooltip}
+                >
+                  <Icon className="h-4 w-4" />
+                </Button>
+              );
+            })}
+            <div className="ml-auto shrink-0">
+              <SyncIndicator />
+            </div>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto">{activePanelDef?.content}</div>
+        </BottomSheetContent>
+      </BottomSheet>
+    );
+  }
+);
+MobileSidebarSheet.displayName = 'MobileSidebarSheet';
+
 const Sidebar: React.FC<SidebarProps> = memo(
   ({
     className,
@@ -74,6 +112,8 @@ const Sidebar: React.FC<SidebarProps> = memo(
     isMobileOpen = false,
     onMobileClose,
   }) => {
+    const { isMobile } = useMobile();
+
     const panels = onFileSelect
       ? [
           { ...DEFAULT_PANELS[0], content: <FilesPanel onFileSelect={onFileSelect} /> },
@@ -86,7 +126,6 @@ const Sidebar: React.FC<SidebarProps> = memo(
       panels[0]?.id ?? null
     );
 
-    // When mobile sidebar opens, ensure a panel is visible
     useEffect(() => {
       if (isMobileOpen && activePanel === null) {
         setActivePanel('files');
@@ -113,24 +152,24 @@ const Sidebar: React.FC<SidebarProps> = memo(
       return () => globalThis.removeEventListener('mdhd:activate-panel', handleActivatePanel);
     }, [setActivePanel]);
 
+    if (isMobile) {
+      return (
+        <MobileSidebarSheet
+          panels={panels}
+          activePanel={activePanel}
+          togglePanel={togglePanel}
+          open={isMobileOpen}
+          onClose={onMobileClose}
+        />
+      );
+    }
+
     const isPanelOpen = activePanel !== null;
     const activePanelDef = panels.find((p) => p.id === activePanel);
     const isRight = position === 'right';
 
-    const swipeHandlers = useSwipeable({
-      onSwipedLeft: () => {
-        if (isMobileOpen && !isRight) onMobileClose?.();
-      },
-      onSwipedRight: () => {
-        if (isMobileOpen && isRight) onMobileClose?.();
-      },
-      delta: 50,
-      trackTouch: true,
-      trackMouse: false,
-    });
-
     const activityBar = (
-      <div className="flex flex-col items-center w-12 sm:w-10 shrink-0 py-2 gap-1">
+      <div className="flex flex-col items-center w-10 shrink-0 py-2 gap-1">
         {panels.map((panel) => {
           const Icon = panel.icon;
           return (
@@ -140,7 +179,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={cn('h-9 w-9 sm:h-7 sm:w-7', activePanel === panel.id && 'bg-muted')}
+                  className={cn('h-7 w-7', activePanel === panel.id && 'bg-muted')}
                   onClick={() => togglePanel(panel.id)}
                 >
                   <Icon className="h-4 w-4" />
@@ -152,31 +191,13 @@ const Sidebar: React.FC<SidebarProps> = memo(
         })}
 
         <div className="mt-auto flex flex-col items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden h-9 w-9"
-            onClick={onMobileClose}
-            aria-label="Close sidebar"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden h-9 w-9"
-            onClick={togglePosition}
-            aria-label={`Move sidebar to ${isRight ? 'left' : 'right'}`}
-          >
-            <ArrowLeftRight className="h-4 w-4" />
-          </Button>
           <SyncIndicator />
           <TooltipButton
             button={
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 sm:h-7 sm:w-7"
+                className="h-7 w-7"
                 onClick={() => window.open('https://github.com/utkarsh5026/mdhd', '_blank')}
               >
                 <FaGithub className="h-4 w-4" />
@@ -189,52 +210,33 @@ const Sidebar: React.FC<SidebarProps> = memo(
     );
 
     return (
-      <>
-        {/* Mobile backdrop */}
-        <button
-          type="button"
-          aria-label="Close sidebar"
-          className={cn(
-            'fixed inset-0 z-50 bg-background/50 backdrop-blur-sm md:hidden transition-opacity duration-300',
-            isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          )}
-          onClick={onMobileClose}
-        />
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div
+            className={cn(
+              'flex overflow-hidden bg-card/80',
+              isPanelOpen ? 'w-80' : 'w-10',
+              className
+            )}
+          >
+            {isRight && activePanelDef && (
+              <div className="flex-1 min-w-0 min-h-0 overflow-auto">{activePanelDef.content}</div>
+            )}
 
-        <ContextMenu>
-          <ContextMenuTrigger asChild>
-            <div
-              {...swipeHandlers}
-              className={cn(
-                'flex overflow-hidden bg-card/80 transition-transform duration-300 ease-in-out',
-                // Mobile: fixed overlay, slides in/out
-                'fixed inset-0 z-50 md:hidden',
-                isRight ? 'right-0' : 'left-0',
-                isMobileOpen ? 'translate-x-0' : isRight ? 'translate-x-full' : '-translate-x-full',
-                'md:relative md:inset-auto md:z-auto md:translate-x-0 md:flex',
-                isPanelOpen ? 'md:w-80' : 'md:w-10',
-                className
-              )}
-            >
-              {isRight && activePanelDef && (
-                <div className="flex-1 min-w-0 min-h-0 overflow-auto">{activePanelDef.content}</div>
-              )}
+            {activityBar}
 
-              {activityBar}
+            {!isRight && activePanelDef && (
+              <div className="flex-1 min-w-0 min-h-0 overflow-auto">{activePanelDef.content}</div>
+            )}
+          </div>
+        </ContextMenuTrigger>
 
-              {!isRight && activePanelDef && (
-                <div className="flex-1 min-w-0 min-h-0 overflow-auto">{activePanelDef.content}</div>
-              )}
-            </div>
-          </ContextMenuTrigger>
-
-          <ContextMenuContent className="w-48 rounded-2xl">
-            <ContextMenuItem onSelect={togglePosition} className="py-2 px-3">
-              Move Sidebar to {isRight ? 'Left' : 'Right'}
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
-      </>
+        <ContextMenuContent className="w-48 rounded-2xl">
+          <ContextMenuItem onSelect={togglePosition} className="py-2 px-3">
+            Move Sidebar to {isRight ? 'Left' : 'Right'}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     );
   }
 );
