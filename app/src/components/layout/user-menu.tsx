@@ -1,5 +1,4 @@
-import { BarChart3, Cloud, LogOut } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Cloud, LogOut } from 'lucide-react';
 
 import Avatar from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -104,12 +103,6 @@ const UserMenu = () => {
         </div>
         <DropdownMenuSeparator className="m-0" />
         <div className="p-1.5">
-          <DropdownMenuItem asChild className="rounded-md">
-            <Link to="/analytics">
-              <BarChart3 className="mr-2.5 h-4 w-4 text-muted-foreground" />
-              Reading Analytics
-            </Link>
-          </DropdownMenuItem>
           <DropdownMenuItem disabled className="rounded-md">
             <Cloud className="mr-2.5 h-4 w-4 text-muted-foreground" />
             Sync
