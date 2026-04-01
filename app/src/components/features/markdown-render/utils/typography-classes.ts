@@ -2,7 +2,7 @@ export type LetterSpacing = 'tighter' | 'tight' | 'normal' | 'wide' | 'wider' | 
 export type WordSpacing = 'tight' | 'normal' | 'wide' | 'wider';
 export type ParagraphSpacing = 'compact' | 'normal' | 'relaxed' | 'spacious';
 export type TextAlignment = 'left' | 'justify';
-export type BodyFontWeight = 'light' | 'normal' | 'medium';
+export type BodyFontWeight = 'light' | 'normal' | 'medium' | 'semibold' | 'bold';
 export type TextIndent = 'none' | 'small' | 'medium' | 'large';
 
 export const LETTER_SPACING_CLASSES: Record<LetterSpacing, string> = {
@@ -37,6 +37,8 @@ export const BODY_FONT_WEIGHT_CLASSES: Record<BodyFontWeight, string> = {
   light: 'font-light',
   normal: 'font-normal',
   medium: 'font-medium',
+  semibold: 'font-semibold',
+  bold: 'font-bold',
 };
 
 export const TEXT_INDENT_CLASSES: Record<TextIndent, string> = {
