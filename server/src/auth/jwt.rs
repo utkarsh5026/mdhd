@@ -21,16 +21,16 @@ pub struct Claims {
     pub iat: i64,
 }
 
-/// Creates a signed JWT for the given user, valid for 7 days.
+/// Creates a signed JWT for the given user, valid for `expiry_days` days.
 ///
 /// # Errors
 ///
 /// Returns [`AppError::Internal`] if the token cannot be encoded.
-pub fn create_token(user_id: Uuid, secret: &str) -> Result<String, AppError> {
+pub fn create_token(user_id: Uuid, secret: &str, expiry_days: i64) -> Result<String, AppError> {
     let now = Utc::now();
     let claims = Claims {
         sub: user_id,
-        exp: (now + Duration::days(7)).timestamp(),
+        exp: (now + Duration::days(expiry_days)).timestamp(),
         iat: now.timestamp(),
     };
 
