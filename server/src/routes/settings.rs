@@ -43,22 +43,25 @@ async fn sync_settings(
     State(state): State<AppState>,
     Json(body): Json<SettingsSyncRequest>,
 ) -> Result<Json<SettingsSyncResponse>, AppError> {
+    if body.settings.len() > state.config.sync_max_settings {
+        return Err(AppError::bad_request("Too many settings in sync request"));
+    }
+
     let server_time = Utc::now();
-    let uid = auth.user_id;
 
     let server_settings = sqlx::query_as!(
         UserSetting,
         "SELECT id, user_id, key, value, hash, updated_at FROM user_settings WHERE user_id = $1",
-        uid
+        auth.user_id
     )
     .fetch_all(&state.db)
     .await?;
 
     let decision = reconcile_settings(&server_settings, &body.settings);
 
-    let mut accepted: Vec<String> = Vec::new();
+    let mut accepted = Vec::new();
     for entry in &decision.to_upsert {
-        upsert_setting(&state, uid, entry, server_time).await?;
+        upsert_setting(&state, auth.user_id, entry, server_time).await?;
         accepted.push(entry.key.clone());
     }
 
