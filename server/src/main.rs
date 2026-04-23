@@ -17,6 +17,7 @@ mod storage;
 #[cfg(test)]
 mod testutil;
 
+use std::net::SocketAddr;
 use std::time::Duration;
 
 use axum::Router;
@@ -35,7 +36,7 @@ use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 use config::{AppEnv, Config};
 use state::AppState;
 
-/// Initialises the global tracing subscriber based on the runtime environment.
+/// Initializes the global tracing subscriber based on the runtime environment.
 ///
 /// In **development** the subscriber emits human-readable, coloured output with target and line
 /// numbers included. In **production** it emits structured JSON (no ANSI codes) suitable for
@@ -84,6 +85,9 @@ fn init_tracing(env: &AppEnv) {
 /// - **CORS** — restricts origins, methods, and headers based on [`Config::cors_origin`].
 /// - **Timeout** — returns `408 Request Timeout` for requests that exceed 30 seconds.
 /// - **Body limit** — rejects request bodies larger than 10 MiB.
+/// - **Rate limit** — per peer IP via `tower-governor` / `governor` (burst 100, 50 req/s);
+///   uses [`axum::extract::ConnectInfo`], so the listener uses
+///   [`Router::into_make_service_with_connect_info`].
 ///
 /// # Errors
 ///
@@ -109,6 +113,7 @@ fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn std::e
         .route("/api/health", get(health))
         .merge(routes::create_router())
         .with_state(state)
+        .layer(middleware::rate_limit::layer())
         .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,
@@ -152,10 +157,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing(&config.app_env);
 
     let port = config.port;
-
-    let db = db::create_pool(&config.database_url).await?;
+    let db = db::create_pool(&config).await?;
     let s3 = storage::create_s3_client(&config);
-    let http = reqwest::Client::new();
+    let http = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .redirect(reqwest::redirect::Policy::none())
+        .build()?;
     let state = AppState {
         config: config.clone(),
         db,
@@ -168,9 +175,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!("Starting server on {addr}");
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
 
     Ok(())
 }

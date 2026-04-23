@@ -89,7 +89,9 @@ impl IntoResponse for AppError {
             }
             AppError::BadRequest(msg) => {
                 tracing::warn!("bad request: {msg}");
-                (StatusCode::BAD_REQUEST, self.to_string())
+                // Return the message — call sites must ensure it's safe for clients.
+                // Never include stack traces, internal paths, or config details.
+                (StatusCode::BAD_REQUEST, msg.clone())
             }
             AppError::Database(err) => {
                 tracing::error!("database error: {err:?}");
