@@ -8,11 +8,25 @@ edition = "2024"
 axum = "0.8"
 axum-extra = { version = "0.10", features = ["cookie", "typed-header"] }
 tokio = { version = "1", features = ["full"] }
-tower-http = { version = "0.6", features = ["cors", "trace", "compression-gzip", "set-header", "timeout", "request-id", "util"] }
+tower-http = { version = "0.6", features = [
+    "cors",
+    "trace",
+    "compression-gzip",
+    "set-header",
+    "timeout",
+    "request-id",
+    "util",
+] }
 time = "0.3"
 
 # Database
-sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono"] }
+sqlx = { version = "0.8", features = [
+    "runtime-tokio",
+    "tls-rustls",
+    "postgres",
+    "uuid",
+    "chrono",
+] }
 
 # Auth
 jsonwebtoken = "9"
@@ -37,6 +51,12 @@ chrono = { version = "0.4", features = ["serde"] }
 sha2 = "0.10"
 thiserror = "2"
 url = "2"
+
+
+governor = "0.10"
+tower_governor = { version = "0.8", default-features = false, features = [
+    "axum",
+] }
 
 [dev-dependencies]
 wiremock = "0.6"
