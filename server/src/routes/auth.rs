@@ -207,7 +207,11 @@ async fn exchange_code(
     .await?
     .or_not_found()?;
 
-    let token = create_token(row.user_id, &state.config.jwt_secret)?;
+    let token = create_token(
+        row.user_id,
+        &state.config.jwt_secret,
+        state.config.jwt_expiry_days,
+    )?;
     Ok(axum::Json(ExchangeResponse { token }))
 }
 
@@ -260,6 +264,13 @@ mod tests {
             cors_origin: "http://localhost:5173".to_string(),
             frontend_url: "http://localhost:5173".to_string(),
             app_env: AppEnv::Development,
+            db_max_connections: 5,
+            jwt_expiry_days: 7,
+            import_max_size: 5 * 1024 * 1024,
+            import_timeout_secs: 15,
+            sync_max_files: 1000,
+            sync_max_settings: 200,
+            paste_max_size: 512 * 1024,
         }
     }
 

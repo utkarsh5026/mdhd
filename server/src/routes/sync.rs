@@ -9,7 +9,9 @@ use tracing::{info, instrument};
 use crate::errors::AppError;
 use crate::middleware::auth::AuthUser;
 use crate::models::file::FileMeta;
-use crate::services::sync::{ClientFileEntry, DownloadEntry, SyncManifest, reconcile};
+use crate::services::sync::{
+    ClientFileEntry, DownloadEntry, SyncDecision, SyncManifest, reconcile,
+};
 use crate::state::AppState;
 
 pub fn router() -> Router<AppState> {
@@ -51,33 +53,42 @@ async fn sync_files(
     State(state): State<AppState>,
     Json(body): Json<SyncRequest>,
 ) -> Result<Json<SyncResponse>, AppError> {
+    if body.files.len() > state.config.sync_max_files {
+        return Err(AppError::bad_request("Too many files in sync request"));
+    }
+
     let server_time = Utc::now();
 
-    let server_files = sqlx::query_as::<_, FileMeta>(
+    let server_files = sqlx::query_as!(
+        FileMeta,
         "SELECT id, user_id, name, path, storage_key, size_bytes, content_hash, share_token, created_at, updated_at
          FROM files WHERE user_id = $1",
+        auth.user_id
     )
-    .bind(auth.user_id)
     .fetch_all(&state.db)
     .await?;
 
-    let decision = reconcile(&SyncManifest {
+    let SyncDecision {
+        upload,
+        download,
+        delete,
+    } = reconcile(&SyncManifest {
         server: server_files,
         client: body.files,
         last_sync_at: body.last_sync_at,
     });
 
     info!(
-        uploads = decision.upload.len(),
-        downloads = decision.download.len(),
-        deletes = decision.delete.len(),
+        uploads = upload.len(),
+        downloads = download.len(),
+        deletes = delete.len(),
         "sync reconciliation complete"
     );
 
     Ok(Json(SyncResponse {
-        to_upload: decision.upload,
-        to_download: decision.download,
-        to_delete: decision.delete,
+        to_upload: upload,
+        to_download: download,
+        to_delete: delete,
         server_time,
     }))
 }

@@ -243,6 +243,9 @@ async fn share_paste(
     if body.content.is_empty() {
         return Err(AppError::bad_request("content must not be empty"));
     }
+    if body.content.len() > state.config.paste_max_size {
+        return Err(AppError::bad_request("paste content too large"));
+    }
 
     let token = sqlx::query_scalar!(
         "INSERT INTO paste_shares (user_id, title, content) VALUES ($1, $2, $3) RETURNING token",
