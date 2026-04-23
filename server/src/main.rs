@@ -85,8 +85,11 @@ fn init_tracing(env: &AppEnv) {
 /// - **CORS** — restricts origins, methods, and headers based on [`Config::cors_origin`].
 /// - **Timeout** — returns `408 Request Timeout` for requests that exceed 30 seconds.
 /// - **Body limit** — rejects request bodies larger than 10 MiB.
-/// - **Rate limit** — per peer IP via `tower-governor` / `governor` (burst 100, 50 req/s);
-///   uses [`axum::extract::ConnectInfo`], so the listener uses
+/// - **Rate limit** — per client IP via `tower-governor` / `governor` (burst 100, 50 req/s).
+///   Uses `SmartIpKeyExtractor` (trusts `Forwarded` / `X-Forwarded-For` headers; deploy behind
+///   a proxy that strips client-supplied values). Applied only to application routes —
+///   `/api/health` is exempt so liveness probes don't consume the bucket. Relies on
+///   [`axum::extract::ConnectInfo`] for the no-proxy fallback, so the listener uses
 ///   [`Router::into_make_service_with_connect_info`].
 ///
 /// # Errors
@@ -109,11 +112,12 @@ fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn std::e
         ])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
 
+    let rate_limited = routes::create_router().layer(middleware::rate_limit::layer());
+
     let app = Router::new()
         .route("/api/health", get(health))
-        .merge(routes::create_router())
+        .merge(rate_limited)
         .with_state(state)
-        .layer(middleware::rate_limit::layer())
         .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,
@@ -153,14 +157,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
     let config = Config::from_env()?;
-
     init_tracing(&config.app_env);
 
-    let port = config.port;
     let db = db::create_pool(&config).await?;
     let s3 = storage::create_s3_client(&config);
     let http = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
+        .timeout(Duration::from_secs(config.import_timeout_secs))
         .redirect(reqwest::redirect::Policy::none())
         .build()?;
     let state = AppState {
@@ -171,7 +173,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let app = create_app(&config, state)?;
-    let addr = format!("0.0.0.0:{port}");
+    let addr = format!("0.0.0.0:{}", config.port);
     tracing::info!("Starting server on {addr}");
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;

@@ -73,6 +73,20 @@ pub struct Config {
     pub cors_origin: String,
     /// Frontend URL used for post-auth redirects. Defaults to `http://localhost:5173`.
     pub frontend_url: String,
+    /// Maximum database connections in the pool. Defaults to `10`.
+    pub db_max_connections: u32,
+    /// JWT token expiry in days. Defaults to `7`.
+    pub jwt_expiry_days: i64,
+    /// Maximum file import size in bytes. Defaults to `5242880` (5 MB).
+    pub import_max_size: usize,
+    /// URL import timeout in seconds. Defaults to `15`.
+    pub import_timeout_secs: u64,
+    /// Maximum number of files in a single sync request. Defaults to `1000`.
+    pub sync_max_files: usize,
+    /// Maximum number of settings in a single sync request. Defaults to `200`.
+    pub sync_max_settings: usize,
+    /// Maximum paste content size in bytes. Defaults to `524288` (512 KB).
+    pub paste_max_size: usize,
 }
 
 impl Config {
@@ -101,10 +115,17 @@ impl Config {
     /// Returns [`ConfigError::Missing`] if `DATABASE_URL` or `JWT_SECRET` are not set,
     /// or [`ConfigError::Invalid`] if `PORT` cannot be parsed as a `u16`.
     pub fn from_env() -> Result<Self, ConfigError> {
+        let jwt_secret = required("JWT_SECRET")?;
+        if jwt_secret.len() < 32 {
+            return Err(ConfigError::Invalid(
+                "JWT_SECRET must be at least 32 characters for HS256 security".into(),
+            ));
+        }
+
         Ok(Self {
             app_env: AppEnv::from_env_var(),
             database_url: required("DATABASE_URL")?,
-            jwt_secret: required("JWT_SECRET")?,
+            jwt_secret,
             google_client_id: optional("GOOGLE_CLIENT_ID"),
             google_client_secret: optional("GOOGLE_CLIENT_SECRET"),
             oauth_redirect_base: optional_or("OAUTH_REDIRECT_BASE", "http://localhost:8080"),
@@ -117,6 +138,27 @@ impl Config {
             })?,
             cors_origin: optional_or("CORS_ORIGIN", "http://localhost:5173"),
             frontend_url: optional_or("FRONTEND_URL", "http://localhost:5173"),
+            db_max_connections: optional_or("DB_MAX_CONNECTIONS", "10")
+                .parse()
+                .map_err(|_| ConfigError::Invalid("DB_MAX_CONNECTIONS must be a u32".into()))?,
+            jwt_expiry_days: optional_or("JWT_EXPIRY_DAYS", "7").parse().map_err(|_| {
+                ConfigError::Invalid("JWT_EXPIRY_DAYS must be a positive i64".into())
+            })?,
+            import_max_size: optional_or("IMPORT_MAX_SIZE", "5242880")
+                .parse()
+                .map_err(|_| ConfigError::Invalid("IMPORT_MAX_SIZE must be a usize".into()))?,
+            import_timeout_secs: optional_or("IMPORT_TIMEOUT_SECS", "15")
+                .parse()
+                .map_err(|_| ConfigError::Invalid("IMPORT_TIMEOUT_SECS must be a u64".into()))?,
+            sync_max_files: optional_or("SYNC_MAX_FILES", "1000")
+                .parse()
+                .map_err(|_| ConfigError::Invalid("SYNC_MAX_FILES must be a usize".into()))?,
+            sync_max_settings: optional_or("SYNC_MAX_SETTINGS", "200")
+                .parse()
+                .map_err(|_| ConfigError::Invalid("SYNC_MAX_SETTINGS must be a usize".into()))?,
+            paste_max_size: optional_or("PASTE_MAX_SIZE", "524288")
+                .parse()
+                .map_err(|_| ConfigError::Invalid("PASTE_MAX_SIZE must be a usize".into()))?,
         })
     }
 }
@@ -141,7 +183,6 @@ mod tests {
     use super::*;
     use std::sync::Mutex;
 
-    /// Serializes all tests that touch environment variables, since env is global process state.
     static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn lock_env() -> std::sync::MutexGuard<'static, ()> {
@@ -204,8 +245,10 @@ mod tests {
         let _g = lock_env();
         unsafe {
             env::set_var("DATABASE_URL", "postgres://localhost/test");
-            env::set_var("JWT_SECRET", "super_secret");
-            // Remove optionals so we exercise their defaults
+            env::set_var(
+                "JWT_SECRET",
+                "this-is-a-test-secret-that-is-at-least-32-chars",
+            );
             for key in &[
                 "GOOGLE_CLIENT_ID",
                 "GOOGLE_CLIENT_SECRET",
@@ -228,7 +271,10 @@ mod tests {
         }
 
         assert_eq!(config.database_url, "postgres://localhost/test");
-        assert_eq!(config.jwt_secret, "super_secret");
+        assert_eq!(
+            config.jwt_secret,
+            "this-is-a-test-secret-that-is-at-least-32-chars"
+        );
         assert_eq!(config.port, 8080);
         assert_eq!(config.cors_origin, "http://localhost:5173");
         assert_eq!(config.frontend_url, "http://localhost:5173");
@@ -242,7 +288,10 @@ mod tests {
         let _g = lock_env();
         unsafe {
             env::set_var("DATABASE_URL", "postgres://localhost/test");
-            env::set_var("JWT_SECRET", "secret");
+            env::set_var(
+                "JWT_SECRET",
+                "this-is-a-test-secret-that-is-at-least-32-chars",
+            );
             env::set_var("PORT", "9090");
             env::set_var("CORS_ORIGIN", "https://example.com");
             env::set_var("FRONTEND_URL", "https://example.com");
@@ -273,7 +322,10 @@ mod tests {
         let _g = lock_env();
         unsafe {
             env::remove_var("DATABASE_URL");
-            env::set_var("JWT_SECRET", "secret");
+            env::set_var(
+                "JWT_SECRET",
+                "this-is-a-test-secret-that-is-at-least-32-chars",
+            );
         }
         let err = Config::from_env().unwrap_err();
         assert!(err.to_string().contains("DATABASE_URL"));
@@ -291,11 +343,29 @@ mod tests {
     }
 
     #[test]
+    fn config_from_env_errors_on_short_jwt_secret() {
+        let _g = lock_env();
+        unsafe {
+            env::set_var("DATABASE_URL", "postgres://localhost/test");
+            env::set_var("JWT_SECRET", "too-short");
+        }
+        let err = Config::from_env().unwrap_err();
+        unsafe {
+            env::remove_var("DATABASE_URL");
+            env::remove_var("JWT_SECRET");
+        }
+        assert!(err.to_string().contains("32 characters"));
+    }
+
+    #[test]
     fn config_from_env_errors_on_invalid_port() {
         let _g = lock_env();
         unsafe {
             env::set_var("DATABASE_URL", "postgres://localhost/test");
-            env::set_var("JWT_SECRET", "secret");
+            env::set_var(
+                "JWT_SECRET",
+                "this-is-a-test-secret-that-is-at-least-32-chars",
+            );
             env::set_var("PORT", "not_a_number");
         }
         let err = Config::from_env().unwrap_err();
