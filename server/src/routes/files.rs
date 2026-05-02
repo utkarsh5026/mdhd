@@ -69,8 +69,8 @@ pub struct ImportUrlResponse {
     pub size: usize,
 }
 
-/// Maximum size in bytes for URL-imported content (5 MB).
-const IMPORT_URL_MAX_SIZE: usize = 5 * 1024 * 1024;
+// Import size and timeout are now configurable via Config.import_max_size
+// and Config.import_timeout_secs respectively.
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -216,22 +216,102 @@ async fn delete_file(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Returns `true` if the hostname looks like a private/internal address (SSRF guard).
+/// Checks if the given IPv4 address is in a private, local, or otherwise restricted range.
+///
+/// Covers standard RFC1918 (private) ranges, loopback, link-local, broadcast, and CGNAT blocks
+/// (100.64.0.0/10).
+///
+/// # Arguments
+/// * `ip` - The IPv4 address to check.
+///
+/// # Returns
+/// `true` if the address is private, local, broadcast, or reserved; `false` otherwise.
+fn is_private_ipv4(ip: std::net::Ipv4Addr) -> bool {
+    ip.is_loopback()
+        || ip.is_private()
+        || ip.is_link_local()
+        || ip.is_broadcast()
+        || ip.is_unspecified()
+        // Explicit check for 169.254.0.0/16 link-local block
+        || ip.octets()[0] == 169 && ip.octets()[1] == 254
+        // CGNAT block: 100.64.0.0/10 (RFC6598)
+        || ip.octets()[0] == 100 && (ip.octets()[1] & 0xC0) == 64
+}
+
+/// Checks if the given IPv6 address is in a private, loopback, or reserved range.
+///
+/// Handles loopback, unspecified (::), unique local addresses (`fc00::/7`),
+/// and detects IPv4-mapped addresses for embedded private ranges.
+///
+/// # Arguments
+/// * `ip` - The IPv6 address to check.
+///
+/// # Returns
+/// `true` if the address is private, local, or reserved; `false` otherwise.
+fn is_private_ipv6(ip: std::net::Ipv6Addr) -> bool {
+    if ip.is_loopback() || ip.is_unspecified() {
+        return true;
+    }
+    if let Some(v4) = ip.to_ipv4_mapped() {
+        return is_private_ipv4(v4);
+    }
+    let segments = ip.segments();
+    (segments[0] & 0xfe00) == 0xfc00
+}
+
+/// Determines if a host string is a private, internal, or potentially unsafe address (SSRF guard).
+///
+/// Attempts to treat the given host as an IPv4/IPv6 address or common internal names,
+/// returning `true` if it matches loopback, unspecified, or private address classes.
+///
+/// Strips brackets around IPv6 hosts for parsing. Does not perform DNS lookup; checks only string-literal hosts.
+///
+/// # Arguments
+/// * `host` - The hostname or string IP representation.
+///
+/// # Returns
+/// `true` if input is a private/internal/loopback/etc. address, `false` otherwise.
 fn is_private_host(host: &str) -> bool {
     let host = host.trim_start_matches('[').trim_end_matches(']');
     if matches!(host, "localhost" | "0.0.0.0" | "::1" | "[::]") {
         return true;
     }
     if let Ok(ip) = host.parse::<std::net::Ipv4Addr>() {
-        return ip.is_loopback()
-            || ip.is_private()
-            || ip.is_link_local()
-            || ip.octets()[0] == 169 && ip.octets()[1] == 254;
+        return is_private_ipv4(ip);
     }
     if let Ok(ip) = host.parse::<std::net::Ipv6Addr>() {
-        return ip.is_loopback() || ip.is_unspecified();
+        return is_private_ipv6(ip);
     }
     false
+}
+
+/// Resolves a hostname and returns `Err` if any resolved IP is private.
+///
+/// This guards against DNS rebinding attacks where a public hostname resolves
+/// to a private IP address.
+async fn verify_resolved_ips(host: &str) -> Result<(), AppError> {
+    use tokio::net::lookup_host;
+    let addresses = lookup_host(format!("{host}:0"))
+        .await
+        .map_err(|_| AppError::bad_request("Cannot resolve hostname"))?;
+
+    for addr in addresses {
+        match addr.ip() {
+            std::net::IpAddr::V4(ip) if is_private_ipv4(ip) => {
+                return Err(AppError::bad_request(
+                    "Cannot fetch from private/internal addresses",
+                ));
+            }
+            std::net::IpAddr::V6(ip) if is_private_ipv6(ip) => {
+                return Err(AppError::bad_request(
+                    "Cannot fetch from private/internal addresses",
+                ));
+            }
+            _ => {}
+        }
+    }
+
+    Ok(())
 }
 
 /// Derive a `.md` filename from the URL path.
@@ -272,35 +352,37 @@ async fn import_url(
         _ => return Err(AppError::bad_request("URL must use http or https")),
     }
 
-    if let Some(host) = parsed.host_str() {
-        if is_private_host(host) {
-            return Err(AppError::bad_request(
-                "Cannot fetch from private/internal addresses",
-            ));
-        }
-    } else {
-        return Err(AppError::bad_request("URL has no host"));
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| AppError::bad_request("URL has no host"))?;
+
+    if is_private_host(host) {
+        return Err(AppError::bad_request(
+            "Cannot fetch from private/internal addresses",
+        ));
     }
+
+    verify_resolved_ips(host).await?;
+
+    let max_size = state.config.import_max_size;
+    let timeout_secs = state.config.import_timeout_secs;
 
     let response = state
         .http
         .get(parsed.as_str())
-        .timeout(Duration::from_secs(15))
+        .timeout(Duration::from_secs(timeout_secs))
         .send()
         .await
         .internal("Failed to fetch URL")?;
 
     if !response.status().is_success() {
-        return Err(AppError::bad_request(format!(
-            "Remote server returned {}",
-            response.status()
-        )));
+        return Err(AppError::bad_request("Remote server returned an error"));
     }
 
     if let Some(len) = response.content_length()
-        && len > IMPORT_URL_MAX_SIZE as u64
+        && len > max_size as u64
     {
-        return Err(AppError::bad_request("File too large (max 5 MB)"));
+        return Err(AppError::bad_request("File too large"));
     }
 
     let bytes = response
@@ -308,8 +390,8 @@ async fn import_url(
         .await
         .internal("Failed to read response body")?;
 
-    if bytes.len() > IMPORT_URL_MAX_SIZE {
-        return Err(AppError::bad_request("File too large (max 5 MB)"));
+    if bytes.len() > max_size {
+        return Err(AppError::bad_request("File too large"));
     }
 
     let content = String::from_utf8(bytes.to_vec())
@@ -359,6 +441,11 @@ async fn search_files(
     if q.len() < 2 {
         return Err(AppError::bad_request("query must be at least 2 characters"));
     }
+    // Postgres text columns reject NUL bytes — surface that as a 400 rather
+    // than a generic 500 from the driver.
+    if q.contains('\0') {
+        return Err(AppError::bad_request("query must not contain NUL bytes"));
+    }
 
     let results = sqlx::query_as!(
         SearchResultEntry,
@@ -396,7 +483,6 @@ mod tests {
 
     use crate::testutil::{create_test_user, delete_req, get_json, post_json, test_state};
 
-    /// Seed a file row directly (no S3 upload needed for read-only endpoint tests).
     async fn seed_file(db: &PgPool, user_id: Uuid, path: &str, content_text: &str) -> Uuid {
         sqlx::query_scalar!(
             r#"
@@ -499,8 +585,6 @@ mod tests {
             .unwrap();
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     }
-
-    // ── GET /files ────────────────────────────────────────────────────────────
 
     #[sqlx::test(migrations = "./migrations")]
     async fn list_files_empty_returns_empty_array(db: PgPool) {
@@ -661,8 +745,6 @@ mod tests {
     async fn create_file_invalid_path_returns_400(db: PgPool) {
         let (_, token) = create_test_user(&db).await;
         let app = super::router().with_state(test_state(db));
-
-        // path does not start with '/'
         let (status, body) = create_file(app, &token, "test.md", "no-slash.md", "content").await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
         assert!(

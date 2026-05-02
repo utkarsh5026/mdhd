@@ -124,7 +124,7 @@ async fn list_bookmarks(
 /// `POST /files/:id/bookmarks` — creates or updates a bookmark at a given section.
 ///
 /// Uses an `INSERT … ON CONFLICT … DO UPDATE` on `(user_id, file_id, section_index)`, so
-/// POSTing twice for the same section updates the name in place rather than creating a duplicate.
+/// `POST` twice for the same section updates the name in place rather than creating a duplicate.
 /// The name is trimmed of leading/trailing whitespace before storage.
 ///
 /// # Errors
@@ -218,8 +218,6 @@ mod tests {
     use uuid::Uuid;
 
     use crate::testutil::{create_test_user, delete_req, get_json, post_json, test_state};
-
-    // ── Helpers ──────────────────────────────────────────────────────────
 
     /// Insert a file owned by `user_id` and return its UUID.
     async fn seed_file(db: &PgPool, user_id: Uuid) -> Uuid {
@@ -527,8 +525,6 @@ mod tests {
         .await;
         assert_eq!(status, StatusCode::NOT_FOUND);
     }
-
-    // ── Unit-level: BookmarkResponse conversion ───────────────────────────
 
     #[test]
     fn bookmark_response_from_bookmark_maps_all_fields() {

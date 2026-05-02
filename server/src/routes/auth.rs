@@ -256,6 +256,7 @@ mod tests {
             google_client_id: String::new(),
             google_client_secret: String::new(),
             oauth_redirect_base: "http://localhost:8080".to_string(),
+            google_token_url_override: None,
             supabase_s3_endpoint: String::new(),
             supabase_s3_access_key: String::new(),
             supabase_s3_secret_key: String::new(),

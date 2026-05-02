@@ -74,7 +74,10 @@ pub fn google_client(config: &Config) -> Result<GoogleOAuthClient, AppError> {
         )?)
         .set_token_uri(parse_oauth_url(
             TokenUrl::new,
-            GOOGLE_TOKEN_URL.to_string(),
+            config
+                .google_token_url_override
+                .clone()
+                .unwrap_or_else(|| GOOGLE_TOKEN_URL.to_string()),
             "token",
         )?)
         .set_redirect_uri(parse_oauth_url(RedirectUrl::new, redirect_url, "redirect")?);
