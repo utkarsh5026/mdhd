@@ -49,6 +49,7 @@ impl AppError {
     }
 
     /// Returns a [`BadRequest`](Self::BadRequest) for an unrecognized OAuth provider name.
+    #[must_use]
     pub fn unsupported_provider(provider: &str) -> Self {
         AppError::BadRequest(format!("Unsupported OAuth provider: {provider}"))
     }
@@ -56,6 +57,11 @@ impl AppError {
 
 /// Extension trait on `Result` to convert errors into [`AppError::Internal`] with context.
 pub trait ResultExt<T> {
+    /// Maps `Err(e)` to [`AppError::Internal`] including `context` and `e`; returns `Ok` unchanged.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Err(AppError::Internal)`](AppError::Internal) when `self` is `Err`.
     fn internal(self, context: &str) -> Result<T, AppError>;
 }
 
@@ -67,6 +73,11 @@ impl<T, E: std::fmt::Display> ResultExt<T> for Result<T, E> {
 
 /// Extension trait on `Option` to convert `None` into common [`AppError`] variants.
 pub trait OptionExt<T> {
+    /// Converts `Some(value)` to `Ok(value)` and `None` to [`AppError::NotFound`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Err(AppError::NotFound)`](AppError::NotFound) when `self` is `None`.
     fn or_not_found(self) -> Result<T, AppError>;
 }
 

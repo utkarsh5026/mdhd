@@ -6,6 +6,11 @@ use crate::config::Config;
 use crate::errors::{AppError, ResultExt};
 
 /// Uploads an object to S3. Overwrites any existing object at the same key.
+///
+/// # Errors
+///
+/// Returns [`AppError`] when the S3 `PutObject` request fails (for example network
+/// or permission errors), mapped via [`ResultExt::internal`].
 pub async fn upload_object(
     s3: &Client,
     bucket: &str,
@@ -24,6 +29,12 @@ pub async fn upload_object(
 }
 
 /// Downloads an object from S3, returning its full body as bytes.
+///
+/// # Errors
+///
+/// Returns [`AppError`] when the S3 `GetObject` request fails, when the object
+/// body cannot be collected from the response stream, or for missing keys /
+/// access denials as reported by S3, all mapped via [`ResultExt::internal`].
 pub async fn download_object(s3: &Client, bucket: &str, key: &str) -> Result<Vec<u8>, AppError> {
     let output = s3
         .get_object()
@@ -45,6 +56,11 @@ pub async fn download_object(s3: &Client, bucket: &str, key: &str) -> Result<Vec
 }
 
 /// Deletes an object from S3. Succeeds even if the key does not exist.
+///
+/// # Errors
+///
+/// Returns [`AppError`] when the S3 `DeleteObject` request fails (for example
+/// network or permission errors), mapped via [`ResultExt::internal`].
 pub async fn delete_object(s3: &Client, bucket: &str, key: &str) -> Result<(), AppError> {
     s3.delete_object()
         .bucket(bucket)
@@ -56,6 +72,7 @@ pub async fn delete_object(s3: &Client, bucket: &str, key: &str) -> Result<(), A
 }
 
 /// Creates an S3 client configured for Supabase Storage (or `MinIO` in local dev).
+#[must_use]
 pub fn create_s3_client(config: &Config) -> Client {
     let credentials = Credentials::new(
         &config.supabase_s3_access_key,

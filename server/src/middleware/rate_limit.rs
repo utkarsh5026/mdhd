@@ -32,19 +32,34 @@ const BURST_SIZE: u32 = 100;
 /// One token every 20 ms ⇒ 50 tokens/s sustained rate.
 const REFILL_INTERVAL: Duration = Duration::from_millis(20);
 
-/// Returns a [`GovernorLayer`] that rate-limits by client IP and maps quota exhaustion to **429**.
+/// Returns a [`GovernorLayer`] configured with the production token-bucket policy
+/// (burst **100**, sustained **50** req/s per client IP).
+///
+/// See [`layer_with`] to build a layer with custom thresholds (useful in integration tests).
+#[must_use]
+pub fn layer() -> GovernorLayer<SmartIpKeyExtractor, NoOpMiddleware, Body> {
+    layer_with(BURST_SIZE, REFILL_INTERVAL)
+}
+
+/// Returns a [`GovernorLayer`] with a caller-supplied burst size and refill interval.
 ///
 /// [`GovernorError::TooManyRequests`] becomes `429 Too Many Requests` with a short plain-text
 /// body. Other [`GovernorError`] variants are turned into an HTTP response via [`Response::from`].
 ///
+/// Exposed primarily for integration tests that need tight thresholds to exercise the 429 path
+/// deterministically — production code should call [`layer`].
+///
 /// # Panics
 ///
-/// Panics if the governor configuration fails to build. With the non-zero constants in this
-/// module, that indicates a programming error rather than runtime input.
-pub fn layer() -> GovernorLayer<SmartIpKeyExtractor, NoOpMiddleware, Body> {
+/// Panics if `burst` is zero or `refill` is zero — these indicate a programming error.
+#[must_use]
+pub fn layer_with(
+    burst: u32,
+    refill: Duration,
+) -> GovernorLayer<SmartIpKeyExtractor, NoOpMiddleware, Body> {
     let config = GovernorConfigBuilder::default()
-        .const_period(REFILL_INTERVAL)
-        .const_burst_size(BURST_SIZE)
+        .const_period(refill)
+        .const_burst_size(burst)
         .key_extractor(SmartIpKeyExtractor)
         .finish()
         .expect("non-zero burst and refill interval");
