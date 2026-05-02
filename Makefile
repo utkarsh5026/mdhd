@@ -1,7 +1,7 @@
 TASKS := help \
          dev prod prod-watch setup containers \
          build build-release \
-         test test-connections \
+         test test-connections sqlx-check sqlx-prepare \
          lint fmt fmt-check pre-commit validate
 
 .PHONY: $(TASKS)

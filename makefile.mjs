@@ -139,6 +139,21 @@ const tasks = {
       await runVenv(["ruff", "format", "--check", "."], "python format check");
     },
   },
+  "sqlx-check": {
+    description:
+      "Verify .sqlx/ offline cache matches the code (no DB needed, fast)",
+    category: "Quality",
+    action: () =>
+      runVenvScript(["scripts/sqlx_sync.py", "check"], "sqlx cache check"),
+  },
+  "sqlx-prepare": {
+    description:
+      "Regenerate .sqlx/ offline cache against DATABASE_URL from .env.development",
+    category: "Quality",
+    action: () =>
+      runVenvScript(["scripts/sqlx_sync.py", "fix"], "sqlx prepare"),
+  },
+
   "test-connections": {
     description:
       "Ping Supabase Postgres + S3 using server/.env files (dev + prod, or pass 'dev' / 'prod')",
@@ -217,6 +232,16 @@ async function runVenv(args, label) {
     console.log();
   }
   await runCommand(VENV_PYTHON, ["-m", ...args], { cwd: SCRIPTS_DIR });
+  console.log();
+  console.log(chalk.green("✓ Done!"));
+}
+
+async function runVenvScript(args, label) {
+  if (label) {
+    console.log(chalk.cyan(`Running: ${label}...`));
+    console.log();
+  }
+  await runCommand(VENV_PYTHON, args, { cwd: SERVER_DIR });
   console.log();
   console.log(chalk.green("✓ Done!"));
 }

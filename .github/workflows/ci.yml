@@ -232,6 +232,9 @@ jobs:
       - name: Run migrations
         run: sqlx migrate run
 
+      - name: Verify sqlx offline cache is up to date
+        run: cargo sqlx prepare --workspace --check -- --all-targets
+
       - name: cargo clippy
         run: cargo clippy --all-targets -- -D warnings
 
