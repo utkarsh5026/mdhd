@@ -47,14 +47,8 @@ impl FromRequestParts<AppState> for AuthUser {
                     AppError::Unauthorized
                 })?;
 
-        let claims =
-            match crate::auth::jwt::validate_token(bearer.token(), &state.config.jwt_secret) {
-                Ok(c) => c,
-                Err(e) => {
-                    warn!("JWT validation failed: {e}");
-                    return Err(e);
-                }
-            };
+        let claims = crate::auth::jwt::validate_token(bearer.token(), &state.config.jwt_secret)
+            .inspect_err(|e| warn!("JWT validation failed: {e}"))?;
 
         Ok(AuthUser {
             user_id: claims.sub,

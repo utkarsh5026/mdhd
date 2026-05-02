@@ -80,8 +80,10 @@ pub struct Config {
     pub supabase_storage_bucket: String,
     /// TCP port the server listens on. Defaults to `8080`.
     pub port: u16,
-    /// Allowed CORS origin for the frontend. Defaults to `http://localhost:5173`.
-    pub cors_origin: String,
+    /// Allowed CORS origins for the frontend. Defaults to `["http://localhost:5173"]`.
+    /// Parsed from a comma-separated `CORS_ORIGIN` env var so multiple origins
+    /// (e.g. production + Vercel preview deployments) can be allowed at once.
+    pub cors_origins: Vec<String>,
     /// Frontend URL used for post-auth redirects. Defaults to `http://localhost:5173`.
     pub frontend_url: String,
     /// Maximum database connections in the pool. Defaults to `10`.
@@ -157,7 +159,7 @@ impl Config {
             port: optional_or(get, "PORT", "8080").parse().map_err(|_| {
                 ConfigError::Invalid("PORT must be a valid port number (0-65535)".into())
             })?,
-            cors_origin: optional_or(get, "CORS_ORIGIN", "http://localhost:5173"),
+            cors_origins: parse_csv(get, "CORS_ORIGIN", "http://localhost:5173"),
             frontend_url: optional_or(get, "FRONTEND_URL", "http://localhost:5173"),
             db_max_connections: optional_or(get, "DB_MAX_CONNECTIONS", "10")
                 .parse()
@@ -203,6 +205,24 @@ fn optional_or(get: &dyn Fn(&str) -> Option<String>, key: &str, default: &str) -
     get(key)
         .filter(|v| !v.is_empty())
         .unwrap_or_else(|| default.to_string())
+}
+
+/// Reads a comma-separated variable via `get` into a list of trimmed, non-empty
+/// values. Falls back to a single-element list containing `default` when unset
+/// or empty after trimming.
+fn parse_csv(get: &dyn Fn(&str) -> Option<String>, key: &str, default: &str) -> Vec<String> {
+    let raw = get(key).unwrap_or_default();
+    let parsed: Vec<String> = raw
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .collect();
+    if parsed.is_empty() {
+        vec![default.to_string()]
+    } else {
+        parsed
+    }
 }
 
 #[cfg(test)]
@@ -277,7 +297,10 @@ mod tests {
         assert_eq!(config.database_url, "postgres://localhost/test");
         assert_eq!(config.jwt_secret, VALID_JWT);
         assert_eq!(config.port, 8080);
-        assert_eq!(config.cors_origin, "http://localhost:5173");
+        assert_eq!(
+            config.cors_origins,
+            vec!["http://localhost:5173".to_string()]
+        );
         assert_eq!(config.frontend_url, "http://localhost:5173");
         assert_eq!(config.oauth_redirect_base, "http://localhost:8080");
         assert_eq!(config.supabase_storage_bucket, "files");
@@ -297,9 +320,31 @@ mod tests {
         let config = Config::from_source(&get_from(&map)).unwrap();
 
         assert_eq!(config.port, 9090);
-        assert_eq!(config.cors_origin, "https://example.com");
+        assert_eq!(config.cors_origins, vec!["https://example.com".to_string()]);
         assert_eq!(config.frontend_url, "https://example.com");
         assert_eq!(config.supabase_storage_bucket, "my-bucket");
+    }
+
+    #[test]
+    fn config_parses_comma_separated_cors_origins() {
+        let map = map_source(&[
+            ("DATABASE_URL", "postgres://localhost/test"),
+            ("JWT_SECRET", VALID_JWT),
+            (
+                "CORS_ORIGIN",
+                "https://app.vercel.app, https://preview.vercel.app ,http://localhost:5173",
+            ),
+        ]);
+        let config = Config::from_source(&get_from(&map)).unwrap();
+
+        assert_eq!(
+            config.cors_origins,
+            vec![
+                "https://app.vercel.app".to_string(),
+                "https://preview.vercel.app".to_string(),
+                "http://localhost:5173".to_string(),
+            ]
+        );
     }
 
     #[test]

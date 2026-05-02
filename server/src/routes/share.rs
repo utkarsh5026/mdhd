@@ -191,7 +191,7 @@ async fn share_file(
 
     let token = file
         .share_token
-        .expect("share_token must be set after upsert");
+        .ok_or_else(|| AppError::internal("share_token missing after file share upsert"))?;
     let url = format!("{}/share/{}", state.config.frontend_url, token);
 
     info!(file_id = %file.id, %token, "file share created/preserved");

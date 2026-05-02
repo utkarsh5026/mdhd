@@ -25,7 +25,7 @@ use axum::extract::State;
 use axum::http::{Method, StatusCode, header};
 use axum::routing::get;
 use tower_http::compression::CompressionLayer;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::timeout::TimeoutLayer;
@@ -47,15 +47,20 @@ pub const HEALTH_API_PATH: &str = "/api/health";
 ///
 /// # Errors
 ///
-/// Returns an error if `config.cors_origin` cannot be parsed as a valid HTTP header value.
+/// Returns an error if any entry in `config.cors_origins` cannot be parsed as a valid HTTP header value.
 pub fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn std::error::Error>> {
-    let cors_header = config
-        .cors_origin
-        .parse::<axum::http::HeaderValue>()
-        .map_err(|e| format!("Invalid CORS_ORIGIN '{}': {e}", config.cors_origin))?;
+    let cors_headers = config
+        .cors_origins
+        .iter()
+        .map(|origin| {
+            origin
+                .parse::<axum::http::HeaderValue>()
+                .map_err(|e| format!("Invalid CORS_ORIGIN entry '{origin}': {e}"))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
     let cors = CorsLayer::new()
-        .allow_origin(cors_header)
+        .allow_origin(AllowOrigin::list(cors_headers))
         .allow_methods([
             Method::GET,
             Method::POST,

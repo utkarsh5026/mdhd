@@ -394,7 +394,7 @@ async fn import_url(
         return Err(AppError::bad_request("File too large"));
     }
 
-    let content = String::from_utf8(bytes.to_vec())
+    let content = String::from_utf8(bytes.into())
         .map_err(|_| AppError::bad_request("Response is not valid UTF-8 text"))?;
 
     let filename = derive_filename(&parsed);

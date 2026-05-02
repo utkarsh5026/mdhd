@@ -15,8 +15,6 @@
 //! | [`assert_owner`]      | Return 404 if the file does not belong to the caller |
 //! | [`upload_to_s3`]      | Upload bytes to the configured S3 bucket             |
 
-use std::fmt::Write as _;
-
 use uuid::Uuid;
 
 use crate::errors::{AppError, OptionExt};
@@ -29,12 +27,13 @@ use crate::storage;
 /// Used for computing SHA-256 content hashes before storing them in the DB.
 #[must_use]
 pub fn hex_encode(bytes: &[u8]) -> String {
-    bytes
-        .iter()
-        .fold(String::with_capacity(bytes.len() * 2), |mut s, b| {
-            write!(s, "{b:02x}").unwrap();
-            s
-        })
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for &b in bytes {
+        s.push(char::from(HEX[usize::from(b >> 4)]));
+        s.push(char::from(HEX[usize::from(b & 0xf)]));
+    }
+    s
 }
 
 /// Return `Err(400)` if `path` does not start with `'/'`.

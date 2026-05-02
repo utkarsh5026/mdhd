@@ -38,7 +38,7 @@ pub fn test_config() -> Config {
         supabase_s3_secret_key: String::new(),
         supabase_storage_bucket: String::new(),
         port: 8080,
-        cors_origin: "http://localhost:5173".to_string(),
+        cors_origins: vec!["http://localhost:5173".to_string()],
         frontend_url: "http://localhost:5173".to_string(),
         app_env: AppEnv::Development,
         db_max_connections: 5,
