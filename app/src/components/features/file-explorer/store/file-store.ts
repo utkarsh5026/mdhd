@@ -12,9 +12,20 @@ import {
   type StoredFile,
   type UploadProgress,
 } from '@/services/indexeddb';
+import { removePaste } from '@/services/sync/paste-persistence';
+
+/** Lightweight metadata for paste files displayed in the explorer. */
+export interface PasteFileMetadata {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  createdAt: number;
+}
 
 interface FileStoreState {
   fileTree: FileTreeNode[];
+  pasteFiles: PasteFileMetadata[];
   selectedFile: StoredFile | null;
   expandedDirectories: Set<string>;
 
@@ -31,6 +42,7 @@ interface FileStoreActions {
   initialize: () => Promise<void>;
 
   refreshFileTree: () => Promise<void>;
+  refreshPasteFiles: () => Promise<void>;
 
   selectFile: (file: StoredFile) => void;
   clearSelection: () => void;
@@ -186,6 +198,7 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
   devtools(
     (set, get) => ({
       fileTree: [],
+      pasteFiles: [],
       selectedFile: null,
       expandedDirectories: new Set<string>(),
       isLoading: false,
@@ -195,7 +208,7 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
       error: null,
       isInitialized: false,
 
-      /** Initializes IndexedDB and loads the initial file tree. No-ops if already initialized. */
+      /** Initializes IndexedDB and loads the initial file tree and paste files. No-ops if already initialized. */
       initialize: async () => {
         const { isInitialized } = get();
         if (isInitialized) return;
@@ -203,8 +216,11 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
         await withLoading(
           set,
           async () => {
-            const fileTree = await fileStorageDB.buildFileTree();
-            set({ fileTree, isInitialized: true });
+            const [fileTree, pasteFiles] = await Promise.all([
+              fileStorageDB.buildFileTree(),
+              fileStorageDB.getPasteFiles(),
+            ]);
+            set({ fileTree, pasteFiles, isInitialized: true });
           },
           'Failed to initialize'
         );
@@ -220,6 +236,16 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
           },
           'Failed to refresh'
         );
+      },
+
+      /** Refreshes `pasteFiles` from IndexedDB. Use after paste content changes. */
+      refreshPasteFiles: async () => {
+        try {
+          const pasteFiles = await fileStorageDB.getPasteFiles();
+          set({ pasteFiles });
+        } catch {
+          // Silently ignore paste refresh failures
+        }
       },
 
       selectFile: (file: StoredFile) => {
@@ -333,7 +359,21 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
             const { selectedFile } = get();
 
             await fileStorageDB.deleteFile(id);
-            useTabsStore.getState().closeTabByFileId(id);
+            const tabsState = useTabsStore.getState();
+            const tabToClose = tabsState.tabs.find((t) => t.sourceFileId === id);
+            if (tabToClose) {
+              const remaining = tabsState.tabs.filter((t) => t.id !== tabToClose.id);
+              const tabIndex = tabsState.tabs.indexOf(tabToClose);
+              let newActiveId: string | null = null;
+              if (remaining.length > 0) {
+                newActiveId =
+                  tabsState.activeTabId === tabToClose.id
+                    ? remaining[Math.min(tabIndex, remaining.length - 1)].id
+                    : tabsState.activeTabId;
+              }
+              tabsState.setTabsState(remaining, newActiveId, remaining.length === 0);
+              removePaste(tabToClose.id, tabToClose.sourceType);
+            }
 
             if (selectedFile?.id === id) {
               set({ selectedFile: null });
@@ -360,7 +400,19 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
             const { selectedFile, expandedDirectories } = get();
 
             await fileStorageDB.deleteDirectoryRecursive(path);
-            useTabsStore.getState().closeTabsByPathPrefix(path);
+            const dirTabsState = useTabsStore.getState();
+            const keptTabs = dirTabsState.tabs.filter(
+              (t) =>
+                !t.sourcePath || (t.sourcePath !== path && !t.sourcePath.startsWith(path + '/'))
+            );
+            const removedTabs = dirTabsState.tabs.filter((t) => !keptTabs.includes(t));
+            const activeStillExists = keptTabs.some((t) => t.id === dirTabsState.activeTabId);
+            dirTabsState.setTabsState(
+              keptTabs,
+              activeStillExists ? dirTabsState.activeTabId : (keptTabs[0]?.id ?? null),
+              keptTabs.length === 0
+            );
+            removedTabs.forEach((t) => removePaste(t.id, t.sourceType));
 
             if (selectedFile?.path.startsWith(path)) {
               set({ selectedFile: null });
@@ -391,7 +443,16 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
           set,
           async () => {
             await fileStorageDB.clearAll();
-            useTabsStore.getState().closeTabsBySourceType('file');
+            const clearTabsState = useTabsStore.getState();
+            const nonFileTabs = clearTabsState.tabs.filter((t) => t.sourceType !== 'file');
+            const fileTabs = clearTabsState.tabs.filter((t) => t.sourceType === 'file');
+            const activeKept = nonFileTabs.some((t) => t.id === clearTabsState.activeTabId);
+            clearTabsState.setTabsState(
+              nonFileTabs,
+              activeKept ? clearTabsState.activeTabId : (nonFileTabs[0]?.id ?? null),
+              nonFileTabs.length === 0
+            );
+            fileTabs.forEach((t) => removePaste(t.id, t.sourceType));
             set({
               fileTree: [],
               selectedFile: null,
@@ -411,6 +472,7 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
 );
 
 export const useFileTree = () => useFileStore((state) => state.fileTree);
+export const usePasteFiles = () => useFileStore((state) => state.pasteFiles);
 export const useSelectedFile = () => useFileStore((state) => state.selectedFile);
 export const useExpandedDirectories = () => useFileStore((state) => state.expandedDirectories);
 export const useIsFileLoading = () => useFileStore((state) => state.isLoading);
@@ -433,6 +495,7 @@ export const useFileStoreActions = () => {
     useShallow((state) => ({
       initialize: state.initialize,
       refreshFileTree: state.refreshFileTree,
+      refreshPasteFiles: state.refreshPasteFiles,
       selectFile: state.selectFile,
       clearSelection: state.clearSelection,
       expandAll: state.expandAll,

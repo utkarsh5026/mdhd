@@ -62,16 +62,16 @@ export function usePdfExport() {
     ) => {
       setIsExporting(true);
 
-      const readingSettings = useReadingSettingsStore.getState().settings;
-      const fontFamily = fontFamilyMap[readingSettings.fontFamily];
+      const { typography } = useReadingSettingsStore.getState();
+      const fontFamily = fontFamilyMap[typography.fontFamily];
 
       const options: PdfExportOptions = {
         title,
         sections,
         metadata,
         fontFamily,
-        fontSize: readingSettings.fontSize,
-        lineHeight: readingSettings.lineHeight,
+        fontSize: typography.fontSize,
+        lineHeight: typography.lineHeight,
         ...settings,
       };
 
