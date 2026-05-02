@@ -18,8 +18,14 @@ impl AppEnv {
     /// Reads `APP_ENV` from the environment.
     #[must_use]
     pub fn from_env_var() -> Self {
-        match env::var("APP_ENV").as_deref() {
-            Ok("production") => Self::Production,
+        Self::from_source(&|k| env::var(k).ok())
+    }
+
+    /// Like [`Self::from_env_var`] but reads via an injected source — used by tests
+    /// to avoid mutating process-wide env (which races with `#[sqlx::test]` in other modules).
+    fn from_source(get: &dyn Fn(&str) -> Option<String>) -> Self {
+        match get("APP_ENV").as_deref() {
+            Some("production") => Self::Production,
             _ => Self::Development,
         }
     }
@@ -114,14 +120,22 @@ impl Config {
         format!("{}/auth/{}/callback", self.oauth_redirect_base, provider)
     }
 
-    /// Builds a [`Config`] by reading environment variables.
+    /// Builds a [`Config`] by reading process environment variables.
     ///
     /// # Errors
     ///
     /// Returns [`ConfigError::Missing`] if `DATABASE_URL` or `JWT_SECRET` are not set,
     /// or [`ConfigError::Invalid`] if `PORT` cannot be parsed as a `u16`.
     pub fn from_env() -> Result<Self, ConfigError> {
-        let jwt_secret = required("JWT_SECRET")?;
+        Self::from_source(&|k| env::var(k).ok())
+    }
+
+    /// Builds a [`Config`] from an arbitrary source — `get(key)` returns `Some(value)`
+    /// when set, `None` when unset. Used by tests to inject a per-test map instead of
+    /// mutating the process-wide environment, which would race with `#[sqlx::test]`
+    /// invocations in other modules that read `DATABASE_URL`.
+    fn from_source(get: &dyn Fn(&str) -> Option<String>) -> Result<Self, ConfigError> {
+        let jwt_secret = required(get, "JWT_SECRET")?;
         if jwt_secret.len() < 32 {
             return Err(ConfigError::Invalid(
                 "JWT_SECRET must be at least 32 characters for HS256 security".into(),
@@ -129,159 +143,139 @@ impl Config {
         }
 
         Ok(Self {
-            app_env: AppEnv::from_env_var(),
-            database_url: required("DATABASE_URL")?,
+            app_env: AppEnv::from_source(get),
+            database_url: required(get, "DATABASE_URL")?,
             jwt_secret,
-            google_client_id: optional("GOOGLE_CLIENT_ID"),
-            google_client_secret: optional("GOOGLE_CLIENT_SECRET"),
-            oauth_redirect_base: optional_or("OAUTH_REDIRECT_BASE", "http://localhost:8080"),
+            google_client_id: optional(get, "GOOGLE_CLIENT_ID"),
+            google_client_secret: optional(get, "GOOGLE_CLIENT_SECRET"),
+            oauth_redirect_base: optional_or(get, "OAUTH_REDIRECT_BASE", "http://localhost:8080"),
             google_token_url_override: None,
-            supabase_s3_endpoint: optional("SUPABASE_S3_ENDPOINT"),
-            supabase_s3_access_key: optional("SUPABASE_S3_ACCESS_KEY"),
-            supabase_s3_secret_key: optional("SUPABASE_S3_SECRET_KEY"),
-            supabase_storage_bucket: optional_or("SUPABASE_STORAGE_BUCKET", "files"),
-            port: optional_or("PORT", "8080").parse().map_err(|_| {
+            supabase_s3_endpoint: optional(get, "SUPABASE_S3_ENDPOINT"),
+            supabase_s3_access_key: optional(get, "SUPABASE_S3_ACCESS_KEY"),
+            supabase_s3_secret_key: optional(get, "SUPABASE_S3_SECRET_KEY"),
+            supabase_storage_bucket: optional_or(get, "SUPABASE_STORAGE_BUCKET", "files"),
+            port: optional_or(get, "PORT", "8080").parse().map_err(|_| {
                 ConfigError::Invalid("PORT must be a valid port number (0-65535)".into())
             })?,
-            cors_origin: optional_or("CORS_ORIGIN", "http://localhost:5173"),
-            frontend_url: optional_or("FRONTEND_URL", "http://localhost:5173"),
-            db_max_connections: optional_or("DB_MAX_CONNECTIONS", "10")
+            cors_origin: optional_or(get, "CORS_ORIGIN", "http://localhost:5173"),
+            frontend_url: optional_or(get, "FRONTEND_URL", "http://localhost:5173"),
+            db_max_connections: optional_or(get, "DB_MAX_CONNECTIONS", "10")
                 .parse()
                 .map_err(|_| ConfigError::Invalid("DB_MAX_CONNECTIONS must be a u32".into()))?,
-            jwt_expiry_days: optional_or("JWT_EXPIRY_DAYS", "7").parse().map_err(|_| {
-                ConfigError::Invalid("JWT_EXPIRY_DAYS must be a positive i64".into())
-            })?,
-            import_max_size: optional_or("IMPORT_MAX_SIZE", "5242880")
+            jwt_expiry_days: optional_or(get, "JWT_EXPIRY_DAYS", "7")
+                .parse()
+                .map_err(|_| {
+                    ConfigError::Invalid("JWT_EXPIRY_DAYS must be a positive i64".into())
+                })?,
+            import_max_size: optional_or(get, "IMPORT_MAX_SIZE", "5242880")
                 .parse()
                 .map_err(|_| ConfigError::Invalid("IMPORT_MAX_SIZE must be a usize".into()))?,
-            import_timeout_secs: optional_or("IMPORT_TIMEOUT_SECS", "15")
+            import_timeout_secs: optional_or(get, "IMPORT_TIMEOUT_SECS", "15")
                 .parse()
                 .map_err(|_| ConfigError::Invalid("IMPORT_TIMEOUT_SECS must be a u64".into()))?,
-            sync_max_files: optional_or("SYNC_MAX_FILES", "1000")
+            sync_max_files: optional_or(get, "SYNC_MAX_FILES", "1000")
                 .parse()
                 .map_err(|_| ConfigError::Invalid("SYNC_MAX_FILES must be a usize".into()))?,
-            sync_max_settings: optional_or("SYNC_MAX_SETTINGS", "200")
+            sync_max_settings: optional_or(get, "SYNC_MAX_SETTINGS", "200")
                 .parse()
                 .map_err(|_| ConfigError::Invalid("SYNC_MAX_SETTINGS must be a usize".into()))?,
-            paste_max_size: optional_or("PASTE_MAX_SIZE", "524288")
+            paste_max_size: optional_or(get, "PASTE_MAX_SIZE", "524288")
                 .parse()
                 .map_err(|_| ConfigError::Invalid("PASTE_MAX_SIZE must be a usize".into()))?,
         })
     }
 }
 
-/// Reads an environment variable, returning [`ConfigError::Missing`] if unset.
-fn required(key: &str) -> Result<String, ConfigError> {
-    env::var(key).map_err(|_| ConfigError::Missing(key.to_string()))
+/// Reads a variable via `get`, returning [`ConfigError::Missing`] if unset or empty.
+fn required(get: &dyn Fn(&str) -> Option<String>, key: &str) -> Result<String, ConfigError> {
+    get(key)
+        .filter(|v| !v.is_empty())
+        .ok_or_else(|| ConfigError::Missing(key.to_string()))
 }
 
-/// Reads an environment variable, returning an empty string if unset.
-fn optional(key: &str) -> String {
-    env::var(key).unwrap_or_default()
+/// Reads a variable via `get`, returning an empty string if unset.
+fn optional(get: &dyn Fn(&str) -> Option<String>, key: &str) -> String {
+    get(key).unwrap_or_default()
 }
 
-/// Reads an environment variable, falling back to `default` if unset.
-fn optional_or(key: &str, default: &str) -> String {
-    env::var(key).unwrap_or_else(|_| default.to_string())
+/// Reads a variable via `get`, falling back to `default` if unset or empty.
+fn optional_or(get: &dyn Fn(&str) -> Option<String>, key: &str, default: &str) -> String {
+    get(key)
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| default.to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
+    use std::collections::HashMap;
 
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
-
-    fn lock_env() -> std::sync::MutexGuard<'static, ()> {
-        ENV_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    /// Builds a `get` closure backed by an in-memory map. Tests use this instead of
+    /// `env::set_var` / `env::remove_var` so they don't mutate process-wide env —
+    /// otherwise a config test's `remove_var("DATABASE_URL")` races against
+    /// `#[sqlx::test]` invocations in other modules that read `DATABASE_URL` via
+    /// `dotenvy::var`, causing flaky `EnvVar(NotPresent)` panics under parallel
+    /// `cargo test`.
+    fn map_source(pairs: &[(&str, &str)]) -> HashMap<String, String> {
+        pairs
+            .iter()
+            .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+            .collect()
     }
+
+    fn get_from(map: &HashMap<String, String>) -> impl Fn(&str) -> Option<String> + '_ {
+        |k: &str| map.get(k).cloned()
+    }
+
+    const VALID_JWT: &str = "this-is-a-test-secret-that-is-at-least-32-chars";
 
     #[test]
     fn required_returns_value_when_set() {
-        let _g = lock_env();
-        unsafe { env::set_var("_TEST_REQUIRED", "my_value") };
-        let result = required("_TEST_REQUIRED").unwrap();
-        unsafe { env::remove_var("_TEST_REQUIRED") };
-        assert_eq!(result, "my_value");
+        let map = map_source(&[("KEY", "my_value")]);
+        assert_eq!(required(&get_from(&map), "KEY").unwrap(), "my_value");
     }
 
     #[test]
     fn required_errors_when_unset() {
-        let _g = lock_env();
-        unsafe { env::remove_var("_TEST_REQUIRED_MISSING") };
-        let err = required("_TEST_REQUIRED_MISSING").unwrap_err();
-        assert!(err.to_string().contains("_TEST_REQUIRED_MISSING"));
+        let map = map_source(&[]);
+        let err = required(&get_from(&map), "MISSING").unwrap_err();
+        assert!(err.to_string().contains("MISSING"));
     }
 
     #[test]
     fn optional_returns_empty_string_when_unset() {
-        let _g = lock_env();
-        unsafe { env::remove_var("_TEST_OPTIONAL") };
-        assert_eq!(optional("_TEST_OPTIONAL"), "");
+        let map = map_source(&[]);
+        assert_eq!(optional(&get_from(&map), "KEY"), "");
     }
 
     #[test]
     fn optional_returns_value_when_set() {
-        let _g = lock_env();
-        unsafe { env::set_var("_TEST_OPTIONAL", "some_value") };
-        let result = optional("_TEST_OPTIONAL");
-        unsafe { env::remove_var("_TEST_OPTIONAL") };
-        assert_eq!(result, "some_value");
+        let map = map_source(&[("KEY", "some_value")]);
+        assert_eq!(optional(&get_from(&map), "KEY"), "some_value");
     }
 
     #[test]
     fn optional_or_returns_default_when_unset() {
-        let _g = lock_env();
-        unsafe { env::remove_var("_TEST_OPTIONAL_OR") };
-        assert_eq!(optional_or("_TEST_OPTIONAL_OR", "fallback"), "fallback");
+        let map = map_source(&[]);
+        assert_eq!(optional_or(&get_from(&map), "KEY", "fallback"), "fallback");
     }
 
     #[test]
     fn optional_or_returns_env_value_over_default() {
-        let _g = lock_env();
-        unsafe { env::set_var("_TEST_OPTIONAL_OR", "override") };
-        let result = optional_or("_TEST_OPTIONAL_OR", "fallback");
-        unsafe { env::remove_var("_TEST_OPTIONAL_OR") };
-        assert_eq!(result, "override");
+        let map = map_source(&[("KEY", "override")]);
+        assert_eq!(optional_or(&get_from(&map), "KEY", "fallback"), "override");
     }
 
     #[test]
     fn config_from_env_builds_with_required_vars() {
-        let _g = lock_env();
-        unsafe {
-            env::set_var("DATABASE_URL", "postgres://localhost/test");
-            env::set_var(
-                "JWT_SECRET",
-                "this-is-a-test-secret-that-is-at-least-32-chars",
-            );
-            for key in &[
-                "GOOGLE_CLIENT_ID",
-                "GOOGLE_CLIENT_SECRET",
-                "OAUTH_REDIRECT_BASE",
-                "SUPABASE_S3_ENDPOINT",
-                "SUPABASE_S3_ACCESS_KEY",
-                "SUPABASE_S3_SECRET_KEY",
-                "SUPABASE_STORAGE_BUCKET",
-                "PORT",
-                "CORS_ORIGIN",
-                "FRONTEND_URL",
-            ] {
-                env::remove_var(key);
-            }
-        }
-        let config = Config::from_env().unwrap();
-        unsafe {
-            env::remove_var("DATABASE_URL");
-            env::remove_var("JWT_SECRET");
-        }
+        let map = map_source(&[
+            ("DATABASE_URL", "postgres://localhost/test"),
+            ("JWT_SECRET", VALID_JWT),
+        ]);
+        let config = Config::from_source(&get_from(&map)).unwrap();
 
         assert_eq!(config.database_url, "postgres://localhost/test");
-        assert_eq!(
-            config.jwt_secret,
-            "this-is-a-test-secret-that-is-at-least-32-chars"
-        );
+        assert_eq!(config.jwt_secret, VALID_JWT);
         assert_eq!(config.port, 8080);
         assert_eq!(config.cors_origin, "http://localhost:5173");
         assert_eq!(config.frontend_url, "http://localhost:5173");
@@ -292,31 +286,15 @@ mod tests {
 
     #[test]
     fn config_from_env_respects_optional_overrides() {
-        let _g = lock_env();
-        unsafe {
-            env::set_var("DATABASE_URL", "postgres://localhost/test");
-            env::set_var(
-                "JWT_SECRET",
-                "this-is-a-test-secret-that-is-at-least-32-chars",
-            );
-            env::set_var("PORT", "9090");
-            env::set_var("CORS_ORIGIN", "https://example.com");
-            env::set_var("FRONTEND_URL", "https://example.com");
-            env::set_var("SUPABASE_STORAGE_BUCKET", "my-bucket");
-        }
-        let config = Config::from_env().unwrap();
-        unsafe {
-            for key in &[
-                "DATABASE_URL",
-                "JWT_SECRET",
-                "PORT",
-                "CORS_ORIGIN",
-                "FRONTEND_URL",
-                "SUPABASE_STORAGE_BUCKET",
-            ] {
-                env::remove_var(key);
-            }
-        }
+        let map = map_source(&[
+            ("DATABASE_URL", "postgres://localhost/test"),
+            ("JWT_SECRET", VALID_JWT),
+            ("PORT", "9090"),
+            ("CORS_ORIGIN", "https://example.com"),
+            ("FRONTEND_URL", "https://example.com"),
+            ("SUPABASE_STORAGE_BUCKET", "my-bucket"),
+        ]);
+        let config = Config::from_source(&get_from(&map)).unwrap();
 
         assert_eq!(config.port, 9090);
         assert_eq!(config.cors_origin, "https://example.com");
@@ -326,56 +304,36 @@ mod tests {
 
     #[test]
     fn config_from_env_errors_without_database_url() {
-        let _g = lock_env();
-        unsafe {
-            env::remove_var("DATABASE_URL");
-            env::set_var(
-                "JWT_SECRET",
-                "this-is-a-test-secret-that-is-at-least-32-chars",
-            );
-        }
-        let err = Config::from_env().unwrap_err();
+        let map = map_source(&[("JWT_SECRET", VALID_JWT)]);
+        let err = Config::from_source(&get_from(&map)).unwrap_err();
         assert!(err.to_string().contains("DATABASE_URL"));
     }
 
     #[test]
     fn config_from_env_errors_without_jwt_secret() {
-        let _g = lock_env();
-        unsafe {
-            env::set_var("DATABASE_URL", "postgres://localhost/test");
-            env::remove_var("JWT_SECRET");
-        }
-        let err = Config::from_env().unwrap_err();
+        let map = map_source(&[("DATABASE_URL", "postgres://localhost/test")]);
+        let err = Config::from_source(&get_from(&map)).unwrap_err();
         assert!(err.to_string().contains("JWT_SECRET"));
     }
 
     #[test]
     fn config_from_env_errors_on_short_jwt_secret() {
-        let _g = lock_env();
-        unsafe {
-            env::set_var("DATABASE_URL", "postgres://localhost/test");
-            env::set_var("JWT_SECRET", "too-short");
-        }
-        let err = Config::from_env().unwrap_err();
-        unsafe {
-            env::remove_var("DATABASE_URL");
-            env::remove_var("JWT_SECRET");
-        }
+        let map = map_source(&[
+            ("DATABASE_URL", "postgres://localhost/test"),
+            ("JWT_SECRET", "too-short"),
+        ]);
+        let err = Config::from_source(&get_from(&map)).unwrap_err();
         assert!(err.to_string().contains("32 characters"));
     }
 
     #[test]
     fn config_from_env_errors_on_invalid_port() {
-        let _g = lock_env();
-        unsafe {
-            env::set_var("DATABASE_URL", "postgres://localhost/test");
-            env::set_var(
-                "JWT_SECRET",
-                "this-is-a-test-secret-that-is-at-least-32-chars",
-            );
-            env::set_var("PORT", "not_a_number");
-        }
-        let err = Config::from_env().unwrap_err();
+        let map = map_source(&[
+            ("DATABASE_URL", "postgres://localhost/test"),
+            ("JWT_SECRET", VALID_JWT),
+            ("PORT", "not_a_number"),
+        ]);
+        let err = Config::from_source(&get_from(&map)).unwrap_err();
         assert!(err.to_string().contains("PORT"));
     }
 }
