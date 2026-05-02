@@ -16,6 +16,11 @@ services:
       timeout: 3s
       retries: 5
 
+  # MinIO is treated as ephemeral dev storage.
+  # Integration tests (tests/s3_roundtrip.rs, run with S3_INTEGRATION_TESTS=1) create
+  # per-test `test-<uuid>` buckets and best-effort purge them at the end of each test.
+  # A panicking test leaks its bucket — reset with `docker compose -f
+  # docker-compose.dev.yml down -v` when the noise gets distracting.
   minio:
     image: minio/minio
     restart: unless-stopped
