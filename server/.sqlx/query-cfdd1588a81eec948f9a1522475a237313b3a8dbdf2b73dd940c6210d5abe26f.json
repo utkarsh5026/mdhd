@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO user_settings (user_id, key, value, hash, updated_at)\n        VALUES ($1, $2, $3, $4, $5)\n        ON CONFLICT (user_id, key)\n        DO UPDATE SET value = $3, hash = $4, updated_at = $5\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Jsonb",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cfdd1588a81eec948f9a1522475a237313b3a8dbdf2b73dd940c6210d5abe26f"
+}
