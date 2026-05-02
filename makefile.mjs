@@ -139,6 +139,13 @@ const tasks = {
       await runVenv(["ruff", "format", "--check", "."], "python format check");
     },
   },
+  "test-connections": {
+    description:
+      "Ping Supabase Postgres + S3 using server/.env files (dev + prod, or pass 'dev' / 'prod')",
+    category: "Quality",
+    action: runTestConnections,
+  },
+
   "pre-commit": {
     description: "Run all CI checks (fmt-check, lint, test) for all",
     category: "Quality",
@@ -487,6 +494,21 @@ async function runSetup() {
   await runContainers();
 
   done("Setup complete! Run 'make dev' to start.");
+}
+
+async function runTestConnections() {
+  const target = process.argv[3];
+  const args = ["scripts/check_connections.py"];
+  if (target) args.push(target);
+  console.log(
+    chalk.bold.cyan(
+      `Testing Supabase connections${target ? ` (${target})` : " (dev + prod)"}...`,
+    ),
+  );
+  console.log();
+  await runCommand(VENV_PYTHON, args, { cwd: SERVER_DIR, stdio: "inherit" });
+  console.log();
+  console.log(chalk.green("✓ Done!"));
 }
 
 async function runPreCommit() {
