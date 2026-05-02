@@ -16,6 +16,7 @@ pub enum AppEnv {
 
 impl AppEnv {
     /// Reads `APP_ENV` from the environment.
+    #[must_use]
     pub fn from_env_var() -> Self {
         match env::var("APP_ENV").as_deref() {
             Ok("production") => Self::Production,
@@ -61,6 +62,10 @@ pub struct Config {
     /// Base URL prepended to `/auth/{provider}/callback` when building OAuth redirect URIs.
     /// Defaults to `http://localhost:8080`.
     pub oauth_redirect_base: String,
+    /// Optional override for Google's `OAuth2` token-exchange endpoint. Only set in
+    /// integration tests that point the flow at a local mock server. `None` in
+    /// production — the real Google URL is used.
+    pub google_token_url_override: Option<String>,
     /// Supabase S3-compatible storage endpoint URL.
     pub supabase_s3_endpoint: String,
     pub supabase_s3_access_key: String,
@@ -104,6 +109,7 @@ impl Config {
     );
 
     /// Returns the OAuth redirect URL for the given provider.
+    #[must_use]
     pub fn oauth_redirect_url(&self, provider: &str) -> String {
         format!("{}/auth/{}/callback", self.oauth_redirect_base, provider)
     }
@@ -129,6 +135,7 @@ impl Config {
             google_client_id: optional("GOOGLE_CLIENT_ID"),
             google_client_secret: optional("GOOGLE_CLIENT_SECRET"),
             oauth_redirect_base: optional_or("OAUTH_REDIRECT_BASE", "http://localhost:8080"),
+            google_token_url_override: None,
             supabase_s3_endpoint: optional("SUPABASE_S3_ENDPOINT"),
             supabase_s3_access_key: optional("SUPABASE_S3_ACCESS_KEY"),
             supabase_s3_secret_key: optional("SUPABASE_S3_SECRET_KEY"),
