@@ -9,6 +9,9 @@ import type {
   StoredFile,
 } from './types';
 
+/** Reserved prefix for paste-backed tabs. Duplicated here to avoid circular imports. */
+const PASTES_PREFIX = '/__pastes__';
+
 const FILES_STORE = 'files';
 const DIRECTORIES_STORE = 'directories';
 
@@ -37,7 +40,7 @@ export function getParentPath(path: string): string {
  * @returns A normalized path that always starts with `/` and has no trailing slash.
  */
 export function normalizePath(path: string): string {
-  let normalized = path.replace(/\\/g, '/');
+  let normalized = path.replaceAll('\\', '/');
   if (!normalized.startsWith('/')) {
     normalized = '/' + normalized;
   }
@@ -260,6 +263,21 @@ class FileStorageDB extends BaseDB {
   }
 
   /**
+   * Updates the `contentHash` field of an existing file without touching content.
+   *
+   * @async
+   * @param id - The UUID of the file to update.
+   * @param contentHash - The new SHA-256 hex digest.
+   * @returns The updated `StoredFile`, or `undefined` if no file with that `id` exists.
+   */
+  async updateFileHash(id: string, contentHash: string): Promise<StoredFile | undefined> {
+    return this.readModifyWrite<StoredFile>(FILES_STORE, id, (file) => ({
+      ...file,
+      contentHash,
+    }));
+  }
+
+  /**
    * Deletes a file record by its UUID.
    *
    * @async
@@ -267,6 +285,81 @@ class FileStorageDB extends BaseDB {
    */
   async deleteFile(id: string): Promise<void> {
     return this.deleteById(FILES_STORE, id);
+  }
+
+  /**
+   * Updates and adds multiple files in a single IndexedDB transaction.
+   *
+   * For each entry in `updates`, reads the existing record and writes back a
+   * new version with updated content, size, hash, and timestamp. Entries in
+   * `adds` are inserted as new records (duplicates are silently skipped).
+   * All reads and writes share one transaction so the entire batch is atomic.
+   *
+   * @async
+   * @param updates - Files to overwrite: existing id, new content and hash.
+   * @param adds - New file inputs to insert.
+   */
+  async batchUpsertFiles(
+    updates: { id: string; content: string; contentHash: string }[],
+    adds: CreateFileInput[]
+  ): Promise<void> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([FILES_STORE], 'readwrite');
+      const store = transaction.objectStore(FILES_STORE);
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(new Error('Failed to batch upsert files'));
+
+      const now = Date.now();
+
+      for (const { id, content, contentHash } of updates) {
+        const req = store.get(id);
+        req.onsuccess = () => {
+          const file = req.result as StoredFile | undefined;
+          if (!file) return;
+          store.put({
+            ...file,
+            content,
+            contentHash,
+            size: new Blob([content]).size,
+            updatedAt: now,
+          });
+        };
+      }
+
+      for (const input of adds) {
+        store.add({
+          ...input,
+          id: uuidv4(),
+          path: normalizePath(input.path),
+          parentPath: normalizePath(input.parentPath),
+          createdAt: now,
+          updatedAt: now,
+        } satisfies StoredFile);
+      }
+    });
+  }
+
+  /**
+   * Deletes multiple file records in a single IndexedDB transaction.
+   *
+   * @async
+   * @param ids - UUIDs of the files to delete.
+   */
+  async batchDeleteFiles(ids: string[]): Promise<void> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([FILES_STORE], 'readwrite');
+      const store = transaction.objectStore(FILES_STORE);
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(new Error('Failed to batch delete files'));
+
+      for (const id of ids) {
+        store.delete(id);
+      }
+    });
   }
 
   /**
@@ -429,6 +522,9 @@ class FileStorageDB extends BaseDB {
     }
 
     for (const file of files) {
+      // Exclude paste-backed tabs from the file explorer tree
+      if (file.path.startsWith(PASTES_PREFIX + '/')) continue;
+
       nodeMap.set(file.path, {
         id: file.id,
         name: file.name,
@@ -446,7 +542,7 @@ class FileStorageDB extends BaseDB {
         root.push(node);
       } else {
         const parent = nodeMap.get(parentPath);
-        if (parent && parent.children) {
+        if (parent?.children) {
           parent.children.push(node);
         } else {
           root.push(node);
@@ -468,6 +564,80 @@ class FileStorageDB extends BaseDB {
 
     sortNodes(root);
     return root;
+  }
+
+  /**
+   * Retrieves metadata for all paste-backed files (stored under `/__pastes__/`).
+   *
+   * Iterates the files store with a cursor, filtering for paths that start with
+   * the paste prefix. Returns lightweight metadata suitable for displaying in
+   * the file explorer's "Pasted Content" section.
+   *
+   * @async
+   * @returns An array of paste file metadata, sorted by creation date (newest first).
+   * @throws {Error} If the cursor request fails.
+   */
+  async getPasteFiles(): Promise<
+    Pick<StoredFile, 'id' | 'name' | 'path' | 'size' | 'createdAt'>[]
+  > {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([FILES_STORE], 'readonly');
+      const request = transaction.objectStore(FILES_STORE).openCursor();
+      const results: Pick<StoredFile, 'id' | 'name' | 'path' | 'size' | 'createdAt'>[] = [];
+
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+        if (cursor) {
+          const file = cursor.value as StoredFile;
+          if (file.path.startsWith(PASTES_PREFIX + '/')) {
+            const { id, name, path, size, createdAt } = file;
+            results.push({ id, name, path, size, createdAt });
+          }
+          cursor.continue();
+        } else {
+          results.sort((a, b) => b.createdAt - a.createdAt);
+          resolve(results);
+        }
+      };
+
+      request.onerror = () => reject(new Error('Failed to read paste file metadata'));
+    });
+  }
+
+  /**
+   * Retrieves sync-relevant metadata for every file without loading content.
+   *
+   * Returns `id`, `name`, `path`, `contentHash`, and `updatedAt` so the sync
+   * service can build a manifest to send to the server. Content is excluded to
+   * avoid holding large strings in memory.
+   *
+   * @async
+   * @returns An array of lightweight file records suitable for sync.
+   * @throws {Error} If the cursor request fails.
+   */
+  async getAllFilesForSync(): Promise<
+    Pick<StoredFile, 'id' | 'name' | 'path' | 'contentHash' | 'updatedAt'>[]
+  > {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([FILES_STORE], 'readonly');
+      const request = transaction.objectStore(FILES_STORE).openCursor();
+      const results: Pick<StoredFile, 'id' | 'name' | 'path' | 'contentHash' | 'updatedAt'>[] = [];
+
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+        if (cursor) {
+          const { id, name, path, contentHash, updatedAt } = cursor.value as StoredFile;
+          results.push({ id, name, path, contentHash, updatedAt });
+          cursor.continue();
+        } else {
+          resolve(results);
+        }
+      };
+
+      request.onerror = () => reject(new Error('Failed to read file sync metadata'));
+    });
   }
 
   /**

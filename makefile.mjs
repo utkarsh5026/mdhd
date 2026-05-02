@@ -1,25 +1,51 @@
 #!/usr/bin/env node
 
-import { spawn } from "child_process";
-import { fileURLToPath, pathToFileURL } from "url";
-import { dirname, join } from "path";
-import { rm } from "fs/promises";
-import { existsSync } from "fs";
+import { spawn } from "node:child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { dirname, join } from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const APP_DIR = join(__dirname, "app");
+const ROOT_DIR = __dirname;
+const APP_DIR = join(ROOT_DIR, "app");
+const SERVER_DIR = join(ROOT_DIR, "server");
 
-const chalkModulePath = join(
-  APP_DIR,
-  "node_modules",
-  "chalk",
-  "source",
-  "index.js",
-);
-const chalkModuleURL = pathToFileURL(chalkModulePath).href;
-const chalk = await import(chalkModuleURL).then((m) => m.default);
+// Try to load chalk, fallback to simple ANSI colors if not installed
+let chalk;
+try {
+  const chalkModulePath = join(
+    APP_DIR,
+    "node_modules",
+    "chalk",
+    "source",
+    "index.js",
+  );
+  const chalkModuleURL = pathToFileURL(chalkModulePath).href;
+  chalk = await import(chalkModuleURL).then((m) => m.default);
+} catch {
+  const bold = (s) => `\x1b[1m${s}\x1b[22m`;
+  chalk = {
+    cyan: (s) => `\x1b[36m${s}\x1b[39m`,
+    green: (s) => `\x1b[32m${s}\x1b[39m`,
+    yellow: (s) => `\x1b[33m${s}\x1b[39m`,
+    red: (s) => `\x1b[31m${s}\x1b[39m`,
+    blue: (s) => `\x1b[34m${s}\x1b[39m`,
+    dim: (s) => `\x1b[2m${s}\x1b[22m`,
+    bold: Object.assign(bold, {
+      cyan: (s) => `\x1b[1m\x1b[36m${s}\x1b[22m\x1b[39m`,
+      yellow: (s) => `\x1b[1m\x1b[33m${s}\x1b[22m\x1b[39m`,
+      green: (s) => `\x1b[1m\x1b[32m${s}\x1b[22m\x1b[39m`,
+      red: (s) => `\x1b[1m\x1b[31m${s}\x1b[22m\x1b[39m`,
+    }),
+  };
+}
+
+const COMPOSE_FILE = join(SERVER_DIR, "docker-compose.dev.yml");
+const SCRIPTS_DIR = join(SERVER_DIR, "scripts");
+const VENV_DIR = join(SCRIPTS_DIR, ".venv");
+const VENV_PYTHON = join(VENV_DIR, "bin", "python");
+const VENV_PIP = join(VENV_DIR, "bin", "pip");
 
 const tasks = {
   help: {
@@ -27,135 +53,114 @@ const tasks = {
     category: "Help",
     action: showHelp,
   },
-  install: {
-    description: "Install dependencies",
+
+  dev: {
+    description:
+      "Start client (port 5173) + server (port 8080), server auto-restarts on changes (requires cargo-watch)",
     category: "Development",
-    action: runNpmInstall,
+    action: runDev,
+  },
+  prod: {
+    description:
+      "Release build of client + server, serve with RUN_ENV=production",
+    category: "Development",
+    action: runProd,
+  },
+  "prod-watch": {
+    description:
+      "Prod build + watch: client rebuilds on change, server restarts on change",
+    category: "Development",
+    action: runProdWatch,
   },
   setup: {
-    description: "Setup project (install + husky)",
+    description:
+      "First-time setup: install deps, git hooks, python venv, containers, migrate, build",
     category: "Development",
     action: runSetup,
   },
-  dev: {
-    description: "Start development server",
+  containers: {
+    description:
+      "Start containers, wait for Postgres, run migrations, build server",
     category: "Development",
-    action: () => runNpmCommand("dev"),
+    action: runContainers,
   },
+
+  test: {
+    description: "Run tests for client (Vitest) and server (cargo test)",
+    category: "Quality",
+    action: async () => {
+      await runBun(["run", "test:run"], "client tests");
+      await runCargo(["test"], "server tests");
+    },
+  },
+
   build: {
-    description: "Build for production",
+    description: "Build client (tsc + vite) then server (cargo)",
     category: "Build",
-    action: () => runNpmCommand("build"),
+    action: async () => {
+      await runBun(["run", "build"], "client build");
+      await runCargo(["build"], "server build");
+    },
   },
-  preview: {
-    description: "Preview production build",
+  "build-release": {
+    description: "Build client then server (release)",
     category: "Build",
-    action: () => runNpmCommand("preview"),
+    action: async () => {
+      await runBun(["run", "build"], "client build");
+      await runCargo(["build", "--release"], "server release build");
+    },
   },
+
   lint: {
-    description: "Run ESLint",
+    description: "Lint client (ESLint), server (Clippy), and Python (ruff)",
     category: "Quality",
-    action: () => runNpmCommand("lint"),
+    action: async () => {
+      await runBun(["run", "lint"], "client lint");
+      await runCargo(["clippy", "--", "-D", "warnings"], "server lint");
+      await runVenv(["ruff", "check", "."], "python lint");
+    },
   },
-  "lint-fix": {
-    description: "Run ESLint with auto-fix (sorts imports)",
+  fmt: {
+    description:
+      "Format client (Prettier), server (cargo fmt), and Python (ruff)",
     category: "Quality",
-    action: () => runLintFix(),
+    action: async () => {
+      await runBun(["run", "format"], "client format");
+      await runCargo(["fmt"], "server fmt");
+      await runVenv(["ruff", "format", "."], "python format");
+    },
   },
-  typecheck: {
-    description: "Run TypeScript type checking",
+  "fmt-check": {
+    description: "Check formatting for client, server, and Python",
     category: "Quality",
-    action: () => runTypeCheck(),
-  },
-  format: {
-    description: "Format code with Prettier",
-    category: "Quality",
-    action: () => runNpmCommand("format"),
-  },
-  "format-check": {
-    description: "Check code formatting",
-    category: "Quality",
-    action: () => runNpmCommand("format:check"),
+    action: async () => {
+      await runBun(["run", "format:check"], "client format check");
+      await runCargo(["fmt", "--", "--check"], "server fmt-check");
+      await runVenv(["ruff", "format", "--check", "."], "python format check");
+    },
   },
   "pre-commit": {
-    description: "Run all CI checks (lint, typecheck, build)",
+    description: "Run all CI checks (fmt-check, lint, test) for all",
     category: "Quality",
     action: runPreCommit,
   },
-  test: {
-    description: "Run unit tests",
-    category: "Testing",
-    action: () => runNpmCommand("test:run"),
-  },
-  "test:watch": {
-    description: "Run tests in watch mode",
-    category: "Testing",
-    action: () => runNpmCommand("test"),
-  },
-  "test:ui": {
-    description: "Run tests with Vitest UI",
-    category: "Testing",
-    action: () => runNpmCommand("test:ui"),
-  },
-  "test:coverage": {
-    description: "Run tests with coverage",
-    category: "Testing",
-    action: () => runNpmCommand("test:coverage"),
-  },
-  "test:e2e": {
-    description: "Run Playwright E2E tests",
-    category: "Testing",
-    action: runE2ETests,
-  },
-  "test:all": {
-    description: "Run all tests (unit + E2E)",
-    category: "Testing",
-    action: runAllTests,
-  },
-  security: {
-    description: "Run security audit",
-    category: "Security",
-    action: runSecurityAudit,
-  },
-  knip: {
-    description: "Find dead code and dependencies",
-    category: "Quality",
-    action: () => runNpmCommand("knip"),
-  },
   validate: {
-    description: "Run all validations (pre-push)",
+    description: "Run all validations (pre-push) for all",
     category: "Quality",
     action: runValidate,
   },
-  lighthouse: {
-    description: "Run Lighthouse performance audit",
-    category: "Quality",
-    action: () => runLighthouse(),
-  },
-  "lighthouse:ci": {
-    description: "Run Lighthouse for CI (strict)",
-    category: "Quality",
-    action: () => runLighthouse(true),
-  },
-  clean: {
-    description: "Remove node_modules and dist",
-    category: "Maintenance",
-    action: cleanProject,
-  },
 };
 
-// Helper function to run commands in the app directory
 function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
-      cwd: APP_DIR,
       stdio: "inherit",
       shell: process.platform === "win32",
       ...options,
     });
 
     child.on("exit", (code) => {
-      if (code === 0) {
+      if (code === 0 || code === null) {
         resolve();
       } else {
         reject(new Error(`Command failed with exit code ${code}`));
@@ -168,259 +173,410 @@ function runCommand(command, args = [], options = {}) {
   });
 }
 
-// Helper function to run npm install
-async function runNpmInstall() {
-  try {
-    console.log(chalk.cyan("Running: bun install..."));
+async function runBun(args, label) {
+  if (label) {
+    console.log(chalk.cyan(`Running: ${label}...`));
     console.log();
-
-    await runCommand("bun", ["install"]);
-
-    console.log();
-    console.log(chalk.green("✓ Dependencies installed!"));
-  } catch (error) {
-    throw new Error("bun install failed");
   }
-}
-
-// Run ESLint with auto-fix
-async function runLintFix() {
-  try {
-    console.log(chalk.cyan("Running: eslint --fix..."));
-    console.log();
-
-    await runCommand("bunx", ["eslint", ".", "--fix"]);
-
-    console.log();
-    console.log(chalk.green("✓ Imports sorted and lint issues fixed!"));
-  } catch (error) {
-    throw new Error("ESLint fix failed");
-  }
-}
-
-// Helper function to run npm commands in the app directory
-function runNpmCommand(command) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      console.log(chalk.cyan(`Running: bun run ${command}...`));
-      console.log();
-
-      await runCommand("bun", ["run", command]);
-
-      console.log();
-      console.log(chalk.green("✓ Done!"));
-      resolve();
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-
-// Run TypeScript type checking
-async function runTypeCheck() {
-  try {
-    console.log(chalk.cyan("Running TypeScript type check..."));
-    console.log();
-
-    await runCommand("bunx", ["tsc", "--noEmit"]);
-
-    console.log();
-    console.log(chalk.green("✓ Type check passed!"));
-  } catch (error) {
-    throw new Error("Type check failed");
-  }
-}
-
-// Run pre-commit checks (matches CI workflow)
-async function runPreCommit() {
-  console.log(chalk.bold.cyan("Running pre-commit checks..."));
+  await runCommand("bun", args, { cwd: APP_DIR });
   console.log();
-
-  const checks = [
-    { name: "ESLint", fn: () => runNpmCommand("lint") },
-    { name: "TypeScript", fn: runTypeCheck },
-    { name: "Build", fn: () => runNpmCommand("build") },
-  ];
-
-  for (const check of checks) {
-    try {
-      console.log(chalk.bold.yellow(`\n▶ Running ${check.name}...`));
-      console.log(chalk.dim("─".repeat(50)));
-      await check.fn();
-    } catch (error) {
-      console.log();
-      console.log(chalk.bold.red(`✗ ${check.name} check failed!`));
-      console.log(chalk.red(`Error: ${error.message}`));
-      console.log();
-      console.log(chalk.dim("Fix the issues above and try again."));
-      process.exit(1);
-    }
-  }
-
-  console.log();
-  console.log(chalk.bold.green("═".repeat(50)));
-  console.log(chalk.bold.green("✓ All pre-commit checks passed!"));
-  console.log(chalk.bold.green("═".repeat(50)));
-  console.log();
-}
-
-async function cleanProject() {
-  console.log(chalk.cyan("Cleaning up..."));
-
-  const pathsToRemove = [join(APP_DIR, "node_modules"), join(APP_DIR, "dist")];
-
-  for (const path of pathsToRemove) {
-    if (existsSync(path)) {
-      console.log(chalk.dim(`  Removing ${path}...`));
-      await rm(path, { recursive: true, force: true });
-    }
-  }
-
   console.log(chalk.green("✓ Done!"));
 }
 
-// Setup project with dependencies and husky
-async function runSetup() {
-  console.log(chalk.bold.cyan("Setting up project..."));
-  console.log();
-
-  try {
-    console.log(chalk.yellow("▶ Installing dependencies..."));
-    await runCommand("bun", ["install"]);
-
-    console.log(chalk.yellow("▶ Setting up Husky git hooks..."));
-    await runCommand("bunx", ["husky"]);
-
+async function runCargo(args, label, options = {}) {
+  if (label) {
+    console.log(chalk.cyan(`Running: ${label}...`));
     console.log();
-    console.log(chalk.bold.green("✓ Project setup complete!"));
-  } catch (error) {
-    throw new Error("Setup failed: " + error.message);
   }
+  await runCommand("cargo", args, { cwd: SERVER_DIR, ...options });
+  console.log();
+  console.log(chalk.green("✓ Done!"));
 }
 
-// Run E2E tests with Playwright
-async function runE2ETests() {
-  try {
-    console.log(chalk.cyan("Running Playwright E2E tests..."));
-    console.log();
-
-    await runCommand("bunx", ["playwright", "test"], { cwd: __dirname });
-
-    console.log();
-    console.log(chalk.green("✓ E2E tests passed!"));
-  } catch (error) {
-    throw new Error("E2E tests failed");
-  }
+async function runDocker(args) {
+  const label = `docker compose ${args.join(" ")}`;
+  console.log(chalk.cyan(`Running: ${label}...`));
+  console.log();
+  await runCommand("docker", ["compose", "-f", COMPOSE_FILE, ...args], {
+    cwd: SERVER_DIR,
+  });
+  console.log();
+  console.log(chalk.green("✓ Done!"));
 }
 
-// Run all tests (unit + E2E)
-async function runAllTests() {
-  console.log(chalk.bold.cyan("Running all tests..."));
-  console.log();
-
-  const tests = [
-    { name: "Unit Tests", fn: () => runNpmCommand("test:run") },
-    { name: "E2E Tests", fn: runE2ETests },
-  ];
-
-  for (const test of tests) {
-    try {
-      console.log(chalk.bold.yellow(`\n▶ Running ${test.name}...`));
-      console.log(chalk.dim("─".repeat(50)));
-      await test.fn();
-    } catch (error) {
-      console.log();
-      console.log(chalk.bold.red(`✗ ${test.name} failed!`));
-      process.exit(1);
-    }
+async function runVenv(args, label) {
+  if (label) {
+    console.log(chalk.cyan(`Running: ${label}...`));
+    console.log();
   }
+  await runCommand(VENV_PYTHON, ["-m", ...args], { cwd: SCRIPTS_DIR });
+  console.log();
+  console.log(chalk.green("✓ Done!"));
+}
 
+/** Print a bold section header with a divider. */
+function step(label) {
+  console.log(chalk.bold.yellow(`\n▶ ${label}...`));
+  console.log(chalk.dim("─".repeat(50)));
+}
+
+/** Print a bordered success banner. */
+function done(message) {
   console.log();
   console.log(chalk.bold.green("═".repeat(50)));
-  console.log(chalk.bold.green("✓ All tests passed!"));
+  console.log(chalk.bold.green(`✓ ${message}`));
   console.log(chalk.bold.green("═".repeat(50)));
 }
 
-// Run security audit
-async function runSecurityAudit() {
-  console.log(chalk.bold.cyan("Running security audit..."));
-  console.log();
+/**
+ * Spawn multiple long-running processes concurrently, prefixing each line of
+ * output with a colored tag. Cleans up all children on SIGINT/SIGTERM or when
+ * any process exits.
+ *
+ * @param {{ command: string, args: string[], cwd: string, prefix: string, color: Function, env?: object }[]} procs
+ */
+async function runConcurrent(procs) {
+  const children = [];
+
+  const spawnOne = ({ command, args, cwd, prefix, color, env = {} }) => {
+    const child = spawn(command, args, {
+      cwd,
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: process.platform === "win32",
+      env: { ...process.env, ...env },
+    });
+
+    children.push(child);
+    const tag = color(`[${prefix}]`);
+
+    child.stdout.on("data", (data) => {
+      data
+        .toString()
+        .split("\n")
+        .filter((l) => l.trim())
+        .forEach((l) => console.log(`${tag} ${l}`));
+    });
+    child.stderr.on("data", (data) => {
+      data
+        .toString()
+        .split("\n")
+        .filter((l) => l.trim())
+        .forEach((l) => console.error(`${tag} ${l}`));
+    });
+
+    return new Promise((resolve, reject) => {
+      child.on("exit", (code) => {
+        if (code === 0 || code === null) resolve();
+        else reject(new Error(`${prefix} exited with code ${code}`));
+      });
+      child.on("error", reject);
+    });
+  };
+
+  const cleanup = () =>
+    children.forEach((c) => {
+      try {
+        c.kill("SIGTERM");
+      } catch {}
+    });
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
 
   try {
-    await runCommand("bun", ["audit"]);
-    console.log();
-    console.log(chalk.green("✓ Security audit passed!"));
-  } catch (error) {
-    console.log();
-    console.log(
-      chalk.yellow(
-        "⚠ Security vulnerabilities found. Run 'bun audit' for details.",
-      ),
-    );
+    await Promise.all(procs.map(spawnOne));
+  } finally {
+    cleanup();
   }
 }
 
-// Run all validations (pre-push)
-async function runValidate() {
-  console.log(chalk.bold.cyan("Running full validation..."));
-  console.log();
-
-  const checks = [
-    { name: "Format Check", fn: () => runNpmCommand("format:check") },
-    { name: "ESLint", fn: () => runNpmCommand("lint") },
-    { name: "TypeScript", fn: runTypeCheck },
-    { name: "Unit Tests", fn: () => runNpmCommand("test:run") },
-    { name: "Build", fn: () => runNpmCommand("build") },
-  ];
-
+/**
+ * Run a list of named checks sequentially, exiting on the first failure.
+ * @param {{ name: string, fn: () => Promise<void> }[]} checks
+ * @param {string} failHint  Extra line printed after a failure.
+ */
+async function runChecks(checks, failHint = "") {
   for (const check of checks) {
     try {
-      console.log(chalk.bold.yellow(`\n▶ Running ${check.name}...`));
-      console.log(chalk.dim("─".repeat(50)));
+      step(`Running ${check.name}`);
       await check.fn();
     } catch {
       console.log();
       console.log(chalk.bold.red(`✗ ${check.name} failed!`));
+      if (failHint) console.log(chalk.dim(failHint));
       process.exit(1);
     }
   }
-
-  console.log();
-  console.log(chalk.bold.green("═".repeat(50)));
-  console.log(chalk.bold.green("✓ All validations passed! Ready to push."));
-  console.log(chalk.bold.green("═".repeat(50)));
 }
 
-// Run Lighthouse performance audit
-async function runLighthouse(strict = false) {
-  try {
-    console.log(chalk.cyan("Running Lighthouse performance audit..."));
-    console.log();
+async function runDev() {
+  console.log(chalk.bold.cyan("Starting client and server concurrently..."));
+  console.log(chalk.dim("  client → http://localhost:5173  (Vite HMR)"));
+  console.log(chalk.dim("  server → http://localhost:8080  (cargo-watch)"));
+  console.log();
 
-    const url = "http://localhost:4173";
-    await runCommand("node", ["scripts/lighthouse-check.mjs", url]);
+  await runConcurrent([
+    {
+      command: "bun",
+      args: ["run", "dev"],
+      cwd: APP_DIR,
+      prefix: "client",
+      color: chalk.blue,
+    },
+    {
+      command: "cargo",
+      args: ["watch", "-x", "run"],
+      cwd: SERVER_DIR,
+      prefix: "server",
+      color: chalk.yellow,
+    },
+  ]);
+}
 
-    console.log();
-    console.log(chalk.green("✓ Lighthouse audit passed!"));
-  } catch (error) {
-    if (strict) {
-      throw new Error("Lighthouse audit failed - scores below threshold");
-    } else {
-      console.log();
-      console.log(
-        chalk.yellow(
-          "⚠ Lighthouse audit found issues, but continuing (use lighthouse:ci for strict mode)",
-        ),
+async function runProd() {
+  console.log(chalk.bold.cyan("Building and serving production..."));
+  console.log();
+
+  step("Building client (release)");
+  await runBun(["run", "build"], "client release build");
+
+  step("Building server (release)");
+  await runCargo(["build", "--release"], "server release build");
+
+  step("Serving");
+  console.log(
+    chalk.dim("  server → http://localhost:8080  (RUN_ENV=production)"),
+  );
+  console.log();
+
+  const serverBin = join(SERVER_DIR, "target", "release", "mdhd-server");
+  await runCommand(serverBin, [], {
+    cwd: SERVER_DIR,
+    env: { ...process.env, RUN_ENV: "production" },
+    stdio: "inherit",
+  });
+}
+
+async function runProdWatch() {
+  console.log(chalk.bold.cyan("Starting production watch mode..."));
+  console.log(chalk.dim("  client → rebuilds to dist/ on source changes"));
+  console.log(
+    chalk.dim(
+      "  server → http://localhost:8080  (RUN_ENV=production, cargo-watch)",
+    ),
+  );
+  console.log();
+
+  const serverBin = join(SERVER_DIR, "target", "release", "mdhd-server");
+  const cargoWatchCmd = `cargo build --release && ${serverBin}`;
+
+  await runConcurrent([
+    {
+      command: "bun",
+      args: ["run", "vite", "build", "--watch"],
+      cwd: APP_DIR,
+      prefix: "client",
+      color: chalk.blue,
+    },
+    {
+      command: "cargo",
+      args: ["watch", "-s", cargoWatchCmd],
+      cwd: SERVER_DIR,
+      prefix: "server",
+      color: chalk.yellow,
+      env: { RUN_ENV: "production" },
+    },
+  ]);
+}
+
+async function waitForPostgres(retries = 30) {
+  console.log(chalk.dim("Waiting for Postgres to be ready..."));
+  for (let i = 0; i < retries; i++) {
+    try {
+      await runCommand(
+        "docker",
+        [
+          "compose",
+          "-f",
+          COMPOSE_FILE,
+          "exec",
+          "-T",
+          "postgres",
+          "pg_isready",
+          "-U",
+          "postgres",
+        ],
+        { cwd: SERVER_DIR, stdio: "ignore" },
       );
+      console.log(chalk.green("✓ Postgres is ready!"));
+      return;
+    } catch {
+      await new Promise((r) => setTimeout(r, 1000));
     }
   }
+  throw new Error("Postgres did not become ready in time");
+}
+
+async function runPythonSetup() {
+  console.log(chalk.bold.cyan("Setting up Python virtual environment..."));
+  console.log();
+
+  const { existsSync } = await import("node:fs");
+  if (!existsSync(VENV_DIR)) {
+    console.log(chalk.yellow("▶ Creating virtual environment..."));
+    await runCommand("python3", ["-m", "venv", VENV_DIR], { cwd: SCRIPTS_DIR });
+    console.log(chalk.green("✓ venv created!"));
+  } else {
+    console.log(chalk.dim("Skipping venv creation — already exists."));
+  }
+
+  console.log(chalk.yellow("▶ Installing dependencies..."));
+  await runCommand(VENV_PIP, ["install", "-r", "requirements.txt"], {
+    cwd: SCRIPTS_DIR,
+  });
+  console.log();
+  console.log(chalk.green("✓ Python setup complete!"));
+}
+
+async function runPreContainerSetup() {
+  step("Installing app dependencies");
+  await runBun(["install"], "app dependencies");
+
+  step("Installing git hooks (lefthook)");
+  await runBun(["x", "lefthook", "install"], "lefthook install");
+
+  step("Setting up Python environment");
+  await runPythonSetup();
+
+  step("Setting up server environment");
+  const envPath = join(SERVER_DIR, ".env");
+  const envExamplePath = join(SERVER_DIR, ".env.example");
+  const { existsSync } = await import("node:fs");
+  if (existsSync(envPath)) {
+    console.log(chalk.dim("Skipping .env — already exists."));
+  } else {
+    console.log(chalk.dim("Creating .env from .env.example..."));
+    await runCommand("cp", [envExamplePath, envPath], { cwd: SERVER_DIR });
+  }
+}
+
+async function runContainers() {
+  console.log(chalk.bold.cyan("Starting containers and running migrations..."));
+  console.log();
+
+  step("Starting containers");
+  await runDocker(["up", "-d"]);
+
+  await waitForPostgres();
+
+  step("Running migrations");
+  console.log(chalk.cyan("Running: sqlx migrate run..."));
+  await runCommand("cargo", ["sqlx", "migrate", "run"], { cwd: SERVER_DIR });
+  console.log(chalk.green("✓ Migrations applied!"));
+
+  step("Building server");
+  await runCargo(["build"], "server build");
+
+  done("Containers ready! Run 'make dev' to start.");
+}
+
+async function runSetup() {
+  console.log(chalk.bold.cyan("Running first-time setup..."));
+  console.log();
+
+  await runPreContainerSetup();
+  await runContainers();
+
+  done("Setup complete! Run 'make dev' to start.");
+}
+
+async function runPreCommit() {
+  console.log(chalk.bold.cyan("Running pre-commit checks..."));
+  console.log();
+
+  await runChecks(
+    [
+      {
+        name: "client fmt-check",
+        fn: () => runBun(["run", "format:check"], "client format check"),
+      },
+      { name: "client lint", fn: () => runBun(["run", "lint"], "client lint") },
+      {
+        name: "server fmt-check",
+        fn: () => runCargo(["fmt", "--", "--check"], "server fmt-check"),
+      },
+      {
+        name: "server lint (Clippy)",
+        fn: () => runCargo(["clippy", "--", "-D", "warnings"], "server lint"),
+      },
+      { name: "server tests", fn: () => runCargo(["test"], "server test") },
+      {
+        name: "python fmt-check",
+        fn: () =>
+          runVenv(["ruff", "format", "--check", "."], "python format check"),
+      },
+      {
+        name: "python lint",
+        fn: () => runVenv(["ruff", "check", "."], "python lint"),
+      },
+    ],
+    "Fix the issues above and try again.",
+  );
+
+  done("All pre-commit checks passed!");
+  console.log();
+}
+
+async function runValidate() {
+  console.log(chalk.bold.cyan("Running full validation..."));
+  console.log();
+
+  await runChecks([
+    {
+      name: "client fmt-check",
+      fn: () => runBun(["run", "format:check"], "client format check"),
+    },
+    { name: "client lint", fn: () => runBun(["run", "lint"], "client lint") },
+    {
+      name: "client build",
+      fn: () => runBun(["run", "build"], "client build"),
+    },
+    {
+      name: "server fmt-check",
+      fn: () => runCargo(["fmt", "--", "--check"], "server fmt-check"),
+    },
+    {
+      name: "server lint (Clippy)",
+      fn: () => runCargo(["clippy", "--", "-D", "warnings"], "server lint"),
+    },
+    { name: "server tests", fn: () => runCargo(["test"], "server test") },
+    {
+      name: "python fmt-check",
+      fn: () =>
+        runVenv(["ruff", "format", "--check", "."], "python format check"),
+    },
+    {
+      name: "python lint",
+      fn: () => runVenv(["ruff", "check", "."], "python lint"),
+    },
+    {
+      name: "server release build",
+      fn: () => runCargo(["build", "--release"], "server release"),
+    },
+  ]);
+
+  done("All validations passed! Ready to push.");
 }
 
 function showHelp() {
   console.log();
+  console.log(chalk.bold("  MDHD — root task runner"));
+  console.log(
+    chalk.dim("  Run client/server-specific commands from their directories:"),
+  );
+  console.log(chalk.dim("    cd app && node makefile.mjs help"));
+  console.log(chalk.dim("    cd server && node makefile.mjs help"));
   console.log();
 
-  // Group tasks by category
   const categories = {};
   for (const [name, task] of Object.entries(tasks)) {
     if (!categories[task.category]) {
@@ -429,13 +585,12 @@ function showHelp() {
     categories[task.category].push({ name, ...task });
   }
 
-  // Display each category
   for (const [category, categoryTasks] of Object.entries(categories)) {
     console.log(chalk.bold.yellow(`  ${category}`));
     console.log(chalk.dim("  ─────────────────────────────────────"));
 
     for (const task of categoryTasks) {
-      const taskName = chalk.green(`make ${task.name.padEnd(15)}`);
+      const taskName = chalk.green(`make ${task.name.padEnd(22)}`);
       console.log(`  ${taskName} ${task.description}`);
     }
 
@@ -445,7 +600,6 @@ function showHelp() {
   return Promise.resolve();
 }
 
-// Main execution
 async function main() {
   const args = process.argv.slice(2);
   const taskName = args[0] || "help";
@@ -465,4 +619,4 @@ async function main() {
   }
 }
 
-main();
+await main();

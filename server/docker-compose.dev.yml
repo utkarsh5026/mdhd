@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mdhd
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # MinIO is treated as ephemeral dev storage.
+  # Integration tests (tests/s3_roundtrip.rs, run with S3_INTEGRATION_TESTS=1) create
+  # per-test `test-<uuid>` buckets and best-effort purge them at the end of each test.
+  # A panicking test leaks its bucket — reset with `docker compose -f
+  # docker-compose.dev.yml down -v` when the noise gets distracting.
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+  # Web UI for Postgres — browse tables, run queries
+  # http://localhost:8081 → System: PostgreSQL, Server: postgres, User/Pass: postgres/postgres, DB: mdhd
+  adminer:
+    image: adminer
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+
+  # Creates the default storage bucket on first run
+  minio-setup:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+        sleep 2;
+        mc alias set local http://minio:9000 minioadmin minioadmin;
+        mc mb --ignore-existing local/files;
+        echo 'Bucket ready';
+      "
+
+volumes:
+  pgdata:
+  miniodata:

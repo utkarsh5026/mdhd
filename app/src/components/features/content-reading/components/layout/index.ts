@@ -8,6 +8,7 @@ import NavigationControls from './navigation-controls';
 import ScrollContentReader from './scroll-content-reader';
 import SectionBreadcrumb from './section-breadcrumb';
 import SwipeHint from './swipe-hint';
+import TTSControls from './tts-controls';
 
 /**
  * Shared padding classes for the reading area.
@@ -27,4 +28,5 @@ export {
   ScrollContentReader,
   SectionBreadcrumb,
   SwipeHint,
+  TTSControls,
 };

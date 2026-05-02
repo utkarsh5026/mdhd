@@ -1,7 +1,7 @@
 import { Check, Monitor } from 'lucide-react';
 import React, { memo, useCallback, useMemo } from 'react';
 
-import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
+import { useTypography } from '@/components/features/settings/store/reading-settings-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { FontFamily } from '@/lib/font';
 import {
@@ -19,8 +19,8 @@ import { SettingsHeader } from './settings-commons';
 const sampleText = 'The quick brown fox jumps over the lazy dog.';
 
 const AppFontSelector: React.FC = () => {
-  const { settings, setAppFontFamily } = useReadingSettings();
-  const { appFontFamily } = settings;
+  const { typography, setAppFontFamily } = useTypography();
+  const { appFontFamily } = typography;
 
   const handleSelectFont = useCallback(
     (font: AppFontFamily) => {

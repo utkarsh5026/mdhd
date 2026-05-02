@@ -8,6 +8,7 @@ import {
 } from '@/components/features/file-explorer';
 import { useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
+import { useAuthUser } from '@/services/auth';
 import type { FileTreeNode } from '@/services/indexeddb';
 
 interface WelcomeScreenProps {
@@ -33,6 +34,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
 
+  const user = useAuthUser();
   const fileTree = useFileTree();
   const isInitialized = useIsFileStoreInitialized();
   const { initialize } = useFileStoreActions();
@@ -44,16 +46,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
   useEffect(() => {
     if (showPasteArea) textareaRef.current?.focus();
   }, [showPasteArea]);
-
-  useEffect(() => {
-    const handleGlobalPaste = (e: ClipboardEvent) => {
-      if (showPasteArea) return;
-      const pasted = e.clipboardData?.getData('text');
-      if (pasted?.trim()) onStartReading(pasted);
-    };
-    window.addEventListener('paste', handleGlobalPaste);
-    return () => window.removeEventListener('paste', handleGlobalPaste);
-  }, [showPasteArea, onStartReading]);
 
   const readAndStart = useCallback(
     async (files: File[]) => {
@@ -129,11 +121,12 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
     return () => clearInterval(id);
   }, []);
 
+  const firstName = user?.name?.split(/\s/)[0];
+
   const greeting = (() => {
     const h = now.getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
+    const base = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    return firstName ? `${base}, ${firstName}` : base;
   })();
 
   const timeString = now.toLocaleTimeString(undefined, {
@@ -151,7 +144,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
   const storedFiles = flattenFiles(fileTree);
 
   return (
-    <div
+    <section
+      aria-label="Markdown file drop zone"
       className={cn(
         'h-full overflow-auto transition-colors duration-150',
         isDragging && 'bg-primary/5'
@@ -168,13 +162,25 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
         )}
       >
         {/* Header */}
-        <div className="space-y-1">
-          <p className="text-xs font-semibold tracking-widest uppercase text-muted-foreground/40 select-none">
-            mdhd
-          </p>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            {greeting}
-          </h1>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            {user?.avatar_url && (
+              <img
+                src={user.avatar_url}
+                alt=""
+                referrerPolicy="no-referrer"
+                className="h-10 w-10 rounded-full ring-2 ring-border/30"
+              />
+            )}
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold tracking-widest uppercase text-muted-foreground/40 select-none">
+                mdhd
+              </p>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                {greeting}
+              </h1>
+            </div>
+          </div>
           <p className="text-sm tabular-nums text-muted-foreground/60">
             {timeString}
             <span className="block mt-0.5 sm:mt-0 sm:inline sm:ml-2 text-muted-foreground/40">
@@ -198,42 +204,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
             Start
           </p>
 
-          {!showPasteArea ? (
-            <div className="flex flex-col gap-2.5">
-              {[
-                {
-                  icon: Upload,
-                  label: 'Open file',
-                  description: 'Open a .md file',
-                  onClick: () => fileInputRef.current?.click(),
-                },
-                {
-                  icon: FileText,
-                  label: 'Paste text',
-                  description: 'Type or paste markdown',
-                  onClick: () => openPasteArea(),
-                },
-              ].map(({ icon: Icon, label, description, onClick }) => (
-                <button
-                  key={label}
-                  onClick={onClick}
-                  className={cn(
-                    'group flex items-start gap-3 rounded-2xl border border-border/40 p-3 sm:p-4 text-left',
-                    'bg-card/40 hover:bg-card/80 hover:border-border/70',
-                    'transition-all duration-150 cursor-pointer active:scale-[0.98]'
-                  )}
-                >
-                  <div className="mt-0.5 rounded-2xl bg-muted/60 p-2 group-hover:bg-primary/10 transition-colors">
-                    <Icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{label}</p>
-                    <p className="text-xs text-muted-foreground/60 mt-0.5">{description}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
+          {showPasteArea ? (
             <div className="space-y-2.5">
               <textarea
                 ref={textareaRef}
@@ -271,11 +242,47 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
                 </button>
               </div>
             </div>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {[
+                {
+                  icon: Upload,
+                  label: 'Open file',
+                  description: 'Open a .md file',
+                  onClick: () => fileInputRef.current?.click(),
+                },
+                {
+                  icon: FileText,
+                  label: 'Paste text',
+                  description: 'Type or paste markdown',
+                  onClick: () => openPasteArea(),
+                },
+              ].map(({ icon: Icon, label, description, onClick }) => (
+                <button
+                  key={label}
+                  onClick={onClick}
+                  className={cn(
+                    'group flex items-start gap-3 rounded-2xl border border-border/40 p-3 sm:p-4 text-left',
+                    'bg-card/40 hover:bg-card/80 hover:border-border/70',
+                    'transition-all duration-150 cursor-pointer active:scale-[0.98]'
+                  )}
+                >
+                  <div className="mt-0.5 rounded-2xl bg-muted/60 p-2 group-hover:bg-primary/10 transition-colors">
+                    <Icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{label}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-0.5">{description}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           )}
 
           <p className="hidden sm:block text-[11px] text-muted-foreground/35 pt-1">
             Or drag a <span className="font-mono">.md</span> file anywhere · Press{' '}
-            <kbd className="font-mono">Ctrl+V</kbd> to paste instantly
+            <kbd className="font-mono">Ctrl+V</kbd> to paste instantly ·{' '}
+            <kbd className="font-mono">Ctrl+Shift+V</kbd> anytime to open clipboard as a new tab
           </p>
         </div>
 
@@ -285,7 +292,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">
               Library
             </p>
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 max-h-64 overflow-y-auto">
               {storedFiles.map((node) => (
                 <button
                   key={node.id}
@@ -317,7 +324,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
         className="sr-only"
         onChange={handleFileSelect}
       />
-    </div>
+    </section>
   );
 };
 

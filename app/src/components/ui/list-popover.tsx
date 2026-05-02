@@ -13,10 +13,12 @@ function ListPopoverTrigger(props: React.ComponentProps<typeof PopoverPrimitive.
 
 interface ListPopoverContentProps extends React.ComponentProps<typeof PopoverPrimitive.Content> {
   title?: string;
+  footer?: React.ReactNode;
 }
 
 function ListPopoverContent({
   title,
+  footer,
   children,
   className,
   align = 'start',
@@ -45,6 +47,7 @@ function ListPopoverContent({
           </div>
         )}
         <div className="max-h-64 overflow-y-auto py-1 scrollbar-none">{children}</div>
+        {footer}
       </PopoverPrimitive.Content>
     </PopoverPrimitive.Portal>
   );

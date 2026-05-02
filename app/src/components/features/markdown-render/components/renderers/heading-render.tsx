@@ -24,7 +24,7 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({
   className: externalClassName,
   ...props
 }) => {
-  const textSizeScale = useReadingSettingsStore((s) => s.settings.textSizeScale);
+  const textSizeScale = useReadingSettingsStore((s) => s.typography.textSizeScale);
   const headingColorStyle = useMarkdownStyleStore((s) => s.settings.headingColorStyle);
 
   const sizeKey = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5';

@@ -23,7 +23,7 @@ const InlineCodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ ch
   return (
     <code
       className={cn(
-        'px-1.5 py-0.5 wrap-break-word text-[0.9em] transition-all duration-200',
+        'px-1.5 py-0.5 wrap-break-word whitespace-pre-wrap text-[0.9em] transition-all duration-200',
         STYLE_CLASSES[inlineCodeStyle],
         SHAPE_CLASSES[inlineCodeShape]
       )}

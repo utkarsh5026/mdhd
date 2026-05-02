@@ -1,0 +1,32 @@
+pre-commit:
+  parallel: true
+  commands:
+    frontend:
+      root: "app/"
+      run: bunx lint-staged
+
+    rust-fmt-check:
+      glob: "**/*.rs"
+      root: "server/"
+      run: cargo fmt -- --check
+
+    rust-clippy:
+      glob: "**/*.rs"
+      root: "server/"
+      run: cargo clippy -- -D warnings
+
+    python-format:
+      glob: "**/*.py"
+      root: "server/"
+      run: scripts/.venv/bin/ruff format scripts/ && git add scripts/
+
+    python-lint:
+      glob: "**/*.py"
+      root: "server/"
+      run: scripts/.venv/bin/ruff check --fix scripts/ && git add scripts/
+
+commit-msg:
+  commands:
+    commitlint:
+      root: "app/"
+      run: bunx commitlint --edit {1}

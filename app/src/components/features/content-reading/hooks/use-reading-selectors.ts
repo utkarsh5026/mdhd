@@ -2,7 +2,8 @@ import { use, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
-import type { TabReadingState, TabsState } from '@/components/features/tabs/store/types';
+import type { Bookmark, TabReadingState, TabsState } from '@/components/features/tabs/store/types';
+import { createBookmark, deleteBookmark } from '@/services/bookmarks';
 import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 
 import ReadingTabContext from '../context/reading-tab-context';
@@ -211,6 +212,99 @@ export function useReadingActions() {
  * @param tabId - The tab to operate on.
  * @returns Core reading-state mutation actions.
  */
+/**
+ * Subscribes to the bookmarks array for the current tab.
+ *
+ * @hook
+ * @returns Sorted array of `Bookmark` objects, or `[]` if none.
+ */
+export function useReadingBookmarks(): Bookmark[] {
+  const tabId = useReadingTabId();
+  return useTabsStore((s) => findReadingState(s, tabId)?.bookmarks ?? []);
+}
+
+/**
+ * Returns `true` when the current section has a saved bookmark.
+ *
+ * @hook
+ */
+export function useIsCurrentSectionBookmarked(): boolean {
+  const tabId = useReadingTabId();
+  return useTabsStore((s) => {
+    const rs = findReadingState(s, tabId);
+    if (!rs) return false;
+    return (rs.bookmarks ?? []).some((b) => b.sectionIndex === rs.currentIndex);
+  });
+}
+
+/**
+ * Returns a `toggleBookmark` callback that adds or removes a bookmark on the
+ * current section with optimistic updates and server sync for file-backed tabs.
+ *
+ * @hook
+ */
+export function useBookmarkActions() {
+  const tabId = useReadingTabId();
+  const tabs = useTabsStore((s) => s.tabs);
+  const addBookmark = useTabsStore((s) => s.addBookmark);
+  const removeBookmark = useTabsStore((s) => s.removeBookmark);
+
+  const toggleBookmark = useCallback(async () => {
+    const tab = tabs.find((t) => t.id === tabId);
+    if (!tab) return;
+
+    const rs = tab.readingState;
+    const sectionIndex = rs.currentIndex;
+    const existing = (rs.bookmarks ?? []).find((b) => b.sectionIndex === sectionIndex);
+
+    const toggleDelete = (bookmark: Bookmark) => {
+      removeBookmark(tabId, sectionIndex);
+      if (tab.sourceFileId && bookmark.serverId) {
+        deleteBookmark(tab.sourceFileId, bookmark.serverId).catch(() => {
+          addBookmark(tabId, bookmark);
+        });
+      }
+      return;
+    };
+
+    const toggleAdd = (bookmark: Bookmark) => {
+      addBookmark(tabId, bookmark);
+      if (tab.sourceFileId) {
+        createBookmark(tab.sourceFileId, sectionIndex, name)
+          .then((serverBm) => {
+            addBookmark(tabId, { ...bookmark, serverId: serverBm.id });
+          })
+          .catch((err) => {
+            console.error('[bookmarks] Failed to create bookmark on server:', err);
+            removeBookmark(tabId, sectionIndex);
+          });
+      }
+    };
+
+    if (existing) {
+      return toggleDelete(existing);
+    }
+
+    const section = rs.sections[sectionIndex];
+    const name = section?.title || `Section ${sectionIndex + 1}`;
+    const bookmark = {
+      localId: crypto.randomUUID(),
+      serverId: null,
+      sectionIndex,
+      name,
+      createdAt: Date.now(),
+    };
+    toggleAdd(bookmark);
+  }, [tabId, addBookmark, removeBookmark, tabs]);
+
+  const isPasteTab = useTabsStore((s) => {
+    const tab = s.tabs.find((t) => t.id === tabId);
+    return tab?.sourceType === 'paste';
+  });
+
+  return { toggleBookmark, isPasteTab };
+}
+
 export function useReadingActionsById(tabId: string) {
   const updateTabReadingState = useTabsStore((s) => s.updateTabReadingState);
 

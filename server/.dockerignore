@@ -1,0 +1,13 @@
+target/
+.env
+.env.*
+!.env.example
+*.md
+docker-compose.dev.yml
+Dockerfile
+.dockerignore
+scripts/
+__pycache__/
+*.pyc
+.vscode/
+.idea/

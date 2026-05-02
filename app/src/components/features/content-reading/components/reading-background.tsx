@@ -18,8 +18,8 @@ function fitToCSS(fit: string): string {
 }
 
 const ReadingBackground: React.FC = memo(() => {
-  const background = useReadingSettingsStore((s) => s.settings.background);
-  const backgroundImageId = useReadingSettingsStore((s) => s.settings.backgroundImageId);
+  const background = useReadingSettingsStore((s) => s.background);
+  const backgroundImageId = useReadingSettingsStore((s) => s.backgroundImageId);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
 
   useEffect(() => {

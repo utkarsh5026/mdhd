@@ -1,7 +1,9 @@
 import { ChevronDown, ChevronLeft, ChevronRight, Maximize, Plus, X } from 'lucide-react';
 import React, { memo } from 'react';
 
+import { useTabClose } from '@/components/features/tabs/hooks/use-tab-close';
 import { Button } from '@/components/ui/button';
+import Icon from '@/components/ui/icon';
 import {
   ListPopover,
   ListPopoverContent,
@@ -13,7 +15,6 @@ import { useToggle } from '@/hooks';
 import { type TabDisplayInfo, useTabDisplayMap } from '../../hooks/use-tab-display-map';
 import { type Tab, useActiveTabId, useTabs, useTabsActions } from '../../store';
 import type { MobileNavProps } from './tab-bar';
-import TabManagementMenu from './tab-management-menu';
 
 interface MobileTabDropdownProps {
   tabs: Tab[];
@@ -34,12 +35,25 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
         <ListPopoverTrigger asChild>
           <button className="flex items-center gap-1 px-2.5 py-1.5 min-w-0 max-w-48 text-xs font-medium text-foreground hover:bg-accent/50 transition-colors">
             <span className="truncate">{activeTitle}</span>
-            <ChevronDown className="w-3 h-3 shrink-0 text-muted-foreground" />
+            <Icon icon={ChevronDown} size="xs" className="shrink-0 text-muted-foreground" />
           </button>
         </ListPopoverTrigger>
         <ListPopoverContent
-          title={`${tabs.length} tab${tabs.length !== 1 ? 's' : ''}`}
+          title={`${tabs.length} tab${tabs.length === 1 ? '' : 's'}`}
           align="start"
+          footer={
+            <div className="border-t border-border/40">
+              <ListPopoverItem
+                onClick={() => {
+                  onNewTab();
+                  close();
+                }}
+                icon={<Icon icon={Plus} size="xs" />}
+              >
+                New tab
+              </ListPopoverItem>
+            </div>
+          }
         >
           {tabs.map((tab) => {
             const displayInfo = tabDisplayMap.get(tab.id);
@@ -60,7 +74,7 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
                     className="p-1.5 rounded hover:bg-destructive/20 hover:text-destructive transition-colors"
                     aria-label={`Close ${tab.title}`}
                   >
-                    <X className="w-3 h-3" />
+                    <Icon icon={X} size="xs" />
                   </button>
                 }
               >
@@ -75,17 +89,6 @@ const MobileTabDropdown: React.FC<MobileTabDropdownProps> = memo(
               </ListPopoverItem>
             );
           })}
-          <div className="border-t border-border/40">
-            <ListPopoverItem
-              onClick={() => {
-                onNewTab();
-                close();
-              }}
-              icon={<Plus className="w-3 h-3" />}
-            >
-              New tab
-            </ListPopoverItem>
-          </div>
         </ListPopoverContent>
       </ListPopover>
     );
@@ -101,7 +104,8 @@ interface MobileTabBarProps {
 const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
   const tabs = useTabs();
   const activeTabId = useActiveTabId();
-  const { setActiveTab, closeTab, createUntitledTab } = useTabsActions();
+  const { setActiveTab, createUntitledTab } = useTabsActions();
+  const { closeTab } = useTabClose();
   const tabDisplayMap = useTabDisplayMap(tabs);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
@@ -122,7 +126,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
 
       <div className="flex-1" />
 
-      {mobileNav && mobileNav.readingMode === 'card' && mobileNav.total > 0 && (
+      {mobileNav?.readingMode === 'card' && mobileNav.total > 0 && (
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -132,7 +136,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
             disabled={mobileNav.currentIndex === 0}
             aria-label="Previous section"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <Icon icon={ChevronLeft} size="sm" />
           </Button>
           <span className="text-xs text-muted-foreground tabular-nums min-w-10 text-center">
             {mobileNav.currentIndex + 1}/{mobileNav.total}
@@ -145,7 +149,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
             disabled={mobileNav.currentIndex === mobileNav.total - 1}
             aria-label="Next section"
           >
-            <ChevronRight className="w-3.5 h-3.5" />
+            <Icon icon={ChevronRight} size="sm" />
           </Button>
         </div>
       )}
@@ -158,10 +162,8 @@ const MobileTabBar: React.FC<MobileTabBarProps> = memo(({ mobileNav }) => {
         disabled={!mobileNav}
         aria-label="Enter fullscreen"
       >
-        <Maximize className="w-3.5 h-3.5" />
+        <Icon icon={Maximize} size="sm" />
       </Button>
-
-      <TabManagementMenu />
     </div>
   );
 });

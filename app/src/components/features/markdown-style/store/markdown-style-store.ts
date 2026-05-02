@@ -2,7 +2,7 @@ import type { StoreApi } from 'zustand';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 
-import { tryCatch } from '@/utils/functions/error';
+import { tryCatch } from '@/utils/error';
 
 const STORAGE_KEY = 'markdown-style';
 

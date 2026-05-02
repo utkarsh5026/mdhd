@@ -8,6 +8,10 @@ import compression from 'vite-plugin-compression';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 import { VitePWA } from 'vite-plugin-pwa';
 import svgr from 'vite-plugin-svgr';
+/// <reference types="vitest" />
+
+const API_PROXY_TARGET = process.env.VITE_API_URL || 'http://localhost:8080';
+const API_ROUTES = ['/api', '/auth'];
 
 export default defineConfig(({ mode }) => {
   const isDev = mode === 'development';
@@ -28,19 +32,22 @@ export default defineConfig(({ mode }) => {
         typescript: true,
       }),
 
-      compression({ algorithm: 'gzip' }),
-      compression({
-        algorithm: 'brotliCompress',
-        ext: '.br',
-        threshold: 10240,
-      }),
-
-      ViteImageOptimizer({
-        png: { quality: 80 },
-        jpeg: { quality: 80 },
-        webp: { quality: 80 },
-        avif: { quality: 70 },
-      }),
+      ...(!isDev
+        ? [
+            compression({ algorithm: 'gzip' }),
+            compression({
+              algorithm: 'brotliCompress',
+              ext: '.br',
+              threshold: 10240,
+            }),
+            ViteImageOptimizer({
+              png: { quality: 80 },
+              jpeg: { quality: 80 },
+              webp: { quality: 80 },
+              avif: { quality: 70 },
+            }),
+          ]
+        : []),
 
       VitePWA({
         registerType: 'autoUpdate',
@@ -130,13 +137,21 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    test: {
+      environment: 'jsdom',
+      globals: true,
+    },
     server: {
       port: 5173,
+      host: true,
       open: true,
       watch: {
         usePolling: true,
         interval: 100,
       },
+      proxy: Object.fromEntries(
+        API_ROUTES.map((route) => [route, { target: API_PROXY_TARGET, changeOrigin: true }])
+      ),
     },
   };
 });

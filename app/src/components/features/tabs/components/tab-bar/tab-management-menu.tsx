@@ -1,48 +1,31 @@
-import { MoreHorizontal } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import React, { memo, useMemo } from 'react';
 
+import { useTabClose } from '@/components/features/tabs/hooks/use-tab-close';
 import { Button } from '@/components/ui/button';
+import Icon from '@/components/ui/icon';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  ListPopover,
+  ListPopoverContent,
+  ListPopoverGroup,
+  ListPopoverGroupLabel,
+  ListPopoverItem,
+  ListPopoverTrigger,
+} from '@/components/ui/list-popover';
 import { useToggle } from '@/hooks';
 
 import {
   useActiveTabId,
   useHeaderVisible,
   useStatusBarVisible,
-  useTabClose,
   useTabs,
   useTabsActions,
 } from '../../store';
 
-interface MenuItemProps {
-  label: string;
-  count?: number;
-  disabled?: boolean;
-  onClick: () => void;
-}
-
-const MenuItem: React.FC<MenuItemProps> = ({ label, count, disabled, onClick }) => (
-  <DropdownMenuItem
-    onClick={onClick}
-    disabled={disabled}
-    className="cursor-pointer justify-between px-3 py-1.5 text-xs text-muted-foreground transition-colors duration-100 focus:text-foreground"
-  >
-    {label}
-    {count !== undefined && count > 0 && (
-      <span className="text-[10px] tabular-nums text-muted-foreground/50">{count}</span>
-    )}
-  </DropdownMenuItem>
-);
+const CountBadge: React.FC<{ count?: number }> = ({ count }) =>
+  count != null && count > 0 ? (
+    <span className="text-[10px] tabular-nums text-muted-foreground/50">{count}</span>
+  ) : null;
 
 const TabManagementMenu: React.FC = memo(() => {
   const tabs = useTabs();
@@ -53,8 +36,7 @@ const TabManagementMenu: React.FC = memo(() => {
   const {
     closeAllTabs,
     closeOtherTabs,
-    closeTabsToTheRight,
-    closeTabsToTheLeft,
+    closeTabsInDirection,
     closeTabsByPathPrefix,
     closeTabsBySourceType,
   } = useTabClose();
@@ -105,115 +87,108 @@ const TabManagementMenu: React.FC = memo(() => {
   }, [tabs, activeTabId, isOpen]);
 
   return (
-    <DropdownMenu onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
+    <ListPopover open={isOpen} onOpenChange={setIsOpen}>
+      <ListPopoverTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 shrink-0 rounded-none border-l border-border/10 transition-all duration-150 hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary"
+          className="h-9 w-9 shrink-0 rounded-none border-l border-border/10 transition-all duration-150 hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary"
           aria-label="Tab management menu"
           disabled={tabs.length === 0}
         >
-          <MoreHorizontal className="h-3.5 w-3.5" />
+          <Icon icon={MoreVertical} size="sm" />
         </Button>
-      </DropdownMenuTrigger>
+      </ListPopoverTrigger>
 
-      <DropdownMenuContent
-        align="end"
-        className="w-52 rounded-xl border-border/30 bg-background/95 p-1 shadow-xl backdrop-blur-xl"
-      >
+      <ListPopoverContent align="end">
         {/* View */}
-        <MenuItem
-          label={isHeaderVisible ? 'Hide header' : 'Show header'}
-          onClick={toggleHeaderVisibility}
-        />
-        <MenuItem
-          label={isStatusBarVisible ? 'Hide status bar' : 'Show status bar'}
-          onClick={toggleStatusBarVisibility}
-        />
-
-        <DropdownMenuSeparator className="my-1 bg-border/30" />
+        <ListPopoverGroup>
+          <ListPopoverItem onClick={toggleHeaderVisibility}>
+            {isHeaderVisible ? 'Hide header' : 'Show header'}
+          </ListPopoverItem>
+          <ListPopoverItem onClick={toggleStatusBarVisibility}>
+            {isStatusBarVisible ? 'Hide status bar' : 'Show status bar'}
+          </ListPopoverItem>
+        </ListPopoverGroup>
 
         {/* Close relative */}
-        <DropdownMenuLabel className="px-3 pb-0.5 pt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground/40">
-          Close
-        </DropdownMenuLabel>
-        <MenuItem
-          label="All tabs"
-          count={tabs.length}
-          disabled={tabs.length === 0}
-          onClick={closeAllTabs}
-        />
-        <MenuItem
-          label="Other tabs"
-          count={tabs.length > 1 ? tabs.length - 1 : undefined}
-          disabled={tabs.length <= 1 || !activeTabId}
-          onClick={() => {
-            if (activeTabId) closeOtherTabs(activeTabId);
-          }}
-        />
-        <MenuItem
-          label="Tabs to the right"
-          count={positionCounts.right || undefined}
-          disabled={positionCounts.right === 0 || !activeTabId}
-          onClick={() => {
-            if (activeTabId) closeTabsToTheRight(activeTabId);
-          }}
-        />
-        <MenuItem
-          label="Tabs to the left"
-          count={positionCounts.left || undefined}
-          disabled={positionCounts.left === 0 || !activeTabId}
-          onClick={() => {
-            if (activeTabId) closeTabsToTheLeft(activeTabId);
-          }}
-        />
-
-        <DropdownMenuSeparator className="my-1 bg-border/30" />
+        <ListPopoverGroup className="border-t border-border/30">
+          <ListPopoverGroupLabel>Close</ListPopoverGroupLabel>
+          <ListPopoverItem
+            disabled={tabs.length === 0}
+            onClick={closeAllTabs}
+            suffix={<CountBadge count={tabs.length} />}
+          >
+            All tabs
+          </ListPopoverItem>
+          <ListPopoverItem
+            disabled={tabs.length <= 1 || !activeTabId}
+            onClick={() => {
+              if (activeTabId) closeOtherTabs(activeTabId);
+            }}
+            suffix={<CountBadge count={tabs.length > 1 ? tabs.length - 1 : undefined} />}
+          >
+            Other tabs
+          </ListPopoverItem>
+          <ListPopoverItem
+            disabled={positionCounts.right === 0 || !activeTabId}
+            onClick={() => {
+              if (activeTabId) closeTabsInDirection('right', activeTabId);
+            }}
+            suffix={<CountBadge count={positionCounts.right || undefined} />}
+          >
+            Tabs to the right
+          </ListPopoverItem>
+          <ListPopoverItem
+            disabled={positionCounts.left === 0 || !activeTabId}
+            onClick={() => {
+              if (activeTabId) closeTabsInDirection('left', activeTabId);
+            }}
+            suffix={<CountBadge count={positionCounts.left || undefined} />}
+          >
+            Tabs to the left
+          </ListPopoverItem>
+        </ListPopoverGroup>
 
         {/* Close by type */}
-        <DropdownMenuLabel className="px-3 pb-0.5 pt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground/40">
-          By type
-        </DropdownMenuLabel>
-        <MenuItem
-          label="File tabs"
-          count={tabCounts.file || undefined}
-          disabled={tabCounts.file === 0}
-          onClick={() => closeTabsBySourceType('file')}
-        />
-        <MenuItem
-          label="Pasted tabs"
-          count={tabCounts.paste || undefined}
-          disabled={tabCounts.paste === 0}
-          onClick={() => closeTabsBySourceType('paste')}
-        />
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger
-            disabled={uniqueFolders.length === 0}
-            className="cursor-pointer px-3 py-1.5 text-xs text-muted-foreground transition-colors duration-100 focus:text-foreground"
+        <ListPopoverGroup className="border-t border-border/30">
+          <ListPopoverGroupLabel>By type</ListPopoverGroupLabel>
+          <ListPopoverItem
+            disabled={tabCounts.file === 0}
+            onClick={() => closeTabsBySourceType('file')}
+            suffix={<CountBadge count={tabCounts.file || undefined} />}
           >
-            From folder
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-48 rounded-lg border-border/30 bg-background/95 p-1 shadow-lg backdrop-blur-xl">
+            File tabs
+          </ListPopoverItem>
+          <ListPopoverItem
+            disabled={tabCounts.paste === 0}
+            onClick={() => closeTabsBySourceType('paste')}
+            suffix={<CountBadge count={tabCounts.paste || undefined} />}
+          >
+            Pasted tabs
+          </ListPopoverItem>
+        </ListPopoverGroup>
+
+        {/* Close by folder */}
+        {uniqueFolders.length > 0 && (
+          <ListPopoverGroup className="border-t border-border/30">
+            <ListPopoverGroupLabel>From folder</ListPopoverGroupLabel>
             {uniqueFolders.map(([folderPath, folderName]) => {
               const tabCount = tabs.filter((t) => t.sourcePath?.startsWith(folderPath)).length;
               return (
-                <DropdownMenuItem
+                <ListPopoverItem
                   key={folderPath}
                   onClick={() => closeTabsByPathPrefix(folderPath)}
-                  className="cursor-pointer justify-between px-3 py-1.5 text-xs text-muted-foreground transition-colors duration-100 focus:text-foreground"
+                  suffix={<CountBadge count={tabCount} />}
                 >
-                  <span className="truncate">{folderName}</span>
-                  <span className="ml-2 text-[10px] tabular-nums text-muted-foreground/50">
-                    {tabCount}
-                  </span>
-                </DropdownMenuItem>
+                  {folderName}
+                </ListPopoverItem>
               );
             })}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          </ListPopoverGroup>
+        )}
+      </ListPopoverContent>
+    </ListPopover>
   );
 });
 

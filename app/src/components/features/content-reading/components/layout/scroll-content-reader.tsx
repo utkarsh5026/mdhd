@@ -2,8 +2,9 @@ import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 're
 
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
 import {
-  useReadingSettings,
+  useReadingDisplay,
   useReadingSettingsStore,
+  useTypography,
 } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
@@ -29,11 +30,13 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
 }) => {
   const sections = useReadingSections();
   const { metadata } = useReadingContent();
-  const { settings } = useReadingSettings();
-  const fontFamily = fontFamilyMap[settings.fontFamily];
-  const { fontSize, lineHeight, contentWidth } = settings;
+  const { typography } = useTypography();
+  const { settings } = useReadingDisplay();
+  const fontFamily = fontFamilyMap[typography.fontFamily];
+  const { fontSize, lineHeight } = typography;
+  const { contentWidth } = settings;
   const hasCustomBackground =
-    useReadingSettingsStore((s) => s.settings.background.backgroundType) !== 'theme';
+    useReadingSettingsStore((s) => s.background.backgroundType) !== 'theme';
   const sectionRefs = useRef<Map<number, HTMLElement>>(new Map());
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -154,6 +157,13 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
               </div>
             </div>
           ))}
+          {sections.length > 0 && (
+            <div className="flex items-center justify-center gap-3 pt-8 pb-4 text-muted-foreground/60">
+              <span className="h-px w-8 bg-muted-foreground/20" />
+              <span className="text-sm italic tracking-wide">The End</span>
+              <span className="h-px w-8 bg-muted-foreground/20" />
+            </div>
+          )}
         </div>
       </div>
     </div>

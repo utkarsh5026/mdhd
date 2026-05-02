@@ -1,5 +1,6 @@
 import { useTheme } from '../components/shared/theme/hooks/use-theme';
 import { useAsync } from './use-async';
+import { useAuthRedirect } from './use-auth-redirect';
 import { useCopyToClipboard } from './use-copy-to-clipboard';
 import { useIsTouch } from './use-is-touch';
 import { useKeyPress } from './use-key-press';
@@ -11,6 +12,7 @@ import { useToggle } from './use-toggle';
 
 export {
   useAsync,
+  useAuthRedirect,
   useCopyToClipboard,
   useIsTouch,
   useKeyPress,

@@ -1,5 +1,5 @@
 {
-  // Format & Lint on save
+  // ─── Format & Lint on save ───
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {
@@ -7,63 +7,154 @@
     "source.organizeImports": "never"
   },
 
-  // TypeScript
+  // ─── Language-specific overrides ───
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.tabSize": 4,
+    "editor.rulers": [100],
+    "editor.inlayHints.enabled": "onUnlessPressed"
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
+  },
+  "[sql]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // ─── TypeScript ───
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "typescript.suggest.autoImports": true,
   "typescript.tsdk": "app/node_modules/typescript/lib",
 
-  // File nesting (cleaner explorer)
+  // ─── Rust Analyzer ───
+  "rust-analyzer.linkedProjects": ["server/Cargo.toml"],
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.check.extraArgs": ["--", "-W", "clippy::pedantic"],
+  "rust-analyzer.cargo.features": "all",
+  "rust-analyzer.diagnostics.experimental.enable": true,
+  "rust-analyzer.procMacro.enable": true,
+
+  // ─── File nesting (cleaner explorer) ───
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
     "package.json": "package-lock.json, .prettierrc, .eslintrc*, eslint.config.*, tsconfig*.json, vite.config.*, vitest.config.*, commitlint.config.*",
-    "tsconfig.json": "tsconfig.*.json"
+    "tsconfig.json": "tsconfig.*.json",
+    "Cargo.toml": "Cargo.lock, .clippy.toml, rustfmt.toml, rust-toolchain.toml"
   },
 
-  // Search & files
+  // ─── Search & files ───
   "search.exclude": {
     "**/node_modules": true,
     "**/dist": true,
     "**/coverage": true,
-    "**/.lighthouseci": true
+    "**/.lighthouseci": true,
+    "**/target": true
   },
   "files.exclude": {
     "**/.DS_Store": true,
     "**/Thumbs.db": true
   },
+  "files.watcherExclude": {
+    "**/target/**": true
+  },
 
-  // Tailwind CSS (if you use the Tailwind extension)
+  // ─── Python ───
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.tabSize": 4,
+    "editor.rulers": [88],
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "isort.args": ["--profile", "black"],
+
+  // ─── Tailwind CSS ───
   "tailwindCSS.experimental.classRegex": [["cn\\(([^)]*)\\)", "'([^']*)'"]],
 
-  // Spell checker
+  // ─── Spell checker ───
   "cSpell.words": [
     "amet",
+    "axum",
     "bionicify",
+    "boto",
     "bunx",
     "cascadia",
+    "cgnat",
     "Chatbubble",
+    "chrono",
+    "Clippy",
+    "commitlint",
     "Consolas",
+    "contenteditable",
     "Cplusplus",
     "decos",
+    "defn",
+    "dotenvy",
     "Fira",
     "Gnubash",
+    "healthcheck",
     "hyperlegible",
+    "IDOR",
     "Inconsolata",
+    "indexdef",
     "indexeddb",
+    "indisprimary",
+    "indisunique",
+    "indrelid",
+    "isready",
+    "jsonwebtoken",
     "Keymap",
     "knip",
     "lightningcss",
     "literata",
+    "lukemathwalker",
     "macbook",
     "mdhd",
+    "metacharacters",
+    "minioadmin",
+    "miniodata",
+    "monokai",
+    "myhash",
+    "nosniff",
+    "nspname",
     "nums",
     "nunito",
+    "oneshot",
     "partialize",
+    "pgdata",
+    "plainto",
+    "psql",
+    "psycopg",
+    "pycache",
+    "pytest",
+    "reqwest",
+    "rfind",
+    "rsplit",
+    "rustls",
     "scannability",
     "Seafoam",
+    "serde",
+    "sqlx",
+    "Supabase",
     "swipeable",
+    "syncable",
+    "testutil",
+    "thiserror",
     "TOCTOU",
+    "tokio",
+    "tsquery",
+    "tsvector",
+    "unbookmark",
+    "unconfigured",
     "Unhighlighted",
+    "upserts",
+    "USERINFO",
     "uuidv",
+    "venv",
     "Videocam",
     "vollkorn",
     "Vuedotjs"

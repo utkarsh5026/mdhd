@@ -1,6 +1,6 @@
 import type { LanguageSupport } from '@codemirror/language';
 
-import { tryAsync } from '@/utils/functions/error';
+import { tryAsync } from '@/utils/error';
 
 type LanguageLoader = () => Promise<LanguageSupport>;
 

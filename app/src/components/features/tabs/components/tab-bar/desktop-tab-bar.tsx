@@ -1,18 +1,21 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import React, { memo, useCallback, useRef } from 'react';
 
+import { useTabClose } from '@/components/features/tabs/hooks/use-tab-close';
 import { Button } from '@/components/ui/button';
+import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 
 import { useTabDisplayMap } from '../../hooks/use-tab-display-map';
 import { useActiveTabId, useTabs, useTabsActions } from '../../store';
-import TabItem from './tab-item';
+import TabContextMenu from './tab-context-menu';
 import TabManagementMenu from './tab-management-menu';
 
 const DesktopTabBar: React.FC = memo(() => {
   const tabs = useTabs();
   const activeTabId = useActiveTabId();
-  const { setActiveTab, closeTab, createUntitledTab } = useTabsActions();
+  const { setActiveTab, createUntitledTab } = useTabsActions();
+  const { closeTab } = useTabClose();
   const tabDisplayMap = useTabDisplayMap(tabs);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -54,7 +57,7 @@ const DesktopTabBar: React.FC = memo(() => {
           onClick={handleScrollLeft}
           aria-label="Scroll tabs left"
         >
-          <ChevronLeft className="w-3.5 h-3.5" />
+          <Icon icon={ChevronLeft} size="sm" />
         </Button>
       )}
       <div
@@ -63,17 +66,17 @@ const DesktopTabBar: React.FC = memo(() => {
         className={cn('flex-1 flex items-stretch overflow-x-auto scrollbar-none', 'scroll-smooth')}
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {tabs.map(({ id, readingState, title }) => {
+        {tabs.map(({ id, title, pinned }) => {
           const displayInfo = tabDisplayMap.get(id);
           return (
-            <TabItem
+            <TabContextMenu
               key={id}
               id={id}
               title={title}
               folderPath={displayInfo?.folderPath}
               fullPath={displayInfo?.fullPath}
               isActive={id === activeTabId}
-              viewMode={readingState.viewMode}
+              pinned={pinned}
               onSelect={() => setActiveTab(id)}
               onClose={handleTabClose(id)}
             />
@@ -88,7 +91,7 @@ const DesktopTabBar: React.FC = memo(() => {
           onClick={handleScrollRight}
           aria-label="Scroll tabs right"
         >
-          <ChevronRight className="w-3.5 h-3.5" />
+          <Icon icon={ChevronRight} size="sm" />
         </Button>
       )}
       <Button
@@ -98,7 +101,7 @@ const DesktopTabBar: React.FC = memo(() => {
         onClick={createUntitledTab}
         aria-label="Create new tab"
       >
-        <Plus className="w-3.5 h-3.5" />
+        <Icon icon={Plus} size="sm" />
       </Button>
       <TabManagementMenu />
     </div>

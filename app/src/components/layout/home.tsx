@@ -1,3 +1,4 @@
+import { Menu } from 'lucide-react';
 import { lazy, Suspense, useCallback, useState } from 'react';
 import { useSwipeable } from 'react-swipeable';
 
@@ -93,7 +94,7 @@ const Homepage = () => {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-card">
       <OfflineIndicator />
-      {isHeaderVisible && <Header onToggleSidebar={toggleMobileSidebar} />}
+      {isHeaderVisible && <Header />}
       {isHeaderVisible && !mobileSidebarOpen && <MobileOnboarding />}
 
       {isHeaderVisible && <div className="shrink-0 h-12 border-b border-border/20" />}
@@ -105,6 +106,25 @@ const Homepage = () => {
             className={`fixed top-0 bottom-0 w-5 z-40 md:hidden ${sidebarPosition === 'left' ? 'left-0' : 'right-0'}`}
           />
         )}
+        {/* Mobile sidebar FAB */}
+        <button
+          onClick={toggleMobileSidebar}
+          className={`
+            md:hidden absolute bottom-4 z-40
+            ${sidebarPosition === 'left' ? 'left-4' : 'right-4'}
+            flex items-center justify-center
+            w-10 h-10 rounded-full
+            opacity-30 hover:opacity-100 active:opacity-100 active:scale-95
+            border border-transparent hover:border-foreground/10
+            hover:bg-foreground/5 hover:backdrop-blur-md
+            text-foreground/70 hover:text-foreground
+            transition-all duration-300
+          `}
+          aria-label="Toggle sidebar"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
+
         {sidebarPosition === 'left' && (
           <ReactErrorBoundary>
             <Sidebar

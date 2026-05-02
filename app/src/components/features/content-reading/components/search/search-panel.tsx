@@ -1,12 +1,17 @@
 import { Search } from 'lucide-react';
-import { memo, useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import { useReadingActionsById } from '@/components/features/content-reading/hooks/use-reading-selectors';
 import { useActiveTabSections } from '@/components/features/tabs/hooks/use-active-tab-sections';
 import { cn } from '@/lib/utils';
+import { useIsAuthenticated } from '@/services/auth';
 
+import { useGlobalSearch } from '../../hooks/use-global-search';
 import { useSearch } from '../../hooks/use-search';
+import GlobalSearchResults from './global-search-results';
 import SearchResultItem from './search-result-item';
+
+type SearchMode = 'document' | 'all-files';
 
 interface SearchPanelProps {
   className?: string;
@@ -15,13 +20,20 @@ interface SearchPanelProps {
 const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
   const { sections, tabId, hasActiveTab } = useActiveTabSections();
   const { changeSection } = useReadingActionsById(tabId ?? '');
-  const { query, setQuery, results, reset } = useSearch(sections);
+  const docSearch = useSearch(sections);
+  const globalSearch = useGlobalSearch();
+  const isAuthenticated = useIsAuthenticated();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset search when tab changes
+  const [mode, setMode] = useState<SearchMode>(hasActiveTab ? 'document' : 'all-files');
+
+  const query = mode === 'document' ? docSearch.query : globalSearch.query;
+  const setQuery = mode === 'document' ? docSearch.setQuery : globalSearch.setQuery;
+
+  // Reset searches when tab changes
   useEffect(() => {
-    reset();
-  }, [tabId, reset]);
+    docSearch.reset();
+  }, [tabId, docSearch.reset]);
 
   // Auto-focus input when panel mounts
   useEffect(() => {
@@ -44,21 +56,26 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
     [changeSection]
   );
 
-  if (!hasActiveTab) {
-    return (
-      <div className={cn('flex flex-col flex-1 overflow-hidden', className)}>
-        <div className="px-3 py-1.5 border-b border-border/30">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 select-none">
-            Search
-          </span>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 p-4">
-          <Search className="w-4 h-4 text-muted-foreground/20" />
-          <p className="text-[11px] text-muted-foreground/40 text-center">No document open</p>
-        </div>
-      </div>
-    );
-  }
+  const handleModeChange = useCallback(
+    (newMode: SearchMode) => {
+      if (newMode === mode) return;
+      // Reset the search we're leaving
+      if (mode === 'document') docSearch.reset();
+      else globalSearch.reset();
+      setMode(newMode);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    },
+    [mode, docSearch, globalSearch]
+  );
+
+  const resultCount =
+    mode === 'document'
+      ? docSearch.query.length >= 2
+        ? docSearch.results.length
+        : null
+      : globalSearch.query.length >= 2 && !globalSearch.isLoading
+        ? globalSearch.results.length
+        : null;
 
   return (
     <div className={cn('flex flex-col flex-1 overflow-hidden', className)}>
@@ -67,12 +84,40 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50 select-none">
           Search
         </span>
-        {query.length >= 2 && results.length > 0 && (
-          <span className="text-[10px] text-muted-foreground/30 tabular-nums">
-            {results.length}
-          </span>
+        {resultCount !== null && resultCount > 0 && (
+          <span className="text-[10px] text-muted-foreground/30 tabular-nums">{resultCount}</span>
         )}
       </div>
+
+      {/* Mode toggle */}
+      {isAuthenticated && (
+        <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border/30">
+          <button
+            type="button"
+            onClick={() => handleModeChange('document')}
+            className={cn(
+              'text-[11px] px-2 py-0.5 rounded-md transition-colors',
+              mode === 'document'
+                ? 'bg-accent text-foreground font-medium'
+                : 'text-muted-foreground/60 hover:text-muted-foreground'
+            )}
+          >
+            Document
+          </button>
+          <button
+            type="button"
+            onClick={() => handleModeChange('all-files')}
+            className={cn(
+              'text-[11px] px-2 py-0.5 rounded-md transition-colors',
+              mode === 'all-files'
+                ? 'bg-accent text-foreground font-medium'
+                : 'text-muted-foreground/60 hover:text-muted-foreground'
+            )}
+          >
+            All Files
+          </button>
+        </div>
+      )}
 
       {/* Search input */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/30">
@@ -80,7 +125,9 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
         <input
           ref={inputRef}
           type="text"
-          placeholder="Search in document…"
+          placeholder={
+            mode === 'document' ? 'Search in document\u2026' : 'Search across all files\u2026'
+          }
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
@@ -111,21 +158,36 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
 
       {/* Results */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        {query.length < 2 ? (
+        {mode === 'all-files' ? (
+          <GlobalSearchResults
+            query={globalSearch.query}
+            results={globalSearch.results}
+            isLoading={globalSearch.isLoading}
+            error={globalSearch.error}
+            isAuthenticated={isAuthenticated}
+          />
+        ) : !hasActiveTab ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+            <Search className="w-4 h-4 text-muted-foreground/20" />
+            <p className="text-[11px] text-muted-foreground/40">No document open</p>
+          </div>
+        ) : docSearch.query.length < 2 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
             <Search className="h-5 w-5 text-muted-foreground/20" strokeWidth={1.5} />
             <p className="text-[11px] text-muted-foreground/40">Type to search in document</p>
           </div>
-        ) : results.length === 0 ? (
+        ) : docSearch.results.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
             <p className="text-[11px] text-muted-foreground/50">
               No results for{' '}
-              <span className="text-foreground/60 font-medium">&ldquo;{query}&rdquo;</span>
+              <span className="text-foreground/60 font-medium">
+                &ldquo;{docSearch.query}&rdquo;
+              </span>
             </p>
           </div>
         ) : (
           <div className="p-1">
-            {results.map((result) => (
+            {docSearch.results.map((result) => (
               <SearchResultItem
                 key={`${result.sectionIndex}-${result.matchType}`}
                 result={result}

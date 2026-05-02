@@ -14,7 +14,7 @@ export function download(url: string, filename: string, isBlobUrl = false) {
   a.download = filename;
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
+  a.remove();
   if (isBlobUrl) URL.revokeObjectURL(url);
 }
 
@@ -36,8 +36,8 @@ export function download(url: string, filename: string, isBlobUrl = false) {
 export function toFilename(heading: string, ext: string, fallback = 'file'): string {
   const slug = heading
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+    .replaceAll(/[^a-z0-9]+/g, '-')
+    .replaceAll(/^-|-$/g, '');
   return `${slug || fallback}.${ext}`;
 }
 

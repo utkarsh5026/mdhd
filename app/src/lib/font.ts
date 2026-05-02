@@ -1,3 +1,5 @@
+import type { BodyFontWeight } from '@/components/features/markdown-render/utils/typography-classes';
+
 export type FontFamily =
   | 'system-ui'
   | 'inter'
@@ -31,6 +33,7 @@ export interface FontOption {
   category: 'serif' | 'sans-serif' | 'monospace';
   isVariable?: boolean; // Indicates if this font has variable font support
   weightRange?: [number, number]; // Weight range for variable fonts, e.g., [100, 900]
+  supportedWeights?: number[]; // Discrete weights available for non-variable fonts
 }
 
 export const fontOptions: FontOption[] = [
@@ -73,6 +76,7 @@ export const fontOptions: FontOption[] = [
     label: 'Merriweather',
     description: 'Readable serif for long text',
     category: 'serif',
+    supportedWeights: [300, 400, 500, 600, 700],
   },
   {
     value: 'roboto-slab',
@@ -95,6 +99,7 @@ export const fontOptions: FontOption[] = [
     label: 'Libre Baskerville',
     description: 'Old-style serif',
     category: 'serif',
+    supportedWeights: [400, 500, 600, 700],
   },
   {
     value: 'lora',
@@ -109,12 +114,14 @@ export const fontOptions: FontOption[] = [
     label: 'PT Serif',
     description: 'Transitional serif',
     category: 'serif',
+    supportedWeights: [400, 700],
   },
   {
     value: 'atkinson-hyperlegible',
     label: 'Atkinson Hyperlegible',
     description: 'Designed for maximum readability and accessibility',
     category: 'sans-serif',
+    supportedWeights: [400, 700],
   },
   {
     value: 'source-sans-pro',
@@ -137,18 +144,21 @@ export const fontOptions: FontOption[] = [
     label: 'IBM Plex Sans',
     description: 'Corporate-grade font designed for extended reading',
     category: 'sans-serif',
+    supportedWeights: [300, 400, 500, 600, 700],
   },
   {
     value: 'crimson-text',
     label: 'Crimson Text',
     description: 'Inspired by old-style book typography',
     category: 'serif',
+    supportedWeights: [400, 600, 700],
   },
   {
     value: 'spectral',
     label: 'Spectral',
     description: "Google's font optimized for screen reading",
     category: 'serif',
+    supportedWeights: [300, 400, 500, 600, 700],
   },
   {
     value: 'eb-garamond',
@@ -171,12 +181,14 @@ export const fontOptions: FontOption[] = [
     label: 'Vollkorn',
     description: 'Designed specifically for bread text reading',
     category: 'serif',
+    supportedWeights: [400, 500, 600, 700],
   },
   {
     value: 'literata',
     label: 'Literata',
     description: "Google Play Books' reading font",
     category: 'serif',
+    supportedWeights: [300, 400, 500, 600, 700],
   },
   {
     value: 'source-code-pro',
@@ -270,8 +282,6 @@ export const fontFamilyMap: Record<FontFamily, string> = {
   'jetbrains-mono': '"JetBrains Mono", monospace',
 };
 
-// --- App UI Font ---
-
 export type AppFontFamily = FontFamily | 'geist';
 
 export interface AppFontOption {
@@ -308,3 +318,30 @@ export const appFontCategories = {
   serif: APP_FONT_OPTIONS.filter((font) => font.category === 'serif'),
   monospace: APP_FONT_OPTIONS.filter((font) => font.category === 'monospace'),
 };
+
+const WEIGHT_TO_BODY: [number, BodyFontWeight][] = [
+  [300, 'light'],
+  [400, 'normal'],
+  [500, 'medium'],
+  [600, 'semibold'],
+  [700, 'bold'],
+];
+
+const ALL_BODY_WEIGHTS: BodyFontWeight[] = ['light', 'normal', 'medium', 'semibold', 'bold'];
+
+export function getSupportedBodyWeights(font: FontFamily): BodyFontWeight[] {
+  const option = fontOptions.find((f) => f.value === font);
+  if (!option) return ALL_BODY_WEIGHTS;
+
+  if (option.isVariable && option.weightRange) {
+    const [min, max] = option.weightRange;
+    return WEIGHT_TO_BODY.filter(([w]) => w >= min && w <= max).map(([, name]) => name);
+  }
+
+  if (option.supportedWeights) {
+    const set = new Set(option.supportedWeights);
+    return WEIGHT_TO_BODY.filter(([w]) => set.has(w)).map(([, name]) => name);
+  }
+
+  return ['normal', 'bold'];
+}

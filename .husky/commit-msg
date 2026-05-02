@@ -1,1 +1,0 @@
-cd app && npx -y commitlint --edit "$1"

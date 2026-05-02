@@ -13,6 +13,10 @@ interface FileTreeProps {
   onFileClick: (file: StoredFile) => void;
   onDirectoryToggle: (path: string) => void;
   onDelete: (node: FileTreeNode) => void;
+  onShare: (node: FileTreeNode) => void;
+  onRevoke: (node: FileTreeNode) => void;
+  /** Map of fileId → share token for files shared this session. */
+  shareTokens: Record<string, string>;
 }
 
 interface ContextMenuState {
@@ -27,6 +31,9 @@ export const FileTree: React.FC<FileTreeProps> = ({
   onFileClick,
   onDirectoryToggle,
   onDelete,
+  onShare,
+  onRevoke,
+  shareTokens,
 }) => {
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     node: null,
@@ -60,6 +67,8 @@ export const FileTree: React.FC<FileTreeProps> = ({
     );
   }
 
+  const currentShareToken = contextMenu.node ? (shareTokens[contextMenu.node.id] ?? null) : null;
+
   return (
     <>
       <div className="flex-1 overflow-auto">
@@ -83,6 +92,9 @@ export const FileTree: React.FC<FileTreeProps> = ({
         position={contextMenu.position}
         onClose={handleCloseContextMenu}
         onDelete={onDelete}
+        onShare={onShare}
+        onRevoke={onRevoke}
+        shareToken={currentShareToken}
       />
     </>
   );

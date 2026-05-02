@@ -23,19 +23,6 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
     }
   }, [showPasteArea]);
 
-  // Global paste → instantly start reading
-  useEffect(() => {
-    const handleGlobalPaste = (e: ClipboardEvent) => {
-      if (showPasteArea) return;
-      const pasted = e.clipboardData?.getData('text');
-      if (pasted?.trim()) {
-        onStartReading(pasted);
-      }
-    };
-    window.addEventListener('paste', handleGlobalPaste);
-    return () => window.removeEventListener('paste', handleGlobalPaste);
-  }, [showPasteArea, onStartReading]);
-
   const readAndStart = useCallback(
     async (files: File[]) => {
       const mdFile = files.find((f) => f.name.endsWith('.md') || f.name.endsWith('.markdown'));
@@ -105,7 +92,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
   );
 
   return (
-    <div
+    <section
+      aria-label="Markdown file drop zone"
       className={cn(
         'h-full flex items-center justify-center transition-colors duration-150',
         isDragging && 'bg-primary/5'
@@ -127,9 +115,10 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
         </p>
 
         {/* Drop zone */}
-        <div
+        <label
+          htmlFor="file-upload-input"
           className={cn(
-            'rounded-2xl border-2 border-dashed p-10 text-center transition-colors duration-150',
+            'block rounded-2xl border-2 border-dashed p-10 text-center transition-colors duration-150 cursor-pointer',
             isDragging
               ? 'border-primary/60 bg-primary/5'
               : 'border-border/30 hover:border-border/50'
@@ -147,7 +136,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
               </p>
             </div>
           )}
-        </div>
+        </label>
 
         {/* Divider */}
         <div className="flex items-center gap-3">
@@ -157,26 +146,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
         </div>
 
         {/* Actions */}
-        {!showPasteArea ? (
-          <div className="flex gap-2.5">
-            <Button
-              variant="outline"
-              className="flex-1 gap-2 rounded h-10 text-sm"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="w-3.5 h-3.5" />
-              Open file
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 gap-2 rounded h-10 text-sm"
-              onClick={() => openPasteArea()}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              Type / paste
-            </Button>
-          </div>
-        ) : (
+        {showPasteArea ? (
           <div className="space-y-2.5">
             <textarea
               ref={textareaRef}
@@ -214,10 +184,30 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
               </Button>
             </div>
           </div>
+        ) : (
+          <div className="flex gap-2.5">
+            <Button
+              variant="outline"
+              className="flex-1 gap-2 rounded h-10 text-sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Open file
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 gap-2 rounded h-10 text-sm"
+              onClick={() => openPasteArea()}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Type / paste
+            </Button>
+          </div>
         )}
 
         <input
           ref={fileInputRef}
+          id="file-upload-input"
           type="file"
           accept=".md,.markdown"
           multiple
@@ -225,7 +215,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
           onChange={handleFileSelect}
         />
       </div>
-    </div>
+    </section>
   );
 };
 

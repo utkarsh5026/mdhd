@@ -10,6 +10,7 @@ export interface StoredFile {
   size: number;
   createdAt: number;
   updatedAt: number;
+  contentHash?: string; // SHA-256 hex digest — computed at upload time, used for sync
 }
 
 /**

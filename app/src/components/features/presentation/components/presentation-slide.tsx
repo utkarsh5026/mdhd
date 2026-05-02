@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef } from 'react';
 
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
-import { useReadingSettings } from '@/components/features/settings/store/reading-settings-store';
+import { useTypography } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
 import type { MarkdownSection } from '@/services/section/parsing';
@@ -31,8 +31,8 @@ function isTitleSlide(markdown: string): boolean {
 
 const PresentationSlide: React.FC<PresentationSlideProps> = memo(
   ({ section, isTransitioning, direction }) => {
-    const { settings } = useReadingSettings();
-    const fontFamily = fontFamilyMap[settings.fontFamily];
+    const { typography } = useTypography();
+    const fontFamily = fontFamilyMap[typography.fontFamily];
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const { slideMarkdown } = useMemo(

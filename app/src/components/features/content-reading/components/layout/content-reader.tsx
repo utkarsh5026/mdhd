@@ -3,8 +3,9 @@ import { useSwipeable } from 'react-swipeable';
 
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
 import {
-  useReadingSettings,
+  useReadingDisplay,
   useReadingSettingsStore,
+  useTypography,
 } from '@/components/features/settings/store/reading-settings-store';
 import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ import {
   useReadingContent,
   useReadingCurrentSection,
   useReadingNavigation,
+  useReadingSections,
 } from '../../hooks';
 import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
@@ -30,13 +32,17 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
     const { currentIndex, isTransitioning } = useReadingNavigation();
     const { metadata } = useReadingContent();
     const currentSection = useReadingCurrentSection();
+    const sections = useReadingSections();
     const { goToNext, goToPrevious } = useReadingActions();
+    const isLastSection = currentIndex === sections.length - 1;
 
-    const { settings } = useReadingSettings();
-    const fontFamily = fontFamilyMap[settings.fontFamily];
-    const { fontSize, lineHeight, contentWidth } = settings;
+    const { typography } = useTypography();
+    const { settings } = useReadingDisplay();
+    const fontFamily = fontFamilyMap[typography.fontFamily];
+    const { fontSize, lineHeight } = typography;
+    const { contentWidth } = settings;
     const hasCustomBackground =
-      useReadingSettingsStore((s) => s.settings.background.backgroundType) !== 'theme';
+      useReadingSettingsStore((s) => s.background.backgroundType) !== 'theme';
 
     const swipeHandlers = useSwipeable({
       onSwipedLeft: (eventData) => {
@@ -103,6 +109,13 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
                   fontFamily={fontFamily}
                 />
               </div>
+              {isLastSection && (
+                <div className="flex items-center justify-center gap-3 pt-8 pb-4 text-muted-foreground/60">
+                  <span className="h-px w-8 bg-muted-foreground/20" />
+                  <span className="text-sm italic tracking-wide">The End</span>
+                  <span className="h-px w-8 bg-muted-foreground/20" />
+                </div>
+              )}
             </div>
           </div>
         </div>

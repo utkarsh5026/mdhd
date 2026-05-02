@@ -1,8 +1,9 @@
-import { Trash2 } from 'lucide-react';
+import { Share2, Trash2, Unlink } from 'lucide-react';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useKeyPress } from '@/hooks';
+import { useIsAuthenticated } from '@/services/auth';
 import type { FileTreeNode } from '@/services/indexeddb';
 
 interface TreeContextMenuProps {
@@ -10,6 +11,10 @@ interface TreeContextMenuProps {
   position: { x: number; y: number };
   onClose: () => void;
   onDelete: (node: FileTreeNode) => void;
+  onShare: (node: FileTreeNode) => void;
+  onRevoke: (node: FileTreeNode) => void;
+  /** Share token for the current node, if one has been generated this session. */
+  shareToken: string | null;
 }
 
 export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
@@ -17,8 +22,12 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
   position,
   onClose,
   onDelete,
+  onShare,
+  onRevoke,
+  shareToken,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const isAuthenticated = useIsAuthenticated();
 
   const handleDelete = useCallback(() => {
     if (node) {
@@ -26,6 +35,20 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
       onClose();
     }
   }, [node, onDelete, onClose]);
+
+  const handleShare = useCallback(() => {
+    if (node) {
+      onShare(node);
+      onClose();
+    }
+  }, [node, onShare, onClose]);
+
+  const handleRevoke = useCallback(() => {
+    if (node) {
+      onRevoke(node);
+      onClose();
+    }
+  }, [node, onRevoke, onClose]);
 
   useKeyPress('Escape', () => {
     if (node) onClose();
@@ -79,6 +102,7 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
   if (!node) return null;
 
   const isDirectory = node.type === 'directory';
+  const canShare = isAuthenticated && !isDirectory;
 
   return createPortal(
     <div
@@ -87,6 +111,29 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
       className="fixed z-50 min-w-40 rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
       style={{ left: position.x, top: position.y }}
     >
+      {canShare && (
+        <>
+          {shareToken ? (
+            <button
+              role="menuitem"
+              className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent transition-colors"
+              onClick={handleRevoke}
+            >
+              <Unlink className="h-4 w-4" />
+              Revoke link
+            </button>
+          ) : (
+            <button
+              role="menuitem"
+              className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent transition-colors"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </button>
+          )}
+        </>
+      )}
       <button
         role="menuitem"
         autoFocus

@@ -16,7 +16,7 @@ const AVERAGE_READING_SPEED_WPM = 250;
  * @returns An object with the stripped `content`, parsed `metadata` (or `null`),
  *   and `frontmatterLineCount` for accurate line-number tracking.
  */
-function extractFrontmatter(markdown: string): {
+export function extractFrontmatter(markdown: string): {
   content: string;
   metadata: MarkdownMetadata | null;
   frontmatterLineCount: number;
