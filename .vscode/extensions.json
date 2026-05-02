@@ -10,7 +10,15 @@
     "editorconfig.editorconfig",
     "streetsidesoftware.code-spell-checker",
     "gruntfuggly.todo-tree",
-    "eamodio.gitlens"
+    "eamodio.gitlens",
+    "ms-python.python",
+    "ms-python.black-formatter",
+    "ms-python.isort",
+    "ms-python.pylance",
+    "rust-lang.rust-analyzer",
+    "tamasfe.even-better-toml",
+    "vadimcn.vscode-lldb",
+    "fill-labs.dependi"
   ],
   "unwantedRecommendations": []
 }

@@ -195,6 +195,8 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/mdhd_test
+      # Enables tests/s3_roundtrip.rs — when unset, those tests early-return.
+      S3_INTEGRATION_TESTS: "1"
 
     steps:
       - name: Checkout repository
@@ -209,6 +211,17 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: server
+
+      # MinIO is started as a plain `docker run` rather than a GHA service
+      # container because the `minio/minio` image has no default server command
+      # and GHA services don't accept a `command:` override.
+      - name: Start MinIO
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio server /data
+          timeout 30 sh -c 'until curl -sf http://localhost:9000/minio/health/live; do sleep 1; done'
 
       - name: cargo fmt --check
         run: cargo fmt --all -- --check
