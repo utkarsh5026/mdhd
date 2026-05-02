@@ -1,10 +1,10 @@
-FROM lukemathwalker/cargo-chef:latest-rust-1-slim AS planner
+FROM lukemathwalker/cargo-chef:latest-rust-1-slim-bookworm AS planner
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 RUN cargo chef prepare --recipe-path recipe.json
 
-FROM lukemathwalker/cargo-chef:latest-rust-1-slim AS cacher
+FROM lukemathwalker/cargo-chef:latest-rust-1-slim-bookworm AS cacher
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
   pkg-config libssl-dev \
@@ -13,7 +13,7 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
 
-FROM rust:1-slim AS builder
+FROM rust:1-slim-bookworm AS builder
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
   pkg-config libssl-dev \
