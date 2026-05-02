@@ -252,6 +252,7 @@ mod tests {
     fn test_config() -> crate::config::Config {
         crate::config::Config {
             database_url: "postgres://localhost/test".to_string(),
+            migration_database_url: "postgres://localhost/test".to_string(),
             jwt_secret: "test_secret_key_for_tests".to_string(),
             google_client_id: String::new(),
             google_client_secret: String::new(),

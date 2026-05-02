@@ -61,6 +61,11 @@ pub struct Config {
     /// Deployment environment (production vs development).
     pub app_env: AppEnv,
     pub database_url: String,
+    /// Direct (non-pooled) Postgres URL used only to run migrations at startup.
+    /// Supabase's transaction-mode pooler doesn't support advisory locks reliably,
+    /// so migrations should connect to port 5432 directly. Falls back to
+    /// `database_url` when unset.
+    pub migration_database_url: String,
     /// Secret used to sign and verify JWT session tokens. **Required.**
     pub jwt_secret: String,
     pub google_client_id: String,
@@ -144,9 +149,13 @@ impl Config {
             ));
         }
 
+        let database_url = required(get, "DATABASE_URL")?;
+        let migration_database_url = optional_or(get, "MIGRATION_DATABASE_URL", &database_url);
+
         Ok(Self {
             app_env: AppEnv::from_source(get),
-            database_url: required(get, "DATABASE_URL")?,
+            database_url,
+            migration_database_url,
             jwt_secret,
             google_client_id: optional(get, "GOOGLE_CLIENT_ID"),
             google_client_secret: optional(get, "GOOGLE_CLIENT_SECRET"),

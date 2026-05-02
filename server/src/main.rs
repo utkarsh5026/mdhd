@@ -44,10 +44,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::from_env()?;
     init_tracing(&config.app_env);
 
-    let db = db::create_pool(&config).await?;
-
     tracing::info!("Running database migrations");
-    sqlx::migrate!("./migrations").run(&db).await?;
+    db::run_migrations(&config).await?;
+
+    let db = db::create_pool(&config).await?;
 
     let s3 = storage::create_s3_client(&config);
     let http = reqwest::Client::builder()

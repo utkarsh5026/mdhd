@@ -14,6 +14,7 @@ use crate::state::AppState;
 pub fn test_config() -> Config {
     Config {
         database_url: String::new(),
+        migration_database_url: String::new(),
         jwt_secret: "test-secret".to_string(),
         google_client_id: String::new(),
         google_client_secret: String::new(),
