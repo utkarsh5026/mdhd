@@ -45,6 +45,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing(&config.app_env);
 
     let db = db::create_pool(&config).await?;
+
+    tracing::info!("Running database migrations");
+    sqlx::migrate!("./migrations").run(&db).await?;
+
     let s3 = storage::create_s3_client(&config);
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(config.import_timeout_secs))

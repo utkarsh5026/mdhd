@@ -76,6 +76,7 @@ fn download_entry(f: &FileMeta) -> DownloadEntry {
 ///    - If `last_sync_at` is `None` (first sync) → client downloads.
 ///    - If the file was created after `last_sync_at` → it's new on another device → client downloads.
 ///    - Otherwise → the client deleted it on another device → client deletes its own copy if any.
+#[must_use]
 pub fn reconcile(manifest: &SyncManifest) -> SyncDecision {
     let server_map: HashMap<&str, &FileMeta> = manifest
         .server
@@ -180,6 +181,7 @@ pub struct SettingsSyncDecision {
 /// - Client is newer (or key unknown to server) → `to_upsert`.
 /// - Server is newer → `updated`.
 /// - Server has a key the client didn't send → `updated`.
+#[must_use]
 pub fn reconcile_settings(
     server: &[UserSetting],
     client: &[ClientSettingEntry],

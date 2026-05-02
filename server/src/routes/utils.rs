@@ -27,6 +27,7 @@ use crate::storage;
 /// Encode `bytes` as a lowercase hex string.
 ///
 /// Used for computing SHA-256 content hashes before storing them in the DB.
+#[must_use]
 pub fn hex_encode(bytes: &[u8]) -> String {
     bytes
         .iter()
@@ -40,6 +41,10 @@ pub fn hex_encode(bytes: &[u8]) -> String {
 ///
 /// All stored file paths are absolute (rooted at the user's virtual FS root),
 /// so a missing leading slash is always a client error.
+///
+/// # Errors
+///
+/// Returns [`AppError::BadRequest`] when `path` does not start with `'/'`.
 pub fn validate_path(path: &str) -> Result<(), AppError> {
     if path.starts_with('/') {
         Ok(())
@@ -51,6 +56,7 @@ pub fn validate_path(path: &str) -> Result<(), AppError> {
 /// Build the S3 object key for a file owned by `user_id` at `path`.
 ///
 /// The key is `"{user_id}{path}"`, e.g. `"550e8400-.../hello/world.md"`.
+#[must_use]
 pub fn storage_key(user_id: Uuid, path: &str) -> String {
     format!("{user_id}{path}")
 }
@@ -67,8 +73,11 @@ pub struct PreparedContent {
 
 /// Convert a `&str` content string into [`PreparedContent`].
 ///
-/// Returns `Err(400)` if the byte length overflows `i64` (practically impossible
-/// for any reasonable file, but we must not panic).
+/// # Errors
+///
+/// Returns [`AppError::BadRequest`] (`"file too large"`, HTTP 400) when the UTF-8
+/// byte length of `content` does not fit in an `i64` (practically impossible for
+/// normal uploads, but avoids panicking on `try_from`).
 pub fn prepare_content(content: &str) -> Result<PreparedContent, AppError> {
     use sha2::{Digest, Sha256};
 
@@ -85,6 +94,12 @@ pub fn prepare_content(content: &str) -> Result<PreparedContent, AppError> {
 }
 
 /// Fetch a [`FileMeta`] by primary key, returning `404` if not found.
+///
+/// # Errors
+///
+/// Returns [`AppError::Database`] when the query fails.
+///
+/// Returns [`AppError::NotFound`] when no row exists for `id`.
 pub async fn fetch_file_by_id(db: &sqlx::PgPool, id: Uuid) -> Result<FileMeta, AppError> {
     sqlx::query_as!(
         FileMeta,
@@ -101,6 +116,10 @@ pub async fn fetch_file_by_id(db: &sqlx::PgPool, id: Uuid) -> Result<FileMeta, A
 ///
 /// We always return 404 (not 403) to avoid leaking the existence of resources
 /// owned by other users.
+///
+/// # Errors
+///
+/// Returns [`AppError::NotFound`] when `file.user_id` is not `caller_id`.
 pub fn assert_owner(file: &FileMeta, caller_id: Uuid) -> Result<(), AppError> {
     if file.user_id == caller_id {
         Ok(())

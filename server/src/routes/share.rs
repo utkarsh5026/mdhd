@@ -20,7 +20,7 @@
 
 use axum::body::Body;
 use axum::extract::{Path, Query, State};
-use axum::http::{HeaderMap, StatusCode, header};
+use axum::http::{HeaderValue, StatusCode, header};
 use axum::response::Response;
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
@@ -90,6 +90,14 @@ pub struct AvatarQuery {
 /// Fetches the image server-side so the browser never hits the OAuth provider's
 /// CDN directly, avoiding cold-request rate limits (e.g. Google's 429s in
 /// incognito). Only allowlisted hostnames are accepted to prevent SSRF.
+///
+/// # Errors
+///
+/// Returns [`AppError::BadRequest`] for an invalid URL, a URL with no host, or a
+/// host outside [`AVATAR_ALLOWLIST`].
+///
+/// Returns [`AppError::Internal`] when the upstream request, reading the response
+/// body, or building the outbound response fails.
 #[instrument(skip(state, query))]
 pub async fn proxy_avatar(
     State(state): State<AppState>,
@@ -118,26 +126,22 @@ pub async fn proxy_avatar(
         .headers()
         .get(header::CONTENT_TYPE)
         .cloned()
-        .unwrap_or_else(|| "image/jpeg".parse().unwrap());
+        .unwrap_or_else(|| HeaderValue::from_static("image/jpeg"));
 
     let bytes = upstream
         .bytes()
         .await
         .map_err(|e| AppError::internal(format!("avatar read failed: {e}")))?;
 
-    let mut headers = HeaderMap::new();
-    headers.insert(header::CONTENT_TYPE, content_type);
-    headers.insert(
-        header::CACHE_CONTROL,
-        "public, max-age=86400, immutable".parse().unwrap(),
-    );
-
-    Ok(Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
-        .header(header::CONTENT_TYPE, headers[header::CONTENT_TYPE].clone())
-        .header(header::CACHE_CONTROL, "public, max-age=86400, immutable")
+        .header(header::CONTENT_TYPE, content_type)
+        .header(
+            header::CACHE_CONTROL,
+            HeaderValue::from_static("public, max-age=86400, immutable"),
+        )
         .body(Body::from(bytes))
-        .unwrap())
+        .map_err(|_| AppError::internal("avatar response build failed"))
 }
 
 /// `POST /share/file` — upsert file content and mint (or preserve) a share token.
@@ -295,6 +299,13 @@ async fn revoke_paste_share(
 /// `files.share_token`. Returns JSON with markdown content and sharer metadata.
 ///
 /// Registered directly in `routes/mod.rs` without any auth middleware.
+///
+/// # Errors
+///
+/// Returns [`AppError::NotFound`] when no paste or file share matches `token`.
+///
+/// Otherwise propagates database errors as [`AppError::Database`] and, for
+/// file-based shares, errors from [`crate::storage::download_object`].
 #[instrument(skip(state), fields(%token))]
 pub async fn get_shared_content(
     State(state): State<AppState>,

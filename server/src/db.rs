@@ -5,6 +5,12 @@ use sqlx::postgres::PgPoolOptions;
 
 use crate::config::Config;
 
+/// Creates a Postgres connection pool from `config.database_url` and pool limits.
+///
+/// # Errors
+///
+/// Returns [`sqlx::Error`] when the driver cannot establish a connection (for example
+/// invalid URL, TLS failure, authentication, or the server is unreachable).
 pub async fn create_pool(config: &Config) -> Result<PgPool, sqlx::Error> {
     PgPoolOptions::new()
         .max_connections(config.db_max_connections)
