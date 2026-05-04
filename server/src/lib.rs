@@ -21,16 +21,19 @@ pub mod testutil;
 use std::time::Duration;
 
 use axum::Router;
+use axum::body::Body;
 use axum::extract::State;
-use axum::http::{Method, StatusCode, header};
+use axum::http::{Method, Request, StatusCode, header};
 use axum::routing::get;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{AllowOrigin, CorsLayer};
-use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
+use tower_http::request_id::{
+    MakeRequestUuid, PropagateRequestIdLayer, RequestId, SetRequestIdLayer,
+};
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
-use tracing::Level;
+use tracing::{Level, instrument};
 
 use config::Config;
 use state::AppState;
@@ -96,11 +99,26 @@ pub fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn st
             axum::http::HeaderValue::from_static("strict-origin-when-cross-origin"),
         ))
         .layer(
-            TraceLayer::new_for_http().on_response(
-                DefaultOnResponse::new()
-                    .level(Level::INFO)
-                    .latency_unit(tower_http::LatencyUnit::Millis),
-            ),
+            TraceLayer::new_for_http()
+                .make_span_with(|request: &Request<Body>| {
+                    let request_id = request
+                        .extensions()
+                        .get::<RequestId>()
+                        .and_then(|id| id.header_value().to_str().ok())
+                        .unwrap_or("-");
+
+                    tracing::info_span!(
+                        "http_request",
+                        method = %request.method(),
+                        path = %request.uri().path(),
+                        request_id = %request_id,
+                    )
+                })
+                .on_response(
+                    DefaultOnResponse::new()
+                        .level(Level::INFO)
+                        .latency_unit(tower_http::LatencyUnit::Millis),
+                ),
         )
         .layer(PropagateRequestIdLayer::x_request_id())
         .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid));
@@ -111,6 +129,7 @@ pub fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn st
 /// Health-check endpoint (`GET /api/health`).
 ///
 /// Executes a trivial `SELECT 1` against the database to verify connectivity.
+#[instrument(skip(state))]
 async fn health(State(state): State<AppState>) -> StatusCode {
     match sqlx::query("SELECT 1").execute(&state.db).await {
         Ok(_) => StatusCode::OK,

@@ -43,12 +43,21 @@ impl FromRequestParts<AppState> for AuthUser {
             TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
                 .await
                 .map_err(|_| {
-                    warn!("missing or malformed Authorization header");
+                    warn!(
+                        error_kind = "missing_authorization",
+                        "missing or malformed Authorization header"
+                    );
                     AppError::Unauthorized
                 })?;
 
         let claims = crate::auth::jwt::validate_token(bearer.token(), &state.config.jwt_secret)
-            .inspect_err(|e| warn!("JWT validation failed: {e}"))?;
+            .inspect_err(|e| {
+                warn!(
+                    error_kind = "jwt_invalid",
+                    error = %e,
+                    "JWT validation failed"
+                );
+            })?;
 
         Ok(AuthUser {
             user_id: claims.sub,

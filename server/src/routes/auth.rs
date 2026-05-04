@@ -15,6 +15,7 @@ use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::{Deserialize, Serialize};
 use time::Duration;
+use tracing::{info, instrument};
 use uuid::Uuid;
 
 use crate::auth::jwt::create_token;
@@ -33,6 +34,7 @@ fn csrf_redirect(
 ) -> (CookieJar, Redirect) {
     let cookie = Cookie::build((CSRF_COOKIE_NAME, csrf_token.secret().clone()))
         .http_only(true)
+        .secure(true)
         .same_site(SameSite::Lax)
         .path("/")
         .max_age(Duration::minutes(10));
@@ -73,6 +75,7 @@ pub fn router() -> Router<AppState> {
 /// Builds the authorization URL with `openid`, `email`, and `profile` scopes,
 /// stores the CSRF token in an `HttpOnly` cookie, then returns a temporary redirect.
 /// Returns [`AppError::BadRequest`] if the provider's client credentials are not configured.
+#[instrument(skip(state, jar), fields(provider = %provider))]
 async fn start_oauth(
     State(state): State<AppState>,
     Path(provider): Path<String>,
@@ -97,6 +100,7 @@ async fn start_oauth(
                 .add_scope(Scope::new("profile".to_string()))
                 .url();
 
+            info!(provider = "google", "oauth redirect issued");
             Ok(csrf_redirect(&auth_url, &csrf_token, jar))
         }
         _ => Err(AppError::unsupported_provider(&provider)),
@@ -118,6 +122,7 @@ struct CallbackParams {
 /// exchanges the authorization `code` for an access token, fetches the user's
 /// profile from the provider, upserts the user in the database, and redirects
 /// back to the frontend with a JWT in the query string.
+#[instrument(skip(state, jar, params), fields(provider = %provider))]
 async fn oauth_callback(
     State(state): State<AppState>,
     Path(provider): Path<String>,
@@ -172,6 +177,7 @@ async fn oauth_callback(
             .fetch_one(&state.db)
             .await?;
 
+            info!(provider = "google", user_id = %user.id, "oauth login completed");
             Ok(issue_auth_code_redirect(user.id, &state, jar).await?)
         }
         _ => Err(AppError::unsupported_provider(&provider)),
@@ -195,6 +201,7 @@ struct ExchangeResponse {
 /// The code is deleted atomically via `DELETE … RETURNING`, so concurrent
 /// requests with the same code cannot both succeed. Returns `404 Not Found`
 /// if the code is unknown or has already expired (60-second window).
+#[instrument(skip(state, body))]
 async fn exchange_code(
     State(state): State<AppState>,
     axum::Json(body): axum::Json<ExchangeRequest>,
@@ -212,6 +219,7 @@ async fn exchange_code(
         &state.config.jwt_secret,
         state.config.jwt_expiry_days,
     )?;
+    info!(user_id = %row.user_id, "auth code exchanged for JWT");
     Ok(axum::Json(ExchangeResponse { token }))
 }
 
@@ -219,6 +227,7 @@ async fn exchange_code(
 ///
 /// Extracts the JWT from the request, looks up the corresponding user,
 /// and returns their `id`, `email`, `name`, and `avatar_url`.
+#[instrument(skip(state), fields(user_id = %auth_user.user_id))]
 async fn get_current_user(
     auth_user: crate::middleware::auth::AuthUser,
     State(state): State<AppState>,

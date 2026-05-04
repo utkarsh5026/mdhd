@@ -15,6 +15,7 @@
 //! | [`assert_owner`]      | Return 404 if the file does not belong to the caller |
 //! | [`upload_to_s3`]      | Upload bytes to the configured S3 bucket             |
 
+use tracing::instrument;
 use uuid::Uuid;
 
 use crate::errors::{AppError, OptionExt};
@@ -99,6 +100,7 @@ pub fn prepare_content(content: &str) -> Result<PreparedContent, AppError> {
 /// Returns [`AppError::Database`] when the query fails.
 ///
 /// Returns [`AppError::NotFound`] when no row exists for `id`.
+#[instrument(skip(db), fields(file_id = %id))]
 pub async fn fetch_file_by_id(db: &sqlx::PgPool, id: Uuid) -> Result<FileMeta, AppError> {
     sqlx::query_as!(
         FileMeta,
@@ -137,6 +139,7 @@ pub fn assert_owner(file: &FileMeta, caller_id: Uuid) -> Result<(), AppError> {
 /// # Errors
 ///
 /// Propagates any S3 transport or service error as an [`AppError::Internal`].
+#[instrument(skip(state, bytes), fields(storage_key = %key, size = bytes.len()))]
 pub async fn upload_to_s3(state: &AppState, key: &str, bytes: Vec<u8>) -> Result<(), AppError> {
     storage::upload_object(&state.s3, &state.config.supabase_storage_bucket, key, bytes).await?;
     Ok(())
