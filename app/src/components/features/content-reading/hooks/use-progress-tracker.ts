@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 
-import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
+import { useTabSlice } from '@/components/features/tabs/store/hooks';
 import { progressTracker } from '@/services/progress';
 
 import { useReadingTabId } from './use-reading-selectors';
@@ -15,16 +14,14 @@ import { useReadingTabId } from './use-reading-selectors';
  */
 export function useProgressTracker(): void {
   const tabId = useReadingTabId();
-  const { fileId, sourceType, currentIndex, scrollProgress, sectionCount } = useTabsStore(
-    useShallow((s) => {
-      const tab = s.tabs.find((t) => t.id === tabId);
-      return {
-        fileId: tab?.sourceFileId,
-        sourceType: tab?.sourceType,
-        currentIndex: tab?.readingState.currentIndex ?? 0,
-        scrollProgress: tab?.readingState.scrollProgress ?? 0,
-        sectionCount: tab?.readingState.sections.length ?? 0,
-      };
+  const { fileId, sourceType, currentIndex, scrollProgress, sectionCount } = useTabSlice(
+    tabId,
+    (tab) => ({
+      fileId: tab?.sourceFileId,
+      sourceType: tab?.sourceType,
+      currentIndex: tab?.readingState.currentIndex ?? 0,
+      scrollProgress: tab?.readingState.scrollProgress ?? 0,
+      sectionCount: tab?.readingState.sections.length ?? 0,
     })
   );
 
