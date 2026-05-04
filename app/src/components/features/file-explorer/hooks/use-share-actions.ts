@@ -72,7 +72,7 @@ export function useShareActions() {
       const token = shareTokens[node.id];
       if (!token) return;
       try {
-        await revokeShare(token, 'file');
+        await revokeShare(token);
         setShareTokens((prev) => {
           const next = { ...prev };
           delete next[node.id];

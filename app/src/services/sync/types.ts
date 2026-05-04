@@ -30,9 +30,16 @@ export interface CreateFileRequest {
   content: string;
 }
 
-export interface DownloadedPaste {
-  tabId: string;
-  title: string;
+/**
+ * A file that was downloaded for the first time on this device — i.e. no
+ * matching record existed in IndexedDB before the sync. Used by the UI layer
+ * to auto-open these files as tabs (the "paste on laptop, read on mobile"
+ * workflow).
+ */
+export interface NewlyDownloadedFile {
+  fileId: string;
+  name: string;
+  path: string;
   content: string;
 }
 
@@ -41,10 +48,10 @@ export interface SyncResult {
   downloaded: number;
   deleted: number;
   serverTime: string;
-  /** Paste tabs downloaded from another device that need to be opened. */
-  downloadedPastes: DownloadedPaste[];
-  /** Tab IDs of paste tabs that were deleted on another device. */
-  deletedPasteTabIds: string[];
+  /** Files downloaded from the server that did not exist locally before this sync. */
+  newFiles: NewlyDownloadedFile[];
+  /** File IDs that were deleted from IndexedDB during this sync. */
+  deletedFileIds: string[];
 }
 
 /** Intermediate result of fetching a file from the server before writing to IndexedDB. */

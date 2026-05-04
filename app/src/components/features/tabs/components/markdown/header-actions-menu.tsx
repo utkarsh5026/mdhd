@@ -43,7 +43,7 @@ interface HeaderActionsMenuProps {
 const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = memo(
   ({ onFullscreen, onPdfExport, onShare }) => {
     const isBookmarked = useIsCurrentSectionBookmarked();
-    const { toggleBookmark, isPasteTab } = useBookmarkActions();
+    const { toggleBookmark, isUnsavedTab } = useBookmarkActions();
     const tts = useTTSContext();
     const isNarrating = tts.ttsStatus === 'playing' || tts.ttsStatus === 'paused';
     const currentSection = useReadingCurrentSection();
@@ -157,7 +157,7 @@ const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = memo(
               isActive={isBookmarked}
               onClick={toggleBookmark}
               suffix={
-                isPasteTab ? (
+                isUnsavedTab ? (
                   <span className="text-[9px] px-1 rounded bg-muted/50 text-muted-foreground/50 leading-4">
                     local
                   </span>

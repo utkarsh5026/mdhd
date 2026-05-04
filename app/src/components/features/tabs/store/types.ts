@@ -6,7 +6,7 @@ export type ViewMode = 'preview';
 export interface Bookmark {
   /** Client-generated stable ID used for optimistic UI before server responds. */
   localId: string;
-  /** Server-assigned UUID, null for offline/paste tabs or before first sync. */
+  /** Server-assigned UUID, null for unsaved tabs or before first sync. */
   serverId: string | null;
   sectionIndex: number;
   name: string;
@@ -37,14 +37,17 @@ export interface TabReadingState {
 }
 
 /**
- * Tab data structure
+ * Tab data structure.
+ *
+ * A tab is either "file-backed" (`sourceFileId` set, content also lives in
+ * IndexedDB and participates in sync) or "untitled" (no source — kept only in
+ * memory + the persisted Zustand store, never written to IDB or sync).
  */
 export interface Tab {
   id: string;
   title: string;
   content: string;
   contentHash: string;
-  sourceType: 'paste' | 'file';
   sourceFileId?: string;
   sourcePath?: string;
   createdAt: number;
@@ -74,13 +77,21 @@ export interface TabsActions extends BookmarkActions {
   addTab: (newTab: Tab, options?: { incrementCounter?: boolean }) => string;
   updateTab: (tabId: string, updater: Partial<Tab> | ((tab: Tab) => Partial<Tab>)) => void;
 
+  /**
+   * Create a tab. If `sourceFileId` is provided the tab is file-backed; otherwise
+   * the tab is unsaved and only lives in the in-memory store.
+   */
   createTab: (
     content: string,
     title?: string,
-    sourceType?: 'paste' | 'file',
     sourceFileId?: string,
     sourcePath?: string
   ) => string;
+  /**
+   * Save pasted content as a regular root-level file and open it as a
+   * file-backed tab. Returns the new tab id.
+   */
+  createFromPaste: (content: string, title?: string) => Promise<string | null>;
   createUntitledTab: () => string;
   setTabsState: (tabs: Tab[], activeTabId: string | null, showEmptyState: boolean) => void;
 
@@ -106,16 +117,4 @@ export interface TabsActions extends BookmarkActions {
    * parsing of every tab's markdown content.
    */
   initializeTabSections: () => void;
-
-  /**
-   * Opens a paste-backed file from IndexedDB as a tab.
-   * Reuses the existing tab if already open, otherwise fetches content,
-   * parses sections, and creates a tab with the ID derived from the paste path.
-   */
-  openPasteTab: (
-    tabId: string,
-    fileId: string,
-    fileName: string,
-    createdAt: number
-  ) => Promise<void>;
 }

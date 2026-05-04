@@ -8,7 +8,7 @@ export interface AggregatedBookmark {
   tabId: string;
   tabTitle: string;
   bookmark: Bookmark;
-  /** False for paste tabs — bookmark lives in localStorage only, lost when tab closes. */
+  /** False for unsaved tabs — bookmark lives in localStorage only, lost when tab closes. */
   isPersisted: boolean;
 }
 
@@ -25,7 +25,7 @@ export function useAllBookmarks(): AggregatedBookmark[] {
           tabId: tab.id,
           tabTitle: tab.title,
           bookmark: b,
-          isPersisted: tab.sourceType === 'file',
+          isPersisted: !!tab.sourceFileId,
         }))
       ),
     [tabs]

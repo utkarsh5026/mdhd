@@ -2,7 +2,6 @@ import { apiFetch, apiFetchText } from '@/services/auth';
 import { fileStorageDB, getParentPath } from '@/services/indexeddb/file-db';
 import { sha256 } from '@/utils/hash';
 
-import { isPastePath, tabIdFromPastePath } from './paste-persistence';
 import { loadSyncMeta, setSettingMeta } from './settings-sync-meta';
 import { getSyncPreferencesState } from './sync-preferences-store';
 import { type SyncableStore, syncableStores } from './syncable-settings';
@@ -10,9 +9,9 @@ import type {
   ClientFileEntry,
   ClientSettingEntry,
   CreateFileRequest,
-  DownloadedPaste,
   DownloadEntry,
   FetchedFile,
+  NewlyDownloadedFile,
   ResolvedDelete,
   SettingsSyncRequest,
   SettingsSyncResponse,
@@ -114,16 +113,15 @@ async function fetchDownloads(entries: DownloadEntry[]): Promise<FetchedFile[]> 
 }
 
 /**
- * Persists downloaded files to IndexedDB and returns any paste-tab updates.
+ * Persists downloaded files to IndexedDB and returns the set of files that did
+ * not previously exist locally.
  *
  * Splits the fetched files into updates (existing local record) and adds (new
- * records), then calls a single `batchUpsertFiles`. After persisting, identifies
- * files whose paths correspond to paste tabs so callers can refresh those tabs.
- *
- * @param fetched - Files previously downloaded via {@link fetchDownloads}.
- * @returns Paste entries whose tab content should be refreshed in the UI.
+ * records), then calls a single `batchUpsertFiles`. The list of newly-added
+ * files is returned so the UI layer can auto-open them as tabs (the cross-
+ * device paste-and-read workflow).
  */
-async function applyDownloads(fetched: FetchedFile[]): Promise<DownloadedPaste[]> {
+async function applyDownloads(fetched: FetchedFile[]): Promise<NewlyDownloadedFile[]> {
   const updates = fetched
     .filter((f) => f.existingId !== null)
     .map((f) => ({ id: f.existingId!, content: f.content, contentHash: f.hash }));
@@ -141,10 +139,14 @@ async function applyDownloads(fetched: FetchedFile[]): Promise<DownloadedPaste[]
 
   await fileStorageDB.batchUpsertFiles(updates, adds);
 
-  return fetched.flatMap(({ entry, content }) => {
-    const tabId = isPastePath(entry.path) ? tabIdFromPastePath(entry.path) : null;
-    return tabId ? [{ tabId, title: entry.name.replace(/\.md$/, ''), content }] : [];
-  });
+  return fetched
+    .filter((f) => f.existingId === null)
+    .map((f) => ({
+      fileId: f.entry.id,
+      name: f.entry.name,
+      path: f.entry.path,
+      content: f.content,
+    }));
 }
 
 /**
@@ -168,19 +170,12 @@ async function resolveDeletes(paths: string[]): Promise<ResolvedDelete[]> {
 }
 
 /**
- * Deletes the resolved files from IndexedDB and returns affected paste tab IDs.
- *
- * @param resolved - Files to delete, as resolved by {@link resolveDeletes}.
- * @returns Tab IDs of any paste tabs that were backed by a deleted file, so the
- *   caller can close or invalidate those tabs in the UI.
+ * Deletes the resolved files from IndexedDB and returns the deleted file IDs
+ * so callers can close any tabs that referenced them.
  */
 async function applyDeletes(resolved: ResolvedDelete[]): Promise<string[]> {
   await fileStorageDB.batchDeleteFiles(resolved.map((r) => r.id));
-
-  return resolved.flatMap(({ path }) => {
-    const tabId = isPastePath(path) ? tabIdFromPastePath(path) : null;
-    return tabId ? [tabId] : [];
-  });
+  return resolved.map((r) => r.id);
 }
 
 /**
@@ -213,18 +208,18 @@ export async function performSync(lastSyncAt: string | null): Promise<SyncResult
   await uploadFiles(result.to_upload);
 
   const fetched = await fetchDownloads(result.to_download);
-  const downloadedPastes = await applyDownloads(fetched);
+  const newFiles = await applyDownloads(fetched);
 
   const resolved = await resolveDeletes(result.to_delete);
-  const deletedPasteTabIds = await applyDeletes(resolved);
+  const deletedFileIds = await applyDeletes(resolved);
 
   return {
     uploaded: result.to_upload.length,
     downloaded: result.to_download.length,
     deleted: result.to_delete.length,
     serverTime: result.server_time,
-    downloadedPastes,
-    deletedPasteTabIds,
+    newFiles,
+    deletedFileIds,
   };
 }
 

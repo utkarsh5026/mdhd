@@ -33,36 +33,9 @@ export async function revokeFileShare(token: string): Promise<void> {
   return apiFetch<void>(`/share/file/${token}`, { method: 'DELETE' });
 }
 
-/**
- * POST /share/paste — store paste content inline and return a public share URL.
- *
- * Unlike file sharing, paste content is stored directly in the database — no
- * file upload required. Each call produces a fresh share token. Requires auth.
- */
-export async function sharePaste(title: string, content: string): Promise<ShareResponse> {
-  return apiFetch<ShareResponse>('/share/paste', {
-    method: 'POST',
-    body: JSON.stringify({ title, content }),
-  });
-}
-
-/**
- * DELETE /share/paste/:token — revoke a paste share link.
- *
- * Requires the user to be authenticated and to own the paste share.
- */
-export async function revokePasteShare(token: string): Promise<void> {
-  return apiFetch<void>(`/share/paste/${token}`, { method: 'DELETE' });
-}
-
-/**
- * Revoke a share link for either a file or paste tab.
- *
- * Dispatches to the correct endpoint based on `sourceType` so callers don't
- * need to know which backend route to use.
- */
-export async function revokeShare(token: string, sourceType: 'file' | 'paste'): Promise<void> {
-  return sourceType === 'paste' ? revokePasteShare(token) : revokeFileShare(token);
+/** Revoke a share link. */
+export async function revokeShare(token: string): Promise<void> {
+  return revokeFileShare(token);
 }
 
 export interface SharedContent {

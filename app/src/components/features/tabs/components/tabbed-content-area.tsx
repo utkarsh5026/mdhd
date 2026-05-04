@@ -20,6 +20,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
   const showEmptyState = useShowEmptyState();
   const {
     createTab,
+    createFromPaste,
     setActiveTab,
     setShowEmptyState,
     findTabByFileId,
@@ -37,10 +38,10 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
       if (activeTab && activeTab.content === '') {
         updateTabContent(activeTab.id, content);
       } else {
-        createTab(content, undefined, 'paste');
+        void createFromPaste(content);
       }
     },
-    [activeTab, updateTabContent, createTab]
+    [activeTab, updateTabContent, createFromPaste]
   );
 
   const handleFileNodeOpen = useCallback(
@@ -52,7 +53,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
         return;
       }
       const file = await fileStorageDB.getFile(node.id);
-      if (file) createTab(file.content, file.name, 'file', file.id, file.path);
+      if (file) createTab(file.content, file.name, file.id, file.path);
     },
     [findTabByFileId, setActiveTab, setShowEmptyState, createTab]
   );
@@ -74,7 +75,7 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
     }
   }, [activeTab, navCurrentIndex, navTotal, updateTabReadingState]);
 
-  const isActiveTabEmpty = activeTab && activeTab.content === '' && activeTab.sourceType !== 'file';
+  const isActiveTabEmpty = activeTab && activeTab.content === '' && !activeTab.sourceFileId;
 
   const noTabs = tabs.length === 0;
   const shouldShowEmptyState = showEmptyState || noTabs || isActiveTabEmpty;

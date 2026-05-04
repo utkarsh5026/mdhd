@@ -40,6 +40,7 @@ export const useTabsActions = () =>
   useTabsStore(
     useShallow((state) => ({
       createTab: state.createTab,
+      createFromPaste: state.createFromPaste,
       createUntitledTab: state.createUntitledTab,
       setActiveTab: state.setActiveTab,
       updateTabReadingState: state.updateTabReadingState,
