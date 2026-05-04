@@ -30,10 +30,10 @@ const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = memo(
 
         const localFile = await fileStorageDB.getFileByPath(result.file_path);
         if (localFile) {
-          createTab(localFile.content, localFile.name, 'file', localFile.id, localFile.path);
+          createTab(localFile.content, localFile.name, localFile.id, localFile.path);
         } else {
           const content = await apiFetchText(`/files/${result.file_id}/content`);
-          createTab(content, result.file_name, 'file', result.file_id, result.file_path);
+          createTab(content, result.file_name, result.file_id, result.file_path);
         }
       },
       [createTab, setActiveTab, findTabByFileId, setShowEmptyState]

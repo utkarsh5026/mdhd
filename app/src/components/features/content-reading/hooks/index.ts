@@ -1,3 +1,4 @@
+export * from './use-anchor-tracker';
 export * from './use-controls';
 export * from './use-global-search';
 export * from './use-progress-tracker';

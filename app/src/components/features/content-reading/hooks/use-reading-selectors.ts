@@ -293,12 +293,12 @@ export function useBookmarkActions() {
     toggleAdd(bookmark);
   }, [tabId, addBookmark, removeBookmark, tabs]);
 
-  const isPasteTab = useTabsStore((s) => {
+  const isUnsavedTab = useTabsStore((s) => {
     const tab = selectTabById(s, tabId);
-    return tab?.sourceType === 'paste';
+    return !tab?.sourceFileId;
   });
 
-  return { toggleBookmark, isPasteTab };
+  return { toggleBookmark, isUnsavedTab };
 }
 
 export function useReadingActionsById(tabId: string) {

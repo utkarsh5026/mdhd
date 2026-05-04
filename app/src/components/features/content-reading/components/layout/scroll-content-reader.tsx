@@ -9,7 +9,7 @@ import {
 import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
 
-import { useReadingContent, useReadingSections } from '../../hooks';
+import { useAnchorTracker, useReadingContent, useReadingSections } from '../../hooks';
 import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
 
@@ -44,6 +44,8 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
   const onScrollProgressRef = useRef(onScrollProgress);
   onSectionVisibleRef.current = onSectionVisible;
   onScrollProgressRef.current = onScrollProgress;
+
+  useAnchorTracker(scrollRef);
 
   useEffect(() => {
     setIsLoaded(true);

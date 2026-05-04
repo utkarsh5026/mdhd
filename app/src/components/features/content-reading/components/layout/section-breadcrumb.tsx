@@ -338,7 +338,7 @@ const SectionBreadcrumb: React.FC<SectionBreadcrumbProps> = memo(
             return;
           }
 
-          createTab(file.content, file.name, 'file', file.id, file.path);
+          createTab(file.content, file.name, file.id, file.path);
         } catch {
           toast.error(`Failed to open "${node.name}"`);
         }
