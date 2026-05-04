@@ -1,0 +1,141 @@
+name: PR Preview
+
+# Builds a per-PR preview stack:
+#   1. Deploys the Rust server to a Railway PR environment.
+#   2. Reads back the Railway service's public URL.
+#   3. Builds & deploys a Vercel preview with VITE_API_URL pointing at it.
+#
+# CORS on the server side is handled once via CORS_ORIGIN_REGEX (set on the
+# Railway PR environment template), so we don't need to mutate CORS per PR.
+#
+# Required repo secrets:
+#   RAILWAY_TOKEN          — project-scoped Railway token
+#   RAILWAY_PROJECT_ID     — Railway project UUID
+#   RAILWAY_SERVICE_NAME   — name of the server service in Railway (e.g. "mdhd-server")
+#   VERCEL_TOKEN           — Vercel personal/team token
+#   VERCEL_ORG_ID
+#   VERCEL_PROJECT_ID
+#   STAGE_OAUTH_URL        — public URL of the stable stage backend that holds
+#                            registered Google OAuth credentials. PR backends
+#                            don't run OAuth themselves; the frontend sends
+#                            login flows here and the resulting JWT works
+#                            against the per-PR backend (shared DB + JWT_SECRET).
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened, closed ]
+    branches: [ main ]
+
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-backend:
+    name: Deploy Railway PR env
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    outputs:
+      api_url: ${{ steps.url.outputs.api_url }}
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      ENV_NAME: pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: bash <(curl -fsSL https://railway.com/install.sh)
+
+      - name: Link project
+        run: railway link --project ${{ secrets.RAILWAY_PROJECT_ID }}
+
+      - name: Create or select PR environment
+        run: |
+          if ! railway environment "$ENV_NAME"; then
+            railway environment new "$ENV_NAME"
+          fi
+
+      - name: Deploy server
+        working-directory: ./server
+        run: railway up --service ${{ secrets.RAILWAY_SERVICE_NAME }} --ci
+
+      - name: Resolve public URL
+        id: url
+        run: |
+          # `railway domain` prints the service's public domain. If none is attached,
+          # `railway domain --port 8080` provisions one and prints it.
+          DOMAIN=$(railway domain --service ${{ secrets.RAILWAY_SERVICE_NAME }} 2>/dev/null \
+                   || railway domain --service ${{ secrets.RAILWAY_SERVICE_NAME }} --port 8080)
+          DOMAIN=$(echo "$DOMAIN" | grep -oE '[a-z0-9.-]+\.up\.railway\.app' | head -n1)
+          if [ -z "$DOMAIN" ]; then
+            echo "Failed to resolve Railway domain" >&2
+            exit 1
+          fi
+          echo "api_url=https://$DOMAIN" >> "$GITHUB_OUTPUT"
+
+  deploy-frontend:
+    name: Deploy Vercel preview
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Pull Vercel project settings
+        working-directory: ./app
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build with API URL injected
+        working-directory: ./app
+        env:
+          VITE_API_URL: ${{ needs.deploy-backend.outputs.api_url }}
+          VITE_OAUTH_URL: ${{ secrets.STAGE_OAUTH_URL }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy preview
+        id: deploy
+        working-directory: ./app
+        run: |
+          URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const apiUrl = '${{ needs.deploy-backend.outputs.api_url }}';
+            const webUrl = '${{ steps.deploy.outputs.url }}';
+            const body = [
+              '### Preview ready',
+              '',
+              `- Frontend: ${webUrl}`,
+              `- API: ${apiUrl}`,
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+
+  cleanup:
+    name: Tear down PR environment
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      ENV_NAME: pr-${{ github.event.pull_request.number }}
+    steps:
+      - name: Install Railway CLI
+        run: bash <(curl -fsSL https://railway.com/install.sh)
+
+      - name: Link project
+        run: railway link --project ${{ secrets.RAILWAY_PROJECT_ID }}
+
+      - name: Delete PR environment
+        run: railway environment delete "$ENV_NAME" --yes || true
