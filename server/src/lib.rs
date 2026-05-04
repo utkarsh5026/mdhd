@@ -52,7 +52,7 @@ pub const HEALTH_API_PATH: &str = "/api/health";
 ///
 /// Returns an error if any entry in `config.cors_origins` cannot be parsed as a valid HTTP header value.
 pub fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn std::error::Error>> {
-    let cors_headers = config
+    let cors_origins: Vec<axum::http::HeaderValue> = config
         .cors_origins
         .iter()
         .map(|origin| {
@@ -62,8 +62,32 @@ pub fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn st
         })
         .collect::<Result<Vec<_>, _>>()?;
 
+    // Regex matching is intentionally Stage-only: prod is locked to the exact
+    // `cors_origins` list, dev uses localhost (no regex needed), and Stage is
+    // the only env that needs to accept dynamic per-PR Vercel preview URLs.
+    let cors_regex = if matches!(config.app_env, config::AppEnv::Stage) {
+        config
+            .cors_origin_regex
+            .as_deref()
+            .map(regex::Regex::new)
+            .transpose()
+            .map_err(|e| format!("Invalid CORS_ORIGIN_REGEX: {e}"))?
+    } else {
+        None
+    };
+
     let cors = CorsLayer::new()
-        .allow_origin(AllowOrigin::list(cors_headers))
+        .allow_origin(AllowOrigin::predicate(move |origin, _req| {
+            if cors_origins.iter().any(|allowed| allowed == origin) {
+                return true;
+            }
+            if let Some(re) = &cors_regex
+                && let Ok(s) = origin.to_str()
+            {
+                return re.is_match(s);
+            }
+            false
+        }))
         .allow_methods([
             Method::GET,
             Method::POST,

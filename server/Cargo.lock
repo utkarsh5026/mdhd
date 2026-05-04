@@ -1924,6 +1924,7 @@ dependencies = [
  "governor",
  "jsonwebtoken",
  "oauth2",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

@@ -51,6 +51,7 @@ chrono = { version = "0.4", features = ["serde"] }
 sha2 = "0.10"
 thiserror = "2"
 url = "2"
+regex = "1"
 
 
 governor = "0.10"
