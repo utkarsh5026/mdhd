@@ -115,13 +115,31 @@ export async function apiFetchText(path: string, options: ApiFetchInit = {}): Pr
 }
 
 /**
+ * Base URL for OAuth flows. Falls back to {@link API_BASE} when unset.
+ *
+ * In PR-preview deployments, this points at the stable stage backend that
+ * holds the registered Google OAuth credentials, while {@link API_BASE} points
+ * at the per-PR backend. Splitting them lets every PR exercise its own
+ * backend for normal API calls while routing login through the one backend
+ * Google knows about. In prod and local dev they're the same value.
+ */
+const OAUTH_BASE = import.meta.env.VITE_OAUTH_URL || API_BASE;
+
+/**
  * Returns the full URL to start the OAuth flow for a given provider.
  *
  * The returned URL is intended for browser navigation (e.g., `window.location.href`),
  * which initiates the server-side OAuth redirect flow.
  *
+ * Passes `return_to=<current origin>` so the backend redirects back to the
+ * frontend that initiated the flow — required for PR-preview deployments
+ * where each preview has a unique Vercel URL but all share one stable
+ * OAuth backend. The backend validates this against an allowlist before
+ * honoring it, so it can't be used for open redirects.
+ *
  * @param provider - The OAuth provider to authenticate with.
  */
 export function getOAuthUrl(provider: 'google'): string {
-  return `${API_BASE}/auth/${provider}`;
+  const returnTo = encodeURIComponent(window.location.origin);
+  return `${OAUTH_BASE}/auth/${provider}?return_to=${returnTo}`;
 }
