@@ -1,3 +1,4 @@
+export type { ApiFetchInit, HttpMethod } from './api-client';
 export { apiFetch, apiFetchText, authFetch, getOAuthUrl } from './api-client';
 export type { AuthUser } from './auth-store';
 export {
