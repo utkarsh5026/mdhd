@@ -1,4 +1,16 @@
 #!/usr/bin/env node
+/**
+ * @file MDHD **server-only** task runner. Invoked as `node makefile.mjs <task>` from `server/`
+ * (often via `make <task>` when the Makefile forwards here).
+ *
+ * Wraps **Cargo** (run, check, build, sqlx, clippy, test, watch), **Docker Compose** for local
+ * Postgres/MinIO (`docker-compose.dev.yml`), and a few **psql** helpers. Does not install app
+ * deps or the Python venv — use the **repo root** `makefile.mjs` for full monorepo setup.
+ *
+ * Chalk is loaded from `../app/node_modules/chalk` so colors match the frontend toolchain.
+ *
+ * @module server/makefile
+ */
 
 import { spawn } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -7,8 +19,10 @@ import { dirname, join } from "node:path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+/** @constant This package directory (`server/`). */
 const SERVER_DIR = __dirname;
 
+/** @constant Resolved path to Chalk in the sibling `app` package (run `bun install` in `app/` first). */
 const chalkModulePath = join(
   SERVER_DIR,
   "..",
@@ -19,10 +33,20 @@ const chalkModulePath = join(
   "index.js",
 );
 const chalkModuleURL = pathToFileURL(chalkModulePath).href;
+/** @type {Awaited<ReturnType<typeof import('chalk')>>} */
 const chalk = await import(chalkModuleURL).then((m) => m.default);
 
+/** @constant Local dev stack definition (Postgres, MinIO, Adminer). */
 const COMPOSE_FILE = join(SERVER_DIR, "docker-compose.dev.yml");
 
+/**
+ * @typedef {object} MakefileTask
+ * @property {string} description One-line summary for `make help`.
+ * @property {string} category Help section heading.
+ * @property {() => void | Promise<void>} action Task implementation.
+ */
+
+/** @type {Record<string, MakefileTask>} */
 const tasks = {
   help: {
     description: "Show this help message",
@@ -36,7 +60,7 @@ const tasks = {
     action: runSetup,
   },
   dev: {
-    description: "Start dev server (port 8080, reads .env)",
+    description: "Start dev server (port 8080, reads .env.development then .env)",
     category: "Development",
     action: () => runCargo(["run"]),
   },
@@ -161,6 +185,14 @@ const tasks = {
   },
 };
 
+/**
+ * Spawns a subprocess with cwd {@link SERVER_DIR} and inherited stdio (unless overridden).
+ *
+ * @param {string} command Executable name.
+ * @param {string[]} [args] argv after the command.
+ * @param {import('node:child_process').SpawnOptions} [options] Merged into spawn options (`env`, `stdio`, etc.).
+ * @returns {Promise<void>} Resolves on exit code `0`; rejects on non-zero exit or spawn error.
+ */
 function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -184,6 +216,12 @@ function runCommand(command, args = [], options = {}) {
   });
 }
 
+/**
+ * Runs `docker compose -f docker-compose.dev.yml` with the given subcommand from {@link SERVER_DIR}.
+ *
+ * @param {string[]} args e.g. `["up", "-d"]`, `["down", "-v"]`.
+ * @returns {Promise<void>}
+ */
 async function runDocker(args) {
   const label = `docker compose ${args.join(" ")}`;
   console.log(chalk.cyan(`Running: ${label}...`));
@@ -193,6 +231,13 @@ async function runDocker(args) {
   console.log(chalk.green("✓ Done!"));
 }
 
+/**
+ * Polls `pg_isready` in the Compose `postgres` service until ready or retries are exhausted.
+ *
+ * @param {number} [retries=30] Max attempts, one second apart.
+ * @returns {Promise<void>}
+ * @throws {Error} If Postgres never becomes ready.
+ */
 async function waitForPostgres(retries = 30) {
   console.log(chalk.dim("Waiting for Postgres to be ready..."));
   for (let i = 0; i < retries; i++) {
@@ -223,6 +268,11 @@ async function waitForPostgres(retries = 30) {
   throw new Error("Postgres did not become ready in time");
 }
 
+/**
+ * Applies pending SQLx migrations (`cargo sqlx migrate run`) using project env / `.env` as configured by Cargo.
+ *
+ * @returns {Promise<void>}
+ */
 async function runMigrate() {
   console.log(chalk.cyan("Running: sqlx migrate run..."));
   console.log();
@@ -231,6 +281,12 @@ async function runMigrate() {
   console.log(chalk.green("✓ Migrations applied!"));
 }
 
+/**
+ * Creates a new empty migration file via `cargo sqlx migrate add <name>`.
+ * Expects the migration name as `process.argv[3]` (e.g. `node makefile.mjs migrate-add my_table`).
+ *
+ * @returns {Promise<void>}
+ */
 async function runMigrateAdd() {
   const name = process.argv[3];
   if (!name) {
@@ -245,6 +301,12 @@ async function runMigrateAdd() {
   console.log(chalk.green("✓ Migration file created!"));
 }
 
+/**
+ * Destroys and recreates the local `mdhd` database on default Compose credentials, then runs migrations.
+ * **Destructive** — intended for dev Docker Postgres on `localhost:5432` only.
+ *
+ * @returns {Promise<void>}
+ */
 async function runDbReset() {
   console.log(chalk.bold.cyan("Resetting database..."));
   console.log();
@@ -264,6 +326,11 @@ async function runDbReset() {
   console.log(chalk.green("✓ Database reset complete!"));
 }
 
+/**
+ * Server-only bootstrap: Compose up, wait for Postgres, migrate, debug build.
+ *
+ * @returns {Promise<void>}
+ */
 async function runSetup() {
   console.log(chalk.bold.cyan("Running first-time setup..."));
   console.log();
@@ -288,6 +355,13 @@ async function runSetup() {
   console.log(chalk.bold.green("═".repeat(50)));
 }
 
+/**
+ * Runs `cargo` in {@link SERVER_DIR} with a standard log banner.
+ *
+ * @param {string[]} args Arguments after `cargo`.
+ * @param {import('node:child_process').SpawnOptions} [options] Extra spawn options (e.g. `RUN_ENV` via `env`).
+ * @returns {Promise<void>}
+ */
 async function runCargo(args, options = {}) {
   const label = `cargo ${args.join(" ")}`;
   console.log(chalk.cyan(`Running: ${label}...`));
@@ -297,6 +371,11 @@ async function runCargo(args, options = {}) {
   console.log(chalk.green("✓ Done!"));
 }
 
+/**
+ * Sequential gate: `cargo fmt --check`, Clippy (`-D warnings`), then tests.
+ *
+ * @returns {Promise<void>}
+ */
 async function runPreCommit() {
   console.log(chalk.bold.cyan("Running pre-commit checks..."));
   console.log();
@@ -327,6 +406,11 @@ async function runPreCommit() {
   console.log();
 }
 
+/**
+ * Pre-push style gate: fmt-check, Clippy, tests, and release build.
+ *
+ * @returns {Promise<void>}
+ */
 async function runValidate() {
   console.log(chalk.bold.cyan("Running full validation..."));
   console.log();
@@ -356,6 +440,11 @@ async function runValidate() {
   console.log(chalk.bold.green("═".repeat(50)));
 }
 
+/**
+ * Prints tasks from {@link tasks}, grouped by category.
+ *
+ * @returns {Promise<void>}
+ */
 function showHelp() {
   console.log();
   console.log();
@@ -383,6 +472,11 @@ function showHelp() {
   return Promise.resolve();
 }
 
+/**
+ * CLI entry: first argument is the task name (default `help`); unknown tasks exit with code 1.
+ *
+ * @returns {Promise<void>}
+ */
 async function main() {
   const args = process.argv.slice(2);
   const taskName = args[0] || "help";
