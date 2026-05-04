@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO reading_progress\n                (user_id, file_id, section_index, scroll_pct, seconds_spent, completed_at, updated_at,\n                 anchor_heading_path, anchor_block_offset, anchor_block_tag, anchor_block_hash)\n            VALUES ($1, $2, $3, $4, $5, CASE WHEN $6 THEN now() ELSE NULL END, now(),\n                    $7, $8, $9, $10)\n            ON CONFLICT (user_id, file_id) DO UPDATE SET\n                section_index = EXCLUDED.section_index,\n                scroll_pct = EXCLUDED.scroll_pct,\n                seconds_spent = reading_progress.seconds_spent + $5,\n                completed_at = COALESCE(reading_progress.completed_at,\n                    CASE WHEN $6 THEN now() ELSE NULL END),\n                updated_at = now(),\n                anchor_heading_path = COALESCE(EXCLUDED.anchor_heading_path, reading_progress.anchor_heading_path),\n                anchor_block_offset = COALESCE(EXCLUDED.anchor_block_offset, reading_progress.anchor_block_offset),\n                anchor_block_tag    = COALESCE(EXCLUDED.anchor_block_tag,    reading_progress.anchor_block_tag),\n                anchor_block_hash   = COALESCE(EXCLUDED.anchor_block_hash,   reading_progress.anchor_block_hash)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Float4",
+        "Int4",
+        "Bool",
+        "TextArray",
+        "Int4",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "453eb3ced605604e489140991e4e83101cd7d558bf23d9196aff1f43582b9adb"
+}

@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT day, seconds_spent FROM reading_sessions WHERE user_id = $1 AND day >= $2 ORDER BY day ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "day",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 1,
+        "name": "seconds_spent",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "afb7e412f19fac9b4157964af0dba14d0ed5328f1bb2c3cdbdeae598fdef4638"
+}
