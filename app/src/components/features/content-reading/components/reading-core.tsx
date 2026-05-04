@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useReadingSettingsStore } from '../../settings/store/reading-settings-store';
 import TTSContext from '../context/tts-context';
 import {
+  useProgressTracker,
   useReadingContent,
   useReadingNavigation,
   useReadingProgress,
@@ -27,6 +28,7 @@ import {
 } from './layout';
 import MilestoneCelebration from './layout/milestone-celebration';
 import ReadingBackground from './reading-background';
+import ResumeBanner from './resume-banner';
 import ReadingToc from './table-of-contents/reading-toc';
 
 const ReadingSettingsSheet = lazy(() =>
@@ -107,6 +109,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
     const { isMobile } = useMobile();
 
     const tts = useTTS();
+    useProgressTracker();
 
     const backgroundType = useReadingSettingsStore((s) => s.background.backgroundType);
     const hasCustomBackground = backgroundType !== 'theme';
@@ -157,6 +160,7 @@ const ReadingCore: React.FC<ReadingCoreProps> = memo(
               onClick={handleContentClick}
             >
               <ReadingBackground />
+              <ResumeBanner />
               {/* Content Container - Card Mode or Scroll Mode */}
               {readingMode === 'card' ? (
                 <ContentReader

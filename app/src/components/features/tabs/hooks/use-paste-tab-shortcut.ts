@@ -16,13 +16,13 @@ function isEditableElementFocused(): boolean {
 }
 
 /**
- * Creates a paste tab from text content, skipping empty strings.
- * Returns the new tab ID or null if skipped.
+ * Saves the pasted text as a root-level file and opens it as a tab.
+ * Skips empty strings; resolves to the new tab id (or null if skipped/failed).
  */
-function createPasteTab(content: string): string | null {
+function createPasteTab(content: string): Promise<string | null> {
   const trimmed = content.trim();
-  if (!trimmed) return null;
-  return useTabsStore.getState().createTab(trimmed, undefined, 'paste');
+  if (!trimmed) return Promise.resolve(null);
+  return useTabsStore.getState().createFromPaste(trimmed);
 }
 
 /**

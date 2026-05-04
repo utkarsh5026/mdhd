@@ -16,6 +16,7 @@ use axum::routing::{delete, get};
 use axum::{Json, Router};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
 use uuid::Uuid;
 
 use crate::errors::{AppError, OptionExt};
@@ -100,6 +101,7 @@ async fn verify_file_owner(
 /// # Errors
 /// - [`AppError::Unauthorized`] — missing or invalid JWT.
 /// - [`AppError::NotFound`] — file does not exist or belongs to another user.
+#[instrument(skip(state), fields(user_id = %auth.user_id, file_id = %file_id))]
 async fn list_bookmarks(
     auth: AuthUser,
     State(state): State<AppState>,
@@ -132,6 +134,15 @@ async fn list_bookmarks(
 /// - [`AppError::BadRequest`] — `section_index` is negative, `name` is blank after trim, or
 ///   `name` exceeds 200 characters.
 /// - [`AppError::NotFound`] — file does not exist or belongs to another user.
+#[instrument(
+    skip(state, body),
+    fields(
+        user_id = %auth.user_id,
+        file_id = %file_id,
+        section_index = body.section_index,
+        name_len = body.name.len(),
+    )
+)]
 async fn create_bookmark(
     auth: AuthUser,
     State(state): State<AppState>,
@@ -182,6 +193,10 @@ async fn create_bookmark(
 /// - [`AppError::Unauthorized`] — missing or invalid JWT.
 /// - [`AppError::NotFound`] — bookmark does not exist, belongs to another user, or is on a
 ///   different file than the one in the URL path.
+#[instrument(
+    skip(state),
+    fields(user_id = %auth.user_id, file_id = %file_id, bookmark_id = %bookmark_id)
+)]
 async fn delete_bookmark(
     auth: AuthUser,
     State(state): State<AppState>,

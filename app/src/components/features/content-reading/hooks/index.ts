@@ -1,5 +1,7 @@
+export * from './use-anchor-tracker';
 export * from './use-controls';
 export * from './use-global-search';
+export * from './use-progress-tracker';
 export * from './use-reading-dialogs';
 export * from './use-reading-interactions';
 export * from './use-reading-selectors';

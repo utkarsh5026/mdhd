@@ -8,9 +8,15 @@ use std::env;
 /// Deployment environment, derived from the `APP_ENV` environment variable.
 ///
 /// Defaults to [`Development`](AppEnv::Development) if unset or unrecognized.
+///
+/// `Stage` is a deployed-but-non-production environment used for PR previews.
+/// It opts in to looser rules (e.g. regex-based CORS / OAuth return URLs) that
+/// production never enables, so ephemeral preview URLs work without a redeploy
+/// per PR.
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppEnv {
     Production,
+    Stage,
     Development,
 }
 
@@ -26,6 +32,7 @@ impl AppEnv {
     fn from_source(get: &dyn Fn(&str) -> Option<String>) -> Self {
         match get("APP_ENV").as_deref() {
             Some("production") => Self::Production,
+            Some("stage" | "staging") => Self::Stage,
             _ => Self::Development,
         }
     }
@@ -89,6 +96,11 @@ pub struct Config {
     /// Parsed from a comma-separated `CORS_ORIGIN` env var so multiple origins
     /// (e.g. production + Vercel preview deployments) can be allowed at once.
     pub cors_origins: Vec<String>,
+    /// Optional regex matched against the request `Origin` header. Used to allow
+    /// dynamic preview URLs (e.g. Vercel PR previews) without redeploying for
+    /// every new URL. Combined with `cors_origins` via OR — a request is
+    /// allowed if it matches the explicit list OR the regex.
+    pub cors_origin_regex: Option<String>,
     /// Frontend URL used for post-auth redirects. Defaults to `http://localhost:5173`.
     pub frontend_url: String,
     /// Maximum database connections in the pool. Defaults to `10`.
@@ -169,6 +181,17 @@ impl Config {
                 ConfigError::Invalid("PORT must be a valid port number (0-65535)".into())
             })?,
             cors_origins: parse_csv(get, "CORS_ORIGIN", "http://localhost:5173"),
+            cors_origin_regex: {
+                let raw = get("CORS_ORIGIN_REGEX").unwrap_or_default();
+                if raw.is_empty() {
+                    None
+                } else {
+                    regex::Regex::new(&raw).map_err(|e| {
+                        ConfigError::Invalid(format!("CORS_ORIGIN_REGEX is not a valid regex: {e}"))
+                    })?;
+                    Some(raw)
+                }
+            },
             frontend_url: optional_or(get, "FRONTEND_URL", "http://localhost:5173"),
             db_max_connections: optional_or(get, "DB_MAX_CONNECTIONS", "10")
                 .parse()

@@ -91,28 +91,38 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
             AppError::NotFound => {
-                tracing::debug!("resource not found");
+                tracing::debug!(error_kind = "not_found", "resource not found");
                 (StatusCode::NOT_FOUND, self.to_string())
             }
             AppError::Unauthorized => {
-                tracing::warn!("unauthorized request");
+                tracing::warn!(error_kind = "unauthorized", "unauthorized request");
                 (StatusCode::UNAUTHORIZED, self.to_string())
             }
             AppError::BadRequest(msg) => {
-                tracing::warn!("bad request: {msg}");
-                // Return the message — call sites must ensure it's safe for clients.
-                // Never include stack traces, internal paths, or config details.
+                tracing::warn!(
+                    error_kind = "bad_request",
+                    message = %msg,
+                    "bad request"
+                );
                 (StatusCode::BAD_REQUEST, msg.clone())
             }
             AppError::Database(err) => {
-                tracing::error!("database error: {err:?}");
+                tracing::error!(
+                    error_kind = "database",
+                    error = ?err,
+                    "database error"
+                );
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Internal server error".to_string(),
                 )
             }
             AppError::Internal(msg) => {
-                tracing::error!("internal error: {msg}");
+                tracing::error!(
+                    error_kind = "internal",
+                    message = %msg,
+                    "internal error"
+                );
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Internal server error".to_string(),

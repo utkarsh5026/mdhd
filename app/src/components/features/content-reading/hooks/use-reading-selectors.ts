@@ -1,6 +1,7 @@
 import { use, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
+import { selectTabById } from '@/components/features/tabs/store/tab-selectors';
 import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
 import type { Bookmark, TabReadingState, TabsState } from '@/components/features/tabs/store/types';
 import { createBookmark, deleteBookmark } from '@/services/bookmarks';
@@ -8,14 +9,9 @@ import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsi
 
 import ReadingTabContext from '../context/reading-tab-context';
 
-/** Looks up a tab by its unique ID from the store state snapshot. */
-function findTab(s: TabsState, tabId: string) {
-  return s.tabs.find((t) => t.id === tabId);
-}
-
 /** Looks up the reading state for a given tab from the store state snapshot. */
 function findReadingState(s: TabsState, tabId: string) {
-  return findTab(s, tabId)?.readingState;
+  return selectTabById(s, tabId)?.readingState;
 }
 
 /** Checks whether a section index is within the bounds of the sections array. */
@@ -95,7 +91,7 @@ export function useReadingContent() {
   const tabId = useReadingTabId();
   return useTabsStore(
     useShallow((s) => {
-      const tab = findTab(s, tabId);
+      const tab = selectTabById(s, tabId);
       return {
         markdown: tab?.content ?? '',
         metadata: (tab?.readingState.metadata ?? null) as MarkdownMetadata | null,
@@ -250,7 +246,7 @@ export function useBookmarkActions() {
   const removeBookmark = useTabsStore((s) => s.removeBookmark);
 
   const toggleBookmark = useCallback(async () => {
-    const tab = tabs.find((t) => t.id === tabId);
+    const tab = selectTabById({ tabs }, tabId);
     if (!tab) return;
 
     const rs = tab.readingState;
@@ -297,12 +293,12 @@ export function useBookmarkActions() {
     toggleAdd(bookmark);
   }, [tabId, addBookmark, removeBookmark, tabs]);
 
-  const isPasteTab = useTabsStore((s) => {
-    const tab = s.tabs.find((t) => t.id === tabId);
-    return tab?.sourceType === 'paste';
+  const isUnsavedTab = useTabsStore((s) => {
+    const tab = selectTabById(s, tabId);
+    return !tab?.sourceFileId;
   });
 
-  return { toggleBookmark, isPasteTab };
+  return { toggleBookmark, isUnsavedTab };
 }
 
 export function useReadingActionsById(tabId: string) {

@@ -2,9 +2,9 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
 import { patch, patchById, patchNested } from '@/lib/store-utils';
+import { savePastedContent, updateSavedContent } from '@/services/files/save-content';
 import { fileStorageDB } from '@/services/indexeddb/file-db';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
-import { persistPaste } from '@/services/sync/paste-persistence';
 
 import { createBookmarkSlice } from './bookmark-slice';
 import { createTab, extractTitleFromMarkdown, hashString } from './helpers';
@@ -40,7 +40,6 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             showEmptyState: false,
             ...(options?.incrementCounter ? { untitledCounter: state.untitledCounter + 1 } : {}),
           }));
-          persistPaste(newTab.id, newTab.title, newTab.content);
           return newTab.id;
         },
 
@@ -53,7 +52,6 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         createTab: (
           content: string,
           title?: string,
-          sourceType: 'paste' | 'file' = 'paste',
           sourceFileId?: string,
           sourcePath?: string
         ) => {
@@ -62,18 +60,29 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           const newTab = createTab(content, resolvedTitle, {
             fileID: sourceFileId,
             path: sourcePath,
-            sType: sourceType,
           });
 
           return get().addTab(newTab);
         },
 
+        createFromPaste: async (content: string, title?: string) => {
+          const trimmed = content.trim();
+          if (!trimmed) return null;
+
+          try {
+            const file = await savePastedContent(content);
+            const resolvedTitle = title || extractTitleFromMarkdown(content) || file.name;
+            return get().createTab(content, resolvedTitle, file.id, file.path);
+          } catch (err) {
+            console.error('[tabs-store] Failed to save pasted content:', err);
+            return null;
+          }
+        },
+
         createUntitledTab: () => {
           const { untitledCounter } = get();
           const title = untitledCounter === 0 ? 'Untitled' : `Untitled-${untitledCounter}`;
-          const newTab = createTab('', title, { sType: 'paste' });
-
-          return get().addTab(newTab, { incrementCounter: true });
+          return get().addTab(createTab('', title), { incrementCounter: true });
         },
 
         setTabsState: (tabs: Tab[], activeTabId: string | null, showEmptyState: boolean) => {
@@ -92,7 +101,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           });
 
           const isAuthenticated = !!localStorage.getItem('mdhd-auth-token');
-          if (isAuthenticated && tab.sourceType === 'file' && tab.sourceFileId) {
+          if (isAuthenticated && tab.sourceFileId) {
             const fileId = tab.sourceFileId;
             import('@/services/bookmarks').then(({ fetchBookmarks, toLocalBookmark }) =>
               fetchBookmarks(fileId)
@@ -132,7 +141,11 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           }));
 
           const tab = get().tabs.find((t) => t.id === tabId);
-          if (tab) persistPaste(tab.id, tab.title, tab.content);
+          if (tab?.sourceFileId) {
+            updateSavedContent(tab.sourceFileId, tab.content).catch((err) =>
+              console.error('[tabs-store] Failed to persist tab content update:', err)
+            );
+          }
         },
 
         getTabById: (tabId: string) => {
@@ -161,6 +174,9 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           if (!tab) return null;
 
           const tabIndex = state.tabs.findIndex((t) => t.id === tabId);
+          // A duplicated tab gets its own identity but no longer points at the
+          // source file — otherwise edits in the copy would write back to the
+          // original. The copy is unsaved until explicitly persisted.
           const newTab: Tab = {
             ...tab,
             id: crypto.randomUUID(),
@@ -168,6 +184,8 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             createdAt: Date.now(),
             lastAccessedAt: Date.now(),
             pinned: false,
+            sourceFileId: undefined,
+            sourcePath: undefined,
             readingState: { ...tab.readingState },
           };
 
@@ -177,35 +195,7 @@ export const useTabsStore = create<TabsState & TabsActions>()(
             return { tabs: newTabs, activeTabId: newTab.id, showEmptyState: false };
           });
 
-          persistPaste(newTab.id, newTab.title, newTab.content);
           return newTab.id;
-        },
-
-        openPasteTab: async (
-          tabId: string,
-          fileId: string,
-          fileName: string,
-          createdAt: number
-        ) => {
-          const state = get();
-          const existing = state.getTabById(tabId);
-          if (existing) {
-            state.setActiveTab(tabId);
-            return;
-          }
-
-          const storedFile = await fileStorageDB.getFile(fileId);
-          if (!storedFile) return;
-
-          const title =
-            fileName.replace(/\.md$/, '') || extractTitleFromMarkdown(storedFile.content);
-          const tab = {
-            ...createTab(storedFile.content, title, { sType: 'paste' as const }),
-            id: tabId,
-            createdAt,
-          };
-
-          get().addTab(tab);
         },
 
         ...createBookmarkSlice(set, get, api),
@@ -270,21 +260,15 @@ export const useTabsStore = create<TabsState & TabsActions>()(
               }, 0);
             }
 
-            const tabsNeedingContent = state.tabs.filter((t) => !t.content);
+            const tabsNeedingContent = state.tabs.filter((t) => !t.content && t.sourceFileId);
             if (tabsNeedingContent.length > 0) {
               Promise.all(
                 tabsNeedingContent.map(async (tab) => {
                   try {
-                    let content: string | null = null;
-                    if (tab.sourceType === 'file' && tab.sourceFileId) {
-                      const file = await fileStorageDB.getFile(tab.sourceFileId);
-                      content = file?.content ?? null;
-                    } else if (tab.sourceType === 'paste') {
-                      const { pastePathForTab } = await import('@/services/sync/paste-persistence');
-                      const file = await fileStorageDB.getFileByPath(pastePathForTab(tab.id));
-                      content = file?.content ?? null;
-                    }
-                    return { tabId: tab.id, content };
+                    const file = tab.sourceFileId
+                      ? await fileStorageDB.getFile(tab.sourceFileId)
+                      : null;
+                    return { tabId: tab.id, content: file?.content ?? null };
                   } catch (err) {
                     console.error(`[tabs-store] Failed to load content for tab ${tab.id}:`, err);
                     return { tabId: tab.id, content: null };

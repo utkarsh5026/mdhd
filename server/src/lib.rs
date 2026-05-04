@@ -21,16 +21,19 @@ pub mod testutil;
 use std::time::Duration;
 
 use axum::Router;
+use axum::body::Body;
 use axum::extract::State;
-use axum::http::{Method, StatusCode, header};
+use axum::http::{Method, Request, StatusCode, header};
 use axum::routing::get;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{AllowOrigin, CorsLayer};
-use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
+use tower_http::request_id::{
+    MakeRequestUuid, PropagateRequestIdLayer, RequestId, SetRequestIdLayer,
+};
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
-use tracing::Level;
+use tracing::{Level, instrument};
 
 use config::Config;
 use state::AppState;
@@ -49,7 +52,7 @@ pub const HEALTH_API_PATH: &str = "/api/health";
 ///
 /// Returns an error if any entry in `config.cors_origins` cannot be parsed as a valid HTTP header value.
 pub fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn std::error::Error>> {
-    let cors_headers = config
+    let cors_origins: Vec<axum::http::HeaderValue> = config
         .cors_origins
         .iter()
         .map(|origin| {
@@ -59,8 +62,32 @@ pub fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn st
         })
         .collect::<Result<Vec<_>, _>>()?;
 
+    // Regex matching is intentionally Stage-only: prod is locked to the exact
+    // `cors_origins` list, dev uses localhost (no regex needed), and Stage is
+    // the only env that needs to accept dynamic per-PR Vercel preview URLs.
+    let cors_regex = if matches!(config.app_env, config::AppEnv::Stage) {
+        config
+            .cors_origin_regex
+            .as_deref()
+            .map(regex::Regex::new)
+            .transpose()
+            .map_err(|e| format!("Invalid CORS_ORIGIN_REGEX: {e}"))?
+    } else {
+        None
+    };
+
     let cors = CorsLayer::new()
-        .allow_origin(AllowOrigin::list(cors_headers))
+        .allow_origin(AllowOrigin::predicate(move |origin, _req| {
+            if cors_origins.iter().any(|allowed| allowed == origin) {
+                return true;
+            }
+            if let Some(re) = &cors_regex
+                && let Ok(s) = origin.to_str()
+            {
+                return re.is_match(s);
+            }
+            false
+        }))
         .allow_methods([
             Method::GET,
             Method::POST,
@@ -96,11 +123,26 @@ pub fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn st
             axum::http::HeaderValue::from_static("strict-origin-when-cross-origin"),
         ))
         .layer(
-            TraceLayer::new_for_http().on_response(
-                DefaultOnResponse::new()
-                    .level(Level::INFO)
-                    .latency_unit(tower_http::LatencyUnit::Millis),
-            ),
+            TraceLayer::new_for_http()
+                .make_span_with(|request: &Request<Body>| {
+                    let request_id = request
+                        .extensions()
+                        .get::<RequestId>()
+                        .and_then(|id| id.header_value().to_str().ok())
+                        .unwrap_or("-");
+
+                    tracing::info_span!(
+                        "http_request",
+                        method = %request.method(),
+                        path = %request.uri().path(),
+                        request_id = %request_id,
+                    )
+                })
+                .on_response(
+                    DefaultOnResponse::new()
+                        .level(Level::INFO)
+                        .latency_unit(tower_http::LatencyUnit::Millis),
+                ),
         )
         .layer(PropagateRequestIdLayer::x_request_id())
         .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid));
@@ -111,6 +153,7 @@ pub fn create_app(config: &Config, state: AppState) -> Result<Router, Box<dyn st
 /// Health-check endpoint (`GET /api/health`).
 ///
 /// Executes a trivial `SELECT 1` against the database to verify connectivity.
+#[instrument(skip(state))]
 async fn health(State(state): State<AppState>) -> StatusCode {
     match sqlx::query("SELECT 1").execute(&state.db).await {
         Ok(_) => StatusCode::OK,

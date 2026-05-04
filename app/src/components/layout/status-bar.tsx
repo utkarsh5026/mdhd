@@ -53,7 +53,6 @@ const StatusBar: React.FC = memo(() => {
 
     return {
       title: activeTab.title,
-      sourceType: activeTab.sourceType,
       currentIndex,
       totalSections,
       readCount,
@@ -74,9 +73,6 @@ const StatusBar: React.FC = memo(() => {
         <Item icon={FileText} className="truncate max-w-28 sm:max-w-48">
           {stats.title}
         </Item>
-        <span className="hidden sm:inline text-muted-foreground/40 uppercase text-[10px]">
-          {stats.sourceType}
-        </span>
       </div>
 
       {/* Center: reading position */}

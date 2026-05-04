@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM reading_progress WHERE user_id = $1 ORDER BY updated_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "file_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "section_index",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "scroll_pct",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 4,
+        "name": "seconds_spent",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "completed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "anchor_heading_path",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 8,
+        "name": "anchor_block_offset",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "anchor_block_tag",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "anchor_block_hash",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "d5aca231e30328a7b32f20ec3db7208b8791cf900c0acd726178d22e85ca2890"
+}

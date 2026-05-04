@@ -1,0 +1,38 @@
+import { useEffect } from 'react';
+
+import { useTabSlice } from '@/components/features/tabs/store/hooks';
+import { progressTracker } from '@/services/progress';
+
+import { useReadingTabId } from './use-reading-selectors';
+
+/**
+ * Wires the active tab's reading position into the progress tracker.
+ *
+ * No-ops for unsaved tabs (no `sourceFileId`) and for unauthenticated sessions.
+ * On unmount or tab change, blurs the tracker so seconds stop accruing against
+ * a tab that's no longer active.
+ */
+export function useProgressTracker(): void {
+  const tabId = useReadingTabId();
+  const { fileId, currentIndex, scrollProgress, sectionCount } = useTabSlice(tabId, (tab) => ({
+    fileId: tab?.sourceFileId,
+    currentIndex: tab?.readingState.currentIndex ?? 0,
+    scrollProgress: tab?.readingState.scrollProgress ?? 0,
+    sectionCount: tab?.readingState.sections.length ?? 0,
+  }));
+
+  useEffect(() => {
+    progressTracker.start();
+  }, []);
+
+  useEffect(() => {
+    if (!fileId) return;
+    progressTracker.track(fileId, currentIndex, Math.max(0, Math.min(1, scrollProgress)));
+    if (sectionCount > 0 && currentIndex >= sectionCount - 1 && scrollProgress >= 0.95) {
+      progressTracker.markCompleted(fileId);
+    }
+    return () => {
+      if (fileId) progressTracker.blur(fileId);
+    };
+  }, [fileId, currentIndex, scrollProgress, sectionCount]);
+}

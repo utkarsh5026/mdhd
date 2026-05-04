@@ -42,8 +42,8 @@ const ThemePreview = memo<ThemePreviewProps>(
         onClick={onClick}
       >
         <div className="flex flex-col shrink-0 rounded-md overflow-hidden mr-2.5 w-5 h-7">
-          <div className="flex-[3]" style={{ background: theme.background }} />
-          <div className="flex-[2]" style={{ background: theme.primary }} />
+          <div className="flex-3" style={{ background: theme.background }} />
+          <div className="flex-2" style={{ background: theme.primary }} />
           <div className="flex-1" style={{ background: theme.foreground ?? theme.primary }} />
         </div>
         <span className="flex-1 min-w-0 text-xs truncate">{theme.name}</span>
@@ -131,7 +131,7 @@ const AppThemeSelector: React.FC<AppThemeSelectorProps> = ({ onRequestCloseSheet
       {/* Active theme callout */}
       <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-border/30 bg-muted/20">
         <div
-          className="w-10 h-10 rounded-xl shrink-0 shadow-sm"
+          className="w-10 h-10 rounded-2xl shrink-0 shadow-sm"
           style={{
             background: `linear-gradient(135deg, ${currentTheme.background} 0%, ${currentTheme.primary} 100%)`,
           }}

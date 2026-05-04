@@ -1,5 +1,5 @@
 import { Menu } from 'lucide-react';
-import { lazy, Suspense, useCallback, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useSwipeable } from 'react-swipeable';
 
 import { MobileOnboarding } from '@/components/features/content-reading/components/layout';
@@ -13,6 +13,8 @@ import OfflineIndicator from '@/components/shared/offline-indicator';
 import { ReactErrorBoundary } from '@/components/utils';
 import { useLocalStorage, useToggle } from '@/hooks';
 import type { StoredFile } from '@/services/indexeddb';
+import { migratePastesToFiles } from '@/services/indexeddb/migrate-pastes';
+import { tabSync } from '@/services/tabs';
 
 import Header from './header';
 import Sidebar, { type SidebarPosition } from './sidebar';
@@ -37,6 +39,10 @@ const Homepage = () => {
   const isStatusBarVisible = useStatusBarVisible();
   const { storedValue: sidebarPosition, setValue: setSidebarPosition } =
     useLocalStorage<SidebarPosition>(SIDEBAR_POSITION_KEY, 'left');
+
+  useEffect(() => {
+    migratePastesToFiles().finally(() => tabSync.start());
+  }, []);
 
   const handleEnterFullscreen = useCallback((tabId: string) => {
     setFullscreenTabId(tabId);
@@ -66,7 +72,7 @@ const Homepage = () => {
         setActiveTab(existingTab.id);
         setShowEmptyState(false);
       } else {
-        createTab(file.content, file.name, 'file', file.id, file.path);
+        createTab(file.content, file.name, file.id, file.path);
       }
 
       closeMobileSidebar();

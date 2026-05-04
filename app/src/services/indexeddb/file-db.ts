@@ -278,6 +278,25 @@ class FileStorageDB extends BaseDB {
   }
 
   /**
+   * Renames a file by rewriting its `name`, `path`, and `parentPath` in place.
+   * The record id and content are preserved; `updatedAt` is bumped.
+   */
+  async renameFile(
+    id: string,
+    name: string,
+    path: string,
+    parentPath: string
+  ): Promise<StoredFile | undefined> {
+    return this.readModifyWrite<StoredFile>(FILES_STORE, id, (file) => ({
+      ...file,
+      name,
+      path: normalizePath(path),
+      parentPath: normalizePath(parentPath),
+      updatedAt: Date.now(),
+    }));
+  }
+
+  /**
    * Deletes a file record by its UUID.
    *
    * @async

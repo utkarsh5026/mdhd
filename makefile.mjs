@@ -1,17 +1,40 @@
 #!/usr/bin/env node
+/**
+ * @file MDHD monorepo task runner (root). Invoked as `node makefile.mjs <task>`; the repo
+ * Makefile typically forwards `make <task>` here.
+ *
+ * Responsibilities:
+ * - **Client** (`app/`): Bun scripts (dev, build, lint, format).
+ * - **Server** (`server/`): Cargo (run, build, sqlx migrate, clippy, test).
+ * - **Infra**: `server/docker-compose.dev.yml` (Postgres, Minio, Adminer).
+ * - **Tooling**: Python venv in `server/scripts/.venv` for ruff and `sqlx_sync.py`.
+ *
+ * Environment: reads `server/.env.development` for migrations and connection checks;
+ * copies from `server/.env.example` on first setup when that file is missing.
+ *
+ * @module makefile
+ */
 
 import { spawn } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+/** @constant Project root (directory containing this file). */
 const ROOT_DIR = __dirname;
+/** @constant Frontend package root (`app/`). */
 const APP_DIR = join(ROOT_DIR, "app");
+/** @constant Rust API package root (`server/`). */
 const SERVER_DIR = join(ROOT_DIR, "server");
+/** @constant Local dev env file; created from {@link SERVER_ENV_EXAMPLE} when missing. */
+const SERVER_DEV_ENV_FILE = join(SERVER_DIR, ".env.development");
+/** @constant Template copied to `.env.development` on first setup. */
+const SERVER_ENV_EXAMPLE = join(SERVER_DIR, ".env.example");
 
-// Try to load chalk, fallback to simple ANSI colors if not installed
+/** Terminal colors: Chalk from `app/node_modules` when present, else minimal ANSI helpers. */
 let chalk;
 try {
   const chalkModulePath = join(
@@ -41,12 +64,82 @@ try {
   };
 }
 
+/** @constant Dev Docker Compose file (Postgres, MinIO, Adminer). */
 const COMPOSE_FILE = join(SERVER_DIR, "docker-compose.dev.yml");
+/** @constant Server-side scripts (Python venv, sqlx helpers). */
 const SCRIPTS_DIR = join(SERVER_DIR, "scripts");
+/** @constant Python virtualenv root for script dependencies. */
 const VENV_DIR = join(SCRIPTS_DIR, ".venv");
+
+/**
+ * Appends `statement-cache-capacity=0` when missing so SQLx works with poolers (PgBouncer).
+ *
+ * @param {string | null | undefined} databaseUrl Postgres connection URL.
+ * @returns {string | null | undefined} URL safe for `sqlx` / pooled connections.
+ */
+function databaseUrlWithStatementCacheDisabled(databaseUrl) {
+  if (!databaseUrl) return databaseUrl;
+  if (databaseUrl.includes("statement-cache-capacity=")) return databaseUrl;
+  const sep = databaseUrl.includes("?") ? "&" : "?";
+  return `${databaseUrl}${sep}statement-cache-capacity=0`;
+}
+
+/**
+ * Reads a single `KEY=value` from a `.env`-style file (no full dotenv dependency).
+ *
+ * @param {string} envPath Absolute path to the env file.
+ * @param {string} key Variable name to extract.
+ * @returns {string | null} Trimmed value, or `null` if not found.
+ */
+function loadEnvVarFromDotenv(envPath, key) {
+  const raw = readFileSync(envPath, "utf8");
+  for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    if (trimmed.slice(0, eq).trim() !== key) continue;
+    let val = trimmed.slice(eq + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    return val;
+  }
+  return null;
+}
+
+/**
+ * Ensures `server/.env.development` exists by copying `server/.env.example` when absent.
+ *
+ * @returns {Promise<void>}
+ */
+async function ensureServerDevEnvFile() {
+  if (existsSync(SERVER_DEV_ENV_FILE)) {
+    console.log(chalk.dim("Skipping .env.development — already exists."));
+    return;
+  }
+  console.log(chalk.dim("Creating .env.development from .env.example..."));
+  await runCommand("cp", [SERVER_ENV_EXAMPLE, SERVER_DEV_ENV_FILE], {
+    cwd: SERVER_DIR,
+  });
+}
+
+/** @constant Interpreter inside the scripts virtualenv. */
 const VENV_PYTHON = join(VENV_DIR, "bin", "python");
+/** @constant Pip inside the scripts virtualenv. */
 const VENV_PIP = join(VENV_DIR, "bin", "pip");
 
+/**
+ * @typedef {object} MakefileTask
+ * @property {string} description One-line summary for `make help`.
+ * @property {string} category Help section heading (e.g. `Development`, `Quality`).
+ * @property {() => void | Promise<void>} action Async or sync handler for the task.
+ */
+
+/** @type {Record<string, MakefileTask>} */
 const tasks = {
   help: {
     description: "Show this help message",
@@ -173,6 +266,14 @@ const tasks = {
   },
 };
 
+/**
+ * Spawns a subprocess with inherited stdio (unless overridden).
+ *
+ * @param {string} command Executable or shell builtin (uses `shell: true` on Windows).
+ * @param {string[]} [args] argv tokens after the command.
+ * @param {import('node:child_process').SpawnOptions} [options] Passed to `spawn` (e.g. `cwd`, `env`, `stdio`).
+ * @returns {Promise<void>} Resolves on exit code 0; rejects otherwise.
+ */
 function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
@@ -195,6 +296,13 @@ function runCommand(command, args = [], options = {}) {
   });
 }
 
+/**
+ * Runs a Bun command in {@link APP_DIR} (typically `package.json` scripts).
+ *
+ * @param {string[]} args Arguments after `bun` (e.g. `["run", "dev"]`).
+ * @param {string} [label] Human-readable log line; omitted section headers if falsy.
+ * @returns {Promise<void>}
+ */
 async function runBun(args, label) {
   if (label) {
     console.log(chalk.cyan(`Running: ${label}...`));
@@ -205,6 +313,14 @@ async function runBun(args, label) {
   console.log(chalk.green("✓ Done!"));
 }
 
+/**
+ * Runs a Cargo command in {@link SERVER_DIR}.
+ *
+ * @param {string[]} args Arguments after `cargo`.
+ * @param {string} [label] Human-readable log line.
+ * @param {import('node:child_process').SpawnOptions} [options] Extra spawn options merged into defaults.
+ * @returns {Promise<void>}
+ */
 async function runCargo(args, label, options = {}) {
   if (label) {
     console.log(chalk.cyan(`Running: ${label}...`));
@@ -215,6 +331,12 @@ async function runCargo(args, label, options = {}) {
   console.log(chalk.green("✓ Done!"));
 }
 
+/**
+ * Runs `docker compose -f docker-compose.dev.yml` from {@link SERVER_DIR}.
+ *
+ * @param {string[]} args Subcommand and flags (e.g. `["up", "-d"]`).
+ * @returns {Promise<void>}
+ */
 async function runDocker(args) {
   const label = `docker compose ${args.join(" ")}`;
   console.log(chalk.cyan(`Running: ${label}...`));
@@ -226,6 +348,13 @@ async function runDocker(args) {
   console.log(chalk.green("✓ Done!"));
 }
 
+/**
+ * Runs `python -m <module> ...` using the scripts venv from {@link SCRIPTS_DIR}.
+ *
+ * @param {string[]} args Tokens after `python -m` (e.g. `["ruff", "check", "."]`).
+ * @param {string} [label] Human-readable log line.
+ * @returns {Promise<void>}
+ */
 async function runVenv(args, label) {
   if (label) {
     console.log(chalk.cyan(`Running: ${label}...`));
@@ -236,6 +365,13 @@ async function runVenv(args, label) {
   console.log(chalk.green("✓ Done!"));
 }
 
+/**
+ * Runs the venv Python with arbitrary argv (script path as first arg), cwd {@link SERVER_DIR}.
+ *
+ * @param {string[]} args e.g. `["scripts/sqlx_sync.py", "check"]`.
+ * @param {string} [label] Human-readable log line.
+ * @returns {Promise<void>}
+ */
 async function runVenvScript(args, label) {
   if (label) {
     console.log(chalk.cyan(`Running: ${label}...`));
@@ -246,13 +382,21 @@ async function runVenvScript(args, label) {
   console.log(chalk.green("✓ Done!"));
 }
 
-/** Print a bold section header with a divider. */
+/**
+ * Prints a bold section header with a divider line (`▶ {label}...`).
+ *
+ * @param {string} label Step title.
+ */
 function step(label) {
   console.log(chalk.bold.yellow(`\n▶ ${label}...`));
   console.log(chalk.dim("─".repeat(50)));
 }
 
-/** Print a bordered success banner. */
+/**
+ * Prints a bordered success banner.
+ *
+ * @param {string} message Short completion message.
+ */
 function done(message) {
   console.log();
   console.log(chalk.bold.green("═".repeat(50)));
@@ -261,11 +405,18 @@ function done(message) {
 }
 
 /**
- * Spawn multiple long-running processes concurrently, prefixing each line of
- * output with a colored tag. Cleans up all children on SIGINT/SIGTERM or when
- * any process exits.
+ * Spawns multiple long-running processes concurrently; prefixes each stdout/stderr line.
+ * Registers SIGINT/SIGTERM handlers to terminate all children.
  *
- * @param {{ command: string, args: string[], cwd: string, prefix: string, color: Function, env?: object }[]} procs
+ * @param {Array<{
+ *   command: string,
+ *   args: string[],
+ *   cwd: string,
+ *   prefix: string,
+ *   color: (s: string) => string,
+ *   env?: NodeJS.ProcessEnv
+ * }>} procs Process specs (typically Vite + cargo-watch).
+ * @returns {Promise<void>} Rejects if any child exits non-zero.
  */
 async function runConcurrent(procs) {
   const children = [];
@@ -340,6 +491,11 @@ async function runChecks(checks, failHint = "") {
   }
 }
 
+/**
+ * Dev stack: Vite on 5173 and `cargo watch -x run` on 8080, logs interleaved with tags.
+ *
+ * @returns {Promise<void>}
+ */
 async function runDev() {
   console.log(chalk.bold.cyan("Starting client and server concurrently..."));
   console.log(chalk.dim("  client → http://localhost:5173  (Vite HMR)"));
@@ -364,6 +520,11 @@ async function runDev() {
   ]);
 }
 
+/**
+ * Production path: release-build client + server, then runs `mdhd-server` with `RUN_ENV=production`.
+ *
+ * @returns {Promise<void>}
+ */
 async function runProd() {
   console.log(chalk.bold.cyan("Building and serving production..."));
   console.log();
@@ -388,6 +549,11 @@ async function runProd() {
   });
 }
 
+/**
+ * Watches client (`vite build --watch`) and server (release build + binary via cargo-watch).
+ *
+ * @returns {Promise<void>}
+ */
 async function runProdWatch() {
   console.log(chalk.bold.cyan("Starting production watch mode..."));
   console.log(chalk.dim("  client → rebuilds to dist/ on source changes"));
@@ -420,6 +586,13 @@ async function runProdWatch() {
   ]);
 }
 
+/**
+ * Polls `pg_isready` inside the Compose `postgres` service until ready or retries exhausted.
+ *
+ * @param {number} [retries=30] Maximum attempts (one second apart).
+ * @returns {Promise<void>}
+ * @throws {Error} If Postgres never becomes ready.
+ */
 async function waitForPostgres(retries = 30) {
   console.log(chalk.dim("Waiting for Postgres to be ready..."));
   for (let i = 0; i < retries; i++) {
@@ -448,6 +621,11 @@ async function waitForPostgres(retries = 30) {
   throw new Error("Postgres did not become ready in time");
 }
 
+/**
+ * Creates `server/scripts/.venv` if missing and installs `requirements.txt` via pip.
+ *
+ * @returns {Promise<void>}
+ */
 async function runPythonSetup() {
   console.log(chalk.bold.cyan("Setting up Python virtual environment..."));
   console.log();
@@ -469,6 +647,11 @@ async function runPythonSetup() {
   console.log(chalk.green("✓ Python setup complete!"));
 }
 
+/**
+ * Steps before Docker: Bun install, lefthook, Python venv, and dev env file bootstrap.
+ *
+ * @returns {Promise<void>}
+ */
 async function runPreContainerSetup() {
   step("Installing app dependencies");
   await runBun(["install"], "app dependencies");
@@ -480,17 +663,15 @@ async function runPreContainerSetup() {
   await runPythonSetup();
 
   step("Setting up server environment");
-  const envPath = join(SERVER_DIR, ".env");
-  const envExamplePath = join(SERVER_DIR, ".env.example");
-  const { existsSync } = await import("node:fs");
-  if (existsSync(envPath)) {
-    console.log(chalk.dim("Skipping .env — already exists."));
-  } else {
-    console.log(chalk.dim("Creating .env from .env.example..."));
-    await runCommand("cp", [envExamplePath, envPath], { cwd: SERVER_DIR });
-  }
+  await ensureServerDevEnvFile();
 }
 
+/**
+ * Brings up dev Compose stack, waits for Postgres, ensures `.env.development`, runs SQLx migrations, builds server.
+ *
+ * @returns {Promise<void>}
+ * @throws {Error} On missing DB URL, pooler-only URL on 6543, or migration failure.
+ */
 async function runContainers() {
   console.log(chalk.bold.cyan("Starting containers and running migrations..."));
   console.log();
@@ -500,9 +681,40 @@ async function runContainers() {
 
   await waitForPostgres();
 
+  await ensureServerDevEnvFile();
+
   step("Running migrations");
   console.log(chalk.cyan("Running: sqlx migrate run..."));
-  await runCommand("cargo", ["sqlx", "migrate", "run"], { cwd: SERVER_DIR });
+  const migrationOverride =
+    process.env.MIGRATION_DATABASE_URL ||
+    (existsSync(SERVER_DEV_ENV_FILE)
+      ? loadEnvVarFromDotenv(SERVER_DEV_ENV_FILE, "MIGRATION_DATABASE_URL")
+      : null);
+  const databaseUrl =
+    process.env.DATABASE_URL ||
+    (existsSync(SERVER_DEV_ENV_FILE)
+      ? loadEnvVarFromDotenv(SERVER_DEV_ENV_FILE, "DATABASE_URL")
+      : null);
+  const resolvedForMigrate = migrationOverride || databaseUrl;
+  if (resolvedForMigrate?.includes(":6543")) {
+    throw new Error(
+      "Migrations cannot use Supabase transaction pooler (port 6543). Set MIGRATION_DATABASE_URL in server/.env.development to the session pooler or direct Postgres URL (port 5432). See server/.env.supabase.example.",
+    );
+  }
+  if (!resolvedForMigrate) {
+    throw new Error(
+      "DATABASE_URL (or MIGRATION_DATABASE_URL) must be set in server/.env.development or in the environment before running migrations.",
+    );
+  }
+  const migrateArgs = [
+    "sqlx",
+    "migrate",
+    "run",
+    "--no-dotenv",
+    "--database-url",
+    databaseUrlWithStatementCacheDisabled(resolvedForMigrate),
+  ];
+  await runCommand("cargo", migrateArgs, { cwd: SERVER_DIR });
   console.log(chalk.green("✓ Migrations applied!"));
 
   step("Building server");
@@ -511,6 +723,11 @@ async function runContainers() {
   done("Containers ready! Run 'make dev' to start.");
 }
 
+/**
+ * Full first-time flow: {@link runPreContainerSetup} then {@link runContainers}.
+ *
+ * @returns {Promise<void>}
+ */
 async function runSetup() {
   console.log(chalk.bold.cyan("Running first-time setup..."));
   console.log();
@@ -521,6 +738,11 @@ async function runSetup() {
   done("Setup complete! Run 'make dev' to start.");
 }
 
+/**
+ * Runs `server/scripts/check_connections.py` against Supabase (optional `dev` / `prod` from `process.argv[3]`).
+ *
+ * @returns {Promise<void>}
+ */
 async function runTestConnections() {
   const target = process.argv[3];
   const args = ["scripts/check_connections.py"];
@@ -536,6 +758,11 @@ async function runTestConnections() {
   console.log(chalk.green("✓ Done!"));
 }
 
+/**
+ * Local gate mirroring pre-commit: fmt-check, lint, and tests for client, server, and Python.
+ *
+ * @returns {Promise<void>}
+ */
 async function runPreCommit() {
   console.log(chalk.bold.cyan("Running pre-commit checks..."));
   console.log();
@@ -573,6 +800,11 @@ async function runPreCommit() {
   console.log();
 }
 
+/**
+ * Broader CI-style gate: fmt-check, lint, tests, plus client build and server release build.
+ *
+ * @returns {Promise<void>}
+ */
 async function runValidate() {
   console.log(chalk.bold.cyan("Running full validation..."));
   console.log();
@@ -614,6 +846,11 @@ async function runValidate() {
   done("All validations passed! Ready to push.");
 }
 
+/**
+ * Prints grouped task list from {@link tasks} and hints for app/server makefiles.
+ *
+ * @returns {Promise<void>}
+ */
 function showHelp() {
   console.log();
   console.log(chalk.bold("  MDHD — root task runner"));
@@ -647,6 +884,11 @@ function showHelp() {
   return Promise.resolve();
 }
 
+/**
+ * CLI entry: first arg is task name (default `help`); unknown names exit 1.
+ *
+ * @returns {Promise<void>}
+ */
 async function main() {
   const args = process.argv.slice(2);
   const taskName = args[0] || "help";

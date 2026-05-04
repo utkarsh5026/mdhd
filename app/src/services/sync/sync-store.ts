@@ -6,7 +6,6 @@ import { useFileStore } from '@/components/features/file-explorer';
 import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
 import type { SyncResult } from '@/services/sync/types';
 
-import { removePaste } from './paste-persistence';
 import { performSettingsSync, performSync } from './sync-service';
 
 /** Persistent and transient state for the cross-device sync process. */
@@ -21,11 +20,13 @@ interface SyncState {
 /** Actions available on the sync store. */
 interface SyncActions {
   /**
-   * Triggers a full bidirectional sync: files, pastes, and settings.
+   * Triggers a full bidirectional sync: files and settings.
    *
-   * Guards against concurrent runs. On success, refreshes the file tree
-   * and reconciles downloaded/deleted paste tabs. Only `lastSyncAt` is
-   * persisted to localStorage; all other state resets on page load.
+   * Guards against concurrent runs. On success, refreshes the file tree,
+   * auto-opens any newly-downloaded files as tabs (so paste-on-laptop /
+   * read-on-mobile keeps working), and closes tabs whose backing file was
+   * deleted on another device. Only `lastSyncAt` is persisted to
+   * localStorage; all other state resets on page load.
    */
   startSync: () => Promise<void>;
   /** Clears the current `syncError` without triggering a new sync. */
@@ -65,25 +66,32 @@ const useSyncStore = create<SyncState & SyncActions>()(
 
             const tabsStore = useTabsStore.getState();
 
-            result.downloadedPastes
-              .filter((paste) => !tabsStore.getTabById(paste.tabId))
-              .forEach((paste) => tabsStore.createTab(paste.content, paste.title, 'paste'));
+            result.newFiles
+              .filter((file) => !tabsStore.findTabByFileId(file.fileId))
+              .forEach((file) =>
+                tabsStore.createTab(
+                  file.content,
+                  file.name.replace(/\.md$/, ''),
+                  file.fileId,
+                  file.path
+                )
+              );
 
-            result.deletedPasteTabIds.forEach((id) => {
+            // Close any tabs whose backing file was deleted on another device.
+            result.deletedFileIds.forEach((fileId) => {
               const { tabs, activeTabId, setTabsState } = useTabsStore.getState();
-              const tab = tabs.find((t) => t.id === id);
+              const tab = tabs.find((t) => t.sourceFileId === fileId);
               if (!tab || tab.pinned) return;
               const tabIndex = tabs.indexOf(tab);
-              const newTabs = tabs.filter((t) => t.id !== id);
+              const newTabs = tabs.filter((t) => t.id !== tab.id);
               let newActiveTabId: string | null = null;
               if (newTabs.length > 0) {
                 newActiveTabId =
-                  activeTabId === id
+                  activeTabId === tab.id
                     ? newTabs[Math.min(tabIndex, newTabs.length - 1)].id
                     : activeTabId;
               }
               setTabsState(newTabs, newActiveTabId, newTabs.length === 0);
-              removePaste(tab.id, tab.sourceType);
             });
           } catch (err) {
             set({

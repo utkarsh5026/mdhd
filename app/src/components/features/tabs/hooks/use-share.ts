@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { revokeShare, shareFile, sharePaste } from '@/services/share/share-api';
+import { revokeShare, shareFile } from '@/services/share/share-api';
 
 import type { Tab } from '../store/types';
 
@@ -14,8 +14,8 @@ export interface UseShareReturn {
 }
 
 /**
- * Determines whether to share a tab as a file or a paste based on its
- * `sourceType`, then calls the appropriate share API endpoint.
+ * Creates a public share link for the given tab via the file-share endpoint.
+ * Unsaved tabs (no `sourcePath`) fall back to the tab title as the path.
  */
 export function useShare(tab: Tab | undefined): UseShareReturn {
   const [shareUrl, setShareUrl] = useState('');
@@ -29,14 +29,7 @@ export function useShare(tab: Tab | undefined): UseShareReturn {
     setError(null);
 
     try {
-      let url: string;
-
-      if (tab.sourceType === 'paste') {
-        ({ url } = await sharePaste(tab.title, tab.content));
-      } else {
-        ({ url } = await shareFile(tab.title, tab.sourcePath ?? tab.title, tab.content));
-      }
-
+      const { url } = await shareFile(tab.title, tab.sourcePath ?? tab.title, tab.content);
       setShareUrl(url);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create share link';
@@ -46,14 +39,10 @@ export function useShare(tab: Tab | undefined): UseShareReturn {
     }
   }, [tab]);
 
-  const revoke = useCallback(
-    async (token: string) => {
-      if (!tab) return;
-      await revokeShare(token, tab.sourceType);
-      setShareUrl('');
-    },
-    [tab]
-  );
+  const revoke = useCallback(async (token: string) => {
+    await revokeShare(token);
+    setShareUrl('');
+  }, []);
 
   const reset = useCallback(() => {
     setShareUrl('');

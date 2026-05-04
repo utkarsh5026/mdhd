@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO user_tabs (user_id, file_id, position, is_active, pinned, updated_at)\n            VALUES ($1, $2, $3, $4, $5, now())\n            ON CONFLICT (user_id, file_id) DO UPDATE SET\n                position = EXCLUDED.position,\n                is_active = EXCLUDED.is_active,\n                pinned = EXCLUDED.pinned,\n                updated_at = now()\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "792683c32981fc660ce866f3e867d83d8c643379817edfaa5f8f64c3188131fd"
+}

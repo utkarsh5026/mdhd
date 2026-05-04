@@ -33,13 +33,8 @@ const TabManagementMenu: React.FC = memo(() => {
   const isHeaderVisible = useHeaderVisible();
   const isStatusBarVisible = useStatusBarVisible();
   const { toggleHeaderVisibility, toggleStatusBarVisibility } = useTabsActions();
-  const {
-    closeAllTabs,
-    closeOtherTabs,
-    closeTabsInDirection,
-    closeTabsByPathPrefix,
-    closeTabsBySourceType,
-  } = useTabClose();
+  const { closeAllTabs, closeOtherTabs, closeTabsInDirection, closeTabsByPathPrefix } =
+    useTabClose();
 
   const { state: isOpen, set: setIsOpen } = useToggle();
 
@@ -66,14 +61,6 @@ const TabManagementMenu: React.FC = memo(() => {
     }
 
     return Array.from(folders.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-  }, [tabs, isOpen]);
-
-  const tabCounts = useMemo(() => {
-    if (!isOpen) return { file: 0, paste: 0 };
-    return {
-      file: tabs.filter((t) => t.sourceType === 'file').length,
-      paste: tabs.filter((t) => t.sourceType === 'paste').length,
-    };
   }, [tabs, isOpen]);
 
   const positionCounts = useMemo(() => {
@@ -147,25 +134,6 @@ const TabManagementMenu: React.FC = memo(() => {
             suffix={<CountBadge count={positionCounts.left || undefined} />}
           >
             Tabs to the left
-          </ListPopoverItem>
-        </ListPopoverGroup>
-
-        {/* Close by type */}
-        <ListPopoverGroup className="border-t border-border/30">
-          <ListPopoverGroupLabel>By type</ListPopoverGroupLabel>
-          <ListPopoverItem
-            disabled={tabCounts.file === 0}
-            onClick={() => closeTabsBySourceType('file')}
-            suffix={<CountBadge count={tabCounts.file || undefined} />}
-          >
-            File tabs
-          </ListPopoverItem>
-          <ListPopoverItem
-            disabled={tabCounts.paste === 0}
-            onClick={() => closeTabsBySourceType('paste')}
-            suffix={<CountBadge count={tabCounts.paste || undefined} />}
-          >
-            Pasted tabs
           </ListPopoverItem>
         </ListPopoverGroup>
 

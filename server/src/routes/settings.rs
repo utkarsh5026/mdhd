@@ -3,6 +3,7 @@ use axum::routing::post;
 use axum::{Json, Router};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use tracing::{info, instrument};
 
 use crate::errors::AppError;
 use crate::middleware::auth::AuthUser;
@@ -38,6 +39,10 @@ pub struct SettingsSyncResponse {
 /// - Accepts client values that are newer (upserts them).
 /// - Returns server values that are newer for the client to apply.
 /// - Returns server settings the client doesn't have yet (from other devices).
+#[instrument(
+    skip(state, body),
+    fields(user_id = %auth.user_id, client_settings = body.settings.len())
+)]
 async fn sync_settings(
     auth: AuthUser,
     State(state): State<AppState>,
@@ -66,6 +71,12 @@ async fn sync_settings(
     }
 
     let updated = decision.updated;
+
+    info!(
+        accepted = accepted.len(),
+        updated = updated.len(),
+        "settings sync reconciliation complete"
+    );
 
     Ok(Json(SettingsSyncResponse {
         updated,

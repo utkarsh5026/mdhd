@@ -16,12 +16,16 @@ use mdhd_server::{create_app, db, storage};
 fn init_tracing(env: &AppEnv) {
     let env_filter =
         tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| match env {
-            AppEnv::Production => "mdhd_server=info,tower_http=info,sqlx=warn".into(),
+            AppEnv::Production | AppEnv::Stage => {
+                "mdhd_server=info,tower_http=info,sqlx=warn".into()
+            }
             AppEnv::Development => "mdhd_server=debug,tower_http=debug,sqlx=warn".into(),
         });
 
     let fmt_layer: Box<dyn Layer<_> + Send + Sync> = match env {
-        AppEnv::Production => Box::new(tracing_subscriber::fmt::layer().json().with_ansi(false)),
+        AppEnv::Production | AppEnv::Stage => {
+            Box::new(tracing_subscriber::fmt::layer().json().with_ansi(false))
+        }
         AppEnv::Development => Box::new(
             tracing_subscriber::fmt::layer()
                 .with_target(true)

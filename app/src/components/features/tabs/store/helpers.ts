@@ -72,8 +72,7 @@ export function createTab(
   source: {
     fileID?: string;
     path?: string;
-    sType: 'paste' | 'file';
-  }
+  } = {}
 ): Tab {
   const now = Date.now();
   return {
@@ -83,7 +82,6 @@ export function createTab(
     contentHash: hashString(content),
     createdAt: now,
     lastAccessedAt: now,
-    sourceType: source.sType,
     sourceFileId: source.fileID,
     sourcePath: source.path,
     readingState: createInitialReadingState(content),

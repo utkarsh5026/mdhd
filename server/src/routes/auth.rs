@@ -15,6 +15,7 @@ use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::{Deserialize, Serialize};
 use time::Duration;
+use tracing::{info, instrument};
 use uuid::Uuid;
 
 use crate::auth::jwt::create_token;
@@ -23,24 +24,71 @@ use crate::errors::{AppError, OptionExt, ResultExt};
 use crate::state::AppState;
 
 const CSRF_COOKIE_NAME: &str = "oauth_csrf";
+const RETURN_TO_COOKIE_NAME: &str = "oauth_return_to";
 
-/// Builds a CSRF cookie and returns the jar + redirect as a response tuple.
+/// Returns `true` if `origin` matches an entry in `cors_origins`, or — only
+/// in `Stage` — the optional `cors_origin_regex`. Reused as the post-login
+/// redirect allowlist so PR-preview frontends can pass
+/// `?return_to=<their-vercel-url>` without enabling open redirects.
+///
+/// Production and Development are restricted to exact equality. Only Stage
+/// honors the regex, since that's the only env that needs to accept dynamic
+/// per-PR preview URLs.
+fn is_origin_allowed(origin: &str, config: &crate::config::Config) -> bool {
+    if config.cors_origins.iter().any(|o| o == origin) {
+        return true;
+    }
+    if !matches!(config.app_env, crate::config::AppEnv::Stage) {
+        return false;
+    }
+    if let Some(pattern) = &config.cors_origin_regex
+        && let Ok(re) = regex::Regex::new(pattern)
+    {
+        return re.is_match(origin);
+    }
+    false
+}
+
+/// Validates a caller-supplied `return_to` URL against the CORS allowlist.
+/// Only the scheme + host (origin) is matched; any path/query is preserved
+/// for the final redirect.
+fn validate_return_to(return_to: &str, config: &crate::config::Config) -> Option<String> {
+    let parsed = oauth2::url::Url::parse(return_to).ok()?;
+    let origin = parsed.origin().ascii_serialization();
+    is_origin_allowed(&origin, config).then(|| return_to.to_string())
+}
+
+/// Builds CSRF + optional return-to cookies and returns the jar + redirect.
 /// Used by both provider branches in [`start_oauth`].
 fn csrf_redirect(
     auth_url: &oauth2::url::Url,
     csrf_token: &CsrfToken,
+    return_to: Option<String>,
     jar: CookieJar,
 ) -> (CookieJar, Redirect) {
-    let cookie = Cookie::build((CSRF_COOKIE_NAME, csrf_token.secret().clone()))
+    let csrf_cookie = Cookie::build((CSRF_COOKIE_NAME, csrf_token.secret().clone()))
         .http_only(true)
+        .secure(true)
         .same_site(SameSite::Lax)
         .path("/")
         .max_age(Duration::minutes(10));
-    (jar.add(cookie), Redirect::temporary(auth_url.as_str()))
+    let mut jar = jar.add(csrf_cookie);
+    if let Some(rt) = return_to {
+        let return_cookie = Cookie::build((RETURN_TO_COOKIE_NAME, rt))
+            .http_only(true)
+            .secure(true)
+            .same_site(SameSite::Lax)
+            .path("/")
+            .max_age(Duration::minutes(10));
+        jar = jar.add(return_cookie);
+    }
+    (jar, Redirect::temporary(auth_url.as_str()))
 }
 
 /// Inserts a one-time auth code for `user_id`, builds the frontend redirect URL,
-/// removes the CSRF cookie, and returns the response tuple.
+/// removes the CSRF + return-to cookies, and returns the response tuple.
+/// If a `return_to` cookie is present and still passes the allowlist (in case
+/// config changed mid-flow), it overrides `config.frontend_url`.
 /// Used by both provider branches in [`oauth_callback`].
 async fn issue_auth_code_redirect(
     user_id: uuid::Uuid,
@@ -54,8 +102,15 @@ async fn issue_auth_code_redirect(
     .fetch_one(&state.db)
     .await?;
 
-    let redirect_url = format!("{}?code={}", state.config.frontend_url, code);
-    let jar = jar.remove(Cookie::from(CSRF_COOKIE_NAME));
+    let base = jar
+        .get(RETURN_TO_COOKIE_NAME)
+        .and_then(|c| validate_return_to(c.value(), &state.config))
+        .unwrap_or_else(|| state.config.frontend_url.clone());
+
+    let redirect_url = format!("{base}?code={code}");
+    let jar = jar
+        .remove(Cookie::from(CSRF_COOKIE_NAME))
+        .remove(Cookie::from(RETURN_TO_COOKIE_NAME));
     Ok((jar, Redirect::temporary(&redirect_url)))
 }
 
@@ -73,11 +128,27 @@ pub fn router() -> Router<AppState> {
 /// Builds the authorization URL with `openid`, `email`, and `profile` scopes,
 /// stores the CSRF token in an `HttpOnly` cookie, then returns a temporary redirect.
 /// Returns [`AppError::BadRequest`] if the provider's client credentials are not configured.
+/// Optional query parameters accepted by the OAuth start endpoint.
+#[derive(Deserialize, Default)]
+struct StartOauthParams {
+    /// Frontend URL to redirect to after a successful login (e.g. a Vercel
+    /// preview origin). Validated against the CORS allowlist; ignored if it
+    /// doesn't match. Falls back to `config.frontend_url`.
+    return_to: Option<String>,
+}
+
+#[instrument(skip(state, jar, params), fields(provider = %provider))]
 async fn start_oauth(
     State(state): State<AppState>,
     Path(provider): Path<String>,
+    Query(params): Query<StartOauthParams>,
     jar: CookieJar,
 ) -> Result<impl IntoResponse, AppError> {
+    let return_to = params
+        .return_to
+        .as_deref()
+        .and_then(|rt| validate_return_to(rt, &state.config));
+
     match provider.as_str() {
         "google" => {
             if state.config.google_client_id.is_empty()
@@ -97,7 +168,8 @@ async fn start_oauth(
                 .add_scope(Scope::new("profile".to_string()))
                 .url();
 
-            Ok(csrf_redirect(&auth_url, &csrf_token, jar))
+            info!(provider = "google", "oauth redirect issued");
+            Ok(csrf_redirect(&auth_url, &csrf_token, return_to, jar))
         }
         _ => Err(AppError::unsupported_provider(&provider)),
     }
@@ -118,6 +190,7 @@ struct CallbackParams {
 /// exchanges the authorization `code` for an access token, fetches the user's
 /// profile from the provider, upserts the user in the database, and redirects
 /// back to the frontend with a JWT in the query string.
+#[instrument(skip(state, jar, params), fields(provider = %provider))]
 async fn oauth_callback(
     State(state): State<AppState>,
     Path(provider): Path<String>,
@@ -172,6 +245,7 @@ async fn oauth_callback(
             .fetch_one(&state.db)
             .await?;
 
+            info!(provider = "google", user_id = %user.id, "oauth login completed");
             Ok(issue_auth_code_redirect(user.id, &state, jar).await?)
         }
         _ => Err(AppError::unsupported_provider(&provider)),
@@ -195,6 +269,7 @@ struct ExchangeResponse {
 /// The code is deleted atomically via `DELETE … RETURNING`, so concurrent
 /// requests with the same code cannot both succeed. Returns `404 Not Found`
 /// if the code is unknown or has already expired (60-second window).
+#[instrument(skip(state, body))]
 async fn exchange_code(
     State(state): State<AppState>,
     axum::Json(body): axum::Json<ExchangeRequest>,
@@ -212,6 +287,7 @@ async fn exchange_code(
         &state.config.jwt_secret,
         state.config.jwt_expiry_days,
     )?;
+    info!(user_id = %row.user_id, "auth code exchanged for JWT");
     Ok(axum::Json(ExchangeResponse { token }))
 }
 
@@ -219,6 +295,7 @@ async fn exchange_code(
 ///
 /// Extracts the JWT from the request, looks up the corresponding user,
 /// and returns their `id`, `email`, `name`, and `avatar_url`.
+#[instrument(skip(state), fields(user_id = %auth_user.user_id))]
 async fn get_current_user(
     auth_user: crate::middleware::auth::AuthUser,
     State(state): State<AppState>,
@@ -264,6 +341,7 @@ mod tests {
             supabase_storage_bucket: "files".to_string(),
             port: 8080,
             cors_origins: vec!["http://localhost:5173".to_string()],
+            cors_origin_regex: None,
             frontend_url: "http://localhost:5173".to_string(),
             app_env: AppEnv::Development,
             db_max_connections: 5,

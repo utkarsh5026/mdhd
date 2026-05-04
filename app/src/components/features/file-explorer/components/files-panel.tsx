@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react';
-import React, { memo, useEffect, useState } from 'react';
+import React, { memo, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { Button } from '@/components/ui/button';
@@ -14,11 +14,9 @@ import {
   useFileStore,
   useFileStoreActions,
   useFileUpload,
-  usePasteFiles,
 } from '../store/file-store';
 import { DeleteDialog } from './actions/delete-dialog';
 import { FileTree } from './file-tree/file-tree';
-import PasteFilesList from './paste-files-list';
 import { DropZone } from './upload/drop-zone';
 import { UploadButton } from './upload/upload-button';
 import { UploadProgressIndicator } from './upload/upload-progress';
@@ -53,7 +51,6 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
         initError: s.error,
       }))
     );
-  const pasteFiles = usePasteFiles();
   const { isUploading, uploadProgress, uploadDirectory, uploadFiles } = useFileUpload();
   const { initialize, selectFile, handleDrop, clearError } = useFileStoreActions();
   const { toggleDirectory } = useDirectory();
@@ -64,13 +61,9 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
     nodeToDelete,
     handleRequestDelete,
     handleConfirmDelete,
-    handleDeletePasteFile,
-    handleBatchDeletePasteFiles,
   } = useDeleteActions();
 
   const { shareTokens, handleShare, handleRevoke } = useShareActions();
-
-  const [activeTab, setActiveTab] = useState<'files' | 'pasted'>('files');
 
   useEffect(() => {
     if (!isInitialized) {
@@ -138,82 +131,40 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
 
         <div className="flex flex-col flex-1 overflow-hidden">
           <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border/30">
-            <button
-              type="button"
-              onClick={() => setActiveTab('files')}
-              className={cn(
-                'text-[11px] px-2 py-0.5 rounded-md transition-colors',
-                activeTab === 'files'
-                  ? 'bg-accent text-foreground font-medium'
-                  : 'text-muted-foreground/60 hover:text-muted-foreground'
-              )}
-            >
+            <span className="text-[11px] px-2 py-0.5 rounded-md bg-accent text-foreground font-medium">
               Files
               {uploadedFileCount > 0 && (
                 <span className="ml-1 text-[10px] opacity-60">{uploadedFileCount}</span>
               )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('pasted')}
-              className={cn(
-                'text-[11px] px-2 py-0.5 rounded-md transition-colors',
-                activeTab === 'pasted'
-                  ? 'bg-accent text-foreground font-medium'
-                  : 'text-muted-foreground/60 hover:text-muted-foreground'
-              )}
-            >
-              Pasted
-              {pasteFiles.length > 0 && (
-                <span className="ml-1 text-[10px] opacity-60">{pasteFiles.length}</span>
-              )}
-            </button>
+            </span>
           </div>
 
-          {activeTab === 'files' && (
-            <DropZone onDrop={handleDrop} className="flex flex-col flex-1 overflow-y-auto">
-              {isLoading && !isUploading ? (
-                <div className="flex items-center justify-center flex-1">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : fileTree.length === 0 ? (
-                <p className="text-xs text-muted-foreground/50 px-3 py-4 text-center">
-                  Drop files here or use the upload buttons
-                </p>
-              ) : (
-                <FileTree
-                  nodes={fileTree}
-                  selectedPath={selectedFile?.path || null}
-                  expandedPaths={expandedDirectories}
-                  onFileClick={(file) => {
-                    selectFile(file);
-                    onFileSelect?.(file);
-                  }}
-                  onDirectoryToggle={toggleDirectory}
-                  onDelete={handleRequestDelete}
-                  onShare={handleShare}
-                  onRevoke={handleRevoke}
-                  shareTokens={shareTokens}
-                />
-              )}
-            </DropZone>
-          )}
-
-          {activeTab === 'pasted' && (
-            <div className="flex flex-col flex-1 overflow-y-auto">
-              {pasteFiles.length === 0 ? (
-                <p className="text-xs text-muted-foreground/50 px-3 py-4 text-center">
-                  Paste markdown with Ctrl+Shift+V
-                </p>
-              ) : (
-                <PasteFilesList
-                  files={pasteFiles}
-                  onDelete={handleDeletePasteFile}
-                  onBatchDelete={handleBatchDeletePasteFiles}
-                />
-              )}
-            </div>
-          )}
+          <DropZone onDrop={handleDrop} className="flex flex-col flex-1 overflow-y-auto">
+            {isLoading && !isUploading ? (
+              <div className="flex items-center justify-center flex-1">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : fileTree.length === 0 ? (
+              <p className="text-xs text-muted-foreground/50 px-3 py-4 text-center">
+                Drop files here, paste with Ctrl+Shift+V, or use the upload buttons
+              </p>
+            ) : (
+              <FileTree
+                nodes={fileTree}
+                selectedPath={selectedFile?.path || null}
+                expandedPaths={expandedDirectories}
+                onFileClick={(file) => {
+                  selectFile(file);
+                  onFileSelect?.(file);
+                }}
+                onDirectoryToggle={toggleDirectory}
+                onDelete={handleRequestDelete}
+                onShare={handleShare}
+                onRevoke={handleRevoke}
+                shareTokens={shareTokens}
+              />
+            )}
+          </DropZone>
         </div>
       </div>
 

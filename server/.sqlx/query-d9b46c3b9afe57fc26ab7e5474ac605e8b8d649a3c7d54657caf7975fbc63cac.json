@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            rp.file_id AS \"file_id!\",\n            f.name AS \"name!\",\n            rp.section_index AS \"section_index!\",\n            rp.scroll_pct AS \"scroll_pct!\",\n            rp.updated_at AS \"updated_at!\"\n        FROM reading_progress rp\n        JOIN files f ON f.id = rp.file_id\n        WHERE rp.user_id = $1\n        ORDER BY rp.updated_at DESC\n        LIMIT 10\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "file_id!",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "section_index!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "scroll_pct!",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 4,
+        "name": "updated_at!",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d9b46c3b9afe57fc26ab7e5474ac605e8b8d649a3c7d54657caf7975fbc63cac"
+}

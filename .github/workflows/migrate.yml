@@ -1,0 +1,168 @@
+name: Migrate Supabase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/migrations/**"
+      - ".github/workflows/migrate.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: migrate-supabase
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Apply migrations to Supabase
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: ./server
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: server
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres,rustls --locked --version ^0.8
+
+      - name: Capture pre-migration state
+        id: before
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          info=$(sqlx migrate info 2>&1 || true)
+          {
+            echo "info<<EOF"
+            echo "$info"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          applied_before=$(printf '%s\n' "$info" | grep -cE '\(applied\)' || true)
+          pending_before=$(printf '%s\n' "$info" | grep -cE '\(pending\)' || true)
+          echo "applied_before=$applied_before" >> "$GITHUB_OUTPUT"
+          echo "pending_before=$pending_before" >> "$GITHUB_OUTPUT"
+
+      - name: List migration files in repo
+        id: files
+        run: |
+          set -euo pipefail
+          count=$(find migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          {
+            echo "list<<EOF"
+            find migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run migrations
+        id: run
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          start=$SECONDS
+          set +e
+          output=$(sqlx migrate run 2>&1)
+          status=$?
+          set -e
+          duration=$(( SECONDS - start ))
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "duration=$duration" >> "$GITHUB_OUTPUT"
+          {
+            echo "output<<EOF"
+            echo "$output"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$output"
+          exit $status
+
+      - name: Capture post-migration state
+        id: after
+        if: always()
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          info=$(sqlx migrate info 2>&1 || true)
+          {
+            echo "info<<EOF"
+            echo "$info"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          applied_after=$(printf '%s\n' "$info" | grep -cE '\(applied\)' || true)
+          pending_after=$(printf '%s\n' "$info" | grep -cE '\(pending\)' || true)
+          echo "applied_after=$applied_after" >> "$GITHUB_OUTPUT"
+          echo "pending_after=$pending_after" >> "$GITHUB_OUTPUT"
+
+      - name: Write run summary
+        if: always()
+        env:
+          STATUS: ${{ steps.run.outputs.status }}
+          DURATION: ${{ steps.run.outputs.duration }}
+          OUTPUT: ${{ steps.run.outputs.output }}
+          APPLIED_BEFORE: ${{ steps.before.outputs.applied_before }}
+          APPLIED_AFTER: ${{ steps.after.outputs.applied_after }}
+          PENDING_BEFORE: ${{ steps.before.outputs.pending_before }}
+          PENDING_AFTER: ${{ steps.after.outputs.pending_after }}
+          INFO_AFTER: ${{ steps.after.outputs.info }}
+          FILE_COUNT: ${{ steps.files.outputs.count }}
+          FILE_LIST: ${{ steps.files.outputs.list }}
+        run: |
+          set -euo pipefail
+          if [ "${STATUS:-1}" = "0" ]; then
+            icon="✅"
+            verdict="**Success**"
+          else
+            icon="❌"
+            verdict="**Failed** (exit $STATUS)"
+          fi
+          newly_applied=$(( ${APPLIED_AFTER:-0} - ${APPLIED_BEFORE:-0} ))
+          {
+            echo "# $icon Supabase migration run"
+            echo ""
+            echo "$verdict — finished in ${DURATION:-?}s"
+            echo ""
+            echo "| Metric | Before | After |"
+            echo "| --- | ---: | ---: |"
+            echo "| Applied | ${APPLIED_BEFORE:-?} | ${APPLIED_AFTER:-?} |"
+            echo "| Pending | ${PENDING_BEFORE:-?} | ${PENDING_AFTER:-?} |"
+            echo "| Newly applied this run | | **${newly_applied}** |"
+            echo ""
+            echo "**Commit:** \`${GITHUB_SHA::7}\` on \`${GITHUB_REF_NAME}\`  "
+            echo "**Triggered by:** ${GITHUB_EVENT_NAME} (@${GITHUB_ACTOR})"
+            echo ""
+            echo "<details><summary>Migrations in repo (${FILE_COUNT})</summary>"
+            echo ""
+            echo '```'
+            printf '%s\n' "${FILE_LIST}"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+            echo "<details><summary>sqlx migrate info (after)</summary>"
+            echo ""
+            echo '```'
+            printf '%s\n' "${INFO_AFTER}"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+            echo "<details><summary>sqlx migrate run output</summary>"
+            echo ""
+            echo '```'
+            printf '%s\n' "${OUTPUT}"
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
