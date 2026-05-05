@@ -8,6 +8,12 @@ import type { Tab } from './types';
 export { useActiveTabSections } from '../hooks/use-active-tab-sections';
 
 export const useTabs = () => useTabsStore((state) => state.tabs);
+/**
+ * Returns the user-selected emoji icon for the tab backed by `fileId`, or
+ * `undefined` if no such tab exists or no custom icon is set.
+ */
+export const useCustomIconForFile = (fileId: string): string | undefined =>
+  useTabsStore((s) => s.tabs.find((t) => t.sourceFileId === fileId)?.customIcon);
 export const useActiveTabId = () => useTabsStore((state) => state.activeTabId);
 export const useActiveTab = () =>
   useTabsStore((state) => state.tabs.find((t) => t.id === state.activeTabId));
@@ -53,5 +59,7 @@ export const useTabsActions = () =>
       pinTab: state.pinTab,
       unpinTab: state.unpinTab,
       duplicateTab: state.duplicateTab,
+      setTabIcon: state.setTabIcon,
+      setTabCover: state.setTabCover,
     }))
   );

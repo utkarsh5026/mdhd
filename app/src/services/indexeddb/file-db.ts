@@ -488,18 +488,20 @@ class FileStorageDB extends BaseDB {
    * @returns An array of partial file records containing only metadata fields.
    * @throws {Error} If the cursor request fails.
    */
-  private async getAllFileMetadata(): Promise<Pick<StoredFile, 'id' | 'name' | 'path' | 'size'>[]> {
+  private async getAllFileMetadata(): Promise<
+    Pick<StoredFile, 'id' | 'name' | 'path' | 'size' | 'contentHash'>[]
+  > {
     const db = await this.getDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([FILES_STORE], 'readonly');
       const request = transaction.objectStore(FILES_STORE).openCursor();
-      const results: Pick<StoredFile, 'id' | 'name' | 'path' | 'size'>[] = [];
+      const results: Pick<StoredFile, 'id' | 'name' | 'path' | 'size' | 'contentHash'>[] = [];
 
       request.onsuccess = (event) => {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
         if (cursor) {
-          const { id, name, path, size } = cursor.value as StoredFile;
-          results.push({ id, name, path, size });
+          const { id, name, path, size, contentHash } = cursor.value as StoredFile;
+          results.push({ id, name, path, size, contentHash });
           cursor.continue();
         } else {
           resolve(results);
@@ -550,6 +552,7 @@ class FileStorageDB extends BaseDB {
         path: file.path,
         type: 'file',
         size: file.size,
+        contentHash: file.contentHash,
       });
     }
 

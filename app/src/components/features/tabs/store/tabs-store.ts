@@ -217,6 +217,20 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           }));
         },
 
+        setTabIcon: (tabId: string, icon: string | null) => {
+          get().updateTab(tabId, { customIcon: icon ?? undefined });
+        },
+
+        setTabCover: (tabId, cover) => {
+          if (cover === null) {
+            get().updateTab(tabId, { customCover: undefined });
+            return;
+          }
+          get().updateTab(tabId, (tab) => ({
+            customCover: { ...(tab.customCover ?? {}), ...cover },
+          }));
+        },
+
         ...createBookmarkSlice(set, get, api),
 
         toggleHeaderVisibility: () => {

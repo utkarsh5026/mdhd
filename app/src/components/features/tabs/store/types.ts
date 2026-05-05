@@ -54,6 +54,15 @@ export interface Tab {
   lastAccessedAt: number;
   readingState: TabReadingState;
   pinned?: boolean;
+  /** User-selected emoji icon for the Notion-style page header. When unset, an icon is derived deterministically from `contentHash`. */
+  customIcon?: string;
+  /** User-chosen overrides for the cover gradient/pattern. Any field unset falls back to the auto-generated value. */
+  customCover?: {
+    paletteIndex?: number;
+    patternIndex?: number;
+    angle?: number;
+    colors?: [string, string, string];
+  };
 }
 
 export interface TabsState {
@@ -113,6 +122,19 @@ export interface TabsActions extends BookmarkActions {
    * Called after a file rename so open tabs display the new name.
    */
   updateTabPath: (fileId: string, newPath: string, newTitle: string) => void;
+
+  /** Set or clear the user-selected emoji icon for a tab. Pass `null` to revert to the auto-generated icon. */
+  setTabIcon: (tabId: string, icon: string | null) => void;
+  /** Patch the user-chosen cover overrides. Pass `null` to clear all overrides and revert to the auto-generated cover. */
+  setTabCover: (
+    tabId: string,
+    cover: {
+      paletteIndex?: number;
+      patternIndex?: number;
+      angle?: number;
+      colors?: [string, string, string];
+    } | null
+  ) => void;
 
   toggleHeaderVisibility: () => void;
   toggleStatusBarVisibility: () => void;

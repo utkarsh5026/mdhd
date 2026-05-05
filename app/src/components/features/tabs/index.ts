@@ -9,6 +9,7 @@ export {
   useActiveTab,
   useActiveTabId,
   useActiveTabSections,
+  useCustomIconForFile,
   useHeaderVisible,
   useShowEmptyState,
   useStatusBarVisible,

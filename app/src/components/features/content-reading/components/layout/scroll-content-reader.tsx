@@ -1,15 +1,23 @@
 import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
+import { NotionPageHeader } from '@/components/features/notion-view';
 import {
   useReadingDisplay,
   useReadingSettingsStore,
   useTypography,
 } from '@/components/features/settings/store/reading-settings-store';
+import { useTabsActions } from '@/components/features/tabs/store';
 import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
 
-import { useAnchorTracker, useReadingContent, useReadingSections } from '../../hooks';
+import {
+  useAnchorTracker,
+  useReadingContent,
+  useReadingPageHeader,
+  useReadingSections,
+  useReadingTabId,
+} from '../../hooks';
 import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
 
@@ -30,6 +38,9 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
 }) => {
   const sections = useReadingSections();
   const { metadata } = useReadingContent();
+  const { title, seed, customIcon, customCover } = useReadingPageHeader();
+  const tabId = useReadingTabId();
+  const { setTabIcon, setTabCover } = useTabsActions();
   const { typography } = useTypography();
   const { settings } = useReadingDisplay();
   const fontFamily = fontFamilyMap[typography.fontFamily];
@@ -129,8 +140,19 @@ const ScrollContentReader: React.FC<ScrollContentReaderProps> = ({
           )}
           style={{ maxWidth: `${contentWidth}px` }}
         >
+          {/* Notion-style page header — generated cover + icon + title */}
+          <NotionPageHeader
+            title={(metadata?.title as string) || title}
+            seed={seed}
+            customIcon={customIcon}
+            customCover={customCover}
+            onIconChange={(icon) => setTabIcon(tabId, icon)}
+            onIconReset={() => setTabIcon(tabId, null)}
+            onCoverChange={(patch) => setTabCover(tabId, patch)}
+            onCoverReset={() => setTabCover(tabId, null)}
+          />
           {/* Show metadata at the top of the content */}
-          {metadata && <MetadataDisplay metadata={metadata} />}
+          {metadata && <MetadataDisplay metadata={metadata} hideTitle />}
           {sections.map((section, index) => (
             <div
               key={section.id}
