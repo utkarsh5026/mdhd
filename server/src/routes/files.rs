@@ -55,6 +55,13 @@ pub struct CreateFileRequest {
     pub content: String,
 }
 
+/// Request body for PATCH /files/{id} — rename / move a file.
+#[derive(Debug, Deserialize)]
+pub struct RenameFileRequest {
+    pub name: String,
+    pub path: String,
+}
+
 /// Request body for POST /files/import-url.
 #[derive(Debug, Deserialize)]
 pub struct ImportUrlRequest {
@@ -77,7 +84,10 @@ pub fn router() -> Router<AppState> {
         .route("/files/search", get(search_files))
         .route("/files/import-url", post(import_url))
         .route("/files", get(list_files).post(create_file))
-        .route("/files/{id}", get(get_file).delete(delete_file))
+        .route(
+            "/files/{id}",
+            get(get_file).delete(delete_file).patch(rename_file),
+        )
         .route("/files/{id}/content", get(download_content))
 }
 
@@ -214,6 +224,97 @@ async fn delete_file(
 
     info!("file deleted");
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// PATCH /files/:id — rename (and/or move) a file.
+///
+/// Updates the file's `name` and `path` and copies the underlying S3 object to
+/// the new derived storage key. The operation is idempotent: re-issuing the
+/// same rename returns the current state without doing additional S3 work.
+#[instrument(skip(state, body), fields(user_id = %auth.user_id, file_id = %id, new_path = %body.path))]
+async fn rename_file(
+    auth: AuthUser,
+    State(state): State<AppState>,
+    Path(id): Path<uuid::Uuid>,
+    Json(body): Json<RenameFileRequest>,
+) -> Result<Json<FileResponse>, AppError> {
+    let file = fetch_file_by_id(&state.db, id).await?;
+    assert_owner(&file, auth.user_id)?;
+
+    if body.name.trim().is_empty() {
+        return Err(AppError::bad_request("name must not be empty"));
+    }
+    if body.name.contains('/') {
+        return Err(AppError::bad_request("name must not contain '/'"));
+    }
+    validate_path(&body.path)?;
+
+    if file.name == body.name && file.path == body.path {
+        return Ok(Json(FileResponse::from(file)));
+    }
+
+    if file.path != body.path {
+        let conflict = sqlx::query_scalar!(
+            "SELECT id FROM files WHERE user_id = $1 AND path = $2 AND id <> $3 LIMIT 1",
+            auth.user_id,
+            &body.path,
+            id
+        )
+        .fetch_optional(&state.db)
+        .await?;
+        if conflict.is_some() {
+            return Err(AppError::bad_request("a file already exists at that path"));
+        }
+    }
+
+    let new_storage_key = storage_key(auth.user_id, &body.path);
+    let old_storage_key = file.storage_key.clone();
+    let path_changed = old_storage_key != new_storage_key;
+
+    if path_changed {
+        let bytes = storage::download_object(
+            &state.s3,
+            &state.config.supabase_storage_bucket,
+            &old_storage_key,
+        )
+        .await?;
+        storage::upload_object(
+            &state.s3,
+            &state.config.supabase_storage_bucket,
+            &new_storage_key,
+            bytes,
+        )
+        .await?;
+    }
+
+    let updated = sqlx::query_as!(
+        FileMeta,
+        "UPDATE files
+         SET name = $1, path = $2, storage_key = $3, updated_at = now()
+         WHERE id = $4 AND user_id = $5
+         RETURNING id, user_id, name, path, storage_key, size_bytes, content_hash, share_token, created_at, updated_at",
+        &body.name,
+        &body.path,
+        &new_storage_key,
+        id,
+        auth.user_id
+    )
+    .fetch_one(&state.db)
+    .await?;
+
+    if path_changed
+        && let Err(e) = storage::delete_object(
+            &state.s3,
+            &state.config.supabase_storage_bucket,
+            &old_storage_key,
+        )
+        .await
+    {
+        warn!(storage_key = %old_storage_key, error = %e, "S3 delete of old key failed; orphaned object will be reaped later");
+    }
+
+    info!("file renamed");
+    Ok(Json(FileResponse::from(updated)))
 }
 
 /// Checks if the given IPv4 address is in a private, local, or otherwise restricted range.
@@ -493,7 +594,7 @@ mod tests {
             user_id,
             path.split('/').last().unwrap_or("test.md"),
             path,
-            format!("key/{}", Uuid::new_v4()),
+            storage_key(user_id, path),
             i64::try_from(content_text.len()).unwrap_or(i64::MAX),
             content_text,
         )
@@ -517,6 +618,33 @@ mod tests {
             json!({ "name": name, "path": path, "content": content }),
         )
         .await
+    }
+
+    async fn patch_json(
+        app: axum::Router,
+        uri: &str,
+        token: &str,
+        body: Value,
+    ) -> (StatusCode, Value) {
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("PATCH")
+                    .uri(uri)
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                    .body(Body::from(body.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: Value = serde_json::from_slice(&bytes).unwrap_or(Value::Null);
+        (status, json)
     }
 
     #[sqlx::test(migrations = "./migrations")]
@@ -579,6 +707,25 @@ mod tests {
                     .method("DELETE")
                     .uri(format!("/files/{}", Uuid::new_v4()))
                     .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn rename_without_token_returns_401(db: PgPool) {
+        let app = super::router().with_state(test_state(db));
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("PATCH")
+                    .uri(format!("/files/{}", Uuid::new_v4()))
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(
+                        json!({"name":"renamed.md","path":"/renamed.md"}).to_string(),
+                    ))
                     .unwrap(),
             )
             .await
@@ -738,6 +885,174 @@ mod tests {
 
         let app = super::router().with_state(test_state(db));
         let status = delete_req(app, &format!("/files/{file_id}"), &attacker_token).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn rename_file_updates_name_when_path_unchanged(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, user_id, "/docs/original.md", "content").await;
+
+        let app = super::router().with_state(test_state(db.clone()));
+        let (status, body) = patch_json(
+            app,
+            &format!("/files/{file_id}"),
+            &token,
+            json!({"name":"renamed.md","path":"/docs/original.md"}),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["id"], file_id.to_string());
+        assert_eq!(body["name"], "renamed.md");
+        assert_eq!(body["path"], "/docs/original.md");
+
+        let row = sqlx::query!(
+            "SELECT name, path, storage_key FROM files WHERE id = $1",
+            file_id
+        )
+        .fetch_one(&db)
+        .await
+        .unwrap();
+        assert_eq!(row.name, "renamed.md");
+        assert_eq!(row.path, "/docs/original.md");
+        assert!(!row.storage_key.is_empty());
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn rename_file_same_name_and_path_is_idempotent(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, user_id, "/docs/current.md", "content").await;
+
+        let before = sqlx::query!("SELECT updated_at FROM files WHERE id = $1", file_id)
+            .fetch_one(&db)
+            .await
+            .unwrap()
+            .updated_at;
+
+        let app = super::router().with_state(test_state(db.clone()));
+        let (status, body) = patch_json(
+            app,
+            &format!("/files/{file_id}"),
+            &token,
+            json!({"name":"current.md","path":"/docs/current.md"}),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["name"], "current.md");
+        assert_eq!(body["path"], "/docs/current.md");
+
+        let after = sqlx::query!("SELECT updated_at FROM files WHERE id = $1", file_id)
+            .fetch_one(&db)
+            .await
+            .unwrap()
+            .updated_at;
+        assert_eq!(after, before, "idempotent rename must not update the row");
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn rename_file_empty_name_returns_400(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, user_id, "/docs/file.md", "content").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, body) = patch_json(
+            app,
+            &format!("/files/{file_id}"),
+            &token,
+            json!({"name":"   ","path":"/docs/file.md"}),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(
+            body["error"].as_str().unwrap_or("").contains("empty"),
+            "expected empty-name error, got: {body}"
+        );
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn rename_file_name_with_slash_returns_400(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, user_id, "/docs/file.md", "content").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, body) = patch_json(
+            app,
+            &format!("/files/{file_id}"),
+            &token,
+            json!({"name":"bad/name.md","path":"/docs/file.md"}),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(
+            body["error"].as_str().unwrap_or("").contains('/'),
+            "expected slash-name error, got: {body}"
+        );
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn rename_file_invalid_path_returns_400(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, user_id, "/docs/file.md", "content").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, body) = patch_json(
+            app,
+            &format!("/files/{file_id}"),
+            &token,
+            json!({"name":"file.md","path":"docs/file.md"}),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(
+            body["error"].as_str().unwrap_or("").contains('/'),
+            "expected path error, got: {body}"
+        );
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn rename_file_existing_path_returns_400(db: PgPool) {
+        let (user_id, token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, user_id, "/docs/source.md", "content").await;
+        seed_file(&db, user_id, "/docs/existing.md", "other").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, body) = patch_json(
+            app,
+            &format!("/files/{file_id}"),
+            &token,
+            json!({"name":"existing.md","path":"/docs/existing.md"}),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(
+            body["error"]
+                .as_str()
+                .unwrap_or("")
+                .contains("already exists"),
+            "expected conflict error, got: {body}"
+        );
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn rename_foreign_file_returns_404(db: PgPool) {
+        let (owner, _) = create_test_user(&db).await;
+        let (_, attacker_token) = create_test_user(&db).await;
+        let file_id = seed_file(&db, owner, "/secret.md", "secret").await;
+
+        let app = super::router().with_state(test_state(db));
+        let (status, _) = patch_json(
+            app,
+            &format!("/files/{file_id}"),
+            &attacker_token,
+            json!({"name":"secret-renamed.md","path":"/secret.md"}),
+        )
+        .await;
         assert_eq!(status, StatusCode::NOT_FOUND);
     }
 
