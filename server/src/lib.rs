@@ -8,6 +8,7 @@ pub mod auth;
 pub mod config;
 pub mod db;
 pub mod errors;
+pub mod jobs;
 pub mod middleware;
 pub mod models;
 pub mod routes;
@@ -34,9 +35,36 @@ use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::{Level, instrument};
+use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
 use config::Config;
 use state::AppState;
+
+pub fn init_tracing(env: &config::AppEnv) {
+    let env_filter =
+        tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| match env {
+            config::AppEnv::Production | config::AppEnv::Stage => {
+                "mdhd_server=info,tower_http=info,sqlx=warn".into()
+            }
+            config::AppEnv::Development => "mdhd_server=debug,tower_http=debug,sqlx=warn".into(),
+        });
+
+    let fmt_layer: Box<dyn Layer<_> + Send + Sync> = match env {
+        config::AppEnv::Production | config::AppEnv::Stage => {
+            Box::new(tracing_subscriber::fmt::layer().json().with_ansi(false))
+        }
+        config::AppEnv::Development => Box::new(
+            tracing_subscriber::fmt::layer()
+                .with_target(true)
+                .with_line_number(true),
+        ),
+    };
+
+    tracing_subscriber::registry()
+        .with(env_filter)
+        .with(fmt_layer)
+        .init();
+}
 
 /// Path for the health-check endpoint.
 ///  Handlers mounted at this path are exempt from rate-limiting middleware, so they can be safely used by uptime monitoring services without risk of false positives due to traffic spikes.
