@@ -46,14 +46,14 @@ const NotionIcon: React.FC<NotionIconProps> = memo(
         className={cn(
           'inline-flex items-center justify-center',
           'h-16 w-16 sm:h-20 sm:w-20',
-          'rounded-xl bg-card shadow-md ring-1 ring-border/40',
+          'rounded-2xl bg-card shadow-md ring-1 ring-border/40',
           'text-4xl sm:text-5xl leading-none select-none',
           interactive && 'cursor-pointer transition-transform hover:scale-105',
           className
         )}
         aria-hidden={!interactive}
       >
-        <span className="translate-y-[1px]">{icon}</span>
+        <span className="translate-y-px">{icon}</span>
       </div>
     );
 

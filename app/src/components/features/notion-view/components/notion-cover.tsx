@@ -15,7 +15,7 @@ const NotionCover: React.FC<NotionCoverProps> = memo(({ style, className }) => {
     <div
       className={cn(
         'relative w-full h-40 sm:h-56 md:h-64 overflow-hidden',
-        'rounded-t-xl',
+        'rounded-t-2xl',
         className
       )}
       style={{ background: style.gradient }}

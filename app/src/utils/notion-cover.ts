@@ -6,7 +6,17 @@ export type CoverPattern =
   | 'mesh'
   | 'circles'
   | 'plus'
-  | 'triangles';
+  | 'triangles'
+  | 'polka'
+  | 'diagonal'
+  | 'crosshatch'
+  | 'hexagons'
+  | 'checkerboard'
+  | 'microgrid'
+  | 'diamonds'
+  | 'dash'
+  | 'confetti'
+  | 'steps';
 
 export interface CoverStyle {
   gradient: string;
@@ -50,6 +60,16 @@ export const COVER_PATTERNS: CoverPattern[] = [
   'circles',
   'plus',
   'triangles',
+  'polka',
+  'diagonal',
+  'crosshatch',
+  'hexagons',
+  'checkerboard',
+  'microgrid',
+  'diamonds',
+  'dash',
+  'confetti',
+  'steps',
 ];
 
 const ICONS = [
