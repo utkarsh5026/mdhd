@@ -1,33 +1,25 @@
-import { ChevronRight, FileText, Folder, FolderOpen } from 'lucide-react';
-import React from 'react';
+import { ChevronRight, Folder, FolderOpen } from 'lucide-react';
+import React, { useMemo } from 'react';
 
 import { useCustomIconForFile } from '@/components/features/tabs';
 import { cn } from '@/lib/utils';
 import type { FileTreeNode } from '@/services/indexeddb';
+import { generateCover } from '@/utils/notion-cover';
 
-const FileIcon: React.FC<{ fileId: string; isSelected: boolean }> = ({ fileId, isSelected }) => {
-  const customIcon = useCustomIconForFile(fileId);
-
-  if (customIcon) {
-    return (
-      <span
-        className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center text-[13px] leading-none select-none"
-        aria-hidden
-      >
-        {customIcon}
-      </span>
-    );
-  }
+const FileIcon: React.FC<{ node: FileTreeNode }> = ({ node }) => {
+  const customIcon = useCustomIconForFile(node.id);
+  const autoIcon = useMemo(
+    () => generateCover(node.contentHash || node.id).icon,
+    [node.contentHash, node.id]
+  );
 
   return (
-    <FileText
-      className={cn(
-        'h-3.5 w-3.5 shrink-0 transition-colors',
-        isSelected
-          ? 'text-primary/70'
-          : 'text-muted-foreground/45 group-hover:text-muted-foreground/70'
-      )}
-    />
+    <span
+      className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center text-[13px] leading-none select-none"
+      aria-hidden
+    >
+      {customIcon || autoIcon}
+    </span>
   );
 };
 
@@ -82,7 +74,7 @@ export const TreeItem: React.FC<TreeItemProps> = (props) => {
       )}
 
       {isFile ? (
-        <FileIcon fileId={node.id} isSelected={isSelected} />
+        <FileIcon node={node} />
       ) : (
         <>
           <ChevronRight

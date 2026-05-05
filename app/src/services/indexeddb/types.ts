@@ -35,6 +35,8 @@ export interface FileTreeNode {
   children?: FileTreeNode[];
   content?: string; // Only for files
   size?: number;
+  /** Stable seed used for deterministic Notion-style icon/cover generation. Files only. */
+  contentHash?: string;
 }
 
 /**
