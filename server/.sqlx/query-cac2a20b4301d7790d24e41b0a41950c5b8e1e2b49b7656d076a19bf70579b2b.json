@@ -1,16 +1,18 @@
 {
   "db_name": "PostgreSQL",
-  "query": "DELETE FROM auth_codes WHERE code = $1 AND expires_at > now() RETURNING user_id",
+  "query": "SELECT id FROM files WHERE user_id = $1 AND path = $2 AND id <> $3 LIMIT 1",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "user_id",
+        "name": "id",
         "type_info": "Uuid"
       }
     ],
     "parameters": {
       "Left": [
+        "Uuid",
+        "Text",
         "Uuid"
       ]
     },
@@ -18,5 +20,5 @@
       false
     ]
   },
-  "hash": "043fe5ea319460137bafe441b281a59e0c31c4a80465c59e141c3793198880c7"
+  "hash": "cac2a20b4301d7790d24e41b0a41950c5b8e1e2b49b7656d076a19bf70579b2b"
 }
