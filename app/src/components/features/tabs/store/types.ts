@@ -108,6 +108,12 @@ export interface TabsActions extends BookmarkActions {
   unpinTab: (tabId: string) => void;
   duplicateTab: (tabId: string) => string | null;
 
+  /**
+   * Refresh the path/title of any tab whose `sourceFileId` matches `fileId`.
+   * Called after a file rename so open tabs display the new name.
+   */
+  updateTabPath: (fileId: string, newPath: string, newTitle: string) => void;
+
   toggleHeaderVisibility: () => void;
   toggleStatusBarVisibility: () => void;
 
