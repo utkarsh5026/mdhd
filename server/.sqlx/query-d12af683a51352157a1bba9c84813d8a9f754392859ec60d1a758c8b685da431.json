@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO files (user_id, name, path, storage_key, size_bytes, content_text, search_content)\n            VALUES ($1, $2, $3, $4, $5, $6, to_tsvector('english', $6))\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d12af683a51352157a1bba9c84813d8a9f754392859ec60d1a758c8b685da431"
+}
