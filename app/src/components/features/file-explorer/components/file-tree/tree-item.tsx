@@ -1,8 +1,35 @@
 import { ChevronRight, FileText, Folder, FolderOpen } from 'lucide-react';
 import React from 'react';
 
+import { useCustomIconForFile } from '@/components/features/tabs';
 import { cn } from '@/lib/utils';
 import type { FileTreeNode } from '@/services/indexeddb';
+
+const FileIcon: React.FC<{ fileId: string; isSelected: boolean }> = ({ fileId, isSelected }) => {
+  const customIcon = useCustomIconForFile(fileId);
+
+  if (customIcon) {
+    return (
+      <span
+        className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center text-[13px] leading-none select-none"
+        aria-hidden
+      >
+        {customIcon}
+      </span>
+    );
+  }
+
+  return (
+    <FileText
+      className={cn(
+        'h-3.5 w-3.5 shrink-0 transition-colors',
+        isSelected
+          ? 'text-primary/70'
+          : 'text-muted-foreground/45 group-hover:text-muted-foreground/70'
+      )}
+    />
+  );
+};
 
 type TreeItemProps =
   | {
@@ -55,14 +82,7 @@ export const TreeItem: React.FC<TreeItemProps> = (props) => {
       )}
 
       {isFile ? (
-        <FileText
-          className={cn(
-            'h-3.5 w-3.5 shrink-0 transition-colors',
-            isSelected
-              ? 'text-primary/70'
-              : 'text-muted-foreground/45 group-hover:text-muted-foreground/70'
-          )}
-        />
+        <FileIcon fileId={node.id} isSelected={isSelected} />
       ) : (
         <>
           <ChevronRight
