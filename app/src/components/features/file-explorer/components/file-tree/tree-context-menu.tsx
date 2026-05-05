@@ -1,4 +1,4 @@
-import { Share2, Trash2, Unlink } from 'lucide-react';
+import { Pencil, Share2, Trash2, Unlink } from 'lucide-react';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -13,6 +13,7 @@ interface TreeContextMenuProps {
   onDelete: (node: FileTreeNode) => void;
   onShare: (node: FileTreeNode) => void;
   onRevoke: (node: FileTreeNode) => void;
+  onRename: (node: FileTreeNode) => void;
   /** Share token for the current node, if one has been generated this session. */
   shareToken: string | null;
 }
@@ -24,6 +25,7 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
   onDelete,
   onShare,
   onRevoke,
+  onRename,
   shareToken,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -49,6 +51,13 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
       onClose();
     }
   }, [node, onRevoke, onClose]);
+
+  const handleRename = useCallback(() => {
+    if (node) {
+      onRename(node);
+      onClose();
+    }
+  }, [node, onRename, onClose]);
 
   useKeyPress('Escape', () => {
     if (node) onClose();
@@ -103,6 +112,7 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
 
   const isDirectory = node.type === 'directory';
   const canShare = isAuthenticated && !isDirectory;
+  const canRename = !isDirectory;
 
   return createPortal(
     <div
@@ -111,6 +121,16 @@ export const TreeContextMenu: React.FC<TreeContextMenuProps> = ({
       className="fixed z-50 min-w-40 rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
       style={{ left: position.x, top: position.y }}
     >
+      {canRename && (
+        <button
+          role="menuitem"
+          className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent transition-colors"
+          onClick={handleRename}
+        >
+          <Pencil className="h-4 w-4" />
+          Rename
+        </button>
+      )}
       {canShare && (
         <>
           {shareToken ? (

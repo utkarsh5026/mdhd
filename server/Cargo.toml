@@ -52,6 +52,7 @@ sha2 = "0.10"
 thiserror = "2"
 url = "2"
 regex = "1"
+futures = "0.3"
 
 
 governor = "0.10"

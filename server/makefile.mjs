@@ -60,7 +60,8 @@ const tasks = {
     action: runSetup,
   },
   dev: {
-    description: "Start dev server (port 8080, reads .env.development then .env)",
+    description:
+      "Start dev server (port 8080, reads .env.development then .env)",
     category: "Development",
     action: () => runCargo(["run"]),
   },
@@ -276,7 +277,12 @@ async function waitForPostgres(retries = 30) {
 async function runMigrate() {
   console.log(chalk.cyan("Running: sqlx migrate run..."));
   console.log();
-  await runCommand("cargo", ["sqlx", "migrate", "run"]);
+  await runCommand("cargo", ["sqlx", "migrate", "run"], {
+    env: {
+      ...process.env,
+      DATABASE_URL: withSqlxCliSafeParams(process.env.DATABASE_URL),
+    },
+  });
   console.log();
   console.log(chalk.green("✓ Migrations applied!"));
 }
@@ -320,10 +326,40 @@ async function runDbReset() {
   await runCommand("psql", [dbUrl, "-c", "CREATE DATABASE mdhd"]);
 
   console.log(chalk.yellow("▶ Running migrations..."));
-  await runCommand("cargo", ["sqlx", "migrate", "run"]);
+  await runCommand("cargo", ["sqlx", "migrate", "run"], {
+    env: {
+      ...process.env,
+      DATABASE_URL: withSqlxCliSafeParams(process.env.DATABASE_URL),
+    },
+  });
 
   console.log();
   console.log(chalk.green("✓ Database reset complete!"));
+}
+
+/**
+ * SQLx CLI uses prepared statements internally; in some setups (notably poolers / transaction pooling)
+ * this can throw `prepared statement "sqlx_s_1" already exists`. We avoid that by disabling the
+ * SQLx statement cache for CLI invocations via the `statement_cache_capacity=0` URL param.
+ *
+ * If no URL is provided, return `undefined` so SQLx can fall back to `.env` / Cargo env.
+ *
+ * @param {string | undefined} url
+ * @returns {string | undefined}
+ */
+function withSqlxCliSafeParams(url) {
+  const effectiveUrl =
+    url ?? "postgresql://postgres:postgres@localhost:5432/mdhd";
+
+  try {
+    const parsed = new URL(effectiveUrl);
+    if (!parsed.searchParams.has("statement_cache_capacity")) {
+      parsed.searchParams.set("statement_cache_capacity", "0");
+    }
+    return parsed.toString();
+  } catch {
+    return effectiveUrl;
+  }
 }
 
 /**

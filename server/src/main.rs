@@ -7,36 +7,58 @@
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
-
-use mdhd_server::config::{AppEnv, Config};
+use mdhd_server::config::Config;
+use mdhd_server::jobs::storage_gc::{StorageGcArgs, run_storage_gc};
 use mdhd_server::state::AppState;
-use mdhd_server::{create_app, db, storage};
+use mdhd_server::{create_app, db, init_tracing, storage};
 
-fn init_tracing(env: &AppEnv) {
-    let env_filter =
-        tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| match env {
-            AppEnv::Production | AppEnv::Stage => {
-                "mdhd_server=info,tower_http=info,sqlx=warn".into()
+fn print_gc_help() {
+    eprintln!(
+        r"mdhd-server gc-orphaned-storage [--grace-days N] [--dry-run]
+
+Deletes orphaned objects from the Supabase S3 bucket: objects whose key is not
+referenced by any row in `files.storage_key`.
+
+Options:
+  --grace-days N   Only delete objects older than N days (default: 7)
+  --dry-run        Do not delete; only log what would be deleted
+  -h, --help       Show this help
+"
+    );
+}
+
+fn parse_gc_args(args: &[String]) -> Result<StorageGcArgs, String> {
+    let mut grace_days: i64 = 7;
+    let mut dry_run = false;
+
+    let mut i = 0usize;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--dry-run" => {
+                dry_run = true;
+                i += 1;
             }
-            AppEnv::Development => "mdhd_server=debug,tower_http=debug,sqlx=warn".into(),
-        });
-
-    let fmt_layer: Box<dyn Layer<_> + Send + Sync> = match env {
-        AppEnv::Production | AppEnv::Stage => {
-            Box::new(tracing_subscriber::fmt::layer().json().with_ansi(false))
+            "--grace-days" => {
+                let v = args
+                    .get(i + 1)
+                    .ok_or_else(|| "--grace-days requires a value".to_string())?;
+                grace_days = v
+                    .parse::<i64>()
+                    .map_err(|_| "--grace-days must be an integer".to_string())?;
+                if grace_days < 0 {
+                    return Err("--grace-days must be >= 0".to_string());
+                }
+                i += 2;
+            }
+            "-h" | "--help" => return Err("help".to_string()),
+            other => return Err(format!("unknown argument: {other}")),
         }
-        AppEnv::Development => Box::new(
-            tracing_subscriber::fmt::layer()
-                .with_target(true)
-                .with_line_number(true),
-        ),
-    };
+    }
 
-    tracing_subscriber::registry()
-        .with(env_filter)
-        .with(fmt_layer)
-        .init();
+    Ok(StorageGcArgs {
+        grace_days,
+        dry_run,
+    })
 }
 
 #[tokio::main]
@@ -45,8 +67,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::from_filename(format!(".env.{env}")).ok();
     dotenvy::dotenv().ok();
 
+    let argv: Vec<String> = std::env::args().collect();
+    let cmd = argv.get(1).map(String::as_str);
+
     let config = Config::from_env()?;
     init_tracing(&config.app_env);
+
+    if matches!(cmd, Some("gc-orphaned-storage")) {
+        let rest: Vec<String> = argv.into_iter().skip(2).collect();
+        let parsed = parse_gc_args(&rest).map_err(|e| {
+            if e == "help" {
+                print_gc_help();
+                std::process::exit(0);
+            }
+            e
+        })?;
+
+        run_storage_gc(&config, parsed).await?;
+        return Ok(());
+    }
 
     tracing::info!("Running database migrations");
     db::run_migrations(&config).await?;

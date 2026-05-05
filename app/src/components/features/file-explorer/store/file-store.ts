@@ -13,6 +13,8 @@ import {
   type UploadProgress,
 } from '@/services/indexeddb';
 
+import { validateFileName } from '../utils/filename';
+
 interface FileStoreState {
   fileTree: FileTreeNode[];
   selectedFile: StoredFile | null;
@@ -47,6 +49,8 @@ interface FileStoreActions {
 
   deleteFile: (id: string) => Promise<void>;
   deleteDirectory: (path: string) => Promise<void>;
+
+  renameFile: (id: string, newName: string) => Promise<void>;
 
   clearAll: () => Promise<void>;
   clearError: () => void;
@@ -404,6 +408,65 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
       },
 
       /**
+       * Renames a file in IndexedDB and refreshes any open tabs that reference it.
+       *
+       * Builds the new path from the file's existing `parentPath` and the new name.
+       * Rejects if another file already lives at the resulting path. Best-effort
+       * propagation to the server happens afterwards via the sync service.
+       */
+      renameFile: async (id: string, newName: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const trimmed = newName.trim();
+          if (!trimmed) throw new Error('Name cannot be empty');
+
+          const file = await fileStorageDB.getFile(id);
+          if (!file) throw new Error('File not found');
+
+          const ext = (() => {
+            const dot = file.name.lastIndexOf('.');
+            if (dot <= 0 || dot === file.name.length - 1) return '';
+            return file.name.slice(dot);
+          })();
+
+          const validationMsg = validateFileName(trimmed, {
+            fixedExtension: ext,
+          });
+          if (validationMsg) throw new Error(validationMsg);
+
+          if (file.name === trimmed) return;
+
+          const newPath = file.parentPath === '/' ? `/${trimmed}` : `${file.parentPath}/${trimmed}`;
+
+          const existing = await fileStorageDB.getFileByPath(newPath);
+          if (existing && existing.id !== id) {
+            throw new Error('A file with that name already exists');
+          }
+
+          await fileStorageDB.renameFile(id, trimmed, newPath, file.parentPath);
+
+          useTabsStore.getState().updateTabPath(id, newPath, trimmed);
+
+          const { selectedFile } = get();
+          if (selectedFile?.id === id) {
+            set({ selectedFile: { ...selectedFile, name: trimmed, path: newPath } });
+          }
+
+          const fileTree = await fileStorageDB.buildFileTree();
+          set({ fileTree });
+
+          // Best-effort server propagation; sync will reconcile on failure.
+          if (localStorage.getItem('mdhd-auth-token')) {
+            import('@/services/sync/sync-service')
+              .then(({ renameFileOnServer }) => renameFileOnServer(id, trimmed, newPath))
+              .catch((err) => console.error('[file-store] Server rename failed:', err));
+          }
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      /**
        * Wipes all files from IndexedDB and resets the store to its empty initial state.
        *
        * Closes all file-backed tabs (keeping any unsaved tabs) and clears
@@ -469,6 +532,7 @@ export const useFileStoreActions = () => {
       collapseAll: state.collapseAll,
       handleDrop: state.handleDrop,
       deleteFile: state.deleteFile,
+      renameFile: state.renameFile,
       clearAll: state.clearAll,
       clearError: state.clearError,
     }))

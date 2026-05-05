@@ -2,13 +2,14 @@ use axum::extract::State;
 use axum::routing::post;
 use axum::{Json, Router};
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use tracing::{info, instrument};
 
 use crate::errors::AppError;
 use crate::middleware::auth::AuthUser;
 use crate::models::setting::UserSetting;
-use crate::services::sync::{ClientSettingEntry, ServerSettingEntry, reconcile_settings};
+use crate::services::sync::{
+    ClientSettingEntry, ServerSettingEntry, SettingsSyncDecision, reconcile_settings,
+};
 use crate::state::AppState;
 
 pub fn router() -> Router<AppState> {
@@ -16,29 +17,36 @@ pub fn router() -> Router<AppState> {
 }
 
 /// Request body for POST /settings/sync.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct SettingsSyncRequest {
-    pub settings: Vec<ClientSettingEntry>,
+    settings: Vec<ClientSettingEntry>,
 }
 
 /// Response body for POST /settings/sync.
-#[derive(Debug, Serialize)]
+#[derive(Debug, serde::Serialize)]
 pub struct SettingsSyncResponse {
-    /// Settings where the server has a newer version — client should apply these.
-    pub updated: Vec<ServerSettingEntry>,
-    /// Keys where the client's version was accepted by the server.
-    pub accepted: Vec<String>,
-    /// Current server time — store as reference for next sync.
-    pub server_time: DateTime<Utc>,
+    updated: Vec<ServerSettingEntry>,
+    accepted: Vec<String>,
+    server_time: DateTime<Utc>,
 }
 
-/// POST /settings/sync — bidirectional settings sync using last-write-wins.
+/// Sync user settings between client and server (last-write-wins).
 ///
-/// The client sends all its settings (key + hash + timestamp + value).
-/// The server compares hashes and timestamps, then:
-/// - Accepts client values that are newer (upserts them).
-/// - Returns server values that are newer for the client to apply.
-/// - Returns server settings the client doesn't have yet (from other devices).
+/// The client sends its full settings set (`key/value/hash/updated_at`). The server:
+/// - Loads the current server settings for the user
+/// - Reconciles client vs server using [`reconcile_settings`]
+/// - Upserts any client settings that the server accepts (`to_upsert`)
+/// - Returns any server settings that are newer (or missing on the client) for the client to apply
+///
+/// The response contains:
+/// - `accepted`: keys whose client value was accepted and persisted by the server
+/// - `updated`: server settings the client should apply (newer or missing locally)
+/// - `server_time`: the server timestamp used for accepted upserts (useful as a reference point)
+///
+/// Errors:
+/// - Returns `400 Bad Request` if the request contains more than `sync_max_settings` entries.
+/// - Returns `401 Unauthorized` if no/invalid auth is provided (handled by [`AuthUser`]).
+/// - Returns `500` on database failures.
 #[instrument(
     skip(state, body),
     fields(user_id = %auth.user_id, client_settings = body.settings.len())
@@ -62,15 +70,23 @@ async fn sync_settings(
     .fetch_all(&state.db)
     .await?;
 
-    let decision = reconcile_settings(&server_settings, &body.settings);
+    let SettingsSyncDecision { to_upsert, updated } =
+        reconcile_settings(&server_settings, &body.settings);
 
-    let mut accepted = Vec::new();
-    for entry in &decision.to_upsert {
-        upsert_setting(&state, auth.user_id, entry, server_time).await?;
-        accepted.push(entry.key.clone());
-    }
+    let accepted = futures::future::try_join_all(to_upsert.iter().map(|entry| async {
+        let upsert_query = sqlx::query!(
+            "INSERT INTO user_settings (user_id, key, value, hash, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id, key) DO UPDATE SET value = $3, hash = $4, updated_at = $5",
+            auth.user_id,
+            entry.key,
+            entry.value,
+            entry.hash,
+            server_time
+        );
 
-    let updated = decision.updated;
+        upsert_query.execute(&state.db).await?;
+        Ok::<String, AppError>(entry.key.clone())
+    }))
+    .await?;
 
     info!(
         accepted = accepted.len(),
@@ -83,32 +99,6 @@ async fn sync_settings(
         accepted,
         server_time,
     }))
-}
-
-/// Insert or update a setting row for the given user.
-async fn upsert_setting(
-    state: &AppState,
-    user_id: uuid::Uuid,
-    entry: &ClientSettingEntry,
-    server_time: DateTime<Utc>,
-) -> Result<(), AppError> {
-    sqlx::query!(
-        r"
-        INSERT INTO user_settings (user_id, key, value, hash, updated_at)
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (user_id, key)
-        DO UPDATE SET value = $3, hash = $4, updated_at = $5
-        ",
-        user_id,
-        &entry.key,
-        &entry.value,
-        &entry.hash,
-        server_time
-    )
-    .execute(&state.db)
-    .await?;
-
-    Ok(())
 }
 
 #[cfg(test)]
@@ -142,9 +132,10 @@ mod tests {
         updated_at: DateTime<Utc>,
     ) {
         sqlx::query!(
-            "INSERT INTO user_settings (user_id, key, value, hash, updated_at) VALUES ($1, $2, '\"seeded\"', $3, $4)",
+            "INSERT INTO user_settings (user_id, key, value, hash, updated_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id, key) DO UPDATE SET value = $3, hash = $4, updated_at = $5",
             user_id,
             key,
+            json!("seeded"),
             hash,
             updated_at
         )

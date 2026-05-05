@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { FileTreeNode, type StoredFile } from '@/services/indexeddb';
 
 import { useDeleteActions } from '../hooks/use-delete-actions';
+import { useRenameActions } from '../hooks/use-rename-actions';
 import { useShareActions } from '../hooks/use-share-actions';
 import {
   useDirectory,
@@ -16,6 +17,7 @@ import {
   useFileUpload,
 } from '../store/file-store';
 import { DeleteDialog } from './actions/delete-dialog';
+import { RenameDialog } from './actions/rename-dialog';
 import { FileTree } from './file-tree/file-tree';
 import { DropZone } from './upload/drop-zone';
 import { UploadButton } from './upload/upload-button';
@@ -64,6 +66,16 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
   } = useDeleteActions();
 
   const { shareTokens, handleShare, handleRevoke } = useShareActions();
+
+  const {
+    renameDialogOpen,
+    setRenameDialogOpen,
+    nodeToRename,
+    renameError,
+    isRenaming,
+    handleRequestRename,
+    handleConfirmRename,
+  } = useRenameActions();
 
   useEffect(() => {
     if (!isInitialized) {
@@ -161,6 +173,7 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
                 onDelete={handleRequestDelete}
                 onShare={handleShare}
                 onRevoke={handleRevoke}
+                onRename={handleRequestRename}
                 shareTokens={shareTokens}
               />
             )}
@@ -174,6 +187,15 @@ const FilesPanel: React.FC<FilesPanelProps> = memo(({ className, onFileSelect })
         node={nodeToDelete}
         onConfirm={handleConfirmDelete}
         isDeleting={isLoading}
+      />
+
+      <RenameDialog
+        open={renameDialogOpen}
+        onOpenChange={setRenameDialogOpen}
+        node={nodeToRename}
+        onConfirm={handleConfirmRename}
+        isRenaming={isRenaming}
+        error={renameError}
       />
     </>
   );

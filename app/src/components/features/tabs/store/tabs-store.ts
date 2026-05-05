@@ -72,7 +72,17 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           try {
             const file = await savePastedContent(content);
             const resolvedTitle = title || extractTitleFromMarkdown(content) || file.name;
-            return get().createTab(content, resolvedTitle, file.id, file.path);
+            const tabId = get().createTab(content, resolvedTitle, file.id, file.path);
+
+            // Refresh the file explorer tree so the new file appears immediately.
+            // Dynamic import avoids a static cycle between tabs-store and file-store.
+            import('@/components/features/file-explorer/store/file-store')
+              .then(({ useFileStore }) => useFileStore.getState().refreshFileTree())
+              .catch((err) =>
+                console.error('[tabs-store] Failed to refresh file tree after paste:', err)
+              );
+
+            return tabId;
           } catch (err) {
             console.error('[tabs-store] Failed to save pasted content:', err);
             return null;
@@ -196,6 +206,15 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           });
 
           return newTab.id;
+        },
+
+        updateTabPath: (fileId: string, newPath: string, newTitle: string) => {
+          set((state) => ({
+            tabs: state.tabs.map((t) => {
+              if (t.sourceFileId !== fileId) return t;
+              return { ...t, sourcePath: newPath, title: newTitle };
+            }),
+          }));
         },
 
         ...createBookmarkSlice(set, get, api),

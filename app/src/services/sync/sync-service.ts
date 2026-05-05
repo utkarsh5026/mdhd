@@ -179,6 +179,25 @@ async function applyDeletes(resolved: ResolvedDelete[]): Promise<string[]> {
 }
 
 /**
+ * Renames a file on the server via PATCH /files/{id}.
+ *
+ * Looks up the local file's current server-side identity by path is unnecessary —
+ * the local IndexedDB UUID matches the server file id once the file has been
+ * synced. For files that have never reached the server (offline-only), the call
+ * fails silently and the next full `/sync` cycle will reconcile the new path.
+ *
+ * @param id - The server (and local) file UUID.
+ * @param name - The new display name.
+ * @param path - The new absolute virtual path.
+ */
+export async function renameFileOnServer(id: string, name: string, path: string): Promise<void> {
+  await apiFetch(`/files/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name, path }),
+  });
+}
+
+/**
  * Performs a full bidirectional file sync against the server.
  *
  * Sends the local file manifest to `/sync`, then processes the server's

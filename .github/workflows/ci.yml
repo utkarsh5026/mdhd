@@ -195,7 +195,7 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/mdhd_test
-      # Enables tests/s3_roundtrip.rs — when unset, those tests early-return.
+      SQLX_OFFLINE: "true"
       S3_INTEGRATION_TESTS: "1"
 
     steps:
@@ -233,6 +233,8 @@ jobs:
         run: sqlx migrate run
 
       - name: Verify sqlx offline cache is up to date
+        env:
+          SQLX_OFFLINE: "false"
         run: cargo sqlx prepare --workspace --check -- --all-targets
 
       - name: cargo clippy

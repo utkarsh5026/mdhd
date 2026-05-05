@@ -15,6 +15,7 @@ interface FileTreeProps {
   onDelete: (node: FileTreeNode) => void;
   onShare: (node: FileTreeNode) => void;
   onRevoke: (node: FileTreeNode) => void;
+  onRename: (node: FileTreeNode) => void;
   /** Map of fileId → share token for files shared this session. */
   shareTokens: Record<string, string>;
 }
@@ -33,6 +34,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
   onDelete,
   onShare,
   onRevoke,
+  onRename,
   shareTokens,
 }) => {
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
@@ -94,6 +96,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
         onDelete={onDelete}
         onShare={onShare}
         onRevoke={onRevoke}
+        onRename={onRename}
         shareToken={currentShareToken}
       />
     </>
