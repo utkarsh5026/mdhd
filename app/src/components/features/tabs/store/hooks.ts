@@ -53,5 +53,7 @@ export const useTabsActions = () =>
       pinTab: state.pinTab,
       unpinTab: state.unpinTab,
       duplicateTab: state.duplicateTab,
+      setTabIcon: state.setTabIcon,
+      setTabCover: state.setTabCover,
     }))
   );
