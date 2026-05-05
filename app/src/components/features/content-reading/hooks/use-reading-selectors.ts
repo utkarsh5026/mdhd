@@ -102,6 +102,29 @@ export function useReadingContent() {
 }
 
 /**
+ * Subscribes to the page-header inputs for the current tab — title and a
+ * stable seed (content hash) used to deterministically generate the Notion-
+ * style cover and icon.
+ *
+ * @hook
+ * @returns `{ title, seed }`.
+ */
+export function useReadingPageHeader() {
+  const tabId = useReadingTabId();
+  return useTabsStore(
+    useShallow((s) => {
+      const tab = selectTabById(s, tabId);
+      return {
+        title: tab?.title ?? 'Untitled',
+        seed: tab?.contentHash ?? tab?.id ?? 'mdhd',
+        customIcon: tab?.customIcon,
+        customCover: tab?.customCover,
+      };
+    })
+  );
+}
+
+/**
  * Subscribes to the set of section indices the user has already read.
  *
  * @hook

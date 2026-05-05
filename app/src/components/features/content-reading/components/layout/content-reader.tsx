@@ -2,11 +2,13 @@ import { memo, type RefObject } from 'react';
 import { useSwipeable } from 'react-swipeable';
 
 import CustomMarkdownRenderer from '@/components/features/markdown-render/components/markdown-render';
+import { NotionPageHeader } from '@/components/features/notion-view';
 import {
   useReadingDisplay,
   useReadingSettingsStore,
   useTypography,
 } from '@/components/features/settings/store/reading-settings-store';
+import { useTabsActions } from '@/components/features/tabs/store';
 import { fontFamilyMap } from '@/lib/font';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +17,9 @@ import {
   useReadingContent,
   useReadingCurrentSection,
   useReadingNavigation,
+  useReadingPageHeader,
   useReadingSections,
+  useReadingTabId,
 } from '../../hooks';
 import { READER_PADDING_CLASSES } from '.';
 import MetadataDisplay from './metadata-display';
@@ -31,6 +35,9 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
   ({ scrollRef, handleDoubleClick, onSectionClick }) => {
     const { currentIndex, isTransitioning } = useReadingNavigation();
     const { metadata } = useReadingContent();
+    const { title, seed, customIcon, customCover } = useReadingPageHeader();
+    const tabId = useReadingTabId();
+    const { setTabIcon, setTabCover } = useTabsActions();
     const currentSection = useReadingCurrentSection();
     const sections = useReadingSections();
     const { goToNext, goToPrevious } = useReadingActions();
@@ -87,8 +94,21 @@ const ContentReader: React.FC<ContentReaderProps> = memo(
               )}
               style={{ maxWidth: `${contentWidth}px` }}
             >
+              {/* Notion-style page header — shown only on the first card */}
+              {currentIndex === 0 && (
+                <NotionPageHeader
+                  title={(metadata?.title as string) || title}
+                  seed={seed}
+                  customIcon={customIcon}
+                  customCover={customCover}
+                  onIconChange={(icon) => setTabIcon(tabId, icon)}
+                  onIconReset={() => setTabIcon(tabId, null)}
+                  onCoverChange={(patch) => setTabCover(tabId, patch)}
+                  onCoverReset={() => setTabCover(tabId, null)}
+                />
+              )}
               {/* Show metadata only on the first section */}
-              {currentIndex === 0 && metadata && <MetadataDisplay metadata={metadata} />}
+              {currentIndex === 0 && metadata && <MetadataDisplay metadata={metadata} hideTitle />}
               <SectionReadingTime section={currentSection} />
               <div
                 key={currentSection.id}
