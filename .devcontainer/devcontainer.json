@@ -25,7 +25,7 @@
   "postStartCommand": "docker compose -f server/docker-compose.dev.yml up -d",
   "containerEnv": {
     "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/mdhd",
-    "SQLX_OFFLINE": "true"
+    "SQLX_OFFLINE": "false"
   },
   "customizations": {
     "vscode": {
