@@ -42,6 +42,8 @@ pub struct TabResponse {
     pub is_active: bool,
     pub pinned: bool,
     pub updated_at: DateTime<Utc>,
+    pub custom_icon: Option<String>,
+    pub custom_cover: Option<String>,
 }
 
 /// Maps a persisted [`UserTab`] into the JSON shape exposed to clients.
@@ -53,6 +55,8 @@ impl From<UserTab> for TabResponse {
             is_active: t.is_active,
             pinned: t.pinned,
             updated_at: t.updated_at,
+            custom_icon: t.custom_icon,
+            custom_cover: t.custom_cover,
         }
     }
 }
@@ -70,6 +74,9 @@ pub struct TabEntry {
 
     #[serde(default)]
     pub pinned: bool,
+
+    pub custom_icon: Option<String>,
+    pub custom_cover: Option<String>,
 }
 
 /// Request body for `PUT /tabs`: the full desired tab set for the user.
@@ -97,7 +104,7 @@ async fn list_tabs(
 ) -> Result<Json<Vec<TabResponse>>, AppError> {
     let rows = sqlx::query_as!(
         UserTab,
-        "SELECT user_id, file_id, position, is_active, pinned, updated_at
+        "SELECT user_id, file_id, position, is_active, pinned, updated_at, custom_icon, custom_cover
          FROM user_tabs WHERE user_id = $1 ORDER BY position ASC",
         auth.user_id,
     )
@@ -227,12 +234,14 @@ async fn persist_tab_replace_in_transaction(
     for t in tabs {
         sqlx::query!(
             r"
-            INSERT INTO user_tabs (user_id, file_id, position, is_active, pinned, updated_at)
-            VALUES ($1, $2, $3, $4, $5, now())
+            INSERT INTO user_tabs (user_id, file_id, position, is_active, pinned, custom_icon, custom_cover, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, now())
             ON CONFLICT (user_id, file_id) DO UPDATE SET
                 position = EXCLUDED.position,
                 is_active = EXCLUDED.is_active,
                 pinned = EXCLUDED.pinned,
+                custom_icon = EXCLUDED.custom_icon,
+                custom_cover = EXCLUDED.custom_cover,
                 updated_at = now()
             ",
             user_id,
@@ -240,6 +249,8 @@ async fn persist_tab_replace_in_transaction(
             t.position,
             t.is_active,
             t.pinned,
+            t.custom_icon.clone() as Option<String>,
+            t.custom_cover.clone() as Option<String>,
         )
         .execute(&mut **tx)
         .await?;
