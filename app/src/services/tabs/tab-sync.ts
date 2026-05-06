@@ -62,9 +62,10 @@ class TabSync {
   }
 
   /**
-   * True when the set, order, active flag, or pinned flag of file-backed tabs
-   * has changed. Reading-state ticks (currentIndex, scrollProgress, etc.) are
-   * intentionally ignored — those go through the progress sync path.
+   * True when the set, order, active flag, pinned flag, or customisation
+   * (icon/cover) of file-backed tabs has changed. Reading-state ticks
+   * (currentIndex, scrollProgress, etc.) are intentionally ignored — those go
+   * through the progress sync path.
    */
   private tabIdentityChanged(
     next: Tab[],
@@ -85,30 +86,31 @@ class TabSync {
 
   private snapshotSignature(tabs: Tab[], activeTabId: string | null): string {
     return this.buildEntries(tabs, activeTabId)
-      .map((e) => `${e.file_id}:${e.position}:${e.is_active ? 1 : 0}:${e.pinned ? 1 : 0}`)
+      .map(
+        (e) =>
+          `${e.file_id}:${e.position}:${e.is_active ? 1 : 0}:${e.pinned ? 1 : 0}:${e.custom_icon ?? ''}:${JSON.stringify(e.custom_cover)}`
+      )
       .join('|');
   }
 
   private buildEntries(tabs: Tab[], activeTabId: string | null): TabEntry[] {
     return tabs
       .filter((t) => !!t.sourceFileId)
-      .map((tab, index) => {
-        return {
-          file_id: tab.sourceFileId!,
-          position: index,
-          is_active: tab.id === activeTabId,
-          pinned: !!tab.pinned,
-        };
-      });
+      .map((tab, index) => ({
+        file_id: tab.sourceFileId!,
+        position: index,
+        is_active: tab.id === activeTabId,
+        pinned: !!tab.pinned,
+        custom_icon: tab.customIcon ?? null,
+        custom_cover: tab.customCover ? JSON.stringify(tab.customCover) : null,
+      }));
   }
 
   private async push(): Promise<void> {
     if (!this.isAuthed()) return;
     const state = useTabsStore.getState();
     const entries = this.buildEntries(state.tabs, state.activeTabId);
-    const signature = entries
-      .map((e) => `${e.file_id}:${e.position}:${e.is_active ? 1 : 0}:${e.pinned ? 1 : 0}`)
-      .join('|');
+    const signature = this.snapshotSignature(state.tabs, state.activeTabId);
     if (signature === this.lastPushedSignature) return;
     try {
       await putTabs(entries);
@@ -150,7 +152,12 @@ class TabSync {
     for (const server of ordered) {
       const local = localFileBacked.get(server.file_id);
       if (local) {
-        const next = { ...local, pinned: server.pinned };
+        const next = {
+          ...local,
+          pinned: server.pinned,
+          customIcon: server.custom_icon ?? undefined,
+          customCover: server.custom_cover ? JSON.parse(server.custom_cover) : undefined,
+        };
         mergedTabs.push(next);
         if (server.is_active) activeTabId = next.id;
         continue;
@@ -198,6 +205,8 @@ class TabSync {
         createdAt: now,
         lastAccessedAt: now,
         pinned: server.pinned,
+        customIcon: server.custom_icon ?? undefined,
+        customCover: server.custom_cover ? JSON.parse(server.custom_cover) : undefined,
         readingState: {
           currentIndex: 0,
           readSections: new Set([0]),

@@ -21,4 +21,8 @@ pub struct UserTab {
     pub is_active: bool,
     pub pinned: bool,
     pub updated_at: DateTime<Utc>,
+    /// User-selected emoji icon. None means use the auto-generated icon.
+    pub custom_icon: Option<String>,
+    /// User-chosen cover overrides serialized as a JSON string by the client. None means use the auto-generated cover.
+    pub custom_cover: Option<String>,
 }

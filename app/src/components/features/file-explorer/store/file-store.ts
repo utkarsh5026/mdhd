@@ -15,10 +15,39 @@ import {
 
 import { validateFileName } from '../utils/filename';
 
+export interface RecentFileEntry {
+  id: string;
+  name: string;
+  path: string;
+  contentHash?: string;
+  accessedAt: number;
+}
+
+const RECENT_FILES_KEY = 'mdhd-recent-files';
+const RECENT_FILES_LIMIT = 5;
+
+function loadRecentFiles(): RecentFileEntry[] {
+  try {
+    const stored = localStorage.getItem(RECENT_FILES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentFiles(entries: RecentFileEntry[]): void {
+  try {
+    localStorage.setItem(RECENT_FILES_KEY, JSON.stringify(entries));
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
 interface FileStoreState {
   fileTree: FileTreeNode[];
   selectedFile: StoredFile | null;
   expandedDirectories: Set<string>;
+  recentFiles: RecentFileEntry[];
 
   isLoading: boolean;
   isUploading: boolean;
@@ -192,6 +221,7 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
       fileTree: [],
       selectedFile: null,
       expandedDirectories: new Set<string>(),
+      recentFiles: [],
       isLoading: false,
       isUploading: false,
       activeUploadCount: 0,
@@ -208,7 +238,8 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
           set,
           async () => {
             const fileTree = await fileStorageDB.buildFileTree();
-            set({ fileTree, isInitialized: true });
+            const recentFiles = loadRecentFiles();
+            set({ fileTree, isInitialized: true, recentFiles });
           },
           'Failed to initialize'
         );
@@ -227,7 +258,20 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
       },
 
       selectFile: (file: StoredFile) => {
-        set({ selectedFile: file });
+        const entry: RecentFileEntry = {
+          id: file.id,
+          name: file.name,
+          path: file.path,
+          contentHash: file.contentHash,
+          accessedAt: Date.now(),
+        };
+        const { recentFiles } = get();
+        const updated = [entry, ...recentFiles.filter((r) => r.id !== file.id)].slice(
+          0,
+          RECENT_FILES_LIMIT
+        );
+        saveRecentFiles(updated);
+        set({ selectedFile: file, recentFiles: updated });
       },
 
       clearSelection: () => {
@@ -356,6 +400,13 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
               set({ selectedFile: null });
             }
 
+            const { recentFiles } = get();
+            const filteredRecent = recentFiles.filter((r) => r.id !== id);
+            if (filteredRecent.length !== recentFiles.length) {
+              saveRecentFiles(filteredRecent);
+              set({ recentFiles: filteredRecent });
+            }
+
             const fileTree = await fileStorageDB.buildFileTree();
             set({ fileTree });
           },
@@ -391,6 +442,15 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
 
             if (selectedFile?.path.startsWith(path)) {
               set({ selectedFile: null });
+            }
+
+            const { recentFiles } = get();
+            const filteredRecent = recentFiles.filter(
+              (r) => r.path !== path && !r.path.startsWith(path + '/')
+            );
+            if (filteredRecent.length !== recentFiles.length) {
+              saveRecentFiles(filteredRecent);
+              set({ recentFiles: filteredRecent });
             }
 
             const newExpanded = new Set(expandedDirectories);
@@ -485,10 +545,12 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
               activeKept ? clearTabsState.activeTabId : (localOnlyTabs[0]?.id ?? null),
               localOnlyTabs.length === 0
             );
+            localStorage.removeItem(RECENT_FILES_KEY);
             set({
               fileTree: [],
               selectedFile: null,
               expandedDirectories: new Set(),
+              recentFiles: [],
             });
           },
           'Clear failed'
@@ -504,6 +566,7 @@ export const useFileStore = create<FileStoreState & FileStoreActions>()(
 );
 
 export const useFileTree = () => useFileStore((state) => state.fileTree);
+export const useRecentFiles = () => useFileStore((state) => state.recentFiles);
 export const useSelectedFile = () => useFileStore((state) => state.selectedFile);
 export const useExpandedDirectories = () => useFileStore((state) => state.expandedDirectories);
 export const useIsFileLoading = () => useFileStore((state) => state.isLoading);
