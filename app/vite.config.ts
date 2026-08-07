@@ -119,6 +119,28 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: (id) => {
             if (id.includes('node_modules')) {
+              // Document import (Word/HTML → markdown). Pulled in only by the
+              // dynamic imports in services/import; without its own chunk the
+              // catch-all `vendor` rule below would drag ~500 KB of mammoth,
+              // jszip, and xmldom into the entry bundle.
+              if (
+                id.includes('/mammoth/') ||
+                id.includes('/turndown/') ||
+                id.includes('/turndown-plugin-gfm/') ||
+                id.includes('/jszip/') ||
+                id.includes('/@xmldom/') ||
+                id.includes('/dingbat-to-unicode/')
+              ) {
+                return 'doc-import';
+              }
+              // Legacy stream modes (shell, Ruby, Swift, TOML, …) are loaded
+              // one language at a time by `language-loader`. Letting Rollup
+              // split them keeps each mode its own small async chunk; naming a
+              // chunk here would instead pull all of them into the eagerly
+              // loaded `codemirror` bundle below.
+              if (id.includes('/@codemirror/legacy-modes/')) {
+                return undefined;
+              }
               if (id.includes('/codemirror/') || id.includes('/@codemirror/')) {
                 return 'codemirror';
               }
