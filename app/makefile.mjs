@@ -222,7 +222,10 @@ async function runTypeCheck() {
     console.log(chalk.cyan("Running TypeScript type check..."));
     console.log();
 
-    await runCommand("bunx", ["tsc", "--noEmit"]);
+    // `tsc -b`, not `tsc --noEmit`: tsconfig.json is a solution-style file
+    // (`"files": []` plus project references), so `--noEmit` resolves an empty
+    // program and always passes. Only a build walks the referenced projects.
+    await runCommand("bunx", ["tsc", "-b"]);
 
     console.log();
     console.log(chalk.green("✓ Type check passed!"));

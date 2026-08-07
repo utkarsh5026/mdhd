@@ -70,8 +70,94 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # `-b`, not `--noEmit`: app/tsconfig.json is solution-style (`"files": []`
+      # plus references), so `--noEmit` type-checks an empty program and passes
+      # unconditionally. Only a build walks tsconfig.app.json / tsconfig.node.json.
       - name: Run TypeScript compiler
-        run: bunx tsc --noEmit
+        run: bunx tsc -b
+
+  # The `typecheck` job above only proves the PR's *final* tree compiles. That
+  # misses a split where an import lands in one commit and the module it points
+  # at lands in a later one: the tip is green, but every commit in between fails
+  # to build. Anything that builds an intermediate commit — a Vercel preview,
+  # a bisect, a revert of the tail commit — hits the breakage.
+  typecheck-commits:
+    name: Type Check (per commit)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: ./app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Full history so the base..head range is walkable.
+          fetch-depth: 0
+          # Check out the real head commit, not the synthetic merge commit, so
+          # the range below is the PR's own commits.
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: ".bun-version"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type check each commit
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # node_modules is gitignored, so it survives the checkouts below and the
+        # install above is done once. Each commit is built with `--force`: a
+        # stale .tsbuildinfo carried between checkouts could otherwise let a
+        # broken commit report success, and a false green defeats the job.
+        run: |
+          set -uo pipefail
+
+          commits=$(git rev-list --reverse --no-merges "$BASE_SHA".."$HEAD_SHA")
+          if [ -z "$commits" ]; then
+            echo "No non-merge commits in range; nothing to check."
+            exit 0
+          fi
+
+          total=$(echo "$commits" | wc -l | tr -d ' ')
+          echo "Type checking $total commit(s) from ${BASE_SHA:0:7} to ${HEAD_SHA:0:7}."
+
+          failed=""
+          for sha in $commits; do
+            subject=$(git log -1 --format=%s "$sha")
+            echo "::group::${sha:0:7} $subject"
+
+            git checkout --quiet --force "$sha"
+
+            # A commit that predates this job may not install cleanly against the
+            # cached node_modules; only reinstall when the lockfile actually moved.
+            if ! git diff --quiet "$HEAD_SHA" "$sha" -- bun.lock; then
+              echo "bun.lock differs from head; reinstalling dependencies."
+              bun install --frozen-lockfile
+            fi
+
+            if bunx tsc -b --force; then
+              echo "::endgroup::"
+              echo "✓ ${sha:0:7} $subject"
+            else
+              echo "::endgroup::"
+              echo "::error::Commit ${sha:0:7} does not type check: $subject"
+              failed="$failed ${sha:0:7}"
+            fi
+          done
+
+          git checkout --quiet --force "$HEAD_SHA"
+
+          if [ -n "$failed" ]; then
+            echo "Commits that failed to type check:$failed"
+            exit 1
+          fi
+          echo "All $total commit(s) type check."
 
   security:
     name: Security Scan
