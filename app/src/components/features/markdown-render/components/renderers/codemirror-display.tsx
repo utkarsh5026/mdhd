@@ -63,8 +63,13 @@ const CodeMirrorDisplay = ({
   const baseThemeCompartment = useRef(new Compartment()).current;
 
   const resolvedFontSize = isDialog ? '1rem' : (fontSize ?? '0.875rem');
+  // A bare face name gets quoted and given a fallback; anything that already
+  // looks like a CSS list (`ui-monospace, Menlo, monospace`) is passed through,
+  // since quoting it would stop the generic keywords from matching.
   const resolvedFontFamily = fontFamily
-    ? `"${fontFamily}", monospace`
+    ? /[,"]/.test(fontFamily)
+      ? fontFamily
+      : `"${fontFamily}", monospace`
     : '"Source Code Pro", "Fira Code", monospace';
   const resolvedLineHeight = lineHeightValue ? String(lineHeightValue) : isDialog ? '1.8' : '1.6';
 
