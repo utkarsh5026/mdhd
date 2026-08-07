@@ -74,6 +74,11 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          // The `vendor` chunk is just over Workbox's 2 MiB default. Leaving it
+          // unprecached is not an option: MDHD is offline-first, and an app
+          // shell that cannot boot without the network defeats that. Raised
+          // with headroom so an ordinary dependency bump doesn't fail the build.
+          maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
