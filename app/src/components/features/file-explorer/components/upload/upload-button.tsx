@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { TooltipButton } from '@/components/ui/tooltip-button';
+import { IMPORT_ACCEPT_ATTRIBUTE } from '@/services/import';
 
 interface UploadButtonProps {
   variant: 'files' | 'directory';
@@ -53,7 +54,7 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
         className="hidden"
         onChange={handleChange}
         multiple={!isDirectory}
-        accept=".md,.markdown"
+        accept={IMPORT_ACCEPT_ATTRIBUTE}
         {...(isDirectory && {
           webkitdirectory: '',
           directory: '',

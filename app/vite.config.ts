@@ -74,6 +74,11 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          // The `vendor` chunk is just over Workbox's 2 MiB default. Leaving it
+          // unprecached is not an option: MDHD is offline-first, and an app
+          // shell that cannot boot without the network defeats that. Raised
+          // with headroom so an ordinary dependency bump doesn't fail the build.
+          maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
@@ -119,6 +124,28 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: (id) => {
             if (id.includes('node_modules')) {
+              // Document import (Word/HTML → markdown). Pulled in only by the
+              // dynamic imports in services/import; without its own chunk the
+              // catch-all `vendor` rule below would drag ~500 KB of mammoth,
+              // jszip, and xmldom into the entry bundle.
+              if (
+                id.includes('/mammoth/') ||
+                id.includes('/turndown/') ||
+                id.includes('/turndown-plugin-gfm/') ||
+                id.includes('/jszip/') ||
+                id.includes('/@xmldom/') ||
+                id.includes('/dingbat-to-unicode/')
+              ) {
+                return 'doc-import';
+              }
+              // Legacy stream modes (shell, Ruby, Swift, TOML, …) are loaded
+              // one language at a time by `language-loader`. Letting Rollup
+              // split them keeps each mode its own small async chunk; naming a
+              // chunk here would instead pull all of them into the eagerly
+              // loaded `codemirror` bundle below.
+              if (id.includes('/@codemirror/legacy-modes/')) {
+                return undefined;
+              }
               if (id.includes('/codemirror/') || id.includes('/@codemirror/')) {
                 return 'codemirror';
               }

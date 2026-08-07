@@ -1,0 +1,6 @@
+# Local, per-developer Claude Code overrides (settings.json is shared and committed)
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db

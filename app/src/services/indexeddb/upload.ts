@@ -1,5 +1,6 @@
 import { toast } from 'sonner';
 
+import { convertToMarkdown, DocumentConversionError, isImportable } from '@/services/import';
 import { sha256 } from '@/utils/hash';
 
 import { fileStorageDB, getParentPath, normalizePath } from './file-db';
@@ -8,6 +9,15 @@ import type { StoredDirectory, StoredFile, UploadProgressCallback } from './type
 /** Maximum allowed file size for a single upload (10 MB). Files exceeding this are skipped with a warning toast. */
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
+/**
+ * Maximum size of the markdown a converted document may produce (12 MB).
+ *
+ * Checked separately from {@link MAX_FILE_SIZE} because conversion can grow a
+ * file: embedded images are inlined as base64, which costs ~33% over the raw
+ * bytes. A 6 MB image-heavy `.docx` can land near this ceiling.
+ */
+const MAX_CONVERTED_SIZE = 12 * 1024 * 1024; // 12 MB
+
 /** Maximum directory nesting depth traversed during a drag-drop operation. Subtrees beyond this level are skipped. */
 const MAX_DIRECTORY_DEPTH = 10;
 
@@ -15,16 +25,14 @@ const MAX_DIRECTORY_DEPTH = 10;
 const MAX_FILE_COUNT = 1000;
 
 /**
- * Filters a list of `File` objects to only those with a `.md` or `.markdown` extension.
+ * Filters a list of `File` objects to only those MDHD can read — markdown plus
+ * every format `@/services/import` has a converter for (`.docx`, `.html`).
  *
  * @param files - The raw file list to filter.
- * @returns A new array containing only markdown files.
+ * @returns A new array containing only importable files.
  */
-function filterMarkdownFiles(files: File[]): File[] {
-  return files.filter(({ name }) => {
-    const filename = name.toLowerCase();
-    return filename.endsWith('.md') || filename.endsWith('.markdown');
-  });
+function filterImportableFiles(files: File[]): File[] {
+  return files.filter(({ name }) => isImportable(name));
 }
 
 /**
@@ -66,11 +74,85 @@ function getFilePath(file: File, basePath: string = ''): string {
 }
 
 /**
- * Reads, hashes, and persists a list of files to IndexedDB in parallel batches.
+ * Resolves the storage path for a file whose name may have changed during
+ * import (`Report.docx` is stored as `Report.md`).
  *
- * Non-markdown files are silently ignored. Files exceeding `MAX_FILE_SIZE` are
- * skipped with a warning toast. Each batch of up to 10 files is processed with
- * `Promise.allSettled` so a single failure doesn't abort the rest.
+ * Keeps the directory the file was uploaded into and swaps only the final
+ * segment, so folder uploads keep their structure.
+ *
+ * @param file - The browser `File` object.
+ * @param basePath - Optional prefix prepended before the resolved name.
+ * @param filename - The name to store the file under.
+ * @returns A normalized absolute path.
+ */
+function getStoragePath(file: File, basePath: string, filename: string): string {
+  const parent = getParentPath(getFilePath(file, basePath));
+  return normalizePath(parent === '/' ? `/${filename}` : `${parent}/${filename}`);
+}
+
+/**
+ * Converts a single file to markdown and persists it.
+ *
+ * @async
+ * @param file - The file to import.
+ * @param basePath - Path prefix for the resolved storage path.
+ * @param warnings - Shared collector for non-fatal conversion notes, summarized
+ *   by the caller once the whole batch is done.
+ * @returns The stored record, or `null` when the file was skipped (too large,
+ *   unreadable, or a duplicate path).
+ */
+async function importFile(
+  file: File,
+  basePath: string,
+  warnings: Set<string>
+): Promise<StoredFile | null> {
+  if (file.size > MAX_FILE_SIZE) {
+    toast.warning(`Skipped "${file.name}" — exceeds ${MAX_FILE_SIZE / 1024 / 1024} MB limit`);
+    return null;
+  }
+
+  let converted;
+  try {
+    converted = await convertToMarkdown(file);
+  } catch (error) {
+    if (error instanceof DocumentConversionError) {
+      toast.error(`Couldn't import "${error.filename}"`, { description: error.message });
+      return null;
+    }
+    throw error;
+  }
+
+  const { markdown, filename, warnings: conversionWarnings } = converted;
+
+  if (markdown.length > MAX_CONVERTED_SIZE) {
+    toast.warning(
+      `Skipped "${file.name}" — converts to more than ${MAX_CONVERTED_SIZE / 1024 / 1024} MB`
+    );
+    return null;
+  }
+
+  conversionWarnings.forEach((warning) => warnings.add(warning));
+
+  const path = getStoragePath(file, basePath, filename);
+
+  return fileStorageDB.addFile({
+    name: filename,
+    path,
+    parentPath: getParentPath(path),
+    content: markdown,
+    size: markdown.length,
+    contentHash: await sha256(markdown),
+  });
+}
+
+/**
+ * Reads, converts, hashes, and persists a list of files to IndexedDB in parallel batches.
+ *
+ * Files in a format MDHD cannot read are silently ignored; Word (`.docx`) and
+ * HTML files are converted to markdown by `@/services/import` and stored under
+ * a `.md` name. Files exceeding `MAX_FILE_SIZE` are skipped with a warning
+ * toast. Each batch of up to 10 files is processed with `Promise.allSettled` so
+ * a single failure doesn't abort the rest.
  *
  * @async
  * @param files - The browser `File` objects to upload.
@@ -83,8 +165,9 @@ export async function processFileUpload(
   basePath: string = '',
   onProgress?: UploadProgressCallback
 ): Promise<StoredFile[]> {
-  const mdFiles = filterMarkdownFiles(files);
+  const mdFiles = filterImportableFiles(files);
   const storedFiles: StoredFile[] = [];
+  const warnings = new Set<string>();
 
   const BATCH_SIZE = 10;
   let processedCount = 0;
@@ -116,24 +199,7 @@ export async function processFileUpload(
     const batch = mdFiles.slice(i, i + BATCH_SIZE);
 
     const batchResults = await Promise.allSettled(
-      batch.map(async (file) => {
-        if (file.size > MAX_FILE_SIZE) {
-          toast.warning(`Skipped "${file.name}" — exceeds ${MAX_FILE_SIZE / 1024 / 1024} MB limit`);
-          return null;
-        }
-
-        const content = await file.text();
-        const path = getFilePath(file, basePath);
-
-        return fileStorageDB.addFile({
-          name: file.name,
-          path,
-          parentPath: getParentPath(path),
-          content,
-          size: file.size,
-          contentHash: await sha256(content),
-        });
-      })
+      batch.map((file) => importFile(file, basePath, warnings))
     );
 
     updateBatchProgress(batchResults, batch);
@@ -144,6 +210,12 @@ export async function processFileUpload(
     processed: mdFiles.length,
     currentFile: '',
   });
+
+  // One summary rather than a toast per warning per file — a single document
+  // can produce the same note dozens of times.
+  for (const warning of warnings) {
+    toast.warning(warning);
+  }
 
   return storedFiles;
 }
@@ -183,8 +255,8 @@ async function ensureDirectories(dirPaths: string[]): Promise<StoredDirectory[]>
  * Persists a directory upload to IndexedDB, creating all required ancestor directories first.
  *
  * Expects `fileList` to contain files with `webkitRelativePath` set (as provided
- * by `<input type="file" webkitdirectory>` or the drag-drop path). Non-markdown
- * files are filtered out before processing.
+ * by `<input type="file" webkitdirectory>` or the drag-drop path). Files in
+ * formats MDHD cannot read are filtered out before processing.
  *
  * @async
  * @param fileList - A `FileList` or `File[]` from a directory input or drag-drop.
@@ -195,7 +267,7 @@ export async function processDirectoryUpload(
   fileList: FileList | File[],
   onProgress?: UploadProgressCallback
 ): Promise<{ files: StoredFile[]; directories: StoredDirectory[] }> {
-  const mdFiles = filterMarkdownFiles(Array.from(fileList as Iterable<File>));
+  const mdFiles = filterImportableFiles(Array.from(fileList as Iterable<File>));
 
   if (mdFiles.length === 0) {
     return { files: [], directories: [] };

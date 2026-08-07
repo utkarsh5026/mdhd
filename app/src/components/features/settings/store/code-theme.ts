@@ -9,12 +9,22 @@ export const codeThemes = {
     oneDark: { name: 'One Dark' },
     atomDark: { name: 'Atom Dark' },
     dracula: { name: 'Dracula' },
+    githubDark: { name: 'GitHub Dark' },
+    nord: { name: 'Nord' },
+    monokai: { name: 'Monokai' },
+    tokyoNight: { name: 'Tokyo Night' },
+    gruvboxDark: { name: 'Gruvbox Dark' },
+    solarizedDark: { name: 'Solarized Dark' },
+    catppuccinMocha: { name: 'Catppuccin Mocha' },
   },
   'Light Themes': {
     vs: { name: 'Visual Studio' },
     oneLight: { name: 'One Light' },
     ghcolors: { name: 'GitHub' },
     prism: { name: 'Prism' },
+    solarizedLight: { name: 'Solarized Light' },
+    gruvboxLight: { name: 'Gruvbox Light' },
+    catppuccinLatte: { name: 'Catppuccin Latte' },
   },
 } as const;
 

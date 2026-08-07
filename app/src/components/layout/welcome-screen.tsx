@@ -9,6 +9,7 @@ import {
 import { useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
 import { useAuthUser } from '@/services/auth';
+import { convertFirstDocument, IMPORT_ACCEPT_ATTRIBUTE } from '@/services/import';
 import type { FileTreeNode } from '@/services/indexeddb';
 
 interface WelcomeScreenProps {
@@ -49,10 +50,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
 
   const readAndStart = useCallback(
     async (files: File[]) => {
-      const mdFile = files.find((f) => f.name.endsWith('.md') || f.name.endsWith('.markdown'));
-      if (!mdFile) return;
-      const content = await mdFile.text();
-      if (content.trim()) onStartReading(content);
+      const document = await convertFirstDocument(files);
+      if (document) onStartReading(document.markdown);
     },
     [onStartReading]
   );
@@ -248,7 +247,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
                 {
                   icon: Upload,
                   label: 'Open file',
-                  description: 'Open a .md file',
+                  description: 'Open a .md, .docx, .html, or code file',
                   onClick: () => fileInputRef.current?.click(),
                 },
                 {
@@ -280,7 +279,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
           )}
 
           <p className="hidden sm:block text-[11px] text-muted-foreground/35 pt-1">
-            Or drag a <span className="font-mono">.md</span> file anywhere · Press{' '}
+            Or drag a <span className="font-mono">.md</span>,{' '}
+            <span className="font-mono">.docx</span>, or source file anywhere · Press{' '}
             <kbd className="font-mono">Ctrl+V</kbd> to paste instantly ·{' '}
             <kbd className="font-mono">Ctrl+Shift+V</kbd> anytime to open clipboard as a new tab
           </p>
@@ -319,7 +319,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
       <input
         ref={fileInputRef}
         type="file"
-        accept=".md,.markdown"
+        accept={IMPORT_ACCEPT_ATTRIBUTE}
         multiple
         className="sr-only"
         onChange={handleFileSelect}

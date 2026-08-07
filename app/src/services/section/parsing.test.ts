@@ -1,6 +1,83 @@
 import { describe, expect, it } from 'vitest';
 
-import { countWords, estimateReadingTime, parseMarkdownIntoSections, slugify } from './parsing';
+import {
+  countWords,
+  estimateReadingTime,
+  parseMarkdownIntoSections,
+  slugify,
+  toSearchableText,
+} from './parsing';
+
+describe('toSearchableText', () => {
+  it('keeps the contents of fenced code blocks', () => {
+    const md = ['# API', '```ts', 'export function parseConfig(raw: string) {}', '```'].join('\n');
+    const text = toSearchableText(md);
+
+    expect(text).toContain('parseConfig');
+    expect(text).toContain('raw: string');
+  });
+
+  it('drops the fence delimiters and info string', () => {
+    const text = toSearchableText('```typescript\nconst a = 1;\n```');
+
+    expect(text).not.toContain('```');
+    expect(text).not.toContain('typescript');
+    expect(text).toContain('const a = 1;');
+  });
+
+  it('preserves indentation inside code', () => {
+    const text = toSearchableText('```py\ndef f():\n    return 1\n```');
+    expect(text).toContain('    return 1');
+  });
+
+  it('unwraps inline code but keeps the identifier', () => {
+    const text = toSearchableText('Call `useSearch` before rendering.');
+
+    expect(text).toContain('useSearch');
+    expect(text).not.toContain('`');
+  });
+
+  it('leaves markdown syntax inside a fence untouched', () => {
+    const text = toSearchableText('```md\n# Not a heading\n**not bold**\n```');
+
+    expect(text).toContain('# Not a heading');
+    expect(text).toContain('**not bold**');
+  });
+
+  it('strips heading, emphasis and link syntax outside code', () => {
+    const text = toSearchableText('## Title\n**bold** and [docs](https://x.com)');
+
+    expect(text).toContain('Title');
+    expect(text).not.toContain('##');
+    expect(text).toContain('bold');
+    expect(text).not.toContain('**');
+    expect(text).toContain('docs');
+    expect(text).not.toContain('https://x.com');
+  });
+
+  it('drops image alt text but keeps link text', () => {
+    const text = toSearchableText('![diagram](a.png) see [guide](./g.md)');
+
+    expect(text).not.toContain('diagram');
+    expect(text).toContain('guide');
+  });
+
+  it('handles tilde fences', () => {
+    const text = toSearchableText('~~~js\nlet x = 2;\n~~~');
+
+    expect(text).toContain('let x = 2;');
+    expect(text).not.toContain('~~~');
+  });
+
+  it('does not close a fence on a mismatched marker', () => {
+    const text = toSearchableText('```\n~~~ inside\n```');
+    expect(text).toContain('~~~ inside');
+  });
+
+  it('returns an empty string for empty input', () => {
+    expect(toSearchableText('')).toBe('');
+  });
+});
 
 describe('slugify', () => {
   it('lowercases and hyphenates words', () => {

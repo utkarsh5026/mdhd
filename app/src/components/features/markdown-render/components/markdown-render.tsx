@@ -1,6 +1,7 @@
 import React, { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import rehypeSlug from 'rehype-slug';
 import remarkGfm from 'remark-gfm';
 
 import { ReactErrorBoundary } from '@/components/utils/react-error-boundary';
@@ -58,6 +59,14 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = memo(
                   },
                 },
               ],
+              // Deliberately after sanitize. Sanitize rewrites author-supplied
+              // ids to `user-content-*` to prevent DOM clobbering, but it does
+              // not rewrite `#fragment` hrefs to match — running slug first
+              // would produce ids that a document's own anchor links miss.
+              // Running it last yields clean, github-slugger ids (the targets
+              // docs are already written against) while author ids keep the
+              // clobber-safe prefix.
+              rehypeSlug,
             ]}
           >
             {markdown}

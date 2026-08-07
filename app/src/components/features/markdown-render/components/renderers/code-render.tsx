@@ -1,5 +1,5 @@
 import { toPng } from 'html-to-image';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Maximize2 } from 'lucide-react';
 import React, { useMemo, useRef } from 'react';
 
 import { CodeImageExportDialog } from '@/components/features/image-export';
@@ -96,6 +96,10 @@ const CodeFullscreenSheet: React.FC<CodeFullscreenSheetProps> = ({
               enableCodeFolding={displaySettings.enableCodeFolding}
               enableWordWrap
               fontSize="0.95rem"
+              fontFamily={displaySettings.fontFamily}
+              fontLigatures={displaySettings.fontLigatures}
+              lineHeightValue={displaySettings.lineHeight}
+              letterSpacing={displaySettings.letterSpacing}
               className="rounded-xl"
             />
           </div>
@@ -183,6 +187,23 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
 
   const backgroundColor = getThemeBackground(selectedTheme);
 
+  /**
+   * Click-to-zoom, minus the case that made partial copying impossible:
+   * drag-selecting inside the block ends with a click, which would open the
+   * sheet and discard the selection the reader just made.
+   */
+  const handleCodeClick = () => {
+    const selection = window.getSelection();
+    const hasSelectionInBlock =
+      selection !== null &&
+      !selection.isCollapsed &&
+      selection.anchorNode !== null &&
+      codeBlockRef.current?.contains(selection.anchorNode);
+
+    if (hasSelectionInBlock) return;
+    openSheet();
+  };
+
   return (
     <>
       <ExportContextMenu title={language ? `${language} block` : 'Code block'} items={exportItems}>
@@ -201,11 +222,26 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
             </div>
           )}
 
+          {/* Expand Button — the accessible route to the fullscreen sheet, now
+              that clicking the block itself yields to text selection. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={openSheet}
+            aria-label="Expand code block"
+            title="Expand"
+            className="absolute top-2 right-12 z-10 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-xl cursor-pointer h-8 w-8 px-0"
+          >
+            <Maximize2 className="w-4 h-4 text-muted-foreground" />
+          </Button>
+
           {/* Copy Button */}
           <Button
             variant="ghost"
             size="sm"
             onClick={copyToClipboard}
+            aria-label="Copy code"
+            title="Copy"
             className="absolute top-2 right-2 z-10 gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-xl cursor-pointer h-8 px-3"
           >
             <div className="relative">
@@ -231,14 +267,9 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
           {/* Code Content */}
           <div
             ref={codeBlockRef}
-            className={cn('overflow-hidden p-4 cursor-zoom-in', containerClasses.inner)}
+            className={cn('overflow-hidden p-4', containerClasses.inner)}
             style={{ backgroundColor }}
-            onClick={openSheet}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') openSheet();
-            }}
+            onClick={handleCodeClick}
           >
             <CodeMirrorDisplay
               code={codeContent}
@@ -248,6 +279,10 @@ const CodeRender: React.FC<React.ComponentPropsWithoutRef<'code'>> = ({ classNam
               enableCodeFolding={displaySettings.enableCodeFolding}
               enableWordWrap={displaySettings.enableWordWrap}
               fontSize={CODE_FONT_SIZES[textSizeScale]}
+              fontFamily={displaySettings.fontFamily}
+              fontLigatures={displaySettings.fontLigatures}
+              lineHeightValue={displaySettings.lineHeight}
+              letterSpacing={displaySettings.letterSpacing}
               className={containerClasses.inner}
             />
           </div>

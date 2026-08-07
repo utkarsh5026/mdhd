@@ -8,6 +8,8 @@ export interface SearchResultItemProps {
   result: SearchResult;
   isSelected: boolean;
   onClick: () => void;
+  /** Lets the pointer take over the keyboard cursor as it moves across rows. */
+  onMouseEnter?: () => void;
 }
 
 const LEVEL_LABEL: Record<number, string> = {
@@ -20,7 +22,7 @@ const LEVEL_LABEL: Record<number, string> = {
 };
 
 const SearchResultItem: React.FC<SearchResultItemProps> = memo(
-  ({ result, isSelected, onClick }) => {
+  ({ result, isSelected, onClick, onMouseEnter }) => {
     const { snippet, matchStart, matchLength, sectionTitle, matchType, sectionLevel } = result;
 
     const before = snippet.slice(0, matchStart);
@@ -32,7 +34,9 @@ const SearchResultItem: React.FC<SearchResultItemProps> = memo(
         type="button"
         role="option"
         aria-selected={isSelected}
+        data-active={isSelected}
         onClick={onClick}
+        onMouseEnter={onMouseEnter}
         className={cn(
           'w-full text-left px-3 py-2.5 rounded-xl transition-colors duration-100',
           'focus:outline-none cursor-pointer',
