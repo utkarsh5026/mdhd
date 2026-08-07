@@ -18,8 +18,18 @@ export interface SearchDialogProps {
 
 const SearchDialog: React.FC<SearchDialogProps> = memo(
   ({ open, onOpenChange, sections, onSelectSection }) => {
-    const { query, setQuery, results, reset } = useSearch(sections);
+    const {
+      query,
+      setQuery,
+      results,
+      totalMatches,
+      activeIndex,
+      setActiveIndex,
+      moveActive,
+      reset,
+    } = useSearch(sections);
     const inputRef = useRef<HTMLInputElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
       if (open) {
@@ -35,6 +45,33 @@ const SearchDialog: React.FC<SearchDialogProps> = memo(
       },
       [onSelectSection, onOpenChange]
     );
+
+    // Arrow keys walk the list, Enter opens the highlighted match. Handled on
+    // the input so the caret stays put and the field keeps focus throughout.
+    const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (results.length === 0) return;
+
+        if (e.key === 'ArrowDown' || (e.key === 'n' && e.ctrlKey)) {
+          e.preventDefault();
+          moveActive(1);
+        } else if (e.key === 'ArrowUp' || (e.key === 'p' && e.ctrlKey)) {
+          e.preventDefault();
+          moveActive(-1);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          const target = results[activeIndex];
+          if (target) handleSelect(target.sectionIndex);
+        }
+      },
+      [results, activeIndex, moveActive, handleSelect]
+    );
+
+    // Keep the highlighted row inside the scroll viewport.
+    useEffect(() => {
+      const row = listRef.current?.querySelector<HTMLElement>('[data-active="true"]');
+      row?.scrollIntoView({ block: 'nearest' });
+    }, [activeIndex]);
 
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,13 +97,14 @@ const SearchDialog: React.FC<SearchDialogProps> = memo(
                 placeholder="Search in document…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
                 className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
               />
               {query && (
                 <div className="flex items-center gap-2">
                   {results.length > 0 && (
                     <span className="text-[11px] text-muted-foreground/60 tabular-nums">
-                      {results.length}
+                      {activeIndex + 1}/{totalMatches}
                     </span>
                   )}
                   <button
@@ -94,7 +132,7 @@ const SearchDialog: React.FC<SearchDialogProps> = memo(
             </div>
 
             {/* Results */}
-            <div role="listbox" className="flex-1 overflow-y-auto min-h-0">
+            <div ref={listRef} role="listbox" className="flex-1 overflow-y-auto min-h-0">
               {query.length < 2 ? (
                 <div className="flex flex-col items-center justify-center gap-2.5 py-12 text-center">
                   <SearchIcon className="h-7 w-7 text-muted-foreground/25" strokeWidth={1.5} />
@@ -109,11 +147,12 @@ const SearchDialog: React.FC<SearchDialogProps> = memo(
                 </div>
               ) : (
                 <div className="p-1.5">
-                  {results.map((result) => (
+                  {results.map((result, index) => (
                     <SearchResultItem
-                      key={`${result.sectionIndex}-${result.matchType}`}
+                      key={result.id}
                       result={result}
-                      isSelected={false}
+                      isSelected={index === activeIndex}
+                      onMouseEnter={() => setActiveIndex(index)}
                       onClick={() => handleSelect(result.sectionIndex)}
                     />
                   ))}
@@ -125,12 +164,26 @@ const SearchDialog: React.FC<SearchDialogProps> = memo(
             <div className="px-4 py-2 border-t border-border/40 flex items-center justify-between">
               <span className="text-[11px] text-muted-foreground/40">
                 {query.length >= 2 && results.length > 0
-                  ? `${results.length} result${results.length !== 1 ? 's' : ''}`
-                  : 'Search sections by title or content'}
+                  ? totalMatches > results.length
+                    ? `Showing ${results.length} of ${totalMatches} matches`
+                    : `${totalMatches} match${totalMatches !== 1 ? 'es' : ''}`
+                  : 'Searches headings, prose and code'}
               </span>
-              <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-border/50 bg-muted/50 text-muted-foreground/50 font-mono">
-                esc
-              </kbd>
+              <div className="flex items-center gap-1">
+                {[
+                  { keys: '↑↓', label: 'navigate' },
+                  { keys: '↵', label: 'open' },
+                  { keys: 'esc', label: 'close' },
+                ].map(({ keys, label }) => (
+                  <kbd
+                    key={label}
+                    aria-label={label}
+                    className="text-[10px] px-1.5 py-0.5 rounded border border-border/50 bg-muted/50 text-muted-foreground/50 font-mono"
+                  >
+                    {keys}
+                  </kbd>
+                ))}
+              </div>
             </div>
           </DialogPrimitive.Content>
         </DialogPortal>

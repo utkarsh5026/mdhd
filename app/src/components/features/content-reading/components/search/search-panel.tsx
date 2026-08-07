@@ -30,10 +30,13 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
   const query = mode === 'document' ? docSearch.query : globalSearch.query;
   const setQuery = mode === 'document' ? docSearch.setQuery : globalSearch.setQuery;
 
-  // Reset searches when tab changes
+  // Reset searches when tab changes. `reset` is referentially stable, so this
+  // fires on tab switches only — depending on `docSearch` would re-run it on
+  // every render and wipe the query as the user types.
+  const { reset: resetDocSearch } = docSearch;
   useEffect(() => {
-    docSearch.reset();
-  }, [tabId, docSearch.reset]);
+    resetDocSearch();
+  }, [tabId, resetDocSearch]);
 
   // Auto-focus input when panel mounts
   useEffect(() => {
@@ -56,6 +59,26 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
     [changeSection]
   );
 
+  // Document mode only — global results are a separate, server-backed list.
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (mode !== 'document' || docSearch.results.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        docSearch.moveActive(1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        docSearch.moveActive(-1);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const target = docSearch.results[docSearch.activeIndex];
+        if (target) handleSelect(target.sectionIndex);
+      }
+    },
+    [mode, docSearch, handleSelect]
+  );
+
   const handleModeChange = useCallback(
     (newMode: SearchMode) => {
       if (newMode === mode) return;
@@ -71,7 +94,7 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
   const resultCount =
     mode === 'document'
       ? docSearch.query.length >= 2
-        ? docSearch.results.length
+        ? docSearch.totalMatches
         : null
       : globalSearch.query.length >= 2 && !globalSearch.isLoading
         ? globalSearch.results.length
@@ -130,6 +153,7 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
           }
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
         />
         {query && (
@@ -187,11 +211,12 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
           </div>
         ) : (
           <div className="p-1">
-            {docSearch.results.map((result) => (
+            {docSearch.results.map((result, index) => (
               <SearchResultItem
-                key={`${result.sectionIndex}-${result.matchType}`}
+                key={result.id}
                 result={result}
-                isSelected={false}
+                isSelected={index === docSearch.activeIndex}
+                onMouseEnter={() => docSearch.setActiveIndex(index)}
                 onClick={() => handleSelect(result.sectionIndex)}
               />
             ))}
