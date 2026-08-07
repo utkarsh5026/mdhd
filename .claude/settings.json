@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(make help)",
+      "Bash(make lint)",
+      "Bash(make fmt-check)",
+      "Bash(make typecheck)",
+      "Bash(make test)",
+      "Bash(make test:*)",
+      "Bash(make sqlx-check)",
+      "Bash(make knip)",
+      "Bash(node makefile.mjs help)",
+      "Bash(bun run lint)",
+      "Bash(bun run format:check)",
+      "Bash(bunx vitest run:*)",
+      "Bash(bunx tsc:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo fmt -- --check)",
+      "Bash(cargo test:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)"
+    ],
+    "deny": [
+      "Read(./server/.env)",
+      "Read(./server/.env.development)",
+      "Read(./server/.env.production)",
+      "Read(./server/.env.local)",
+      "Read(./app/.env)",
+      "Read(./app/.env.local)",
+      "Read(./app/.env.production)",
+      "Bash(git push --force:*)",
+      "Bash(git commit --no-verify:*)",
+      "Bash(make db-reset)",
+      "Bash(make nuke)"
+    ]
+  }
+}
