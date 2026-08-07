@@ -1,5 +1,6 @@
 import { Toaster } from 'sonner';
 
+import { CommandPalette } from '@/components/features/command-palette';
 import { useInitialFontSetup } from '@/components/features/settings';
 import Homepage from '@/components/layout/home';
 
@@ -16,6 +17,7 @@ const App = () => {
   return (
     <>
       <Homepage />
+      <CommandPalette />
       <Toaster />
     </>
   );
