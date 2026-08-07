@@ -90,6 +90,78 @@ export function removeMarkdownFormatting(text: string): string {
 }
 
 /**
+ * Strips markdown *syntax* while preserving code, for building a search index.
+ *
+ * Differs from {@link removeMarkdownFormatting}, which discards code entirely
+ * because it exists to count prose words. Search has the opposite requirement:
+ * a reader looking for `parseConfig` most likely wants the fenced block that
+ * defines it, so fence markers and backticks are dropped but their contents
+ * are kept verbatim — indentation and all, since leading whitespace is
+ * meaningful when the match is rendered back as a snippet.
+ *
+ * Line offsets are preserved 1:1 with the input except for fence delimiter
+ * lines, which are blanked rather than removed so surrounding line counts
+ * stay stable.
+ *
+ * @param markdown - Raw markdown text to flatten.
+ * @returns Plain text including code content, suitable for substring search.
+ */
+export function toSearchableText(markdown: string): string {
+  if (!markdown) return '';
+
+  const lines = markdown.split('\n');
+  const result: string[] = [];
+  let fence: string | null = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const fenceMatch = /^(```+|~~~+)/.exec(trimmed);
+
+    if (fenceMatch) {
+      const marker = fenceMatch[1];
+      if (fence === null) {
+        // Opening fence — drop the delimiter and its info string ("```ts").
+        fence = marker[0];
+        result.push('');
+        continue;
+      }
+      if (marker[0] === fence) {
+        fence = null;
+        result.push('');
+        continue;
+      }
+    }
+
+    // Inside a fence everything is code: keep it exactly as written.
+    result.push(fence !== null ? line : stripInlineMarkdown(line));
+  }
+
+  return result.join('\n');
+}
+
+/**
+ * Removes inline markdown syntax from a single non-code line, keeping the
+ * text a reader would actually see. Inline code is unwrapped rather than
+ * dropped so identifiers written as `someFunction` remain searchable.
+ */
+function stripInlineMarkdown(line: string): string {
+  return (
+    line
+      // Images first — otherwise the link rule eats their alt text.
+      .replace(/!\[[^\]]*]\([^)]*\)/g, '')
+      .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
+      // Heading hashes, blockquote markers and list bullets.
+      .replace(/^#{1,6}\s+/, '')
+      .replace(/^\s*>\s?/, '')
+      // Unwrap inline code, keeping the identifier inside.
+      .replace(/`([^`]*)`/g, '$1')
+      .replace(/(\*\*|__)(.*?)\1/g, '$2')
+      .replace(/([*_])(.*?)\1/g, '$2')
+      .replace(/<[^>]*>/g, '')
+  );
+}
+
+/**
  * Counts the number of words in a markdown string.
  *
  * Strips markdown formatting first, then splits on whitespace.
