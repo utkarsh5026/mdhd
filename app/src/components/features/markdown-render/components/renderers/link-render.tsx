@@ -1,55 +1,85 @@
 import React, { ComponentPropsWithoutRef } from 'react';
 
+import { isDocumentLink } from '@/services/markdown/links';
+
+import { useDocumentLink } from '../../context/document-link-context';
+
 interface LinkRenderProps extends ComponentPropsWithoutRef<'a'> {
   children?: React.ReactNode;
 }
 
-/**
- * LinkRender Component
- *
- * A functional React component that renders a hyperlink (`<a>` element) with
- * additional styling and accessibility features. This component is designed
- * to be used within a Markdown renderer to ensure that links are styled
- * consistently and behave correctly based on their target.
- *
- * Props:
- * - children (React.ReactNode): The content to be displayed inside the link.
- *   This can be text or any other React component.
- * - ...props (ComponentPropsWithoutRef<"a">): Any additional props that
- *   should be passed to the anchor element. This includes standard anchor
- *   attributes such as `href`, `title`, etc.
- *
- * The component automatically applies the following behaviors:
- * - If the `href` prop starts with "http", it sets the `target` attribute to
- *   "_blank", which opens the link in a new tab.
- * - It also sets the `rel` attribute to "noopener noreferrer" for security
- *   reasons when opening external links in a new tab.
- * - The `aria-label` attribute is conditionally set to improve accessibility.
- *   If there are no children, it uses the `title` prop or defaults to "Link".
- *
- * Usage:
- * ```jsx
- * <LinkRender href="https://example.com" title="Example Link">
- *   Click here to visit Example
- * </LinkRender>
- * ```
- */
-const SAFE_URL_PATTERN = /^(https?:\/\/|mailto:|#|\/)/i;
+/** Schemes the renderer will emit an `href` for. Anything else is stripped. */
+const SAFE_URL_PATTERN = /^(https?:\/\/|mailto:|#)/i;
 
+/**
+ * Anchors that stay useful inside a single-page reader.
+ *
+ * Three kinds of link are handled differently:
+ *
+ * - **External** (`https:`, `mailto:`) — opened in a new tab with
+ *   `noopener noreferrer`.
+ * - **Local documents** (`./setup.md`, `../api.md#usage`) — resolved against
+ *   the containing document and opened as a tab. These are how a docs folder
+ *   navigates itself, so they are intercepted rather than handed to the
+ *   browser, which has no route that could serve them.
+ * - **In-page fragments** (`#heading`) — left alone, to match the `id`s
+ *   rehype-slug puts on headings.
+ *
+ * Unrecognised schemes (`javascript:`, `data:`) render without an href.
+ */
 const LinkRender: React.FC<LinkRenderProps> = ({ children, ...props }) => {
-  const href = props.href;
+  const { openDocument } = useDocumentLink();
+  const { href, onClick, title, ...rest } = props;
+
+  const isLocalDocument = isDocumentLink(href);
+
+  if (isLocalDocument) {
+    // No host wiring (the public share view, for one) means there is no file
+    // tree to resolve against. Showing plain text is more honest than a link
+    // that silently does nothing.
+    if (!openDocument || !href) {
+      return (
+        <span className="text-muted-foreground" title={`Unresolved link: ${href ?? ''}`}>
+          {children}
+        </span>
+      );
+    }
+
+    // The app has no URL that maps to a stored document, so every click is
+    // handled here — including modified ones, which would otherwise open a
+    // new browser tab on a route that does not exist.
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      openDocument(href);
+    };
+
+    return (
+      <a
+        {...rest}
+        href={href}
+        title={title ?? href}
+        onClick={handleClick}
+        className="text-primary hover:underline"
+      >
+        {children}
+      </a>
+    );
+  }
+
   const isSafe = !href || SAFE_URL_PATTERN.test(href);
   const safeHref = isSafe ? href : undefined;
   const isExternal = safeHref?.startsWith('http');
 
   return (
     <a
-      {...props}
+      {...rest}
       href={safeHref}
+      title={title}
+      onClick={onClick}
       className="text-primary hover:underline"
       target={isExternal ? '_blank' : undefined}
       rel={isExternal ? 'noopener noreferrer' : undefined}
-      aria-label={children ? undefined : (props.title ?? 'Link')}
+      aria-label={children ? undefined : (title ?? 'Link')}
     >
       {children}
     </a>
