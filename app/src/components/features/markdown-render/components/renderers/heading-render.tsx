@@ -1,7 +1,10 @@
+import { Link2 } from 'lucide-react';
 import React from 'react';
+import { toast } from 'sonner';
 
 import { useMarkdownStyleStore } from '@/components/features/markdown-style/store/markdown-style-store';
 import { useReadingSettingsStore } from '@/components/features/settings/store/reading-settings-store';
+import { useCopyToClipboard } from '@/hooks';
 
 import { TEXT_SIZE_SCALE_CLASSES } from '../../utils/text-size-classes';
 
@@ -26,6 +29,24 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({
 }) => {
   const textSizeScale = useReadingSettingsStore((s) => s.typography.textSizeScale);
   const headingColorStyle = useMarkdownStyleStore((s) => s.settings.headingColorStyle);
+  const { copy } = useCopyToClipboard();
+
+  // `id` is injected by rehype-slug during rendering; without it there is
+  // nothing stable to link to, so the anchor affordance is omitted.
+  const headingId = props.id;
+
+  const handleAnchorClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    if (!headingId) return;
+
+    document.getElementById(headingId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const url = `${window.location.origin}${window.location.pathname}${window.location.search}#${headingId}`;
+    window.history.replaceState(null, '', `#${headingId}`);
+
+    const copied = await copy(url);
+    toast[copied ? 'success' : 'error'](copied ? 'Link copied' : 'Could not copy link');
+  };
 
   const sizeKey = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
 
@@ -93,6 +114,24 @@ const HeadingRender: React.FC<HeadingRenderProps> = ({
   return (
     <HeadingTag {...props} className={className}>
       {children}
+      {headingId && (
+        <a
+          href={`#${headingId}`}
+          onClick={handleAnchorClick}
+          aria-label="Copy link to this heading"
+          title="Copy link to this heading"
+          className={[
+            'ml-2 inline-flex align-middle no-underline',
+            'text-muted-foreground/50 hover:text-primary',
+            // Revealed on heading hover; always reachable by keyboard.
+            'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+            'transition-opacity duration-150',
+            'motion-reduce:transition-none',
+          ].join(' ')}
+        >
+          <Link2 className="w-[0.6em] h-[0.6em]" aria-hidden="true" />
+        </a>
+      )}
     </HeadingTag>
   );
 };
