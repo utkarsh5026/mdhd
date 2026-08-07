@@ -4,9 +4,8 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useReadingActionsById } from '@/components/features/content-reading/hooks/use-reading-selectors';
 import { useActiveTabSections } from '@/components/features/tabs/hooks/use-active-tab-sections';
 import { cn } from '@/lib/utils';
-import { useIsAuthenticated } from '@/services/auth';
 
-import { useGlobalSearch } from '../../hooks/use-global-search';
+import { useAllFilesSearch } from '../../hooks/use-all-files-search';
 import { useSearch } from '../../hooks/use-search';
 import GlobalSearchResults from './global-search-results';
 import SearchResultItem from './search-result-item';
@@ -21,9 +20,10 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
   const { sections, tabId, hasActiveTab } = useActiveTabSections();
   const { changeSection } = useReadingActionsById(tabId ?? '');
   const docSearch = useSearch(sections);
-  const globalSearch = useGlobalSearch();
-  const isAuthenticated = useIsAuthenticated();
+  const globalSearch = useAllFilesSearch();
   const inputRef = useRef<HTMLInputElement>(null);
+  /** Keyboard cursor for the all-files list; document mode has its own. */
+  const [globalActiveIndex, setGlobalActiveIndex] = useState(0);
 
   const [mode, setMode] = useState<SearchMode>(hasActiveTab ? 'document' : 'all-files');
 
@@ -59,25 +59,41 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
     [changeSection]
   );
 
-  // Document mode only — global results are a separate, server-backed list.
+  // Arrow keys walk whichever list is showing; Enter opens the highlighted row.
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (mode !== 'document' || docSearch.results.length === 0) return;
+      const count = mode === 'document' ? docSearch.results.length : globalSearch.results.length;
+      if (count === 0) return;
 
-      if (e.key === 'ArrowDown') {
+      const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
+
+      if (step !== 0) {
         e.preventDefault();
-        docSearch.moveActive(1);
-      } else if (e.key === 'ArrowUp') {
+        if (mode === 'document') docSearch.moveActive(step);
+        else setGlobalActiveIndex((current) => (current + step + count) % count);
+        return;
+      }
+
+      if (e.key === 'Enter') {
         e.preventDefault();
-        docSearch.moveActive(-1);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        const target = docSearch.results[docSearch.activeIndex];
-        if (target) handleSelect(target.sectionIndex);
+        if (mode === 'document') {
+          const target = docSearch.results[docSearch.activeIndex];
+          if (target) handleSelect(target.sectionIndex);
+        } else {
+          // The result list owns tab-opening; ask it to activate the row.
+          document
+            .querySelector<HTMLElement>('[data-search-results] [data-active="true"]')
+            ?.click();
+        }
       }
     },
-    [mode, docSearch, handleSelect]
+    [mode, docSearch, globalSearch.results.length, handleSelect]
   );
+
+  // A changed query invalidates the all-files cursor.
+  useEffect(() => {
+    setGlobalActiveIndex(0);
+  }, [globalSearch.query]);
 
   const handleModeChange = useCallback(
     (newMode: SearchMode) => {
@@ -112,35 +128,30 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
         )}
       </div>
 
-      {/* Mode toggle */}
-      {isAuthenticated && (
-        <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border/30">
+      {/* Mode toggle — all-files search runs against the local index, so it is
+          offered whether or not the reader is signed in. */}
+      <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border/30">
+        {(
+          [
+            ['document', 'Document'],
+            ['all-files', 'All Files'],
+          ] as const
+        ).map(([value, label]) => (
           <button
+            key={value}
             type="button"
-            onClick={() => handleModeChange('document')}
+            onClick={() => handleModeChange(value)}
             className={cn(
               'text-[11px] px-2 py-0.5 rounded-md transition-colors',
-              mode === 'document'
+              mode === value
                 ? 'bg-accent text-foreground font-medium'
                 : 'text-muted-foreground/60 hover:text-muted-foreground'
             )}
           >
-            Document
+            {label}
           </button>
-          <button
-            type="button"
-            onClick={() => handleModeChange('all-files')}
-            className={cn(
-              'text-[11px] px-2 py-0.5 rounded-md transition-colors',
-              mode === 'all-files'
-                ? 'bg-accent text-foreground font-medium'
-                : 'text-muted-foreground/60 hover:text-muted-foreground'
-            )}
-          >
-            All Files
-          </button>
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* Search input */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/30">
@@ -181,14 +192,15 @@ const SearchPanel: React.FC<SearchPanelProps> = memo(({ className }) => {
       </div>
 
       {/* Results */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div data-search-results className="flex-1 overflow-y-auto min-h-0">
         {mode === 'all-files' ? (
           <GlobalSearchResults
             query={globalSearch.query}
             results={globalSearch.results}
             isLoading={globalSearch.isLoading}
             error={globalSearch.error}
-            isAuthenticated={isAuthenticated}
+            activeIndex={globalActiveIndex}
+            onHoverResult={setGlobalActiveIndex}
           />
         ) : !hasActiveTab ? (
           <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
