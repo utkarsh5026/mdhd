@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToggle } from '@/hooks';
 import { cn } from '@/lib/utils';
+import { convertFirstDocument, IMPORT_ACCEPT_ATTRIBUTE } from '@/services/import';
 
 interface EmptyStateProps {
   onStartReading: (content: string) => void;
@@ -25,10 +26,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
 
   const readAndStart = useCallback(
     async (files: File[]) => {
-      const mdFile = files.find((f) => f.name.endsWith('.md') || f.name.endsWith('.markdown'));
-      if (!mdFile) return;
-      const content = await mdFile.text();
-      if (content.trim()) onStartReading(content);
+      const document = await convertFirstDocument(files);
+      if (document) onStartReading(document.markdown);
     },
     [onStartReading]
   );
@@ -129,7 +128,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
           ) : (
             <div className="space-y-1">
               <p className="text-muted-foreground/70 text-sm">
-                Drop a <span className="font-mono text-xs">.md</span> file here
+                Drop a <span className="font-mono text-xs">.md</span>,{' '}
+                <span className="font-mono text-xs">.docx</span>, or source file here
               </p>
               <p className="text-muted-foreground/40 text-xs">
                 or press <kbd className="font-mono">Ctrl+V</kbd> to paste anywhere
@@ -209,7 +209,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
           ref={fileInputRef}
           id="file-upload-input"
           type="file"
-          accept=".md,.markdown"
+          accept={IMPORT_ACCEPT_ATTRIBUTE}
           multiple
           className="sr-only"
           onChange={handleFileSelect}
