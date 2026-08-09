@@ -28,9 +28,12 @@ export default defineConfig(({ mode }) => {
 
       svgr(),
 
-      checker({
-        typescript: true,
-      }),
+      // Dev only. The `build` script already runs `tsc -b` ahead of Vite, so on
+      // a production build the checker re-typechecks for nothing — and its
+      // TypeScript worker keeps a handle open that stops the build process from
+      // exiting once output is written. Locally that just delays the prompt; on
+      // Vercel the build hangs past the 45-minute cap and the deploy is killed.
+      ...(isDev ? [checker({ typescript: true })] : []),
 
       ...(!isDev
         ? [
