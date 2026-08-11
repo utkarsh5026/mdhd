@@ -47,6 +47,7 @@ export const useTabsActions = () =>
     useShallow((state) => ({
       createTab: state.createTab,
       createFromPaste: state.createFromPaste,
+      openDocument: state.openDocument,
       createUntitledTab: state.createUntitledTab,
       setActiveTab: state.setActiveTab,
       updateTabReadingState: state.updateTabReadingState,

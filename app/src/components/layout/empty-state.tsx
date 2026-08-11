@@ -7,7 +7,11 @@ import { cn } from '@/lib/utils';
 import { convertFirstDocument, IMPORT_ACCEPT_ATTRIBUTE } from '@/services/import';
 
 interface EmptyStateProps {
-  onStartReading: (content: string) => void;
+  /**
+   * Opens a document. `filename` is the name it arrived under, so the stored
+   * copy keeps it; typed or pasted text has none.
+   */
+  onStartReading: (content: string, filename?: string) => void;
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
@@ -27,7 +31,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onStartReading }) => {
   const readAndStart = useCallback(
     async (files: File[]) => {
       const document = await convertFirstDocument(files);
-      if (document) onStartReading(document.markdown);
+      if (document) onStartReading(document.markdown, document.filename);
     },
     [onStartReading]
   );

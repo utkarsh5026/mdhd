@@ -97,16 +97,57 @@ export interface TabsActions extends BookmarkActions {
     sourcePath?: string
   ) => string;
   /**
+   * Save `content` as a regular root-level file and show it in a file-backed
+   * tab — the entry point for every document that arrives from outside the
+   * library (dropped, opened, pasted, typed).
+   *
+   * Persisting first is what makes the document survive a reload: an unsaved
+   * tab's content is stripped when the store is written to localStorage and
+   * cannot be recovered without a `sourceFileId`.
+   *
+   * @param content - The markdown to store.
+   * @param options.filename - Name the document arrived under, when it had one;
+   *   otherwise the name is derived from the content's first heading.
+   * @param options.title - Tab title override; defaults to the first heading.
+   * @param options.reuseTabId - Fill this tab instead of opening a new one, as
+   *   long as it is still empty and unsaved (the empty state renders inside
+   *   such a tab). Ignored otherwise.
+   * @returns The id of the tab showing the document, or `null` when `content`
+   *   was blank or the save failed.
+   */
+  openDocument: (
+    content: string,
+    options?: { filename?: string; title?: string; reuseTabId?: string }
+  ) => Promise<string | null>;
+  /**
    * Save pasted content as a regular root-level file and open it as a
    * file-backed tab. Returns the new tab id.
    */
   createFromPaste: (content: string, title?: string) => Promise<string | null>;
+  /**
+   * Point an existing empty tab at a newly stored file, filling in its content,
+   * title, and source binding, and parsing its sections. Returns `tabId`.
+   */
+  adoptFile: (
+    tabId: string,
+    content: string,
+    title: string,
+    sourceFileId: string,
+    sourcePath: string
+  ) => string;
   createUntitledTab: () => string;
   setTabsState: (tabs: Tab[], activeTabId: string | null, showEmptyState: boolean) => void;
 
   setActiveTab: (tabId: string) => void;
   updateTabReadingState: (tabId: string, state: Partial<TabReadingState>) => void;
 
+  /**
+   * Replace a tab's content, re-parsing its sections and resetting its reading
+   * position. Writes through to IndexedDB only for file-backed tabs — content
+   * set on an unsaved tab lives in memory and is dropped on reload, so a
+   * document arriving from outside the library must go through
+   * {@link TabsActions.openDocument} instead.
+   */
   updateTabContent: (tabId: string, content: string) => void;
   getTabById: (tabId: string) => Tab | undefined;
 

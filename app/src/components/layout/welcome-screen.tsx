@@ -13,7 +13,11 @@ import { convertFirstDocument, IMPORT_ACCEPT_ATTRIBUTE } from '@/services/import
 import type { FileTreeNode } from '@/services/indexeddb';
 
 interface WelcomeScreenProps {
-  onStartReading: (content: string) => void;
+  /**
+   * Opens a document. `filename` is the name it arrived under, so the stored
+   * copy keeps it; typed or pasted text has none.
+   */
+  onStartReading: (content: string, filename?: string) => void;
   onFileNodeOpen: (node: FileTreeNode) => void;
 }
 
@@ -51,7 +55,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartReading, onFileNod
   const readAndStart = useCallback(
     async (files: File[]) => {
       const document = await convertFirstDocument(files);
-      if (document) onStartReading(document.markdown);
+      if (document) onStartReading(document.markdown, document.filename);
     },
     [onStartReading]
   );

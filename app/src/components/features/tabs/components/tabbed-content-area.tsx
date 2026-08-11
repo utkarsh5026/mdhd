@@ -20,11 +20,10 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
   const showEmptyState = useShowEmptyState();
   const {
     createTab,
-    createFromPaste,
+    openDocument,
     setActiveTab,
     setShowEmptyState,
     findTabByFileId,
-    updateTabContent,
     updateTabReadingState,
   } = useTabsActions();
 
@@ -33,15 +32,20 @@ const TabbedContentArea: React.FC<TabbedContentAreaProps> = memo(({ onEnterFulls
   useGlobalPasteToTab();
 
   const handleStartReading = useCallback(
-    (content: string) => {
+    (content: string, filename?: string) => {
       if (!content.trim()) return;
-      if (activeTab && activeTab.content === '') {
-        updateTabContent(activeTab.id, content);
-      } else {
-        void createFromPaste(content);
-      }
+
+      // Always goes through openDocument: the document is stored in the library
+      // first, so it shows up in the file explorer and its content is reloaded
+      // from IndexedDB after a refresh. An empty active tab is filled in place
+      // rather than left behind.
+      const isEmptyActiveTab = activeTab && !activeTab.content && !activeTab.sourceFileId;
+      void openDocument(content, {
+        filename,
+        reuseTabId: isEmptyActiveTab ? activeTab.id : undefined,
+      });
     },
-    [activeTab, updateTabContent, createFromPaste]
+    [activeTab, openDocument]
   );
 
   const handleFileNodeOpen = useCallback(

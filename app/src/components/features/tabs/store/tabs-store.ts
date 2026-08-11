@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
 import { patch, patchById, patchNested } from '@/lib/store-utils';
-import { savePastedContent, updateSavedContent } from '@/services/files/save-content';
+import { saveDocument, updateSavedContent } from '@/services/files/save-content';
 import { fileStorageDB } from '@/services/indexeddb/file-db';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
 
@@ -65,28 +65,64 @@ export const useTabsStore = create<TabsState & TabsActions>()(
           return get().addTab(newTab);
         },
 
-        createFromPaste: async (content: string, title?: string) => {
-          const trimmed = content.trim();
-          if (!trimmed) return null;
+        openDocument: async (content, options = {}) => {
+          if (!content.trim()) return null;
+
+          const { filename, title, reuseTabId } = options;
 
           try {
-            const file = await savePastedContent(content);
+            const file = await saveDocument(content, filename);
             const resolvedTitle = title || extractTitleFromMarkdown(content) || file.name;
-            const tabId = get().createTab(content, resolvedTitle, file.id, file.path);
+
+            // The empty state is rendered *inside* an empty tab, so a document
+            // opened from it should fill that tab rather than leave a blank one
+            // behind. Re-read the tab now: the save above was async.
+            const reuseTab = reuseTabId ? get().getTabById(reuseTabId) : undefined;
+            const tabId =
+              reuseTab && !reuseTab.content && !reuseTab.sourceFileId
+                ? get().adoptFile(reuseTab.id, content, resolvedTitle, file.id, file.path)
+                : get().createTab(content, resolvedTitle, file.id, file.path);
 
             // Refresh the file explorer tree so the new file appears immediately.
             // Dynamic import avoids a static cycle between tabs-store and file-store.
             import('@/components/features/file-explorer/store/file-store')
               .then(({ useFileStore }) => useFileStore.getState().refreshFileTree())
               .catch((err) =>
-                console.error('[tabs-store] Failed to refresh file tree after paste:', err)
+                console.error('[tabs-store] Failed to refresh file tree after save:', err)
               );
 
             return tabId;
           } catch (err) {
-            console.error('[tabs-store] Failed to save pasted content:', err);
+            console.error('[tabs-store] Failed to save document:', err);
             return null;
           }
+        },
+
+        createFromPaste: async (content: string, title?: string) => {
+          return get().openDocument(content, { title });
+        },
+
+        adoptFile: (tabId, content, title, sourceFileId, sourcePath) => {
+          const { metadata, sections } = parseMarkdownIntoSections(content);
+
+          get().updateTab(tabId, (tab) => ({
+            content,
+            contentHash: hashString(content),
+            title,
+            sourceFileId,
+            sourcePath,
+            readingState: patch(tab.readingState, {
+              sections,
+              metadata,
+              isInitialized: sections.length > 0,
+              currentIndex: 0,
+              readSections: new Set([0]),
+              scrollProgress: 0,
+            }),
+          }));
+
+          set({ activeTabId: tabId, showEmptyState: false });
+          return tabId;
         },
 
         createUntitledTab: () => {
