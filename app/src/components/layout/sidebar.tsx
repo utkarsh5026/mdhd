@@ -10,6 +10,7 @@ import FilesPanel from '@/components/features/file-explorer/components/files-pan
 import OutlinePanel from '@/components/features/file-explorer/components/outline-panel';
 import { MarkdownStylePanel } from '@/components/features/markdown-style';
 import { SettingsPanel } from '@/components/features/settings';
+import { WhatsNewTrigger } from '@/components/features/whats-new';
 import { BottomSheet, BottomSheetContent } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import {
@@ -91,7 +92,8 @@ const MobileSidebarSheet: React.FC<MobileSidebarSheetProps> = memo(
                 </Button>
               );
             })}
-            <div className="ml-auto shrink-0">
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              <WhatsNewTrigger />
               <SyncIndicator />
             </div>
           </div>
@@ -191,6 +193,7 @@ const Sidebar: React.FC<SidebarProps> = memo(
         })}
 
         <div className="mt-auto flex flex-col items-center gap-1">
+          <WhatsNewTrigger />
           <SyncIndicator />
           <TooltipButton
             button={

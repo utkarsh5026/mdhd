@@ -61,6 +61,15 @@ Pattern used throughout (`components/features/settings/store/reading-settings-st
 - Export **selector hooks**, not the raw store, to consumers: `useTabs()`, `useActiveTab()`, `useTabsActions()`. Multi-field selectors use `useShallow`.
 - Immutable updates go through `patch` / `patchNested` from `@/lib/store-utils` instead of nested spreads.
 
+## Release announcements
+
+User-visible changes are announced in-app by the `whats-new` feature. The only file you edit is
+`components/features/whats-new/data/releases.ts` — prepend a `Release` to `RELEASES` (newest first)
+with **at most three** highlights, each a lucide icon plus one plain-language sentence. The modal
+auto-opens once per device for the newest `id`, skips first-time visitors, and can be reopened from
+the sparkle in the sidebar rail. The `/pr` command does this as part of opening a pull request; see
+[.claude/commands/pr.md](../.claude/commands/pr.md) for the copy rules.
+
 ## Data and networking
 
 - File content lives in IndexedDB (`mdhd-files`, object stores `files` + `directories`, tree assembled from parent-path indexes). Go through `services/indexeddb/`, never open the DB directly.
