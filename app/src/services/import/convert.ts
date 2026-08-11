@@ -91,8 +91,9 @@ export async function convertToMarkdown(file: File): Promise<ConvertedDocument> 
 
 /**
  * Converts the first importable file in a list, for the "open one document"
- * entry points (the welcome screen and the empty state) that read a file
- * straight into a tab without storing it.
+ * entry points (the welcome screen and the empty state) that read a single file
+ * into a tab. Only the first readable file in the list is converted — the
+ * explorer's upload buttons are the path for importing a whole batch.
  *
  * Unlike {@link convertToMarkdown} this never throws: a failed conversion is
  * reported to the user as a toast and resolves to `null`, because these call
