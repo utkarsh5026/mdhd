@@ -70,7 +70,8 @@ auto-opens once per device for the newest `id`, skips first-time visitors, and c
 the release-notes icon in the sidebar rail. The `/pr` command does this as part of opening a pull
 request; see [.claude/commands/pr.md](../.claude/commands/pr.md) for the copy rules — the voice is
 deliberately flat, and the design leans on hairline rules and type weight rather than cards, tinted
-icon tiles, or gradients.
+icon tiles, or gradients. Accent colour is spent in exactly three places (the version, the highlight
+icons, the dismiss button); keep it there rather than tinting surfaces.
 
 ## Data and networking
 

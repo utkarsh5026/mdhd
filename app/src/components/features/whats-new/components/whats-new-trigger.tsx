@@ -27,7 +27,7 @@ const WhatsNewTrigger: React.FC = () => {
           onClick={open}
           aria-label="Release notes"
         >
-          <ScrollText className={cn('h-4 w-4', hasUnseen && 'text-foreground')} />
+          <ScrollText className={cn('h-4 w-4', hasUnseen && 'text-primary')} />
           {hasUnseen && (
             <span className="absolute right-1 top-1 size-1.5 rounded-full bg-primary ring-2 ring-card" />
           )}
