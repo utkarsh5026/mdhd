@@ -67,8 +67,10 @@ User-visible changes are announced in-app by the `whats-new` feature. The only f
 `components/features/whats-new/data/releases.ts` — prepend a `Release` to `RELEASES` (newest first)
 with **at most three** highlights, each a lucide icon plus one plain-language sentence. The modal
 auto-opens once per device for the newest `id`, skips first-time visitors, and can be reopened from
-the sparkle in the sidebar rail. The `/pr` command does this as part of opening a pull request; see
-[.claude/commands/pr.md](../.claude/commands/pr.md) for the copy rules.
+the release-notes icon in the sidebar rail. The `/pr` command does this as part of opening a pull
+request; see [.claude/commands/pr.md](../.claude/commands/pr.md) for the copy rules — the voice is
+deliberately flat, and the design leans on hairline rules and type weight rather than cards, tinted
+icon tiles, or gradients.
 
 ## Data and networking
 

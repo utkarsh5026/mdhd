@@ -36,16 +36,35 @@ That file is the single source of truth for the modal — nothing else needs edi
 }
 ```
 
-Rules for the copy — these are what make the modal worth showing:
+Rules for the copy. **Write like a colleague pointing out a change, not like a product launch.** This modal interrupts someone's reading, so it earns its place by being short, specific, and flat in tone. Anything that sounds like marketing is worse than saying nothing.
 
-- **Three highlights maximum.** Two is often better. If the branch did five things, pick the three a user would actually care about and drop the rest. Never add a fourth; the modal slices at three anyway.
-- **Plain language, user's point of view.** "Jump straight to the paragraph it lives in", not "adds fuzzy content indexing across the IndexedDB store". No component names, file paths, library names, or internal jargon.
-- **Say what they can now do**, not what we built. Lead the description with the benefit.
-- **Make it feel good.** Warm and a little excited — not breathless. No exclamation marks, no "revolutionary", no emoji.
-- **Keep it tight.** `title` under ~34 characters so it stays on one line; `description` a single sentence.
-- The headline `title` is sentence case with no trailing period; the `tagline` is one line on why the release matters as a whole.
-- **Pick an icon that reads at a glance** from `lucide-react` — `Search`, `Sparkles`, `Zap`, `FileText`, `Palette`, `Cloud`, `Keyboard`, `BookOpen`, `Highlighter`. Import it at the top of the file and prune imports that are no longer used, or the strict build will fail.
+- **Three highlights maximum.** Two is usually better; one is fine. If the branch did five things, pick the ones a user would actually notice and drop the rest. Never add a fourth — the modal slices at three anyway.
+- **Plain language, user's point of view.** "Jump to the paragraph it appears in", not "adds fuzzy content indexing across the IndexedDB store". No component names, file paths, library names, or internal jargon.
+- **Say what they can now do**, not what we built. Lead with the thing itself.
+- **Keep it tight.** `title` under ~34 characters so it stays on one line; `description` a single plain sentence. The headline `title` is sentence case with no trailing period; the `tagline` is one short line on what the release is.
 - Set `version` by bumping the previous entry's: minor for a feature, patch for a fix.
+
+### Voice — do not do these
+
+These are the tells that make a release note read as machine-written. Reject your own first draft if it has any of them.
+
+- **No kicker clauses after an em dash.** "…tells you what changed — then gets out of your way." Cut everything after the dash, or split it into a sentence. One em dash per entry, at most.
+- **Don't personify the app.** No "MDHD now introduces itself", "your documents come alive", "the sidebar remembers you".
+- **No rhetorical questions.** "Missed one?" "Ever wanted to…?"
+- **No hype adjectives or adverbs**: seamless, effortless, powerful, beautiful, blazing, delightful, simply, instantly, magically. If the feature is good, the plain description already shows it.
+- **No self-congratulation about the announcement itself.** Describe the feature, not how nice it is that you're telling them.
+- **No exclamation marks and no emoji.**
+- Prefer concrete nouns to abstractions: "the icon at the bottom of the sidebar" beats "a convenient location".
+
+Test each line by asking: would a maintainer write this in a commit body? If it only works as ad copy, rewrite it.
+
+### Icons
+
+Pick the icon for the actual surface the change touches — `Search` for search, `PanelLeft` for the sidebar, `FileText` for documents, `Palette` for theming, `Keyboard` for shortcuts, `Cloud` for sync, `ScrollText` for notes. Concrete beats decorative.
+
+**Do not use** `Sparkles`, `Wand`, `WandSparkles`, `Rocket`, `Zap`, `Star`, or `PartyPopper`. They carry no information and they are the visual signature of generated UI.
+
+Import the icon at the top of the file and prune imports that are no longer used, or the strict build will fail.
 
 Everything else is already handled: the modal auto-opens once per device for the newest `id`, first-time visitors are skipped, and the sidebar sparkle reopens it later.
 

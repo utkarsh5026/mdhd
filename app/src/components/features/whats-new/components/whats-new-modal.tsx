@@ -44,7 +44,7 @@ const WhatsNewModal: React.FC = () => {
       <BottomSheet open={isOpen} onOpenChange={handleOpenChange}>
         <BottomSheetContent className="h-auto max-h-[85vh]" onOpenAutoFocus={focusDismiss}>
           <DialogPrimitive.Title className="sr-only">
-            {`What's new in MDHD ${LATEST_RELEASE.version}`}
+            {`MDHD ${LATEST_RELEASE.version} release notes`}
           </DialogPrimitive.Title>
           <ReleaseNotes
             release={LATEST_RELEASE}
@@ -71,9 +71,9 @@ const WhatsNewModal: React.FC = () => {
         <DialogPrimitive.Content
           className={cn(
             'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
-            'w-[calc(100%-2rem)] max-w-lg overflow-hidden',
-            'rounded-3xl border border-border/60 bg-background shadow-2xl',
-            'px-7 py-7',
+            'w-[calc(100%-2rem)] max-w-md overflow-hidden',
+            'rounded-2xl border border-border/60 bg-background shadow-xl',
+            'px-6 py-6',
             'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
             'duration-200'
@@ -81,13 +81,13 @@ const WhatsNewModal: React.FC = () => {
           onOpenAutoFocus={focusDismiss}
         >
           <DialogPrimitive.Title className="sr-only">
-            {`What's new in MDHD ${LATEST_RELEASE.version}`}
+            {`MDHD ${LATEST_RELEASE.version} release notes`}
           </DialogPrimitive.Title>
 
           <DialogPrimitive.Close
             aria-label="Close"
             className={cn(
-              'absolute right-4 top-4 z-10 rounded-lg p-1.5 text-muted-foreground/50',
+              'absolute right-4 top-4 z-10 rounded-lg p-1.5 text-muted-foreground/40',
               'transition-colors hover:bg-accent hover:text-foreground cursor-pointer'
             )}
           >

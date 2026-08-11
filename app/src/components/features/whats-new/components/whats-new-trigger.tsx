@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { ScrollText } from 'lucide-react';
 import React from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,8 @@ import { useHasUnseenRelease, useWhatsNewActions } from '../store/whats-new-stor
 /**
  * Sidebar rail button that reopens the latest release notes.
  *
- * Carries a small primary dot while the newest release is still unread, so a
- * dismissed announcement is never lost.
+ * Carries a small dot while the newest release is still unread, so a dismissed
+ * announcement is never lost.
  */
 const WhatsNewTrigger: React.FC = () => {
   const hasUnseen = useHasUnseenRelease();
@@ -25,15 +25,15 @@ const WhatsNewTrigger: React.FC = () => {
           size="icon"
           className="relative h-7 w-7"
           onClick={open}
-          aria-label="What's new"
+          aria-label="Release notes"
         >
-          <Sparkles className={cn('h-4 w-4', hasUnseen && 'text-primary')} />
+          <ScrollText className={cn('h-4 w-4', hasUnseen && 'text-foreground')} />
           {hasUnseen && (
             <span className="absolute right-1 top-1 size-1.5 rounded-full bg-primary ring-2 ring-card" />
           )}
         </Button>
       }
-      tooltipText="What's new"
+      tooltipText="Release notes"
     />
   );
 };

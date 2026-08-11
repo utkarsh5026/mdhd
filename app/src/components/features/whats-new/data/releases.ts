@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { History, Sparkles } from 'lucide-react';
+import { PanelLeft, ScrollText } from 'lucide-react';
 
 /**
  * One thing that changed, written for someone who has never read the diff.
@@ -48,20 +48,18 @@ export const RELEASES: Release[] = [
     id: '2026-08-11-whats-new',
     version: 'v1.0',
     date: '2026-08-11',
-    title: "See what's new, right here",
-    tagline: 'Every improvement to MDHD now introduces itself the moment it lands.',
+    title: 'Release notes now live in the app',
+    tagline: 'A short summary each time MDHD changes.',
     highlights: [
       {
-        icon: Sparkles,
-        title: 'A proper welcome for new features',
-        description:
-          'When something new ships, a short note tells you what changed — then gets out of your way.',
+        icon: ScrollText,
+        title: 'Notes when something changes',
+        description: 'Open MDHD after an update and a note like this one lists what is new.',
       },
       {
-        icon: History,
-        title: 'Catch up whenever you like',
-        description:
-          'Missed one? The sparkle in the sidebar reopens the latest release notes any time.',
+        icon: PanelLeft,
+        title: 'Kept in the sidebar',
+        description: 'Reopen the notes any time from the icon at the bottom of the sidebar.',
       },
     ],
   },
