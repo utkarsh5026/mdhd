@@ -1,5 +1,8 @@
+import { getIsOnline } from '@/services/offline';
+
 import type { BlockAnchor } from './anchor';
 import { postProgressBatch, type ProgressEntry, sendProgressBeacon } from './api';
+import { mergeProgressEntries, progressOutbox } from './outbox';
 
 /**
  * Per-file unflushed state held by the tracker.
@@ -208,30 +211,70 @@ class ProgressTracker {
    *
    * - No-ops when the user is unauthenticated (no auth token)
    * - No-ops when there are no dirty entries to send
+   * - Hands the batch to the offline outbox instead of the network when the
+   *   device is offline, so it survives the tab closing
+   * - Replays anything the outbox is holding alongside the current batch
    * - Resets local dirty/seconds/completion flags only after a successful post
    * - Leaves pending state intact on failure so the next flush can retry
    */
   async flush(): Promise<void> {
-    const token =
-      typeof localStorage !== 'undefined' ? localStorage.getItem('mdhd-auth-token') : null;
-    if (!token) return;
-    const entries = this.collectBatch();
+    if (!hasToken()) return;
+    const batch = this.collectBatch();
+
+    if (!getIsOnline()) {
+      this.parkOffline(batch);
+      return;
+    }
+
+    const entries = mergeProgressEntries(progressOutbox.read(), batch);
     if (entries.length === 0) return;
+
     try {
       await postProgressBatch(entries);
+      progressOutbox.clear();
       this.resetAfterFlush();
     } catch (err) {
       console.error('[progress-tracker] flush failed:', err);
     }
   }
 
-  /** Sync flush via fetch+keepalive — used during page unload. */
+  /**
+   * Sync flush during page unload: `fetch + keepalive` while online, the
+   * durable outbox while offline. Either way the pending state is considered
+   * handed off, so nothing is counted twice on the next flush.
+   */
   flushSync(): void {
-    const entries = this.collectBatch();
+    if (!hasToken()) return;
+    const batch = this.collectBatch();
+
+    if (!getIsOnline()) {
+      this.parkOffline(batch);
+      return;
+    }
+
+    const entries = mergeProgressEntries(progressOutbox.read(), batch);
     if (entries.length === 0) return;
     sendProgressBeacon(entries);
+    progressOutbox.clear();
     this.resetAfterFlush();
   }
+
+  /**
+   * Moves a batch into the outbox and clears the in-memory deltas.
+   *
+   * Ownership transfers with the batch: the outbox now holds those seconds, so
+   * resetting here is what stops a later online flush from sending them twice.
+   */
+  private parkOffline(batch: ProgressEntry[]): void {
+    if (batch.length === 0) return;
+    progressOutbox.add(batch);
+    this.resetAfterFlush();
+  }
+}
+
+/** Reads the persisted JWT, tolerating environments with no `localStorage`. */
+function hasToken(): boolean {
+  return typeof localStorage !== 'undefined' && !!localStorage.getItem('mdhd-auth-token');
 }
 
 function anchorEquals(a: BlockAnchor | null, b: BlockAnchor | null): boolean {

@@ -2,6 +2,8 @@ import { memo, useEffect, useState } from 'react';
 
 import { useTabSlice } from '@/components/features/tabs/store/hooks';
 import { Button } from '@/components/ui/button';
+import { useIsAuthenticated } from '@/services/auth';
+import { useIsOnline } from '@/services/offline';
 import { fetchProgressForFile, findBlockByAnchor, type ServerProgress } from '@/services/progress';
 
 import { useReadingActions, useReadingTabId } from '../hooks/use-reading-selectors';
@@ -33,6 +35,8 @@ const ResumeBanner = memo(() => {
     };
   });
   const { changeSection } = useReadingActions();
+  const isAuthenticated = useIsAuthenticated();
+  const isOnline = useIsOnline();
 
   const [progress, setProgress] = useState<ServerProgress | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -41,6 +45,10 @@ const ResumeBanner = memo(() => {
     setProgress(null);
     setDismissed(false);
     if (!fileId) return;
+    // The banner exists to surface a position saved on *another* device, so it
+    // has nothing to offer signed-out or offline readers — the local position
+    // has already been restored from the tab store by this point.
+    if (!isAuthenticated || !isOnline) return;
     if (
       typeof sessionStorage !== 'undefined' &&
       sessionStorage.getItem(DISMISS_KEY_PREFIX + fileId)
@@ -49,20 +57,25 @@ const ResumeBanner = memo(() => {
       return;
     }
     let cancelled = false;
-    void fetchProgressForFile(fileId).then((p) => {
-      if (cancelled || !p) return;
-      const sectionAhead =
-        p.section_index > currentIndex && p.section_index < (sections.length || Infinity);
-      const anchorWorthShowing =
-        p.section_index === currentIndex && p.anchor_block_offset !== null && p.scroll_pct > 0.05;
-      if (sectionAhead || anchorWorthShowing) setProgress(p);
-    });
+    void fetchProgressForFile(fileId)
+      .then((p) => {
+        if (cancelled || !p) return;
+        const sectionAhead =
+          p.section_index > currentIndex && p.section_index < (sections.length || Infinity);
+        const anchorWorthShowing =
+          p.section_index === currentIndex && p.anchor_block_offset !== null && p.scroll_pct > 0.05;
+        if (sectionAhead || anchorWorthShowing) setProgress(p);
+      })
+      .catch(() => {
+        // A missing cross-device position is not worth a message — the reader
+        // keeps the local one either way.
+      });
     return () => {
       cancelled = true;
     };
     // currentIndex/sections intentionally not in deps — we only check on tab change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileId]);
+  }, [fileId, isAuthenticated, isOnline]);
 
   const dismiss = () => {
     if (fileId && typeof sessionStorage !== 'undefined') {

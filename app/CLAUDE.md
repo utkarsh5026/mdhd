@@ -78,6 +78,18 @@ icons, the dismiss button); keep it there rather than tinting surfaces.
 - File content lives in IndexedDB (`mdhd-files`, object stores `files` + `directories`, tree assembled from parent-path indexes). Go through `services/indexeddb/`, never open the DB directly.
 - API calls use `apiFetch` (for `/api/*`) or `authFetch` (for `/auth/*`) from `@/services/auth` — they attach the bearer token, set JSON content-type, and turn non-2xx into thrown errors. Don't call `fetch` directly for our own endpoints.
 - Sync lives in `services/sync/`. Anything that should follow a user across devices must be registered there; check `syncable-settings.ts` before inventing a new path.
+- `apiFetch` / `authFetch` throw two error types: `ApiError` (a response came back, carries `status`) and `NetworkError` (never reached the server). Branch on them — never on the message text. A `NetworkError` is an ordinary outcome here, so handle it by deferring, not by clearing local state or showing "failed".
+
+## Offline
+
+A device that has loaded MDHD once must keep working with no connection. That is a hard rule, not an aspiration, and it constrains new code:
+
+- **Connectivity comes from `services/offline`** — `useIsOnline()` in components, `getIsOnline()` elsewhere. Don't read `navigator.onLine` directly.
+- **Never let a failed request destroy local state.** Signing the user out, dropping a token, or discarding queued work because a fetch failed turns a tunnel into data loss. `auth-store.ts` only clears a session on a 401/403.
+- **Server-backed features degrade, they don't error.** Skip the call while offline (sync, the resume banner) or say plainly that the screen needs a connection (share links, stats). "Sync failed" for an offline user is a bug.
+- **The app shell is precached by `vite-plugin-pwa`** (`generateSW`, `registerType: 'prompt'`). Registration is explicit in `main.tsx` so it runs on every route and the update prompt stays in the app's hands.
+- **`scripts/verify-precache.mjs` runs as part of `bun run build` and must stay there.** Workbox validates its manifest inside the service worker at runtime, so a broken precache fails *silently* — a green build that caches nothing. The script fails the build on duplicate entries with conflicting revisions, which is what happens when a plugin adds a `public/` file to the manifest that another plugin rewrites on the way into `dist`.
+- **Don't add a `<link rel="manifest">` to `index.html`.** The plugin injects one; the browser honours the first it finds, so a second link silently replaces the installed app's identity.
 
 ## Tests
 

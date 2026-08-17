@@ -12,6 +12,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { LoadingFallback } from '@/components/utils';
+import { isNetworkError } from '@/services/auth';
 import { fetchStatsSummary, type StatsSummary } from '@/services/progress';
 
 function formatDuration(totalSeconds: number): string {
@@ -125,7 +126,16 @@ const StatsPage = memo(() => {
   useEffect(() => {
     fetchStatsSummary()
       .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load stats'));
+      .catch((err) => {
+        // Stats are computed server-side from synced progress, so this is one
+        // of the few screens an offline visit genuinely cannot fill. Name the
+        // reason instead of showing a raw fetch message.
+        if (isNetworkError(err)) {
+          setError("You're offline. Reading stats come from the server — reconnect to see them.");
+          return;
+        }
+        setError(err instanceof Error ? err.message : 'Failed to load stats');
+      });
   }, []);
 
   if (error) {

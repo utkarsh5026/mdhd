@@ -1,8 +1,9 @@
-import { Loader2 } from 'lucide-react';
+import { Loader2, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
+import { ApiError, isNetworkError } from '@/services/auth';
 import type { MarkdownMetadata, MarkdownSection } from '@/services/section/parsing';
 import { parseMarkdownIntoSections } from '@/services/section/parsing';
 import type { SharedContent } from '@/services/share';
@@ -10,7 +11,7 @@ import { fetchSharedContent } from '@/services/share';
 
 import ShareSectionReader from './share-section-reader';
 
-type Status = 'loading' | 'success' | 'not-found' | 'error';
+type Status = 'loading' | 'success' | 'not-found' | 'offline' | 'error';
 
 const SharePage = () => {
   const { token } = useParams<{ token: string }>();
@@ -41,10 +42,13 @@ const SharePage = () => {
         }
       })
       .catch((err: unknown) => {
-        if (!cancelled) {
-          const message = err instanceof Error ? err.message : '';
-          setStatus(message.includes('404') ? 'not-found' : 'error');
-        }
+        if (cancelled) return;
+        // A shared document lives on the server by definition, so this is the
+        // one screen a cached app shell still can't fill in offline. Say that
+        // plainly instead of blaming the link.
+        if (isNetworkError(err)) setStatus('offline');
+        else if (err instanceof ApiError && err.status === 404) setStatus('not-found');
+        else setStatus('error');
       });
 
     return () => {
@@ -66,6 +70,19 @@ const SharePage = () => {
         <p className="text-lg font-semibold">Link not found</p>
         <p className="text-sm text-muted-foreground">
           This share link may have expired or been revoked.
+        </p>
+      </div>
+    );
+  }
+
+  if (status === 'offline') {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center gap-3 text-center px-4">
+        <WifiOff className="h-6 w-6 text-muted-foreground" />
+        <p className="text-lg font-semibold">You&rsquo;re offline</p>
+        <p className="text-sm text-muted-foreground">
+          Shared links are fetched from the server. Reconnect and reload to open this one — your own
+          documents are still available offline.
         </p>
       </div>
     );

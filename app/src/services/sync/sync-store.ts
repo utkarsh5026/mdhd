@@ -4,6 +4,8 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { useFileStore } from '@/components/features/file-explorer';
 import { useTabsStore } from '@/components/features/tabs/store/tabs-store';
+import { isNetworkError } from '@/services/auth';
+import { getIsOnline } from '@/services/offline';
 import type { SyncResult } from '@/services/sync/types';
 
 import { performSettingsSync, performSync } from './sync-service';
@@ -22,7 +24,8 @@ interface SyncActions {
   /**
    * Triggers a full bidirectional sync: files and settings.
    *
-   * Guards against concurrent runs. On success, refreshes the file tree,
+   * No-ops while offline and treats a mid-flight connection loss as a deferral
+   * rather than an error. Guards against concurrent runs. On success, refreshes the file tree,
    * auto-opens any newly-downloaded files as tabs (so paste-on-laptop /
    * read-on-mobile keeps working), and closes tabs whose backing file was
    * deleted on another device. Only `lastSyncAt` is persisted to
@@ -44,6 +47,9 @@ const useSyncStore = create<SyncState & SyncActions>()(
 
         startSync: async () => {
           if (get().isSyncing) return;
+          // Nothing to do offline, and nothing has gone wrong: local edits stay
+          // in IndexedDB and `useSync` re-runs this the moment we reconnect.
+          if (!getIsOnline()) return;
           set({ isSyncing: true, syncError: null });
 
           try {
@@ -94,6 +100,13 @@ const useSyncStore = create<SyncState & SyncActions>()(
               setTabsState(newTabs, newActiveTabId, newTabs.length === 0);
             });
           } catch (err) {
+            // Losing the connection mid-sync is not a failure the user has to
+            // act on — it retries on reconnect. Surfacing "Sync failed" for it
+            // would make ordinary offline use look broken.
+            if (isNetworkError(err)) {
+              set({ isSyncing: false, syncError: null });
+              return;
+            }
             set({
               isSyncing: false,
               syncError: err instanceof Error ? err.message : 'Sync failed',

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/verify-precache.mjs",
     "dev": "vite",
     "lint": "eslint .",
     "preview": "vite preview",

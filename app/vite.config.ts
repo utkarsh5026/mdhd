@@ -53,9 +53,34 @@ export default defineConfig(({ mode }) => {
         : []),
 
       VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon-32x32.png', 'favicon-16x16.png', 'apple-touch-icon.png'],
+        // `prompt`, not `autoUpdate`: a new build downloads in the background
+        // but only takes over when the user accepts the toast wired up in
+        // `services/offline/service-worker.ts`. Swapping the precache under a
+        // page someone has had open for an hour breaks the lazy chunks it
+        // hasn't loaded yet — a reader is exactly that kind of page.
+        registerType: 'prompt',
+        // Registration is explicit, from `main.tsx`, so it happens on every
+        // route (a `/share/...` visitor also gets the shell cached) and the
+        // update moment stays in the app's hands. `injectRegister: 'auto'`
+        // detects the `virtual:pwa-register` import and skips its own script.
+        injectRegister: 'auto',
+        // The app is served from the domain root; Vite's relative `base` (for
+        // asset URLs) must not follow through to the worker, whose scope
+        // decides which pages it can serve offline.
+        base: '/',
+        scope: '/',
+        // Both of these ask the plugin to add `public/` files to the precache
+        // manifest a second time, hashed from their *source* bytes — while
+        // Workbox globs the same files out of `dist`, where
+        // `ViteImageOptimizer` has already recompressed them. The two
+        // revisions disagree, Workbox rejects the whole manifest with
+        // `add-to-cache-list-conflicting-entries`, and the app silently
+        // precaches nothing at all. The icons are ordinary files in `dist`, so
+        // `globPatterns` below already covers them.
+        includeAssets: [],
+        includeManifestIcons: false,
         manifest: {
+          id: '/',
           name: 'MDHD - Markdown Reader',
           short_name: 'MDHD',
           description: 'Distraction-free markdown reading experience',
@@ -64,6 +89,7 @@ export default defineConfig(({ mode }) => {
           display: 'standalone',
           orientation: 'any',
           start_url: '/',
+          scope: '/',
           icons: [
             { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
             { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
@@ -76,22 +102,22 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          // `json` covers `themes.json`, which the theme picker fetches at
+          // runtime — without it the extended themes vanish offline. The
+          // generated `manifest.webmanifest` is added by the plugin itself, so
+          // it is deliberately not globbed here.
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,json}'],
           // The `vendor` chunk is just over Workbox's 2 MiB default. Leaving it
           // unprecached is not an option: MDHD is offline-first, and an app
           // shell that cannot boot without the network defeats that. Raised
           // with headroom so an ordinary dependency bump doesn't fail the build.
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts',
-                expiration: { maxEntries: 10, maxAgeSeconds: 365 * 24 * 60 * 60 },
-              },
-            },
-          ],
+          // Every route is client-side, so any navigation resolves to the
+          // cached shell — except the API, which must reach the network or
+          // fail honestly rather than being handed an HTML document.
+          navigateFallback: 'index.html',
+          navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
+          cleanupOutdatedCaches: true,
         },
       }),
 
