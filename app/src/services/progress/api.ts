@@ -1,4 +1,4 @@
-import { apiFetch } from '@/services/auth/api-client';
+import { ApiError, apiFetch } from '@/services/auth/api-client';
 
 /** Last-known reading position for a single file as returned by the server. */
 export interface ServerProgress {
@@ -65,7 +65,7 @@ export async function fetchProgressForFile(fileId: string): Promise<ServerProgre
   try {
     return await apiFetch<ServerProgress>(`/progress/${fileId}`);
   } catch (err) {
-    if (err instanceof Error && /404/.test(err.message)) return null;
+    if (err instanceof ApiError && err.status === 404) return null;
     throw err;
   }
 }

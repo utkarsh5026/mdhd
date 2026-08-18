@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/list-popover';
 import { Switch } from '@/components/ui/switch';
 import { useIsAuthenticated } from '@/services/auth';
+import { useIsOnline } from '@/services/offline';
 import {
   useDisabledSyncKeys,
   useIsSyncing,
@@ -45,6 +46,7 @@ const KEY_ICONS: Record<string, React.ReactNode> = {
 
 const SyncIndicator = memo(() => {
   const isAuthenticated = useIsAuthenticated();
+  const isOnline = useIsOnline();
   const isSyncing = useIsSyncing();
   const lastSyncAt = useLastSyncAt();
   const syncError = useSyncError();
@@ -62,7 +64,12 @@ const SyncIndicator = memo(() => {
   let statusIcon: React.ReactNode;
   let statusText: string;
 
-  if (isSyncing) {
+  if (!isOnline) {
+    statusIcon = <CloudOff className="h-4 w-4 text-muted-foreground" />;
+    statusText = lastSyncAt
+      ? `Offline — synced ${formatTimeAgo(new Date(lastSyncAt).getTime())}`
+      : 'Offline — will sync when reconnected';
+  } else if (isSyncing) {
     statusIcon = <RefreshCw className="h-4 w-4 animate-spin" />;
     statusText = 'Syncing...';
   } else if (syncError) {
@@ -83,7 +90,7 @@ const SyncIndicator = memo(() => {
         size="sm"
         className="w-full h-7 text-[11px] text-muted-foreground gap-1.5 font-normal"
         onClick={handleSync}
-        disabled={isSyncing}
+        disabled={isSyncing || !isOnline}
       >
         <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
         {isSyncing ? 'Syncing...' : 'Sync now'}

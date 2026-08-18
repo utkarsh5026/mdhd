@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { PanelLeft, ScrollText } from 'lucide-react';
+import { CloudUpload, KeyRound, PanelLeft, ScrollText, WifiOff } from 'lucide-react';
 
 /**
  * One thing that changed, written for someone who has never read the diff.
@@ -44,6 +44,33 @@ export interface Release {
  * whenever a pull request is opened.
  */
 export const RELEASES: Release[] = [
+  {
+    id: '2026-08-17-offline',
+    version: 'v1.1',
+    date: '2026-08-17',
+    title: 'MDHD works without a connection',
+    tagline: 'Open it on a plane and everything you have read is still there.',
+    highlights: [
+      {
+        icon: WifiOff,
+        title: 'Opens with no internet',
+        description:
+          'Once you have visited MDHD, it loads and runs from your device even with no connection.',
+      },
+      {
+        icon: KeyRound,
+        title: 'You stay signed in',
+        description:
+          'Losing the network no longer signs you out — your documents and settings stay put.',
+      },
+      {
+        icon: CloudUpload,
+        title: 'Catches up when you reconnect',
+        description:
+          'Reading you do offline, including where you stopped, syncs on its own once you are back.',
+      },
+    ],
+  },
   {
     id: '2026-08-11-whats-new',
     version: 'v1.0',

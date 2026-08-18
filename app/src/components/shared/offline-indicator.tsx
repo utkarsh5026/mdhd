@@ -1,33 +1,36 @@
 import { Wifi, WifiOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+import { useIsOnline } from '@/services/offline';
+
 type Status = 'online' | 'offline' | 'back-online';
 
+/**
+ * Thin banner that appears while the browser is offline, and flashes a
+ * confirmation when the connection returns.
+ *
+ * Deliberately worded as a state ("Reading offline"), not a warning: every
+ * document lives in IndexedDB, so losing the network costs the user nothing
+ * but sync.
+ */
 const OfflineIndicator: React.FC = () => {
-  const [status, setStatus] = useState<Status>(navigator.onLine ? 'online' : 'offline');
-  const wasOffline = useRef(!navigator.onLine);
+  const isOnline = useIsOnline();
+  const [status, setStatus] = useState<Status>(isOnline ? 'online' : 'offline');
+  const wasOffline = useRef(!isOnline);
 
   useEffect(() => {
-    const handleOnline = () => {
-      if (wasOffline.current) {
-        setStatus('back-online');
-        setTimeout(() => setStatus('online'), 1500);
-      }
-      wasOffline.current = false;
-    };
-    const handleOffline = () => {
+    if (!isOnline) {
       wasOffline.current = true;
       setStatus('offline');
-    };
+      return;
+    }
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+    if (!wasOffline.current) return;
+    wasOffline.current = false;
+    setStatus('back-online');
+    const id = setTimeout(() => setStatus('online'), 1500);
+    return () => clearTimeout(id);
+  }, [isOnline]);
 
   const visible = status !== 'online';
   const isBackOnline = status === 'back-online';
